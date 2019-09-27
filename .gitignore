@@ -19,6 +19,10 @@
 
 # Ignore build files
 /**/cmake-build-debug/
+/build
+
+# Ignore third-party (must be setup explicitly)
+/thirdparty/*
 
 # MacOS finder files
 /**/.DS_Store
