@@ -16,15 +16,11 @@ include_directories(${PROJECT_SOURCE_DIR}/thirdparty)
 include_directories(${PROJECT_SOURCE_DIR}/thirdparty/Glfw/include)
 include_directories(${PROJECT_SOURCE_DIR}/thirdparty/Vulkan/include)
 
-########################## Vulkan GLFW lib ##########################
+########################## GLFW lib ##########################
 
-find_library(GLFW_LIB glfw PATHS "${PROJECT_SOURCE_DIR}/thirdparty/Glfw/lib")
-set(THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} ${GLFW_LIB})
-
-########################## Vulkan SDK lib ##########################
-
-find_library(VULKAN_LIB vulkan PATHS "${PROJECT_SOURCE_DIR}/thirdparty/Vulkan/lib")
-set(THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} ${VULKAN_LIB})
+link_directories(${CMAKE_SOURCE_DIR}/thirdparty/Glfw/lib)
+link_directories(${CMAKE_SOURCE_DIR}/thirdparty/Vulkan/lib)
+set(THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} glfw vulkan)
 
 ########################## Project h/cpp files ##########################
 

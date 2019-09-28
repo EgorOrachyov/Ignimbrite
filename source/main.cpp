@@ -13,7 +13,7 @@ int main() {
     VkResult result;
     VkInstanceCreateInfo info = {};
 
-    result = vkCreateInstance(&info, NULL, &instance);
+    result = vkCreateInstance(&info, nullptr, &instance);
     std::cout << "vkCreateInstance result: " << result  << "\n";
 
     vkDestroyInstance(instance, nullptr);
