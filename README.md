@@ -20,37 +20,22 @@ VulkanRenderer
 +- source
 +- thirdparty
 | |
-| +- Vulkan
-| +- Glfw
+| +- include
+| +- lib
+|   |
+|   +- win32
+|   +- win64
+|   +- mac64
+|   +- linux64
 |  
 +- CMakeLists.txt
 
 ...
 ```
-Project requires as dependency GLFW3 library for multi-platform window system
-support and Vulkan SDK as API for high performance GPU rendering computations.
+Project uses GLFW3 library for window system
+and Vulkan SDK as API for graphics rendering.
 You have to explicitly download, compile listed above SDKs and place it in the 
-folders 'Vulkan' and 'Glfw' respectively.
-
-3. GLFW folder structure must follow the next pattern:
-
-```
-Glfw
-|
-+- include
-+- lib
-```
-
-4. Vulkan folder structure must follow the next pattern:
-```
-Vulkan
-|
-+- bin
-+- etc
-+- Frameworks
-+- include
-+- lib
-```
+folder 'win32', 'win64' or other.
 
 ### Linux
 
@@ -72,3 +57,8 @@ To run the example executable file enter the following command (from the folder 
 ```
 $ ./VulkanRenderer
 ```
+
+
+### Windows
+
+As the project uses CMake, building on Windows is almost the same as on Linux.
