@@ -20,9 +20,14 @@
 # Ignore build files
 /**/cmake-build-debug/
 /build
+/out
 
 # Ignore third-party (must be setup explicitly)
 /thirdparty/*
 
 # MacOS finder files
 /**/.DS_Store
+
+# Visual Studio
+/.vs
+CMakeSettings.json
