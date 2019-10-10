@@ -8,9 +8,30 @@ void VulkanTriangle::Start()
 	CreateWindow();
 	InitVulkan();
 
+	Scene scene = Scene();
+	scene.Setup(*this);
+
+	scene.MVPUniform.MapAndCopy(scene.MVP, sizeof(scene.MVP));
+	scene.MVPUniform.Unmap();
+
 	MainLoop();
 
-	Cleanup();
+	scene.Destroy();
+
+	//delete scene;
+
+	DestroyVulkan();
+	DestroyWindow();
+}
+
+const VkPhysicalDeviceMemoryProperties &VulkanTriangle::GetChoosedDeviceMemProperties() const
+{
+	return choosedDeviceMemProperties;
+}
+
+const VkDevice VulkanTriangle::GetDevice() const
+{
+	return device;
 }
 
 void VulkanTriangle::CreateWindow()
@@ -327,9 +348,10 @@ void VulkanTriangle::CreateDepthBuffer()
 	memAllocInfo.pNext = NULL;
 	memAllocInfo.allocationSize = memReqs.size;
 
-	// this memory must be accessed efficiently by device
+	// VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT:
+	//   this memory must be accessed efficiently by device
 	uint32_t memoryTypeIndex;
-	bool foundMemoryType = FindMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, memoryTypeIndex);
+	bool foundMemoryType = Utils::GetMemoryType(choosedDeviceMemProperties, memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, memoryTypeIndex);
 	assert(foundMemoryType);
 		
 	memAllocInfo.memoryTypeIndex = memoryTypeIndex;
@@ -361,27 +383,6 @@ void VulkanTriangle::CreateDepthBuffer()
 
 	r = vkCreateImageView(device, &depthViewInfo, NULL, &depthBuffer.View);
 	assert(r == VK_SUCCESS);
-}
-
-bool VulkanTriangle::FindMemoryType(uint32_t memoryTypeBits, VkFlags requirementsMask, uint32_t &result)
-{
-	// for each memory type available for this device
-	for (uint32_t i = 0; i < choosedDeviceMemProperties.memoryTypeCount; i++)
-	{
-		// if type is available
-		if ((memoryTypeBits & 1) == 1)
-		{
-			if ((choosedDeviceMemProperties.memoryTypes[i].propertyFlags & requirementsMask) == requirementsMask)
-			{
-				result = i;
-				return true;
-			}
-		}
-
-		memoryTypeBits >>= 1;
-	}
-
-	return false;
 }
 
 void VulkanTriangle::FindQueueFamilyIndices()
@@ -579,7 +580,7 @@ std::vector<const char*> VulkanTriangle::GetRequiredDeviceExtensions()
 	return deviceExtensions;
 }
 
-void VulkanTriangle::Cleanup()
+void VulkanTriangle::DestroyVulkan()
 {
 	if (enableValidationLayers)
 	{
@@ -590,8 +591,6 @@ void VulkanTriangle::Cleanup()
 	DestroySwapchain();
 	DestroyDevice();
 	DestroyInstance();
-
-	DestroyWindow();
 }
 
 void VulkanTriangle::DestroyInstance()
@@ -626,4 +625,80 @@ void VulkanTriangle::DestroyWindow()
 {
 	glfwDestroyWindow(window);
 	glfwTerminate();
+}
+
+void Scene::Setup(const VulkanTriangle &t)
+{
+	//auto projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
+	//
+	//auto view = glm::lookAt(
+	//	glm::vec3(-5, 3, -10), // Camera is at (-5,3,-10), in World Space
+	//	glm::vec3(0, 0, 0),    // and looks at the origin
+	//	glm::vec3(0, -1, 0)    // Head is up (set to 0,-1,0 to look upside-down)
+	//);
+	//
+	//auto model = glm::mat4(1.0f);
+
+	//auto clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
+	//	0.0f, -1.0f, 0.0f, 0.0f,
+	//	0.0f, 0.0f, 0.5f, 0.0f,
+	//	0.0f, 0.0f, 0.5f, 1.0f);
+
+	//auto mvp = clip * projection * view * model;
+
+	//for (int i = 0; i < 4; i++)
+	//{
+	//	for (int j = 0; j < 4; j++)
+	//	{
+	//		MVP[i * 4 + j] = mvp[i][j];
+	//	}
+	//}
+
+	MVP[0] = 2.15934f;
+	MVP[1] = 0.279808f;
+	MVP[2] = 0.432367f;
+	MVP[3] = 0.431934f;
+	
+	MVP[4] = 0.0f;
+	MVP[5] = 2.33173f;
+	MVP[6] = -0.25942f;
+	MVP[7] = -0.259161f;
+
+	MVP[8] = -1.07967f;
+	MVP[9] = 0.559615f;
+	MVP[10] = 0.864733f;
+	MVP[11] = 0.863868f;
+
+	MVP[12] = 0.0f;
+	MVP[13] = 0.0f;
+	MVP[14] = 11.4873f;
+	MVP[15] = 11.5758f;
+
+	MVPUniform.Init(t.GetChoosedDeviceMemProperties(), t.GetDevice(), sizeof(MVP));
+}
+
+void Scene::Destroy()
+{
+	MVPUniform.Destroy();
+}
+
+bool Utils::GetMemoryType(const VkPhysicalDeviceMemoryProperties &deviceMemProperties, uint32_t memoryTypeBits, VkFlags requirementsMask, uint32_t& result)
+{
+	// for each memory type available for this device
+	for (uint32_t i = 0; i < deviceMemProperties.memoryTypeCount; i++)
+	{
+		// if type is available
+		if ((memoryTypeBits & 1) == 1)
+		{
+			if ((deviceMemProperties.memoryTypes[i].propertyFlags & requirementsMask) == requirementsMask)
+			{
+				result = i;
+				return true;
+			}
+		}
+
+		memoryTypeBits >>= 1;
+	}
+
+	return false;
 }

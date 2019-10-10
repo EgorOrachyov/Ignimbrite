@@ -6,26 +6,41 @@
 #include <vector>
 
 #include "ValidationLayers.h"
+#include "UniformBuffer.h"
 
-//struct LayerProperties
-//{
-//	VkLayerProperties properties;
-//	std::vector<VkExtensionProperties> instanceExtensions;
-//	std::vector<VkExtensionProperties> deviceExtensions;
-//};
+class VulkanTriangle;
 
 struct SwapchainBuffer 
 {
-	VkImage			Image;
-	VkImageView		View;
+	VkImage					Image;
+	VkImageView				View;
 };
 
 struct DepthBuffer
 {
-	VkImage			Image;
-	VkImageView		View;
-	VkDeviceMemory	Memory;
-	VkFormat		Format;
+	VkImage					Image;
+	VkImageView				View;
+	VkDeviceMemory			Memory;
+	VkFormat				Format;
+};
+
+// Scene that contains cube and a camera
+class Scene
+{
+public:
+	// Model view projection matrix
+	float				MVP[16];
+	// Uniform buffer for MVP matrix
+	UniformBuffer		MVPUniform;
+
+	void				Setup(const VulkanTriangle& t);
+	void				Destroy();
+};
+
+class Utils
+{
+public:
+	static bool GetMemoryType(const VkPhysicalDeviceMemoryProperties& deviceMemProperties, uint32_t memoryTypeBits, VkFlags requirementsMask, uint32_t& result);
 };
 
 class VulkanTriangle
@@ -49,17 +64,17 @@ private:
 	VkSurfaceKHR			surface;
 	VkFormat				surfaceFormat;
 
-	VkSwapchainKHR						swapchain;
-	uint32_t							swapchainImageCount;
-	std::vector<SwapchainBuffer>		imageBuffers;
+	VkSwapchainKHR							swapchain;
+	uint32_t								swapchainImageCount;
+	std::vector<SwapchainBuffer>			imageBuffers;
 
-	DepthBuffer							depthBuffer;
+	DepthBuffer								depthBuffer;
 
-	std::vector<VkPhysicalDevice>		physicalDevices;
+	std::vector<VkPhysicalDevice>			physicalDevices;
 
-	int									choosedPhysDevice;
-	VkPhysicalDeviceMemoryProperties	choosedDeviceMemProperties;
-	VkPhysicalDeviceProperties			choosedDeviceProperties;
+	int										choosedPhysDevice;
+	VkPhysicalDeviceMemoryProperties		choosedDeviceMemProperties;
+	VkPhysicalDeviceProperties				choosedDeviceProperties;
 	
 	uint32_t								queueFamilyCount;
 	std::vector<VkQueueFamilyProperties>	queueFamilyProperties;
@@ -71,6 +86,8 @@ private:
 
 	// use 1 sample
 	const VkSampleCountFlagBits SampleCount = VK_SAMPLE_COUNT_1_BIT;
+
+	//Scene					scene;
 
 private:
 	std::vector<const char*> GetRequiredInstanceExtensions();
@@ -95,11 +112,10 @@ private:
 	void CreateSwapchainImages();
 
 	void CreateDepthBuffer();
-	bool FindMemoryType(uint32_t memoryTypeBits, VkFlags requirementsMask, uint32_t& result);
 
 	void MainLoop();
 
-	void Cleanup();
+	void DestroyVulkan();
 	void DestroyWindow();
 	void DestroyInstance();
 	void DestroyDevice();
@@ -108,4 +124,7 @@ private:
 
 public:
 	void Start();
+
+	const VkPhysicalDeviceMemoryProperties &GetChoosedDeviceMemProperties() const;
+	const VkDevice GetDevice() const;
 };

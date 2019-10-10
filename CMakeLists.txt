@@ -9,21 +9,22 @@ set(CMAKE_GENERATOR_PLATFORM x64)
 set(THIRD_PARTY_LIBS)
 set(SOURCES)
 
-########################## Include ##########################
+# Include
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/thirdparty/include)
 
-########################## Lib ##########################
+# Lib
 
 link_directories(${CMAKE_SOURCE_DIR}/thirdparty/lib/win64)
 set(THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} glfw3 vulkan-1)
 
-########################## Project h/cpp files ##########################
+# Source
 
 set(SOURCES ${SOURCES} source/main.cpp)
 set(SOURCES ${SOURCES} source/VulkanTriangle.cpp)
 set(SOURCES ${SOURCES} source/ValidationLayers.cpp)
+set(SOURCES ${SOURCES} source/UniformBuffer.cpp)
 
 add_executable(VulkanRenderer ${SOURCES})
 target_link_libraries(VulkanRenderer ${THIRD_PARTY_LIBS})
