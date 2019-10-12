@@ -69,10 +69,14 @@ private:
 	uint32_t						swapchainImageCount;
 	std::vector<SwapchainBuffer>	imageBuffers;
 
+	VkSampleCountFlagBits			SampleCount;
+
 	VkPipelineLayout				pipelineLayout;
 
 	VkDescriptorPool				descriptorPool;
 	std::vector<VkDescriptorSet>	descriptorSets;
+
+	VkRenderPass					renderPass;
 
 private:
 	DepthBuffer								depthBuffer;
@@ -90,8 +94,6 @@ private:
 	uint32_t				presentQueueFamilyIndex;
 
 	VkDevice				device;
-
-	VkSampleCountFlagBits	SampleCount;
 
 private:
 	std::vector<const char*> GetRequiredInstanceExtensions();
@@ -121,8 +123,11 @@ private:
 	void CreateDescriptorPool(const VkDescriptorPoolSize* poolSizes, uint32_t poolSizeCount);
 	void AllocateDescriptorSets(const VkDescriptorSetLayout* descSetLayouts, uint32_t descriptorSetCount);
 
+	void CreateRenderPass();
+
 
 	void MainLoop();
+
 
 	void DestroyVulkan();
 	void DestroyWindow();
@@ -133,6 +138,8 @@ private:
 
 	void DestroyPipelineLayout();
 	void DestroyDescriptorPool();
+
+	void DestroyRenderPass();
 
 public:
 	void Start();

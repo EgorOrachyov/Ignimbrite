@@ -48,15 +48,21 @@ void VulkanTriangle::Start()
 	VkWriteDescriptorSet writes[] = { cubeShader.GetWriteDescriptorSet(descriptorSets[0]) };
 	vkUpdateDescriptorSets(device, 1, writes, 0, NULL);
 
-	
+	CreateRenderPass();
 
 
 
 	MainLoop();
 
+
+
 	scene.Destroy();
 
 	cubeShader.mvpUniform.Destroy();
+	cubeShader.Destroy(device);
+
+
+	DestroyRenderPass();
 
 	DestroyPipelineLayout();
 	DestroyDescriptorPool();
@@ -640,6 +646,78 @@ void VulkanTriangle::AllocateDescriptorSets(const VkDescriptorSetLayout *descSet
 	assert(r == VK_SUCCESS);
 }
 
+void VulkanTriangle::CreateRenderPass()
+{
+	VkAttachmentDescription attachmentDesc[2];
+
+	// color
+	attachmentDesc[0].format = surfaceFormat;
+	attachmentDesc[0].samples = SampleCount;
+	// clear at the start of render pass
+	attachmentDesc[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	// leave rendering result in this buffer
+	attachmentDesc[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachmentDesc[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachmentDesc[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	// initial layout is undefined
+	attachmentDesc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	// final layout must be appropriate for present operation
+	attachmentDesc[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	attachmentDesc[0].flags = 0;
+
+	// depth
+	attachmentDesc[1].format = depthBuffer.Format;
+	attachmentDesc[1].samples = SampleCount;
+	// clear at the start of render pass
+	attachmentDesc[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachmentDesc[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachmentDesc[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachmentDesc[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachmentDesc[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	// leave same as it will not be presented
+	attachmentDesc[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	attachmentDesc[1].flags = 0;
+
+	// create attachment ref for subpass
+	VkAttachmentReference colorAttachRef = {};
+	colorAttachRef.attachment = 0;
+	// subpass occurs between initial and final layouts,
+	// so choose optimal layout
+	colorAttachRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference depthAttachRef = {};
+	depthAttachRef.attachment = 1;
+	depthAttachRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	VkSubpassDescription subpasses[1];
+
+	subpasses[0] = {};
+	// graphics pipeline type
+	subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpasses[0].flags = 0;
+	subpasses[0].inputAttachmentCount = 0;
+	subpasses[0].pInputAttachments = NULL;
+	subpasses[0].colorAttachmentCount = 1;
+	subpasses[0].pColorAttachments = &colorAttachRef;
+	subpasses[0].pResolveAttachments = NULL;
+	subpasses[0].pDepthStencilAttachment = &depthAttachRef;
+	subpasses[0].preserveAttachmentCount = 0;
+	subpasses[0].pPreserveAttachments = NULL;
+
+	VkRenderPassCreateInfo renderPassInfo = {};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassInfo.pNext = NULL;
+	renderPassInfo.attachmentCount = 2;
+	renderPassInfo.pAttachments = attachmentDesc;
+	renderPassInfo.subpassCount = 1;
+	renderPassInfo.pSubpasses = subpasses;
+	renderPassInfo.dependencyCount = 0;
+	renderPassInfo.pDependencies = NULL;
+
+	VkResult r = vkCreateRenderPass(device, &renderPassInfo, TR_VK_ALLOCATION_CALLBACKS_MARK, &renderPass);
+	assert(r == VK_SUCCESS);
+}
+
 std::vector<const char*> VulkanTriangle::GetRequiredInstanceExtensions()
 {
 	uint32_t glfwExtensionCount = 0;
@@ -712,6 +790,11 @@ void VulkanTriangle::DestroyPipelineLayout()
 void VulkanTriangle::DestroyDescriptorPool()
 {
 	vkDestroyDescriptorPool(device, descriptorPool, TR_VK_ALLOCATION_CALLBACKS_MARK);
+}
+
+void VulkanTriangle::DestroyRenderPass()
+{
+	vkDestroyRenderPass(device, renderPass, TR_VK_ALLOCATION_CALLBACKS_MARK);
 }
 
 void VulkanTriangle::DestroyWindow()

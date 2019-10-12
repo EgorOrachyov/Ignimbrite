@@ -78,7 +78,7 @@ void Shader::Init(VkDevice device)
 
 void Shader::Destroy(VkDevice device)
 {
-	CreateDescriptorSetLayout(device);
+	DestroyDescriptorSetLayout(device);
 }
 
 const VkDescriptorSetLayout &Shader::GetDescriptorSetLayout() const
