@@ -55,19 +55,22 @@ private:
 	const bool enableValidationLayers = true;
 #endif
 
-	GLFWwindow				*window;
+	GLFWwindow						*window;
 
-	VkInstance				vkInstance;
+	VkInstance						vkInstance;
 	
-	ValidationLayers		validationLayers;
+	ValidationLayers				validationLayers;
 	
-	VkSurfaceKHR			surface;
-	VkFormat				surfaceFormat;
+	VkSurfaceKHR					surface;
+	VkFormat						surfaceFormat;
 
-	VkSwapchainKHR							swapchain;
-	uint32_t								swapchainImageCount;
-	std::vector<SwapchainBuffer>			imageBuffers;
+	VkSwapchainKHR					swapchain;
+	uint32_t						swapchainImageCount;
+	std::vector<SwapchainBuffer>	imageBuffers;
 
+	VkPipelineLayout				pipelineLayout;
+
+private:
 	DepthBuffer								depthBuffer;
 
 	std::vector<VkPhysicalDevice>			physicalDevices;
@@ -84,10 +87,7 @@ private:
 
 	VkDevice				device;
 
-	// use 1 sample
-	const VkSampleCountFlagBits SampleCount = VK_SAMPLE_COUNT_1_BIT;
-
-	//Scene					scene;
+	VkSampleCountFlagBits SampleCount;
 
 private:
 	std::vector<const char*> GetRequiredInstanceExtensions();
@@ -113,6 +113,8 @@ private:
 
 	void CreateDepthBuffer();
 
+	void CreatePipelineLayout(uint32_t setLayoutCount, const VkDescriptorSetLayout* pSetLayouts);
+
 	void MainLoop();
 
 	void DestroyVulkan();
@@ -121,6 +123,8 @@ private:
 	void DestroyDevice();
 	void DestroySwapchain();
 	void DestroyDepthBuffer();
+
+	void DestroyPipelineLayout();
 
 public:
 	void Start();

@@ -25,6 +25,7 @@ set(SOURCES ${SOURCES} source/main.cpp)
 set(SOURCES ${SOURCES} source/VulkanTriangle.cpp)
 set(SOURCES ${SOURCES} source/ValidationLayers.cpp)
 set(SOURCES ${SOURCES} source/UniformBuffer.cpp)
+set(SOURCES ${SOURCES} source/Shader.cpp)
 
 add_executable(VulkanRenderer ${SOURCES})
 target_link_libraries(VulkanRenderer ${THIRD_PARTY_LIBS})

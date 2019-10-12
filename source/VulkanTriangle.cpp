@@ -1,24 +1,36 @@
 #include "VulkanTriangle.h"
+#include "Shader.h"
 #include <stdexcept>
 #include <iostream>
 #include <cassert>
 
 void VulkanTriangle::Start()
 {
+	// use 1 sample
+	SampleCount = VK_SAMPLE_COUNT_1_BIT;
+
 	CreateWindow();
 	InitVulkan();
 
+	// create shader
+	Shader cubeShader = Shader();
+	cubeShader.CreateDescriptorSetLayout(device);
+
+	// get set layouts of all shaders
+	VkDescriptorSetLayout setLayouts[] = { cubeShader.GetDescriptorSetLayout() };
+	CreatePipelineLayout(1, setLayouts);
+
+	// create scene
 	Scene scene = Scene();
 	scene.Setup(*this);
 
+	// set uniform data to device
 	scene.MVPUniform.MapAndCopy(scene.MVP, sizeof(scene.MVP));
 	scene.MVPUniform.Unmap();
 
 	MainLoop();
 
 	scene.Destroy();
-
-	//delete scene;
 
 	DestroyVulkan();
 	DestroyWindow();
@@ -557,6 +569,20 @@ void VulkanTriangle::SetSurfaceCapabilities(VkSwapchainCreateInfoKHR& swapchainC
 	swapchainCreateInfo.presentMode = swapchainPresentMode;
 }
 
+void VulkanTriangle::CreatePipelineLayout(uint32_t setLayoutCount, const VkDescriptorSetLayout *pSetLayouts)
+{
+	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
+	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutCreateInfo.pNext = NULL;
+	pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
+	pipelineLayoutCreateInfo.pPushConstantRanges = NULL;
+	pipelineLayoutCreateInfo.setLayoutCount = setLayoutCount;
+	pipelineLayoutCreateInfo.pSetLayouts = pSetLayouts;
+
+	VkResult r = vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, NULL, &pipelineLayout);
+	assert(r == VK_SUCCESS);
+}
+
 std::vector<const char*> VulkanTriangle::GetRequiredInstanceExtensions()
 {
 	uint32_t glfwExtensionCount = 0;
@@ -619,6 +645,11 @@ void VulkanTriangle::DestroyDepthBuffer()
 	vkDestroyImageView(device, depthBuffer.View, NULL);
 	vkDestroyImage(device, depthBuffer.Image, NULL);
 	vkFreeMemory(device, depthBuffer.Memory, NULL);
+}
+
+void VulkanTriangle::DestroyPipelineLayout()
+{
+	vkDestroyPipelineLayout(device, pipelineLayout, NULL);
 }
 
 void VulkanTriangle::DestroyWindow()
