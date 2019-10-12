@@ -2,7 +2,7 @@
 
 int main() 
 {
-	VulkanTriangle app = VulkanTriangle();
+	VulkanTriangle app;
 	app.Start();
 
 	return 0;

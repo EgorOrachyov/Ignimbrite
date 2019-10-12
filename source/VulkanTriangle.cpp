@@ -13,12 +13,12 @@ void VulkanTriangle::Start()
 	InitVulkan();
 
 	// create shader
-	Shader cubeShader = Shader();
+	Shader cubeShader;
 	// create descriptor set layout for this shader
 	cubeShader.Init(device);
 
 	// create scene
-	Scene scene = Scene();
+	Scene scene;
 	scene.Setup(*this);
 
 	// init uniform buffer
