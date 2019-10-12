@@ -3,7 +3,7 @@
 #include <cassert>
 #include <string>
 
-void UniformBuffer::Init(const VkPhysicalDeviceMemoryProperties &physDeviceMemProperties, const VkDevice &device, VkDeviceSize uniformBufferSize)
+void UniformBuffer::Init(const VkPhysicalDeviceMemoryProperties &physDeviceMemProperties, VkDevice device, VkDeviceSize uniformBufferSize)
 {
 	this->Device = device;
 
@@ -32,7 +32,7 @@ void UniformBuffer::CreateBufferObject(VkDeviceSize uniformBufferSize)
 	bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	bufferCreateInfo.flags = 0;
 
-	VkResult r = vkCreateBuffer(this->Device, &bufferCreateInfo, NULL, &this->Buffer);
+	VkResult r = vkCreateBuffer(this->Device, &bufferCreateInfo, TR_VK_ALLOCATION_CALLBACKS_MARK, &this->Buffer);
 	assert(r == VK_SUCCESS);
 }
 
@@ -62,7 +62,7 @@ void UniformBuffer::AllocateDeviceMemory(const VkPhysicalDeviceMemoryProperties 
 
 	assert(found);
 
-	VkResult r = vkAllocateMemory(this->Device, &memAllocInfo, NULL, &this->Memory);
+	VkResult r = vkAllocateMemory(this->Device, &memAllocInfo, TR_VK_ALLOCATION_CALLBACKS_MARK, &this->Memory);
 	assert(r == VK_SUCCESS);
 }
 
@@ -76,7 +76,7 @@ void UniformBuffer::BindBufferMemory(VkDeviceSize uniformBufferSize)
 	this->BufferInfo.range = uniformBufferSize;
 }
 
-void UniformBuffer::MapAndCopy(void *data, uint32_t dataSize)
+void UniformBuffer::MapAndCopy(void *data, uint32_t dataSize) const
 {
 	void* mapped;
 
@@ -88,7 +88,7 @@ void UniformBuffer::MapAndCopy(void *data, uint32_t dataSize)
 	memcpy(mapped, &data, dataSize);
 }
 
-void UniformBuffer::Unmap()
+void UniformBuffer::Unmap() const
 {
 	vkUnmapMemory(this->Device, this->Memory);
 }

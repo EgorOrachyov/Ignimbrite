@@ -1,6 +1,9 @@
 #include "Shader.h"
 #include <cassert>
 
+// for allocation mark define: TR_VK_ALLOCATION_CALLBACKS_MARK
+#include "VulkanTriangle.h"
+
 // specific for this shader
 #define LAYOUT_BINDING_COUNT 1
 
@@ -32,12 +35,16 @@ const char* fragShaderText =
 
 void Shader::CreateDescriptorSetLayout(VkDevice device)
 {
+	// current shader uses only 1 uniform buffer
 	VkDescriptorSetLayoutBinding layoutBinding[LAYOUT_BINDING_COUNT] = {};
 
 	layoutBinding[0] = {};
+	
+	// binding index, used in shader for uniform buffer
 	layoutBinding[0].binding = 0;
 	layoutBinding[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	layoutBinding[0].descriptorCount = 1;
+	// this binding is for vertex shader
 	layoutBinding[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	layoutBinding[0].pImmutableSamplers = NULL;
 
@@ -47,8 +54,15 @@ void Shader::CreateDescriptorSetLayout(VkDevice device)
 	descriptorLayout.bindingCount = LAYOUT_BINDING_COUNT;
 	descriptorLayout.pBindings = layoutBinding;
 
-	VkResult r = vkCreateDescriptorSetLayout(device, &descriptorLayout, NULL, &descriptorSetLayout);
+	VkResult r = vkCreateDescriptorSetLayout(device, &descriptorLayout, TR_VK_ALLOCATION_CALLBACKS_MARK, &descriptorSetLayout);
 	assert(r == VK_SUCCESS);
+}
+
+void Shader::CreatePoolSize()
+{
+	// current shader uses only 1 uniform buffer
+	poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSize.descriptorCount = 1;
 }
 
 void Shader::DestroyDescriptorSetLayout(VkDevice device)
@@ -56,7 +70,44 @@ void Shader::DestroyDescriptorSetLayout(VkDevice device)
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, NULL);
 }
 
-const VkDescriptorSetLayout& Shader::GetDescriptorSetLayout() const
+void Shader::Init(VkDevice device)
+{
+	CreateDescriptorSetLayout(device);
+	CreatePoolSize();
+}
+
+void Shader::Destroy(VkDevice device)
+{
+	CreateDescriptorSetLayout(device);
+}
+
+const VkDescriptorSetLayout &Shader::GetDescriptorSetLayout() const
 {
 	return descriptorSetLayout;
+}
+
+const VkDescriptorPoolSize &Shader::GetPoolSize() const
+{
+	return poolSize;
+}
+
+VkWriteDescriptorSet Shader::GetWriteDescriptorSet(const VkDescriptorSet &descSet) const
+{
+	VkWriteDescriptorSet writeDescSet = {};
+
+	writeDescSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescSet.pNext = NULL;
+	writeDescSet.dstSet = descSet;
+	writeDescSet.descriptorCount = 1;
+
+	// uniform buffer
+	writeDescSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+	// specify buffer info
+	writeDescSet.pBufferInfo = &mvpUniform.BufferInfo;
+
+	writeDescSet.dstArrayElement = 0;
+	writeDescSet.dstBinding = 0;
+
+	return writeDescSet;
 }

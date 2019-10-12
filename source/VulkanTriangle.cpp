@@ -14,23 +14,52 @@ void VulkanTriangle::Start()
 
 	// create shader
 	Shader cubeShader = Shader();
-	cubeShader.CreateDescriptorSetLayout(device);
-
-	// get set layouts of all shaders
-	VkDescriptorSetLayout setLayouts[] = { cubeShader.GetDescriptorSetLayout() };
-	CreatePipelineLayout(1, setLayouts);
+	// create descriptor set layout for this shader
+	cubeShader.Init(device);
 
 	// create scene
 	Scene scene = Scene();
 	scene.Setup(*this);
 
-	// set uniform data to device
-	scene.MVPUniform.MapAndCopy(scene.MVP, sizeof(scene.MVP));
-	scene.MVPUniform.Unmap();
+	// init uniform buffer
+	cubeShader.mvpUniform.Init(choosedDeviceMemProperties, device, sizeof(scene.MVP));
+	cubeShader.mvpUniform.MapAndCopy(scene.MVP, sizeof(scene.MVP));
+	cubeShader.mvpUniform.Unmap();
+
+
+
+	// get descriptor set layouts of all shaders,
+	// and pool sizes for creating descriptor pool
+	const int setLayoutCount = 1;
+	const int poolSizeCount = 1;
+	VkDescriptorPoolSize poolSizes[] = { cubeShader.GetPoolSize() };
+	VkDescriptorSetLayout setLayouts[] = { cubeShader.GetDescriptorSetLayout() };
+
+	// create pipeline layout
+	CreatePipelineLayout(setLayouts, setLayoutCount);
+	// and descriptor pool
+	CreateDescriptorPool(poolSizes, poolSizeCount);
+	
+	// allocate descriptor sets using pool
+	AllocateDescriptorSets(setLayouts, setLayoutCount);
+
+	// write content of descriptor set;
+	// here only uniform buffer will be written
+	VkWriteDescriptorSet writes[] = { cubeShader.GetWriteDescriptorSet(descriptorSets[0]) };
+	vkUpdateDescriptorSets(device, 1, writes, 0, NULL);
+
+	
+
+
 
 	MainLoop();
 
 	scene.Destroy();
+
+	cubeShader.mvpUniform.Destroy();
+
+	DestroyPipelineLayout();
+	DestroyDescriptorPool();
 
 	DestroyVulkan();
 	DestroyWindow();
@@ -111,13 +140,13 @@ void VulkanTriangle::CreateInstance()
 		createInfo.pNext = nullptr;
 	}
 
-	VkResult r = vkCreateInstance(&createInfo, nullptr, &vkInstance);
+	VkResult r = vkCreateInstance(&createInfo, TR_VK_ALLOCATION_CALLBACKS_MARK, &vkInstance);
 	assert(r == VK_SUCCESS);
 }
 
 void VulkanTriangle::CreateSurface()
 {
-	VkResult r = glfwCreateWindowSurface(vkInstance, window, nullptr, &surface);
+	VkResult r = glfwCreateWindowSurface(vkInstance, window, TR_VK_ALLOCATION_CALLBACKS_MARK, &surface);
 	assert(r == VK_SUCCESS);
 }
 
@@ -210,7 +239,7 @@ void VulkanTriangle::EnumerateDevices()
 		deviceInfo.ppEnabledLayerNames = NULL;
 	}
 
-	r = vkCreateDevice(physicalDevices[choosedPhysDevice], &deviceInfo, NULL, &device);
+	r = vkCreateDevice(physicalDevices[choosedPhysDevice], &deviceInfo, TR_VK_ALLOCATION_CALLBACKS_MARK, &device);
 	assert(r == VK_SUCCESS);
 }
 
@@ -249,7 +278,7 @@ void VulkanTriangle::CreateSwapchain()
 		swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
 	}
 
- 	VkResult r = vkCreateSwapchainKHR(device, &swapchainCreateInfo, NULL, &swapchain);
+ 	VkResult r = vkCreateSwapchainKHR(device, &swapchainCreateInfo, TR_VK_ALLOCATION_CALLBACKS_MARK, &swapchain);
 	assert(r == VK_SUCCESS);
 
 	CreateSwapchainImages();
@@ -303,7 +332,7 @@ void VulkanTriangle::CreateSwapchainImages()
 		colorImageView.subresourceRange.baseArrayLayer = 0;
 		colorImageView.subresourceRange.layerCount = 1;
 
-		r = vkCreateImageView(device, &colorImageView, NULL, &imageBuffers[i].View);
+		r = vkCreateImageView(device, &colorImageView, TR_VK_ALLOCATION_CALLBACKS_MARK, &imageBuffers[i].View);
 		assert(r == VK_SUCCESS);
 	}
 }
@@ -349,7 +378,7 @@ void VulkanTriangle::CreateDepthBuffer()
 	depthImageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	depthImageInfo.flags = 0;
 
-	VkResult r = vkCreateImage(device, &depthImageInfo, NULL, &depthBuffer.Image);
+	VkResult r = vkCreateImage(device, &depthImageInfo, TR_VK_ALLOCATION_CALLBACKS_MARK, &depthBuffer.Image);
 	assert(r == VK_SUCCESS);
 
 	VkMemoryRequirements memReqs;
@@ -368,7 +397,7 @@ void VulkanTriangle::CreateDepthBuffer()
 		
 	memAllocInfo.memoryTypeIndex = memoryTypeIndex;
 
-	r = vkAllocateMemory(device, &memAllocInfo, NULL, &depthBuffer.Memory);
+	r = vkAllocateMemory(device, &memAllocInfo, TR_VK_ALLOCATION_CALLBACKS_MARK, &depthBuffer.Memory);
 	assert(r == VK_SUCCESS);
 
 	r = vkBindImageMemory(device, depthBuffer.Image, depthBuffer.Memory, 0);
@@ -393,7 +422,7 @@ void VulkanTriangle::CreateDepthBuffer()
 	depthViewInfo.flags = 0;
 	depthViewInfo.image = depthBuffer.Image;
 
-	r = vkCreateImageView(device, &depthViewInfo, NULL, &depthBuffer.View);
+	r = vkCreateImageView(device, &depthViewInfo, TR_VK_ALLOCATION_CALLBACKS_MARK, &depthBuffer.View);
 	assert(r == VK_SUCCESS);
 }
 
@@ -569,7 +598,7 @@ void VulkanTriangle::SetSurfaceCapabilities(VkSwapchainCreateInfoKHR& swapchainC
 	swapchainCreateInfo.presentMode = swapchainPresentMode;
 }
 
-void VulkanTriangle::CreatePipelineLayout(uint32_t setLayoutCount, const VkDescriptorSetLayout *pSetLayouts)
+void VulkanTriangle::CreatePipelineLayout(const VkDescriptorSetLayout *pSetLayouts, uint32_t setLayoutCount)
 {
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -579,7 +608,35 @@ void VulkanTriangle::CreatePipelineLayout(uint32_t setLayoutCount, const VkDescr
 	pipelineLayoutCreateInfo.setLayoutCount = setLayoutCount;
 	pipelineLayoutCreateInfo.pSetLayouts = pSetLayouts;
 
-	VkResult r = vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, NULL, &pipelineLayout);
+	VkResult r = vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, TR_VK_ALLOCATION_CALLBACKS_MARK, &pipelineLayout);
+	assert(r == VK_SUCCESS);
+}
+
+void VulkanTriangle::CreateDescriptorPool(const VkDescriptorPoolSize *poolSizes, uint32_t poolSizeCount)
+{
+	VkDescriptorPoolCreateInfo descriptorPoolInfo = {};
+	descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	descriptorPoolInfo.pNext = NULL;
+	// max number of descriptor sets, that can be allocated
+	descriptorPoolInfo.maxSets = 1; 
+	descriptorPoolInfo.poolSizeCount = poolSizeCount;
+	descriptorPoolInfo.pPoolSizes = poolSizes;
+
+	VkResult r = vkCreateDescriptorPool(device, &descriptorPoolInfo, TR_VK_ALLOCATION_CALLBACKS_MARK, &descriptorPool);
+	assert(r == VK_SUCCESS);
+}
+
+void VulkanTriangle::AllocateDescriptorSets(const VkDescriptorSetLayout *descSetLayouts, uint32_t descriptorSetCount)
+{
+	VkDescriptorSetAllocateInfo descSetAllocInfo[1];
+	descSetAllocInfo[0].sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	descSetAllocInfo[0].pNext = NULL;
+	descSetAllocInfo[0].descriptorPool = this->descriptorPool;
+	descSetAllocInfo[0].descriptorSetCount = descriptorSetCount;
+	descSetAllocInfo[0].pSetLayouts = descSetLayouts;
+
+	descriptorSets.resize(descriptorSetCount);
+	VkResult r = vkAllocateDescriptorSets(device, descSetAllocInfo, descriptorSets.data());
 	assert(r == VK_SUCCESS);
 }
 
@@ -621,35 +678,40 @@ void VulkanTriangle::DestroyVulkan()
 
 void VulkanTriangle::DestroyInstance()
 {
-	vkDestroyInstance(vkInstance, NULL);
+	vkDestroyInstance(vkInstance, TR_VK_ALLOCATION_CALLBACKS_MARK);
 }
 
 void VulkanTriangle::DestroyDevice()
 {
 	vkDeviceWaitIdle(device);
-	vkDestroyDevice(device, NULL);
+	vkDestroyDevice(device, TR_VK_ALLOCATION_CALLBACKS_MARK);
 }
 
 void VulkanTriangle::DestroySwapchain()
 {
 	for (uint32_t i = 0; i < swapchainImageCount; i++)
 	{
-		vkDestroyImageView(device, imageBuffers[i].View, NULL);
+		vkDestroyImageView(device, imageBuffers[i].View, TR_VK_ALLOCATION_CALLBACKS_MARK);
 	}
 
-	vkDestroySwapchainKHR(device, swapchain, NULL);
+	vkDestroySwapchainKHR(device, swapchain, TR_VK_ALLOCATION_CALLBACKS_MARK);
 }
 
 void VulkanTriangle::DestroyDepthBuffer()
 {
-	vkDestroyImageView(device, depthBuffer.View, NULL);
-	vkDestroyImage(device, depthBuffer.Image, NULL);
-	vkFreeMemory(device, depthBuffer.Memory, NULL);
+	vkDestroyImageView(device, depthBuffer.View, TR_VK_ALLOCATION_CALLBACKS_MARK);
+	vkDestroyImage(device, depthBuffer.Image, TR_VK_ALLOCATION_CALLBACKS_MARK);
+	vkFreeMemory(device, depthBuffer.Memory, TR_VK_ALLOCATION_CALLBACKS_MARK);
 }
 
 void VulkanTriangle::DestroyPipelineLayout()
 {
-	vkDestroyPipelineLayout(device, pipelineLayout, NULL);
+	vkDestroyPipelineLayout(device, pipelineLayout, TR_VK_ALLOCATION_CALLBACKS_MARK);
+}
+
+void VulkanTriangle::DestroyDescriptorPool()
+{
+	vkDestroyDescriptorPool(device, descriptorPool, TR_VK_ALLOCATION_CALLBACKS_MARK);
 }
 
 void VulkanTriangle::DestroyWindow()
@@ -704,14 +766,10 @@ void Scene::Setup(const VulkanTriangle &t)
 	MVP[13] = 0.0f;
 	MVP[14] = 11.4873f;
 	MVP[15] = 11.5758f;
-
-	MVPUniform.Init(t.GetChoosedDeviceMemProperties(), t.GetDevice(), sizeof(MVP));
 }
 
 void Scene::Destroy()
-{
-	MVPUniform.Destroy();
-}
+{}
 
 bool Utils::GetMemoryType(const VkPhysicalDeviceMemoryProperties &deviceMemProperties, uint32_t memoryTypeBits, VkFlags requirementsMask, uint32_t& result)
 {

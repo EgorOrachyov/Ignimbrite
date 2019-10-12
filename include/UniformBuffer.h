@@ -19,13 +19,13 @@ public:
 	VkDevice				Device;
 
 public:
-	void Init(const VkPhysicalDeviceMemoryProperties& physDeviceMemProperties, const VkDevice& device, VkDeviceSize uniformBufferSize);
+	void Init(const VkPhysicalDeviceMemoryProperties &physDeviceMemProperties, VkDevice device, VkDeviceSize uniformBufferSize);
 	void Destroy();
 
 	// Map memory object into application address space
 	// and copy data to this memory. This memory will be visible to device.
-	void MapAndCopy(void *data, uint32_t dataSize);
+	void MapAndCopy(void *data, uint32_t dataSize) const;
 
 	// Unmap memory that was mapped
-	void Unmap();
+	void Unmap() const;
 };

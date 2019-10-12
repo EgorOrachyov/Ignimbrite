@@ -8,6 +8,9 @@
 #include "ValidationLayers.h"
 #include "UniformBuffer.h"
 
+// special mark that shows vulkan allocation callbacks
+#define TR_VK_ALLOCATION_CALLBACKS_MARK NULL
+
 class VulkanTriangle;
 
 struct SwapchainBuffer 
@@ -30,8 +33,6 @@ class Scene
 public:
 	// Model view projection matrix
 	float				MVP[16];
-	// Uniform buffer for MVP matrix
-	UniformBuffer		MVPUniform;
 
 	void				Setup(const VulkanTriangle& t);
 	void				Destroy();
@@ -70,6 +71,9 @@ private:
 
 	VkPipelineLayout				pipelineLayout;
 
+	VkDescriptorPool				descriptorPool;
+	std::vector<VkDescriptorSet>	descriptorSets;
+
 private:
 	DepthBuffer								depthBuffer;
 
@@ -87,7 +91,7 @@ private:
 
 	VkDevice				device;
 
-	VkSampleCountFlagBits SampleCount;
+	VkSampleCountFlagBits	SampleCount;
 
 private:
 	std::vector<const char*> GetRequiredInstanceExtensions();
@@ -113,7 +117,10 @@ private:
 
 	void CreateDepthBuffer();
 
-	void CreatePipelineLayout(uint32_t setLayoutCount, const VkDescriptorSetLayout* pSetLayouts);
+	void CreatePipelineLayout(const VkDescriptorSetLayout* pSetLayouts, uint32_t setLayoutCount);
+	void CreateDescriptorPool(const VkDescriptorPoolSize* poolSizes, uint32_t poolSizeCount);
+	void AllocateDescriptorSets(const VkDescriptorSetLayout* descSetLayouts, uint32_t descriptorSetCount);
+
 
 	void MainLoop();
 
@@ -125,6 +132,7 @@ private:
 	void DestroyDepthBuffer();
 
 	void DestroyPipelineLayout();
+	void DestroyDescriptorPool();
 
 public:
 	void Start();
