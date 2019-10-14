@@ -16,7 +16,18 @@ include_directories(${PROJECT_SOURCE_DIR}/thirdparty/include)
 
 # Lib
 
-link_directories(${CMAKE_SOURCE_DIR}/thirdparty/lib/win64)
+if (WIN32)
+    if (${CMAKE_GENERATOR_PLATFORM} MATCHES "x64")
+        link_directories(${CMAKE_SOURCE_DIR}/thirdparty/lib/win64)
+    else()
+        link_directories(${CMAKE_SOURCE_DIR}/thirdparty/lib/win32)
+    endif()
+endif (WIN32)
+
+if (UNIX)
+    link_directories(${CMAKE_SOURCE_DIR}/thirdparty/lib/linux64)
+endif (UNIX)
+
 set(THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} glfw3 vulkan-1)
 
 # Source
