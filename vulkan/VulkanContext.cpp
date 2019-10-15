@@ -13,6 +13,7 @@ VulkanContext::VulkanContext(std::string appName, bool enableValidation, uint32 
     _createInstance();
     _setupDebugMessenger();
     _pickPhysicalDevice();
+    _createLogicalDevice();
 }
 
 VulkanContext::~VulkanContext() {
@@ -292,14 +293,12 @@ void VulkanContext::_outDeviceInfoVerbose(VkPhysicalDevice device) {
 }
 
 void VulkanContext::_createLogicalDevice() {
-
     float queuePriority = 1.0f;
-    VulkanQueueFamilyIndices indices;
-    _findQueueFamilies(mPhysicalDevice, indices);
+    _findQueueFamilies(mPhysicalDevice, mIndices);
 
     VkDeviceQueueCreateInfo queueCreateInfo = {};
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queueCreateInfo.queueFamilyIndex = indices.graphicsFamily;
+    queueCreateInfo.queueFamilyIndex = mIndices.graphicsFamily;
     queueCreateInfo.queueCount = 1;
     queueCreateInfo.pQueuePriorities = &queuePriority;
 
@@ -324,8 +323,14 @@ void VulkanContext::_createLogicalDevice() {
     if (vkCreateDevice(mPhysicalDevice, &createInfo, nullptr, &mDevice) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create logical device");
     }
+
+
 }
 
 void VulkanContext::_destroyLogicalDevice() {
     vkDestroyDevice(mDevice, nullptr);
+}
+
+void VulkanContext::_setupQueue() {
+    vkGetDeviceQueue(mDevice, mIndices.graphicsFamily, 0, &mGraphicsQueue);
 }

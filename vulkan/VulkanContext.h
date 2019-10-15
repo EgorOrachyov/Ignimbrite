@@ -45,6 +45,7 @@ private:
     static void _outDeviceInfoVerbose(VkPhysicalDevice device);
     void _createLogicalDevice();
     void _destroyLogicalDevice();
+    void _setupQueue();
 
     static VkResult _createDebugUtilsMessengerEXT(
             VkInstance instance,
@@ -77,6 +78,7 @@ private:
     VkQueue mGraphicsQueue;
 
     std::string mApplicationName;
+    VulkanQueueFamilyIndices mIndices;
 
 };
 
