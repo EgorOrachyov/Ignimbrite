@@ -10,6 +10,7 @@
 #include <vulkan/vulkan.h>
 #include <string>
 #include <vector>
+#include <VulkanQueueFamilyIndices.h>
 
 /**
  * Contains all the vulkan specific functionality for
@@ -38,6 +39,12 @@ private:
     void _fillRequiredExt(uint32 count, const char *const *ext);
     void _setupDebugMessenger();
     void _destroyDebugMessenger();
+    void _pickPhysicalDevice();
+    static bool _isDeviceSuitable(VkPhysicalDevice device);
+    static void _findQueueFamilies(VkPhysicalDevice device, VulkanQueueFamilyIndices& indices);
+    static void _outDeviceInfoVerbose(VkPhysicalDevice device);
+    void _createLogicalDevice();
+    void _destroyLogicalDevice();
 
     static VkResult _createDebugUtilsMessengerEXT(
             VkInstance instance,
@@ -63,8 +70,11 @@ private:
     const std::vector<const char*> mValidationLayers = { "VK_LAYER_KHRONOS_validation" };
     const bool mEnableValidationLayers;
 
-    VkInstance mInstance;
-    VkDebugUtilsMessengerEXT mDebugMessenger;
+    VkInstance mInstance = VK_NULL_HANDLE;
+    VkDebugUtilsMessengerEXT mDebugMessenger = VK_NULL_HANDLE;
+    VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;
+    VkDevice mDevice = VK_NULL_HANDLE;
+    VkQueue mGraphicsQueue;
 
     std::string mApplicationName;
 

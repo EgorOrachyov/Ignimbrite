@@ -12,9 +12,11 @@ VulkanContext::VulkanContext(std::string appName, bool enableValidation, uint32 
     _fillRequiredExt(extensionsCount, extensions);
     _createInstance();
     _setupDebugMessenger();
+    _pickPhysicalDevice();
 }
 
 VulkanContext::~VulkanContext() {
+    _destroyLogicalDevice();
     _destroyDebugMessenger();
     _destroyInstance();
 }
@@ -192,4 +194,138 @@ VkBool32 VulkanContext::_debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT me
                                        void *pUserData) {
     printf("[Vk Validation layer]: %s\n", pCallbackData->pMessage);
     return VK_FALSE;
+}
+
+void VulkanContext::_pickPhysicalDevice() {
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
+
+    if (deviceCount == 0) {
+        throw std::runtime_error("No target GPUs with Vulkan support");
+    }
+
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
+
+#ifdef MODE_DEBUG
+    printf("Physical devices (count: %u) info:\n", (uint32) devices.size());
+    for (auto &device: devices) {
+        _outDeviceInfoVerbose(device);
+    }
+#endif
+
+    for (auto &device: devices) {
+        if (_isDeviceSuitable(device)) {
+            mPhysicalDevice = device;
+            break;
+        }
+    }
+
+    if (mPhysicalDevice == VK_NULL_HANDLE) {
+      throw std::runtime_error("Failed to find a suitable GPU");
+    }
+}
+
+bool VulkanContext::_isDeviceSuitable(VkPhysicalDevice device) {
+    VulkanQueueFamilyIndices indices;
+    _findQueueFamilies(device, indices);
+    return indices.isComplete();
+}
+
+void VulkanContext::_findQueueFamilies(VkPhysicalDevice device, VulkanQueueFamilyIndices &indices) {
+    uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+    for (uint32 i = 0; i < queueFamilies.size(); i++) {
+        VkQueueFamilyProperties& p = queueFamilies[i];
+        if (p.queueCount > 0 && (p.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
+            indices.setGraphicsFamilyIndex(i);
+            return;
+        }
+    }
+}
+
+void VulkanContext::_outDeviceInfoVerbose(VkPhysicalDevice device) {
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+    VkPhysicalDeviceLimits& limits = deviceProperties.limits;
+
+    printf("Name: %s\n", deviceProperties.deviceName);
+    printf("Device ID: %u\n", deviceProperties.deviceID);
+    printf("Vendor ID: %u\n", deviceProperties.vendorID);
+    printf("API version: %u\n", deviceProperties.apiVersion);
+    printf("Driver version: %u\n", deviceProperties.driverVersion);
+
+    printf("maxImageDimension1D = %u\n", limits.maxImageDimension1D);
+    printf("maxImageDimension2D = %u\n", limits.maxImageDimension2D);
+    printf("maxImageDimension3D = %u\n", limits.maxImageDimension3D);
+    printf("maxImageDimensionCube = %u\n", limits.maxImageDimensionCube);
+
+    printf("maxUniformBufferRange = %u\n", limits.maxUniformBufferRange);
+    printf("maxMemoryAllocationCount = %u\n", limits.maxMemoryAllocationCount);
+    printf("maxSamplerAllocationCount = %u\n", limits.maxSamplerAllocationCount);
+
+    printf("maxPerStageDescriptorSamplers = %u\n", limits.maxPerStageDescriptorSamplers);
+    printf("maxPerStageDescriptorUniformBuffers = %u\n", limits.maxPerStageDescriptorUniformBuffers);
+    printf("maxPerStageDescriptorStorageBuffers = %u\n", limits.maxPerStageDescriptorStorageBuffers);
+    printf("maxPerStageDescriptorSampledImages = %u\n", limits.maxPerStageDescriptorSampledImages);
+    printf("maxPerStageDescriptorStorageImages = %u\n", limits.maxPerStageDescriptorStorageImages);
+    printf("maxPerStageDescriptorInputAttachments = %u\n", limits.maxPerStageDescriptorInputAttachments);
+    printf("maxPerStageResources = %u\n", limits.maxPerStageResources);
+
+    printf("maxVertexInputAttributes = %u\n", limits.maxVertexInputAttributes);
+    printf("maxVertexInputBindings = %u\n", limits.maxVertexInputBindings);
+    printf("maxVertexInputAttributeOffset = %u\n", limits.maxVertexInputAttributeOffset);
+    printf("maxVertexInputBindingStride = %u\n", limits.maxVertexInputBindingStride);
+    printf("maxVertexOutputComponents = %u\n", limits.maxVertexOutputComponents);
+
+    printf("maxFragmentInputComponents = %u\n", limits.maxFragmentInputComponents);
+    printf("maxFragmentOutputAttachments = %u\n", limits.maxFragmentOutputAttachments);
+    printf("maxFragmentDualSrcAttachments = %u\n", limits.maxFragmentDualSrcAttachments);
+    printf("maxFragmentCombinedOutputResources = %u\n", limits.maxFragmentCombinedOutputResources);
+
+}
+
+void VulkanContext::_createLogicalDevice() {
+
+    float queuePriority = 1.0f;
+    VulkanQueueFamilyIndices indices;
+    _findQueueFamilies(mPhysicalDevice, indices);
+
+    VkDeviceQueueCreateInfo queueCreateInfo = {};
+    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueCreateInfo.queueFamilyIndex = indices.graphicsFamily;
+    queueCreateInfo.queueCount = 1;
+    queueCreateInfo.pQueuePriorities = &queuePriority;
+
+    VkPhysicalDeviceFeatures deviceFeatures = {};
+
+    VkDeviceCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.pQueueCreateInfos = &queueCreateInfo;
+    createInfo.queueCreateInfoCount = 1;
+    createInfo.pEnabledFeatures = &deviceFeatures;
+    createInfo.enabledExtensionCount = 0;
+    createInfo.ppEnabledExtensionNames = nullptr;
+
+    if (mEnableValidationLayers) {
+        createInfo.enabledLayerCount = (uint32 )mValidationLayers.size();
+        createInfo.ppEnabledLayerNames = mValidationLayers.data();
+    } else {
+        createInfo.enabledLayerCount = 0;
+        createInfo.ppEnabledLayerNames = nullptr;
+    }
+
+    if (vkCreateDevice(mPhysicalDevice, &createInfo, nullptr, &mDevice) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create logical device");
+    }
+}
+
+void VulkanContext::_destroyLogicalDevice() {
+    vkDestroyDevice(mDevice, nullptr);
 }

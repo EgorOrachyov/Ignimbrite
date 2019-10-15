@@ -26,13 +26,18 @@ set(THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} vulkan glfw)
 
 set(SOURCES
         ${SOURCES}
-        tests/main.cpp
         device/RenderDevice.h
-        vulkan/VulkanDevice.h
-        device/ResourceID.h
         device/ResourceIDBuffer.h
+        device/ResourceID.h
         vulkan/VulkanDevice.cpp
-        misc/Compilation.h misc/Platform.h vulkan/VulkanContext.cpp vulkan/VulkanContext.h misc/Types.h)
+        vulkan/VulkanDevice.h
+        vulkan/VulkanQueueFamilyIndices.h
+        vulkan/VulkanContext.cpp
+        vulkan/VulkanContext.h
+        misc/Compilation.h
+        misc/Platform.h
+        misc/Types.h
+        tests/main.cpp)
 
 add_executable(VulkanRenderer ${SOURCES})
 target_link_libraries(VulkanRenderer ${THIRD_PARTY_LIBS})
