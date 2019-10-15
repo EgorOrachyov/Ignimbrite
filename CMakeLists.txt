@@ -4,10 +4,10 @@ cmake_minimum_required(VERSION 3.11)
 project(VulkanRenderer)
 
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_GENERATOR_PLATFORM x64)
 
+set(POJECT_LIBS)
 set(THIRD_PARTY_LIBS)
-set(SOURCES)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -Wall")
 
 ########################## Headers paths ##########################
 
@@ -17,27 +17,31 @@ include_directories(${PROJECT_SOURCE_DIR}/device)
 include_directories(${PROJECT_SOURCE_DIR}/vulkan)
 include_directories(${PROJECT_SOURCE_DIR}/tests)
 
-########################## GLFW lib ##########################
+########################## Third-party ##########################
 
-link_directories(${CMAKE_SOURCE_DIR}/thirdparty/lib)
-set(THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} vulkan glfw)
+if (APPLE)
+    set(THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} vulkan glfw)
+    link_directories(${CMAKE_SOURCE_DIR}/thirdparty/lib/apple)
+elseif(WIN32)
+    set(THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} vulkan-1 glfw3)
+    link_directories(${CMAKE_SOURCE_DIR}/thirdparty/lib/win32)
+elseif(UNIX)
+    set(THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} vulkan glfw)
+    link_directories(${CMAKE_SOURCE_DIR}/thirdparty/lib/unix)
+endif()
 
 ########################## Project h/cpp files ##########################
 
 set(SOURCES
-        ${SOURCES}
-        device/RenderDevice.h
-        device/ResourceIDBuffer.h
-        device/ResourceID.h
-        vulkan/VulkanDevice.cpp
-        vulkan/VulkanDevice.h
-        vulkan/VulkanQueueFamilyIndices.h
-        vulkan/VulkanContext.cpp
-        vulkan/VulkanContext.h
-        misc/Compilation.h
-        misc/Platform.h
-        misc/Types.h
-        tests/main.cpp)
+    device/RenderDevice.h
+    device/ResourceIDBuffer.h
+    device/ResourceID.h
+    misc/Compilation.h
+    misc/Platform.h
+    misc/Types.h)
 
-add_executable(VulkanRenderer ${SOURCES})
-target_link_libraries(VulkanRenderer ${THIRD_PARTY_LIBS})
+set(PROJECT_LIBS
+    VulkanDevice)
+
+add_subdirectory(vulkan)
+add_subdirectory(tests)

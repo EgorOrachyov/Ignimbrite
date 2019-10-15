@@ -14,6 +14,7 @@ VulkanContext::VulkanContext(std::string appName, bool enableValidation, uint32 
     _setupDebugMessenger();
     _pickPhysicalDevice();
     _createLogicalDevice();
+    _setupQueue();
 }
 
 VulkanContext::~VulkanContext() {
@@ -323,8 +324,6 @@ void VulkanContext::_createLogicalDevice() {
     if (vkCreateDevice(mPhysicalDevice, &createInfo, nullptr, &mDevice) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create logical device");
     }
-
-
 }
 
 void VulkanContext::_destroyLogicalDevice() {

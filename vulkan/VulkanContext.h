@@ -75,7 +75,7 @@ private:
     VkDebugUtilsMessengerEXT mDebugMessenger = VK_NULL_HANDLE;
     VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;
     VkDevice mDevice = VK_NULL_HANDLE;
-    VkQueue mGraphicsQueue;
+    VkQueue mGraphicsQueue = VK_NULL_HANDLE;
 
     std::string mApplicationName;
     VulkanQueueFamilyIndices mIndices;

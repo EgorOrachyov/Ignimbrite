@@ -8,23 +8,27 @@ C/C++ library for visualization dynamic 3D scene with GPU hardware acceleration 
 this repo URL address as a param.
 
 ```
-$ git clone <repo URL>
+$ git clone https://github.com/EgorOrachyov/VulkanRenderer.git
 ```
 
 2. The project has the following structure:
 
 ```
 VulkanRenderer
-|
++- device
++- misc
++- vulkan
++- tests
 +- thirdparty
+ +- include
+ +- lib
 +- CMakeLists.txt
-
-...
 ```
+
 Project requires as dependency GLFW3 library for multi-platform window system
 support and Vulkan SDK as API for high performance GPU rendering computations.
-You have to explicitly download, compile listed above SDKs and place it in the 
-folders 'Vulkan' and 'Glfw' respectively.
+You have to explicitly download, compile listed above SDKs and place include/lib
+files in third-party folder.
 
 ### Linux
 
