@@ -22,9 +22,6 @@
 /build
 /out
 
-# Ignore third-party (must be setup explicitly)
-/thirdparty/*
-
 # MacOS finder files
 /**/.DS_Store
 
