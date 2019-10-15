@@ -1,5 +1,7 @@
 #include "Shader.h"
 #include <cassert>
+#include <fstream>
+#include <iterator>
 
 // for allocation mark define: TR_VK_ALLOCATION_CALLBACKS_MARK
 #include "VulkanTriangle.h"
@@ -7,33 +9,7 @@
 // specific for this shader
 #define LAYOUT_BINDING_COUNT 1
 
-const char* vertShaderText =
-"#version 400\n"
-"#extension GL_ARB_separate_shader_objects : enable\n"
-"#extension GL_ARB_shading_language_420pack : enable\n"
-"layout (std140, binding = 0) uniform buf {\n"
-"        mat4 mvp;\n"
-"} ubuf;\n"
-"layout (location = 0) in vec4 pos;\n"
-"layout (location = 1) in vec2 inTexCoords;\n"
-"layout (location = 0) out vec2 texcoord;\n"
-"void main() {\n"
-"   texcoord = inTexCoords;\n"
-"   gl_Position = ubuf.mvp * pos;\n"
-"}\n";
-
-const char* fragShaderText =
-"#version 400\n"
-"#extension GL_ARB_separate_shader_objects : enable\n"
-"#extension GL_ARB_shading_language_420pack : enable\n"
-"layout (binding = 1) uniform sampler2D tex;\n"
-"layout (location = 0) in vec2 texcoord;\n"
-"layout (location = 0) out vec4 outColor;\n"
-"void main() {\n"
-"   outColor = textureLod(tex, texcoord, 0.0);\n"
-"}\n";
-
-void Shader::CreateDescriptorSetLayout(VkDevice device)
+void Shader::CreateDescriptorSetLayout()
 {
 	// current shader uses only 1 uniform buffer
 	VkDescriptorSetLayoutBinding layoutBinding[LAYOUT_BINDING_COUNT] = {};
@@ -65,20 +41,66 @@ void Shader::CreatePoolSize()
 	poolSize.descriptorCount = 1;
 }
 
-void Shader::DestroyDescriptorSetLayout(VkDevice device)
+void Shader::DestroyDescriptorSetLayout()
 {
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, NULL);
 }
 
+void Shader::DestroyShaderStages()
+{
+	vkDestroyShaderModule(device, vertStage.module, NULL);
+	vkDestroyShaderModule(device, fragStage.module, NULL);
+}
+
 void Shader::Init(VkDevice device)
 {
-	CreateDescriptorSetLayout(device);
+	this->device = device;
+
+	CreateDescriptorSetLayout();
 	CreatePoolSize();
 }
 
-void Shader::Destroy(VkDevice device)
+void Shader::Load(const char* vertSpvPath, const char* fragSpvPath)
 {
-	DestroyDescriptorSetLayout(device);
+	std::ifstream vertFile(vertSpvPath, std::ios::binary);
+	std::ifstream fragFile(fragSpvPath, std::ios::binary);
+
+	std::vector<char> vertSpv(std::istreambuf_iterator<char>(vertFile), {});
+	std::vector<char> fragSpv(std::istreambuf_iterator<char>(fragFile), {});
+
+	size_t vertSpvSize = vertSpv.size() * sizeof(char);
+	size_t fragSpvSize = fragSpv.size() * sizeof(char);
+
+	CreateStage((uint32_t*)vertSpv.data(), vertSpvSize, VK_SHADER_STAGE_VERTEX_BIT, &vertStage);
+	CreateStage((uint32_t*)fragSpv.data(), fragSpvSize, VK_SHADER_STAGE_FRAGMENT_BIT, &fragStage);
+}
+
+void Shader::CreateStage(uint32_t *spvCode, size_t codeSize, VkShaderStageFlagBits stageType, VkPipelineShaderStageCreateInfo* result)
+{
+	result->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	result->pNext = NULL;
+	result->pSpecializationInfo = NULL;
+	result->flags = 0;
+	// is vertex stage
+	result->stage = stageType;
+	// entry point name
+	result->pName = "main";
+
+	VkShaderModuleCreateInfo moduleCreateInfo;
+	moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	moduleCreateInfo.pNext = NULL;
+	moduleCreateInfo.flags = 0;
+	moduleCreateInfo.codeSize = codeSize;
+	moduleCreateInfo.pCode = spvCode;
+
+	VkResult r = vkCreateShaderModule(device, &moduleCreateInfo, TR_VK_ALLOCATION_CALLBACKS_MARK, &result->module);
+	assert(r == VK_SUCCESS);
+}
+
+void Shader::Destroy()
+{
+	DestroyDescriptorSetLayout();
+	DestroyShaderStages();
 }
 
 const VkDescriptorSetLayout &Shader::GetDescriptorSetLayout() const

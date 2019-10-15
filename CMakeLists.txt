@@ -25,7 +25,7 @@ if (WIN32)
 endif (WIN32)
 
 if (UNIX)
-    link_directories(${CMAKE_SOURCE_DIR}/thirdparty/lib/linux64)
+    link_directories(${CMAKE_SOURCE_DIR}/thirdparty/lib/unix64)
 endif (UNIX)
 
 set(THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} glfw3 vulkan-1)

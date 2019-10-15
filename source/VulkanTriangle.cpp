@@ -17,6 +17,9 @@ void VulkanTriangle::Start()
 	// create descriptor set layout for this shader
 	cubeShader.Init(device);
 
+	// load spirv binary to shader
+	cubeShader.Load("shaders/vert.spv", "shaders/frag.spv");
+
 	// create scene
 	Scene scene;
 	scene.Setup(*this);
@@ -59,7 +62,7 @@ void VulkanTriangle::Start()
 	scene.Destroy();
 
 	cubeShader.mvpUniform.Destroy();
-	cubeShader.Destroy(device);
+	cubeShader.Destroy();
 
 
 	DestroyRenderPass();
