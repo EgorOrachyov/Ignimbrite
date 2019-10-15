@@ -12,8 +12,9 @@ set(SOURCES)
 ########################## Headers paths ##########################
 
 include_directories(${PROJECT_SOURCE_DIR}/thirdparty/include)
-include_directories(${PROJECT_SOURCE_DIR}/renderDevice)
-include_directories(${PROJECT_SOURCE_DIR}/vulkanDevice)
+include_directories(${PROJECT_SOURCE_DIR}/misc)
+include_directories(${PROJECT_SOURCE_DIR}/device)
+include_directories(${PROJECT_SOURCE_DIR}/vulkan)
 include_directories(${PROJECT_SOURCE_DIR}/tests)
 
 ########################## GLFW lib ##########################
@@ -26,11 +27,12 @@ set(THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} vulkan glfw)
 set(SOURCES
         ${SOURCES}
         tests/main.cpp
-        renderDevice/renderDevice.h
-        vulkanDevice/vulkanRenderDevice.h
-        renderDevice/objectID.h
-        renderDevice/objectIDBuffer.h
-)
+        device/RenderDevice.h
+        vulkan/VulkanDevice.h
+        device/ResourceID.h
+        device/ResourceIDBuffer.h
+        vulkan/VulkanDevice.cpp
+        misc/Compilation.h misc/Platform.h vulkan/VulkanContext.cpp vulkan/VulkanContext.h misc/Types.h)
 
 add_executable(VulkanRenderer ${SOURCES})
 target_link_libraries(VulkanRenderer ${THIRD_PARTY_LIBS})

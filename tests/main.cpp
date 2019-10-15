@@ -1,32 +1,25 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <vulkan/vulkan.h>
-
-#include <iostream>
-#include <stdexcept>
-#include <functional>
-#include <cstdlib>
+#include <VulkanContext.h>
 
 int main() {
-
-    VkInstance instance;
-    VkResult result;
-    VkInstanceCreateInfo info = {};
-
-    result = vkCreateInstance(&info, nullptr, &instance);
-    std::cout << "vkCreateInstance result: " << result  << "\n";
-
-    vkDestroyInstance(instance, nullptr);
 
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     GLFWwindow* window = glfwCreateWindow(600, 400, "Vulkan", nullptr, nullptr);
 
-    while (!glfwWindowShouldClose(window)) {
+    uint32_t glfwExtensionCount = 0;
+    const char** glfwExtensions;
+    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
+    VulkanContext* device = new VulkanContext("Vulkan", true, glfwExtensionCount, glfwExtensions);
+
+    while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
     }
+
+    delete device;
 
     glfwDestroyWindow(window);
     glfwTerminate();

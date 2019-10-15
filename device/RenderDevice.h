@@ -14,10 +14,12 @@
 class RenderDevice {
 public:
 
+    virtual ~RenderDevice() = default;
+
     /** @return Readable hardware API name */
-    virtual const std::string& getDeviceName() const = 0;
+    virtual const std::string& getDeviceName() const { };
     /** @return Video card vendor name */
-    virtual const std::string& getVendor() const = 0;
+    virtual const std::string& getVendor() const { };
 
 };
 

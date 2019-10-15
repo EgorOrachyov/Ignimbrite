@@ -2,10 +2,10 @@
 // Created by Egor Orachyov on 2019-10-14.
 //
 
-#ifndef VULKANRENDERER_OBJECTIDBUFFER_H
-#define VULKANRENDERER_OBJECTIDBUFFER_H
+#ifndef VULKANRENDERER_RESOURCEIDBUFFER_H
+#define VULKANRENDERER_RESOURCEIDBUFFER_H
 
-#include <objectID.h>
+#include <ResourceID.h>
 
 /**
  * Stores objects of type T with unique
@@ -13,8 +13,8 @@
  * @tparam T type of stored elements
  */
 template <typename T>
-class objectIDBuffer {
+class ResourceIDBuffer {
 
 };
 
-#endif //VULKANRENDERER_OBJECTIDBUFFER_H
+#endif //VULKANRENDERER_RESOURCEIDBUFFER_H

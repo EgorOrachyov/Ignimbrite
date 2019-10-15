@@ -16,13 +16,7 @@ $ git clone <repo URL>
 ```
 VulkanRenderer
 |
-+- include
-+- source
 +- thirdparty
-| |
-| +- Vulkan
-| +- Glfw
-|  
 +- CMakeLists.txt
 
 ...
@@ -31,26 +25,6 @@ Project requires as dependency GLFW3 library for multi-platform window system
 support and Vulkan SDK as API for high performance GPU rendering computations.
 You have to explicitly download, compile listed above SDKs and place it in the 
 folders 'Vulkan' and 'Glfw' respectively.
-
-3. GLFW folder structure must follow the next pattern:
-
-```
-Glfw
-|
-+- include
-+- lib
-```
-
-4. Vulkan folder structure must follow the next pattern:
-```
-Vulkan
-|
-+- bin
-+- etc
-+- Frameworks
-+- include
-+- lib
-```
 
 ### Linux
 
