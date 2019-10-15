@@ -78,6 +78,8 @@ private:
 
 	VkRenderPass					renderPass;
 
+	std::vector<VkFramebuffer>		framebuffers;
+
 private:
 	DepthBuffer								depthBuffer;
 
@@ -124,6 +126,7 @@ private:
 	void AllocateDescriptorSets(const VkDescriptorSetLayout* descSetLayouts, uint32_t descriptorSetCount);
 
 	void CreateRenderPass();
+	void CreateFramebuffers();
 
 
 	void MainLoop();
@@ -140,6 +143,7 @@ private:
 	void DestroyDescriptorPool();
 
 	void DestroyRenderPass();
+	void DestroyFramebuffers();
 
 public:
 	void Start();

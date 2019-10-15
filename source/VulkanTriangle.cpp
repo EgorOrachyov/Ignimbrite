@@ -52,6 +52,7 @@ void VulkanTriangle::Start()
 	vkUpdateDescriptorSets(device, 1, writes, 0, NULL);
 
 	CreateRenderPass();
+	CreateFramebuffers();
 
 
 
@@ -65,6 +66,7 @@ void VulkanTriangle::Start()
 	cubeShader.Destroy();
 
 
+	DestroyFramebuffers();
 	DestroyRenderPass();
 
 	DestroyPipelineLayout();
@@ -179,7 +181,7 @@ void VulkanTriangle::EnumerateDevices()
 
 	// get physical devices
 	VkResult r = vkEnumeratePhysicalDevices(vkInstance, &physicalDeviceCount, physicalDevices.data());
-	assert(!r && physicalDeviceCount >= 1);
+	assert(r == VK_SUCCESS && physicalDeviceCount >= 1);
 
 
 	// for testing, choose first device
@@ -721,6 +723,34 @@ void VulkanTriangle::CreateRenderPass()
 	assert(r == VK_SUCCESS);
 }
 
+void VulkanTriangle::CreateFramebuffers()
+{
+	VkImageView attachments[2];
+	attachments[1] = depthBuffer.View;
+
+	VkFramebufferCreateInfo framebufferInfo = {};
+	framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	framebufferInfo.pNext = NULL;
+	framebufferInfo.renderPass = renderPass;
+	framebufferInfo.attachmentCount = 2;
+	framebufferInfo.pAttachments = attachments;
+	framebufferInfo.width = WindowWidth;
+	framebufferInfo.height = WindowHeight;
+	framebufferInfo.layers = 1;
+
+	// create framebuffer for each image
+	framebuffers.resize(swapchainImageCount);
+
+	for (int i = 0; i < swapchainImageCount; i++)
+	{
+		// set needed image
+		attachments[0] = imageBuffers[i].View;
+
+		VkResult r = vkCreateFramebuffer(device, &framebufferInfo, TR_VK_ALLOCATION_CALLBACKS_MARK, &framebuffers[i]);
+		assert(r == VK_SUCCESS);
+	}
+}
+
 std::vector<const char*> VulkanTriangle::GetRequiredInstanceExtensions()
 {
 	uint32_t glfwExtensionCount = 0;
@@ -798,6 +828,14 @@ void VulkanTriangle::DestroyDescriptorPool()
 void VulkanTriangle::DestroyRenderPass()
 {
 	vkDestroyRenderPass(device, renderPass, TR_VK_ALLOCATION_CALLBACKS_MARK);
+}
+
+void VulkanTriangle::DestroyFramebuffers()
+{
+	for (int i = 0; i < swapchainImageCount; i++)
+	{
+		vkDestroyFramebuffer(device, framebuffers[i], NULL);
+	}
 }
 
 void VulkanTriangle::DestroyWindow()
