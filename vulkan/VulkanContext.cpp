@@ -234,7 +234,73 @@ void VulkanContext::_pickPhysicalDevice() {
 bool VulkanContext::_isDeviceSuitable(VkPhysicalDevice device) {
     VulkanQueueFamilyIndices indices;
     _findQueueFamilies(device, indices);
-    return indices.isComplete();
+
+    auto queueFamilySupport = indices.isComplete();
+    auto extensionsSupported = _checkDeviceExtensionSupport(device);
+    auto swapChainAdequate = false;
+
+    if (extensionsSupported) {
+        VulkanSwapChainSupportDetails details;
+        _querySwapChainSupport(device, details);
+        swapChainAdequate = !details.formats.empty() && !details.presentModes.empty();
+    }
+
+    return queueFamilySupport && extensionsSupported && swapChainAdequate;
+}
+
+bool VulkanContext::_checkDeviceExtensionSupport(VkPhysicalDevice device) {
+    uint32_t extensionCount;
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+#ifdef MODE_DEBUG
+    printf("Required (count: %u) physical device extensions:\n", (uint32) mDeviceExtensions.size());
+    for (auto& ext: mDeviceExtensions) {
+        printf("%s\n", ext);
+    }
+    printf("Available (count: %u) physical device extensions:\n", (uint32) availableExtensions.size());
+    for (auto& ext: availableExtensions) {
+        printf("%s\n", ext.extensionName);
+    }
+#endif
+
+    for (auto &required: mDeviceExtensions) {
+        bool found = false;
+        for (auto &available: availableExtensions) {
+            if (std::strcmp(required, available.extensionName) == 0) {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void VulkanContext::_querySwapChainSupport(VkPhysicalDevice device, VulkanSwapChainSupportDetails &details) {
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, mWindow.surface, &details.capabilities);
+
+    uint32_t formatCount;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, mWindow.surface, &formatCount, nullptr);
+
+    if (formatCount != 0) {
+        details.formats.resize(formatCount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, mWindow.surface, &formatCount, details.formats.data());
+    }
+
+    uint32_t presentModeCount;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, mWindow.surface, &presentModeCount, nullptr);
+
+    if (presentModeCount != 0) {
+        details.presentModes.resize(presentModeCount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, mWindow.surface, &presentModeCount, details.presentModes.data());
+    }
 }
 
 void VulkanContext::_findQueueFamilies(VkPhysicalDevice device, VulkanQueueFamilyIndices &indices) {
@@ -308,10 +374,12 @@ void VulkanContext::_outDeviceInfoVerbose(VkPhysicalDevice device) {
 }
 
 void VulkanContext::_createLogicalDevice() {
+    /** Fill data about the needed queues */
     _findQueueFamilies(mPhysicalDevice, mIndices);
 
-    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+    /** Want to create only one instance of the same queue */
     std::set<uint32> uniqueQueueFamilies = { mIndices.graphicsFamily.get(), mIndices.presentFamily.get() };
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -330,8 +398,8 @@ void VulkanContext::_createLogicalDevice() {
     createInfo.queueCreateInfoCount = (uint32) queueCreateInfos.size();
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
     createInfo.pEnabledFeatures = &deviceFeatures;
-    createInfo.enabledExtensionCount = 0;
-    createInfo.ppEnabledExtensionNames = nullptr;
+    createInfo.enabledExtensionCount = (uint32) mDeviceExtensions.size();
+    createInfo.ppEnabledExtensionNames = mDeviceExtensions.data();
 
     if (mEnableValidationLayers) {
         createInfo.enabledLayerCount = (uint32 )mValidationLayers.size();

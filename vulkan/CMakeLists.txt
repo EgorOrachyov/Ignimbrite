@@ -6,6 +6,10 @@ set(SOURCES
         VulkanDevice.h
         VulkanQueueFamilyIndices.h
         VulkanContext.cpp
-        VulkanContext.h VulkanWindow.h VulkanApplication.h VulkanGlfw.h)
+        VulkanContext.h
+        VulkanWindow.h
+        VulkanApplication.h
+        VulkanGlfw.h
+        VulkanSwapChainSupportDetails.h)
 
 add_library(VulkanDevice STATIC ${SOURCES})

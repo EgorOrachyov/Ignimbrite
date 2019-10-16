@@ -9,6 +9,7 @@
 #include <Types.h>
 #include <VulkanQueueFamilyIndices.h>
 #include <VulkanApplication.h>
+#include <VulkanSwapChainSupportDetails.h>
 
 /**
  * Contains all the vulkan specific functionality for
@@ -33,13 +34,17 @@ private:
     void _destroyDebugMessenger();
     void _pickPhysicalDevice();
     bool _isDeviceSuitable(VkPhysicalDevice device);
+    bool _checkDeviceExtensionSupport(VkPhysicalDevice device);
+    void _querySwapChainSupport(VkPhysicalDevice device, VulkanSwapChainSupportDetails &details);
     void _findQueueFamilies(VkPhysicalDevice device, VulkanQueueFamilyIndices& indices);
-    static void _outDeviceInfoVerbose(VkPhysicalDevice device);
     void _createLogicalDevice();
     void _destroyLogicalDevice();
     void _setupQueue();
     void _createSurface();
     void _destroySurface();
+
+    static void _outDeviceInfoVerbose(
+            VkPhysicalDevice device);
 
     static VkResult _createDebugUtilsMessengerEXT(
             VkInstance instance,
@@ -60,6 +65,7 @@ private:
 private:
 
     std::vector<const char*> mRequiredExtensions;
+    const std::vector<const char*> mDeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
     const std::vector<const char*> mValidationLayers = { "VK_LAYER_KHRONOS_validation" };
     const bool mEnableValidationLayers;
 
