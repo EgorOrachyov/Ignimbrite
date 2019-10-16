@@ -19,7 +19,7 @@ include_directories(${PROJECT_SOURCE_DIR}/tests)
 
 ########################## Third-party ##########################
 
-if (APPLE)
+if(APPLE)
     set(THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} vulkan glfw)
     link_directories(${CMAKE_SOURCE_DIR}/thirdparty/lib/apple)
 elseif(WIN32)
@@ -33,15 +33,16 @@ endif()
 ########################## Project h/cpp files ##########################
 
 set(SOURCES
-    device/RenderDevice.h
-    device/ResourceIDBuffer.h
-    device/ResourceID.h
-    misc/Compilation.h
-    misc/Platform.h
-    misc/Types.h)
+        device/RenderDevice.h
+        device/ResourceIDBuffer.h
+        device/ResourceID.h
+        misc/Compilation.h
+        misc/Platform.h
+        misc/Types.h
+        misc/Optional.h)
 
 set(PROJECT_LIBS
-    VulkanDevice)
+        VulkanDevice)
 
 add_subdirectory(vulkan)
 add_subdirectory(tests)

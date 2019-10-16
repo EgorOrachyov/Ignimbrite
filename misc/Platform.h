@@ -15,4 +15,8 @@
     #error "Unsupported target platform"
 #endif
 
+#ifndef WSI_GLFW
+    #define WSI_GLFW
+#endif
+
 #endif //VULKANRENDERER_PLATFORM_H

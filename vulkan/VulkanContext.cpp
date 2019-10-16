@@ -4,20 +4,23 @@
 
 #include "VulkanContext.h"
 #include <Platform.h>
+#include <set>
 
-VulkanContext::VulkanContext(std::string appName, bool enableValidation, uint32 extensionsCount,
-                             const char *const *extensions)
-        : mApplicationName(std::move(appName)),
-          mEnableValidationLayers(enableValidation) {
-    _fillRequiredExt(extensionsCount, extensions);
+VulkanContext::VulkanContext(VulkanApplication &app)
+        : mEnableValidationLayers(app.enableValidation),
+          mApp(app),
+          mWindow(app.getPrimaryWindow()) {
+    _fillRequiredExt(app.extensionsCount, app.extensions);
     _createInstance();
     _setupDebugMessenger();
+    _createSurface();
     _pickPhysicalDevice();
     _createLogicalDevice();
     _setupQueue();
 }
 
 VulkanContext::~VulkanContext() {
+    _destroySurface();
     _destroyLogicalDevice();
     _destroyDebugMessenger();
     _destroyInstance();
@@ -27,7 +30,7 @@ void VulkanContext::_createInstance() {
     /** General application info */
     VkApplicationInfo appInfo = {};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = mApplicationName.c_str();
+    appInfo.pApplicationName = mApp.name.c_str();
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "No Engine";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -243,8 +246,19 @@ void VulkanContext::_findQueueFamilies(VkPhysicalDevice device, VulkanQueueFamil
 
     for (uint32 i = 0; i < queueFamilies.size(); i++) {
         VkQueueFamilyProperties& p = queueFamilies[i];
+
         if (p.queueCount > 0 && (p.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
-            indices.setGraphicsFamilyIndex(i);
+            indices.graphicsFamily.setValue(i);
+        }
+
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, mWindow.surface, &presentSupport);
+
+        if (p.queueCount > 0 && presentSupport) {
+            indices.presentFamily.setValue(i);
+        }
+
+        if (indices.isComplete()) {
             return;
         }
     }
@@ -294,21 +308,27 @@ void VulkanContext::_outDeviceInfoVerbose(VkPhysicalDevice device) {
 }
 
 void VulkanContext::_createLogicalDevice() {
-    float queuePriority = 1.0f;
     _findQueueFamilies(mPhysicalDevice, mIndices);
 
-    VkDeviceQueueCreateInfo queueCreateInfo = {};
-    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queueCreateInfo.queueFamilyIndex = mIndices.graphicsFamily;
-    queueCreateInfo.queueCount = 1;
-    queueCreateInfo.pQueuePriorities = &queuePriority;
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+    std::set<uint32> uniqueQueueFamilies = { mIndices.graphicsFamily.get(), mIndices.presentFamily.get() };
+
+    float queuePriority = 1.0f;
+    for (uint32_t queueFamily : uniqueQueueFamilies) {
+        VkDeviceQueueCreateInfo queueCreateInfo = {};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = queueFamily;
+        queueCreateInfo.queueCount = 1;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+        queueCreateInfos.push_back(queueCreateInfo);
+    }
 
     VkPhysicalDeviceFeatures deviceFeatures = {};
 
     VkDeviceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    createInfo.pQueueCreateInfos = &queueCreateInfo;
-    createInfo.queueCreateInfoCount = 1;
+    createInfo.queueCreateInfoCount = (uint32) queueCreateInfos.size();
+    createInfo.pQueueCreateInfos = queueCreateInfos.data();
     createInfo.pEnabledFeatures = &deviceFeatures;
     createInfo.enabledExtensionCount = 0;
     createInfo.ppEnabledExtensionNames = nullptr;
@@ -331,5 +351,19 @@ void VulkanContext::_destroyLogicalDevice() {
 }
 
 void VulkanContext::_setupQueue() {
-    vkGetDeviceQueue(mDevice, mIndices.graphicsFamily, 0, &mGraphicsQueue);
+    vkGetDeviceQueue(mDevice, mIndices.graphicsFamily.get(), 0, &mGraphicsQueue);
+    vkGetDeviceQueue(mDevice, mIndices.presentFamily.get(), 0, &mPresentQueue);
+}
+
+void VulkanContext::_createSurface() {
+#ifdef WSI_GLFW
+    VkResult result = glfwCreateWindowSurface(mInstance, mWindow.handle, nullptr, &mWindow.surface);
+#endif
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create window surface");
+    }
+}
+
+void VulkanContext::_destroySurface() {
+    vkDestroySurfaceKHR(mInstance, mWindow.surface, nullptr);
 }

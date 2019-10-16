@@ -7,10 +7,8 @@
 
 #include <Compilation.h>
 #include <Types.h>
-#include <vulkan/vulkan.h>
-#include <string>
-#include <vector>
 #include <VulkanQueueFamilyIndices.h>
+#include <VulkanApplication.h>
 
 /**
  * Contains all the vulkan specific functionality for
@@ -20,15 +18,9 @@ class VulkanContext {
 public:
     /**
      * Initialize Vulkan instance for the application
-     *
-     * Extensions info could be got from Window API, such as GLFW.
-     * This info needed for communication between renderer and window canvas.
-     *
-     * @param appName Name of the application
-     * @param extensionsCount Number of extensions to be used
-     * @param extensions Actual extensions list
+     * @param app Window application instance info
      */
-    VulkanContext(std::string appName, bool enableValidation = true, uint32 extensionsCount = 0, const char *const *extensions = nullptr);
+    VulkanContext(VulkanApplication &app);
     ~VulkanContext();
 
 private:
@@ -40,12 +32,14 @@ private:
     void _setupDebugMessenger();
     void _destroyDebugMessenger();
     void _pickPhysicalDevice();
-    static bool _isDeviceSuitable(VkPhysicalDevice device);
-    static void _findQueueFamilies(VkPhysicalDevice device, VulkanQueueFamilyIndices& indices);
+    bool _isDeviceSuitable(VkPhysicalDevice device);
+    void _findQueueFamilies(VkPhysicalDevice device, VulkanQueueFamilyIndices& indices);
     static void _outDeviceInfoVerbose(VkPhysicalDevice device);
     void _createLogicalDevice();
     void _destroyLogicalDevice();
     void _setupQueue();
+    void _createSurface();
+    void _destroySurface();
 
     static VkResult _createDebugUtilsMessengerEXT(
             VkInstance instance,
@@ -65,9 +59,7 @@ private:
             void* pUserData);
 private:
 
-    /** Required extension by window system */
     std::vector<const char*> mRequiredExtensions;
-    /** Required validation layers for debug mode */
     const std::vector<const char*> mValidationLayers = { "VK_LAYER_KHRONOS_validation" };
     const bool mEnableValidationLayers;
 
@@ -76,8 +68,10 @@ private:
     VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;
     VkDevice mDevice = VK_NULL_HANDLE;
     VkQueue mGraphicsQueue = VK_NULL_HANDLE;
+    VkQueue mPresentQueue = VK_NULL_HANDLE;
 
-    std::string mApplicationName;
+    VulkanApplication &mApp;
+    VulkanWindow &mWindow;
     VulkanQueueFamilyIndices mIndices;
 
 };

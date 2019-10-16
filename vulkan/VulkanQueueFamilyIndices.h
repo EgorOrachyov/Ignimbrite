@@ -5,19 +5,15 @@
 #ifndef VULKANRENDERER_VULKANQUEUEFAMILYINDICES_H
 #define VULKANRENDERER_VULKANQUEUEFAMILYINDICES_H
 
-#include <Types.h>
+#include <Optional.h>
 
 struct VulkanQueueFamilyIndices {
-    uint32 graphicsFamily = 0xffffffff;
-    bool found = false;
-
-    void setGraphicsFamilyIndex(uint32 i) {
-        graphicsFamily = i;
-        found = true;
-    }
+    Optional<uint32> graphicsFamily;
+    Optional<uint32> presentFamily;
 
     bool isComplete() {
-        return found;
+        return graphicsFamily.hasValue() &&
+            presentFamily.hasValue();
     }
 };
 
