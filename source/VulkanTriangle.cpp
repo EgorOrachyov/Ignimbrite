@@ -61,6 +61,10 @@ void VulkanTriangle::Start()
 	CreateRenderPass();
 	CreateFramebuffers();
 
+	CreateGraphicsPipeline(
+		&vertexBuffer.vertInputBinding, 1, 
+		vertexBuffer.vertInputAttributes, 2, 
+		cubeShader.stages, 2);
 
 
 	MainLoop();
@@ -69,10 +73,11 @@ void VulkanTriangle::Start()
 
 	scene.Destroy();
 
+	DestroyGraphicsPipeline();
+
 	vertexBuffer.Destroy();
 	cubeShader.mvpUniform.Destroy();
 	cubeShader.Destroy();
-
 
 	DestroyFramebuffers();
 	DestroyRenderPass();
@@ -759,6 +764,197 @@ void VulkanTriangle::CreateFramebuffers()
 	}
 }
 
+void VulkanTriangle::CreateGraphicsPipeline(const VkVertexInputBindingDescription *pVertexBindingDescriptions, uint32_t vertexBindingDescriptionCount,
+	const VkVertexInputAttributeDescription *pVertexAttributeDescriptions, uint32_t vertexAttributeDescriptionCount,
+	const VkPipelineShaderStageCreateInfo *pStages, uint32_t stageCount)
+{
+	VkDynamicState dynamicStateEnables[VK_DYNAMIC_STATE_RANGE_SIZE];
+
+	VkPipelineDynamicStateCreateInfo dynamicState = {};
+	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	dynamicState.pNext = NULL;
+	dynamicState.pDynamicStates = dynamicStateEnables;
+	dynamicState.dynamicStateCount = 0;
+
+
+	// pipeline vertex input state
+	VkPipelineVertexInputStateCreateInfo vertexInput = {};
+	vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	vertexInput.pNext = NULL;
+	vertexInput.flags = 0;
+	vertexInput.vertexBindingDescriptionCount = vertexBindingDescriptionCount;
+	vertexInput.pVertexBindingDescriptions = pVertexBindingDescriptions;
+	vertexInput.vertexAttributeDescriptionCount = vertexAttributeDescriptionCount;
+	vertexInput.pVertexAttributeDescriptions = pVertexAttributeDescriptions;
+
+
+	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
+	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	inputAssembly.pNext = NULL;
+	inputAssembly.flags = 0;
+	inputAssembly.primitiveRestartEnable = VK_FALSE;
+	// using triangle list, i.e. all vertices are unique for each triangle
+	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+
+	VkPipelineRasterizationStateCreateInfo rasterization = {};
+	rasterization.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	rasterization.pNext = NULL;
+	rasterization.flags = 0;
+	rasterization.polygonMode = VK_POLYGON_MODE_FILL;
+	// cull backfaces
+	rasterization.cullMode = VK_CULL_MODE_BACK_BIT;
+	rasterization.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rasterization.depthClampEnable = VK_FALSE;
+	rasterization.rasterizerDiscardEnable = VK_FALSE;
+	rasterization.depthBiasEnable = VK_FALSE;
+	rasterization.depthBiasConstantFactor = 0;
+	rasterization.depthBiasClamp = 0;
+	rasterization.depthBiasSlopeFactor = 0;
+	rasterization.lineWidth = 1.0f;
+
+
+	const uint32_t attachmentCount = 1;
+	VkPipelineColorBlendAttachmentState attachmentStates[attachmentCount];
+	// enable all RGBA components
+	attachmentStates[0].colorWriteMask = 0xf;
+	
+	// disable blending
+	attachmentStates[0].blendEnable = VK_FALSE;
+	// default, not used as 'blendEnable' is false
+	attachmentStates[0].colorBlendOp = VK_BLEND_OP_ADD;
+	attachmentStates[0].srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+	attachmentStates[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+	attachmentStates[0].alphaBlendOp = VK_BLEND_OP_ADD;
+	attachmentStates[0].dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+	attachmentStates[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+
+
+	VkPipelineColorBlendStateCreateInfo colorBlend = {};
+	colorBlend.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	colorBlend.pNext = NULL;
+	colorBlend.flags = 0;
+	colorBlend.attachmentCount = attachmentCount;
+	colorBlend.pAttachments = attachmentStates;
+
+	// dont use any logical operations
+	colorBlend.logicOpEnable = VK_FALSE;
+	colorBlend.logicOp = VK_LOGIC_OP_NO_OP;
+
+	// not used
+	colorBlend.blendConstants[0] = 1.0f;
+	colorBlend.blendConstants[1] = 1.0f;
+	colorBlend.blendConstants[2] = 1.0f;
+	colorBlend.blendConstants[3] = 1.0f;
+
+
+	VkPipelineViewportStateCreateInfo viewport = {};
+	viewport.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	viewport.pNext = NULL;
+	viewport.flags = 0;
+
+	dynamicState.dynamicStateCount = 2;
+
+	// set viewport state to dynamic
+	dynamicStateEnables[0] = VK_DYNAMIC_STATE_VIEWPORT;
+	// must be 1 (if there are no multiple viewports)
+	viewport.viewportCount = 1;
+	// will be ignored, as state is dynamic
+	viewport.pViewports = NULL;
+
+	// set viewport state to scissors
+	dynamicStateEnables[1] = VK_DYNAMIC_STATE_SCISSOR;
+	// must be 1 (if there are no multiple viewports)
+	viewport.scissorCount = 1;
+	// will be ignored, as state is dynamic
+	viewport.pScissors = NULL;
+
+	
+	VkPipelineDepthStencilStateCreateInfo depthStencil = {};
+	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	depthStencil.pNext = NULL;
+	depthStencil.flags = 0;
+	// enable depth
+	depthStencil.depthTestEnable = VK_TRUE;
+	depthStencil.depthWriteEnable = VK_TRUE;
+	// draw less or equal
+	depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+	// disable depth bounds test;
+	// if enabled, depth values <= min and >= max will be cleared
+	depthStencil.depthBoundsTestEnable = VK_FALSE;
+	// ignored; should be 0 <= db <= 1
+	depthStencil.minDepthBounds = 0;
+	depthStencil.maxDepthBounds = 0;
+
+	// disable stencil
+	depthStencil.stencilTestEnable = VK_FALSE;
+	// ignored
+	depthStencil.back.failOp = VK_STENCIL_OP_KEEP;
+	depthStencil.back.passOp = VK_STENCIL_OP_KEEP;
+	depthStencil.back.compareOp = VK_COMPARE_OP_ALWAYS;
+	depthStencil.back.compareMask = 0;
+	depthStencil.back.reference = 0;
+	depthStencil.back.depthFailOp = VK_STENCIL_OP_KEEP;
+	depthStencil.back.writeMask = 0;
+	depthStencil.front = depthStencil.back;
+
+
+	VkPipelineMultisampleStateCreateInfo multisample = {};
+	multisample.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	multisample.pNext = NULL;
+	multisample.flags = 0;
+	// disable multispampling
+	multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	multisample.sampleShadingEnable = VK_FALSE;
+	multisample.minSampleShading = 0.0;
+	multisample.pSampleMask = NULL;
+	multisample.alphaToCoverageEnable = VK_FALSE;
+	multisample.alphaToOneEnable = VK_FALSE;
+	
+
+	const uint32_t pipelineCount = 1;
+	pipelines.resize(pipelineCount);
+
+	VkGraphicsPipelineCreateInfo pipelineInfos[pipelineCount];
+	pipelineInfos[0].sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineInfos[0].pNext = NULL;
+
+	// default pipeline creating;
+	pipelineInfos[0].flags = 0;
+
+	// shader stages that will be included
+	// in this pipeling
+	pipelineInfos[0].stageCount = stageCount;
+	pipelineInfos[0].pStages = pStages;
+
+	pipelineInfos[0].pVertexInputState = &vertexInput;
+	pipelineInfos[0].pInputAssemblyState = &inputAssembly;
+	// ignored, as there is no tesselation stage in pStages
+	pipelineInfos[0].pTessellationState = NULL;
+	pipelineInfos[0].pViewportState = &viewport;
+	pipelineInfos[0].pRasterizationState = &rasterization;
+	pipelineInfos[0].pMultisampleState = &multisample;
+	pipelineInfos[0].pDepthStencilState = &depthStencil;
+	pipelineInfos[0].pColorBlendState = &colorBlend;
+	pipelineInfos[0].pDynamicState = &dynamicState;
+
+	pipelineInfos[0].layout = this->pipelineLayout;
+
+	pipelineInfos[0].renderPass = this->renderPass;
+	// index of subpass where this pipeline will be used
+	pipelineInfos[0].subpass = 0;
+
+	// no parent pipeline;
+	// no VK_PIPELINE_CREATE_DERIVATIVE_BIT flag in flags
+	pipelineInfos[0].basePipelineHandle = VK_NULL_HANDLE;
+	pipelineInfos[0].basePipelineIndex = 0;
+
+	VkResult r = vkCreateGraphicsPipelines(device, NULL, pipelineCount,
+		pipelineInfos, TR_VK_ALLOCATION_CALLBACKS_MARK, pipelines.data());
+
+	assert(r == VK_SUCCESS);
+}
+
 std::vector<const char*> VulkanTriangle::GetRequiredInstanceExtensions()
 {
 	uint32_t glfwExtensionCount = 0;
@@ -843,6 +1039,14 @@ void VulkanTriangle::DestroyFramebuffers()
 	for (int i = 0; i < swapchainImageCount; i++)
 	{
 		vkDestroyFramebuffer(device, framebuffers[i], NULL);
+	}
+}
+
+void VulkanTriangle::DestroyGraphicsPipeline()
+{
+	for (int i = 0; i < pipelines.size(); i++)
+	{
+		vkDestroyPipeline(device, pipelines[i], NULL);
 	}
 }
 

@@ -48,8 +48,8 @@ void Shader::DestroyDescriptorSetLayout()
 
 void Shader::DestroyShaderStages()
 {
-	vkDestroyShaderModule(device, vertStage.module, NULL);
-	vkDestroyShaderModule(device, fragStage.module, NULL);
+	vkDestroyShaderModule(device, stages[0].module, NULL);
+	vkDestroyShaderModule(device, stages[1].module, NULL);
 }
 
 void Shader::Init(VkDevice device)
@@ -71,8 +71,8 @@ void Shader::Load(const char* vertSpvPath, const char* fragSpvPath)
 	size_t vertSpvSize = vertSpv.size() * sizeof(char);
 	size_t fragSpvSize = fragSpv.size() * sizeof(char);
 
-	CreateStage((uint32_t*)vertSpv.data(), vertSpvSize, VK_SHADER_STAGE_VERTEX_BIT, &vertStage);
-	CreateStage((uint32_t*)fragSpv.data(), fragSpvSize, VK_SHADER_STAGE_FRAGMENT_BIT, &fragStage);
+	CreateStage((uint32_t*)vertSpv.data(), vertSpvSize, VK_SHADER_STAGE_VERTEX_BIT, &stages[0]);
+	CreateStage((uint32_t*)fragSpv.data(), fragSpvSize, VK_SHADER_STAGE_FRAGMENT_BIT, &stages[1]);
 }
 
 void Shader::CreateStage(uint32_t *spvCode, size_t codeSize, VkShaderStageFlagBits stageType, VkPipelineShaderStageCreateInfo* result)
@@ -132,4 +132,10 @@ VkWriteDescriptorSet Shader::GetWriteDescriptorSet(const VkDescriptorSet &descSe
 	writeDescSet.dstBinding = 0;
 
 	return writeDescSet;
+}
+
+const VkPipelineShaderStageCreateInfo* Shader::GetStages(uint32_t& count)
+{
+	count = 2;
+	return stages;
 }

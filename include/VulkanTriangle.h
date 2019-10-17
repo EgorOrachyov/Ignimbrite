@@ -80,7 +80,8 @@ private:
 
 	std::vector<VkFramebuffer>		framebuffers;
 
-private:
+	std::vector<VkPipeline>			pipelines;
+
 	DepthBuffer								depthBuffer;
 
 	std::vector<VkPhysicalDevice>			physicalDevices;
@@ -128,6 +129,10 @@ private:
 	void CreateRenderPass();
 	void CreateFramebuffers();
 
+	void CreateGraphicsPipeline(const VkVertexInputBindingDescription* pVertexBindingDescriptions, uint32_t vertexBindingDescriptionCount,
+		const VkVertexInputAttributeDescription* pVertexAttributeDescriptions, uint32_t vertexAttributeDescriptionCount,
+		const VkPipelineShaderStageCreateInfo* pStages, uint32_t stageCount);
+
 
 	void MainLoop();
 
@@ -144,6 +149,8 @@ private:
 
 	void DestroyRenderPass();
 	void DestroyFramebuffers();
+
+	void DestroyGraphicsPipeline();
 
 public:
 	void Start();

@@ -85,8 +85,9 @@ public:
 
 // vertex buffer specific
 private:
+	void InitVertexInputDescription();
+
+public:
 	VkVertexInputBindingDescription vertInputBinding;
 	VkVertexInputAttributeDescription vertInputAttributes[2];
-
-	void InitVertexInputDescription();
 };

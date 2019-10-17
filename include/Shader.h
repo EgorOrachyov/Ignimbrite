@@ -13,8 +13,8 @@ private:
 	VkDescriptorSetLayout	descriptorSetLayout;
 	VkDescriptorPoolSize	poolSize;
 
-	VkPipelineShaderStageCreateInfo vertStage;
-	VkPipelineShaderStageCreateInfo fragStage;
+public:
+	VkPipelineShaderStageCreateInfo stages[2];
 
 public:
 	// uniform buffer for MVP matrix (should be in a child of this class)
@@ -41,4 +41,5 @@ public:
 	const VkDescriptorSetLayout		&GetDescriptorSetLayout() const;
 	const VkDescriptorPoolSize		&GetPoolSize() const;
 	VkWriteDescriptorSet			GetWriteDescriptorSet(const VkDescriptorSet &descSet) const;
+	const VkPipelineShaderStageCreateInfo* GetStages(uint32_t &count);
 };
