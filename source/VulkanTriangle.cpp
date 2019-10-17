@@ -1,9 +1,12 @@
 #include "VulkanTriangle.h"
 #include "Shader.h"
-#include "VertexBuffer.h"
 #include <stdexcept>
 #include <iostream>
 #include <cassert>
+
+#define GLM_FORCE_RADIANS
+#include "glm/glm.hpp"
+#include <glm/gtc/matrix_transform.hpp>
 
 void VulkanTriangle::Start()
 {
@@ -26,13 +29,10 @@ void VulkanTriangle::Start()
 	scene.Setup(*this);
 
 	// init uniform buffer
-	// NOTE: if not working, put binding after Unmap()
 	cubeShader.mvpUniform.Init(choosedDeviceMemProperties, device, sizeof(scene.MVP));
 	cubeShader.mvpUniform.MapAndCopy(scene.MVP, sizeof(scene.MVP));
 	cubeShader.mvpUniform.Unmap();
 
-	VertexBuffer vertexBuffer;
-	// NOTE: if not working, put binding after Unmap()
 	vertexBuffer.Init(choosedDeviceMemProperties, device);
 	vertexBuffer.MapAndCopy();
 	vertexBuffer.Unmap();
@@ -66,12 +66,17 @@ void VulkanTriangle::Start()
 		vertexBuffer.vertInputAttributes, 2, 
 		cubeShader.stages, 2);
 
+	CreateSemaphore();
+
+
 
 	MainLoop();
 
-
+	
 
 	scene.Destroy();
+
+	DestroySemaphore();
 
 	DestroyGraphicsPipeline();
 
@@ -84,6 +89,9 @@ void VulkanTriangle::Start()
 
 	DestroyPipelineLayout();
 	DestroyDescriptorPool();
+
+	DestroyCommandBuffers();
+	DestroyCommandPool();
 
 	DestroyVulkan();
 	DestroyWindow();
@@ -111,18 +119,163 @@ void VulkanTriangle::CreateWindow()
 
 void VulkanTriangle::MainLoop()
 {
+	// init clear values
+	VkClearValue clearValues[2];
+	
+	clearValues[0].color.float32[0] = 0.2f;
+	clearValues[0].color.float32[1] = 0.2f;
+	clearValues[0].color.float32[2] = 0.3f;
+	clearValues[0].color.float32[3] = 0.2f;
+
+	clearValues[1].depthStencil.depth = 1.0f;
+	clearValues[1].depthStencil.stencil = 0;
+
+
+	VkResult r;
+	uint32_t currentBuffer;
+
+	const int viewportCount = 1;
+	const int scissorCount = 1;
+	VkViewport	viewports[viewportCount];
+	VkRect2D	scissors[scissorCount];
+
+	VkCommandBuffer cmdBuffer = commandBuffers[0];
+
+
 	while (!glfwWindowShouldClose(window)) 
 	{
+		BeginCommandBuffer(cmdBuffer);
+
+		r = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, swapSemaphore, VK_NULL_HANDLE,
+			&currentBuffer);
+		assert(r == VK_SUCCESS);
+
+		VkRenderPassBeginInfo rpBegin;
+		rpBegin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		rpBegin.pNext = NULL;
+		rpBegin.renderPass = renderPass;
+		rpBegin.framebuffer = framebuffers[currentBuffer];
+		rpBegin.renderArea.offset.x = 0;
+		rpBegin.renderArea.offset.y = 0;
+		rpBegin.renderArea.extent.width = WindowWidth;
+		rpBegin.renderArea.extent.height = WindowHeight;
+		rpBegin.clearValueCount = 2;
+		rpBegin.pClearValues = clearValues;
+
+		vkCmdBeginRenderPass(cmdBuffer, &rpBegin, VK_SUBPASS_CONTENTS_INLINE);
+		
+
+		// bind graphics pipeline
+		vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[0]);
+	
+
+		// bind description sets for specific shader program
+		vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptorSets.size(),
+			descriptorSets.data(), 0, NULL);
+
+		const VkDeviceSize offsets[1] = { 0 };
+		vkCmdBindVertexBuffers(cmdBuffer, 0, 1, &vertexBuffer.Buffer, offsets);
+
+
+		// set viewport and scissors dynamically
+		viewports[0].height = (float)WindowHeight;
+		viewports[0].width = (float)WindowWidth;
+		viewports[0].minDepth = (float)0.0f;
+		viewports[0].maxDepth = (float)1.0f;
+		viewports[0].x = 0;
+		viewports[0].y = 0;
+		scissors[0].extent.height = WindowHeight;
+		scissors[0].extent.width = WindowWidth;
+		scissors[0].offset.x = 0;
+		scissors[0].offset.y = 0;
+
+		vkCmdSetViewport(cmdBuffer, 0, viewportCount, viewports);
+		vkCmdSetScissor(cmdBuffer, 0, scissorCount, scissors);
+
+
+		// draw
+		vkCmdDraw(cmdBuffer, 12 * 3, 1, 0, 0);
+		vkCmdEndRenderPass(cmdBuffer);
+
+
+		EndCommandBuffer(cmdBuffer);
+
+
+		// create fence
+		VkFenceCreateInfo fenceInfo;
+		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		fenceInfo.pNext = NULL;
+		fenceInfo.flags = 0;
+
+		VkFence drawFence;
+		vkCreateFence(device, &fenceInfo, NULL, &drawFence);
+
+
+		VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		VkSubmitInfo submit_info[1] = {};
+		submit_info[0].pNext = NULL;
+		submit_info[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submit_info[0].waitSemaphoreCount = 1;
+		submit_info[0].pWaitSemaphores = &swapSemaphore;
+		submit_info[0].pWaitDstStageMask = &pipe_stage_flags;
+		submit_info[0].commandBufferCount = commandBuffers.size();
+		submit_info[0].pCommandBuffers = commandBuffers.data();
+		submit_info[0].signalSemaphoreCount = 0;
+		submit_info[0].pSignalSemaphores = NULL;
+
+		r = vkQueueSubmit(graphicsQueue, 1, submit_info, drawFence);
+		assert(r == VK_SUCCESS);
+
+		// present
+		VkPresentInfoKHR present;
+		present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		present.pNext = NULL;
+		present.swapchainCount = 1;
+		present.pSwapchains = &swapchain;
+		present.pImageIndices = &currentBuffer;
+		present.pWaitSemaphores = NULL;
+		present.waitSemaphoreCount = 0;
+		present.pResults = NULL;
+
+		// wait for command buffer
+		do
+		{
+			r = vkWaitForFences(device, 1, &drawFence, VK_TRUE, 100000000);
+		
+		} while (r == VK_TIMEOUT);
+
+		assert(r == VK_SUCCESS);
+
+
+
+		r = vkQueuePresentKHR(presentQueue, &present);
+		assert(r == VK_SUCCESS);
+
+
+		vkDestroyFence(device, drawFence, TR_VK_ALLOCATION_CALLBACKS_MARK);
+		
+
 		glfwPollEvents();
 	}
+
 }
 
 void VulkanTriangle::InitVulkan()
 {
 	CreateInstance();
 	SetupDebugMessenger();
+	
 	CreateSurface();
+	
 	EnumerateDevices();
+
+	// find necessary properties
+	FindQueueFamilyIndices();
+	FindSupportedFormats();
+
+	CreateCommandPool();
+	CreateCommandBuffers();
+
 	CreateSwapchain();
 	CreateDepthBuffer();
 }
@@ -267,12 +420,54 @@ void VulkanTriangle::EnumerateDevices()
 	assert(r == VK_SUCCESS);
 }
 
+void VulkanTriangle::CreateCommandPool()
+{
+	VkCommandPoolCreateInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	info.pNext = NULL;
+	info.queueFamilyIndex = this->graphicsQueueFamilyIndex;
+	info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+	VkResult r = vkCreateCommandPool(device, &info, TR_VK_ALLOCATION_CALLBACKS_MARK, &commandPool);
+	assert(r == VK_SUCCESS);
+}
+
+void VulkanTriangle::CreateCommandBuffers()
+{
+	VkCommandBufferAllocateInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	info.pNext = NULL;
+	info.commandPool = commandPool;
+	info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	// create only 1
+	info.commandBufferCount = 1;
+
+	commandBuffers.resize(info.commandBufferCount);
+
+	VkResult r = vkAllocateCommandBuffers(device, &info, commandBuffers.data());
+	assert(r == VK_SUCCESS);
+}
+
+void VulkanTriangle::BeginCommandBuffer(VkCommandBuffer cmdBuffer)
+{
+	VkCommandBufferBeginInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	info.pNext = NULL;
+	info.flags = 0;
+	info.pInheritanceInfo = NULL;
+
+	VkResult r = vkBeginCommandBuffer(cmdBuffer, &info);
+	assert(r == VK_SUCCESS);
+}
+
+void VulkanTriangle::EndCommandBuffer(VkCommandBuffer cmdBuffer)
+{
+	VkResult r = vkEndCommandBuffer(cmdBuffer);
+	assert(r == VK_SUCCESS);
+}
+
 void VulkanTriangle::CreateSwapchain()
 {
-	// find necessary properties
-	FindQueueFamilyIndices();
-	FindSupportedFormats();
-
 	VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
 	swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	swapchainCreateInfo.pNext = NULL;
@@ -500,6 +695,17 @@ void VulkanTriangle::FindQueueFamilyIndices()
 	free(supportsPresent);
 
 	assert(graphicsQueueFamilyIndex != UINT32_MAX && presentQueueFamilyIndex != UINT32_MAX);
+
+	// init device queues
+	vkGetDeviceQueue(device, graphicsQueueFamilyIndex, 0, &graphicsQueue);
+	if (graphicsQueueFamilyIndex == presentQueueFamilyIndex)
+	{
+		presentQueue = graphicsQueue;
+	}
+	else
+	{
+		vkGetDeviceQueue(device, presentQueueFamilyIndex, 0, &presentQueue);
+	}
 }
 
 void VulkanTriangle::FindSupportedFormats()
@@ -955,6 +1161,17 @@ void VulkanTriangle::CreateGraphicsPipeline(const VkVertexInputBindingDescriptio
 	assert(r == VK_SUCCESS);
 }
 
+void VulkanTriangle::CreateSemaphore()
+{
+	VkSemaphoreCreateInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	info.pNext = NULL;
+	info.flags = 0;
+
+	VkResult r = vkCreateSemaphore(device, &info, TR_VK_ALLOCATION_CALLBACKS_MARK, &swapSemaphore);
+	assert(r == VK_SUCCESS);
+}
+
 std::vector<const char*> VulkanTriangle::GetRequiredInstanceExtensions()
 {
 	uint32_t glfwExtensionCount = 0;
@@ -1000,6 +1217,16 @@ void VulkanTriangle::DestroyDevice()
 {
 	vkDeviceWaitIdle(device);
 	vkDestroyDevice(device, TR_VK_ALLOCATION_CALLBACKS_MARK);
+}
+
+void VulkanTriangle::DestroyCommandPool()
+{
+	vkDestroyCommandPool(device, commandPool, TR_VK_ALLOCATION_CALLBACKS_MARK);
+}
+
+void VulkanTriangle::DestroyCommandBuffers()
+{
+	vkFreeCommandBuffers(device, commandPool, commandBuffers.size(), commandBuffers.data());
 }
 
 void VulkanTriangle::DestroySwapchain()
@@ -1050,6 +1277,11 @@ void VulkanTriangle::DestroyGraphicsPipeline()
 	}
 }
 
+void VulkanTriangle::DestroySemaphore()
+{
+	vkDestroySemaphore(device, swapSemaphore, TR_VK_ALLOCATION_CALLBACKS_MARK);
+}
+
 void VulkanTriangle::DestroyWindow()
 {
 	glfwDestroyWindow(window);
@@ -1058,50 +1290,36 @@ void VulkanTriangle::DestroyWindow()
 
 void Scene::Setup(const VulkanTriangle &t)
 {
-	//auto projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
-	//
-	//auto view = glm::lookAt(
-	//	glm::vec3(-5, 3, -10), // Camera is at (-5,3,-10), in World Space
-	//	glm::vec3(0, 0, 0),    // and looks at the origin
-	//	glm::vec3(0, -1, 0)    // Head is up (set to 0,-1,0 to look upside-down)
-	//);
-	//
-	//auto model = glm::mat4(1.0f);
+	float fov = glm::radians(45.0f);
+	if (800 > 600)
+	{
+		fov *= static_cast<float>(600) / static_cast<float>(800);
+	}
 
-	//auto clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
-	//	0.0f, -1.0f, 0.0f, 0.0f,
-	//	0.0f, 0.0f, 0.5f, 0.0f,
-	//	0.0f, 0.0f, 0.5f, 1.0f);
-
-	//auto mvp = clip * projection * view * model;
-
-	//for (int i = 0; i < 4; i++)
-	//{
-	//	for (int j = 0; j < 4; j++)
-	//	{
-	//		MVP[i * 4 + j] = mvp[i][j];
-	//	}
-	//}
-
-	MVP[0] = 2.15934f;
-	MVP[1] = 0.279808f;
-	MVP[2] = 0.432367f;
-	MVP[3] = 0.431934f;
+	auto projection = glm::perspective(fov, static_cast<float>(800) / static_cast<float>(600), 0.1f, 100.0f);
 	
-	MVP[4] = 0.0f;
-	MVP[5] = 2.33173f;
-	MVP[6] = -0.25942f;
-	MVP[7] = -0.259161f;
+	auto view = glm::lookAt(
+		glm::vec3(-5, 3, -10), // Camera is at (-5,3,-10), in World Space
+		glm::vec3(0, 0, 0),    // and looks at the origin
+		glm::vec3(0, -1, 0)    // Head is up (set to 0,-1,0 to look upside-down)
+	);
+	
+	auto model = glm::mat4(1.0f);
 
-	MVP[8] = -1.07967f;
-	MVP[9] = 0.559615f;
-	MVP[10] = 0.864733f;
-	MVP[11] = 0.863868f;
+	auto clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, -1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.5f, 0.0f,
+		0.0f, 0.0f, 0.5f, 1.0f);
 
-	MVP[12] = 0.0f;
-	MVP[13] = 0.0f;
-	MVP[14] = 11.4873f;
-	MVP[15] = 11.5758f;
+	auto mvp = clip * projection * view * model;
+
+	for (int i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 4; j++)
+		{
+			MVP[i * 4 + j] = mvp[i][j];
+		}
+	}
 }
 
 void Scene::Destroy()

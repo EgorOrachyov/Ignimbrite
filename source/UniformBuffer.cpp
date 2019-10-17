@@ -85,7 +85,7 @@ void UniformBuffer::MapAndCopy(void *data, uint32_t dataSize) const
 	assert(r == VK_SUCCESS);
 
 	// copy data to this memory
-	memcpy(mapped, &data, dataSize);
+	memcpy(mapped, data, dataSize);
 }
 
 void UniformBuffer::Unmap() const

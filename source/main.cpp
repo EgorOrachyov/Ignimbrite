@@ -2,8 +2,10 @@
 
 int main() 
 {
-	VulkanTriangle &app = VulkanTriangle();
-	app.Start();
+	VulkanTriangle *app = new VulkanTriangle();
+	app->Start();
+
+	delete app;
 
 	return 0;
 }

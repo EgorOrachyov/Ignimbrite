@@ -20,6 +20,7 @@ public:
 
 public:
 	void Init(const VkPhysicalDeviceMemoryProperties &physDeviceMemProperties, VkDevice device, VkDeviceSize uniformBufferSize);
+	
 	void Destroy();
 
 	// Map memory object into application address space

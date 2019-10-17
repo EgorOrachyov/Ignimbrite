@@ -69,6 +69,7 @@ void VertexBuffer::Init(const VkPhysicalDeviceMemoryProperties & physDeviceMemPr
 
 	CreateBufferObject(bufferSize);
 	AllocateDeviceMemory(physDeviceMemProperties);
+
 	BindBufferMemory(bufferSize);
 
 	// vertex
@@ -93,7 +94,7 @@ void VertexBuffer::MapAndCopy() const
 	assert(r == VK_SUCCESS);
 
 	// copy data to this memory
-	memcpy(mapped, &data, dataSize);
+	memcpy(mapped, data, dataSize);
 }
 
 void VertexBuffer::Unmap() const
