@@ -1,5 +1,6 @@
 #include "VulkanTriangle.h"
 #include "Shader.h"
+#include "VertexBuffer.h"
 #include <stdexcept>
 #include <iostream>
 #include <cassert>
@@ -25,10 +26,16 @@ void VulkanTriangle::Start()
 	scene.Setup(*this);
 
 	// init uniform buffer
+	// NOTE: if not working, put binding after Unmap()
 	cubeShader.mvpUniform.Init(choosedDeviceMemProperties, device, sizeof(scene.MVP));
 	cubeShader.mvpUniform.MapAndCopy(scene.MVP, sizeof(scene.MVP));
 	cubeShader.mvpUniform.Unmap();
 
+	VertexBuffer vertexBuffer;
+	// NOTE: if not working, put binding after Unmap()
+	vertexBuffer.Init(choosedDeviceMemProperties, device);
+	vertexBuffer.MapAndCopy();
+	vertexBuffer.Unmap();
 
 
 	// get descriptor set layouts of all shaders,
@@ -62,6 +69,7 @@ void VulkanTriangle::Start()
 
 	scene.Destroy();
 
+	vertexBuffer.Destroy();
 	cubeShader.mvpUniform.Destroy();
 	cubeShader.Destroy();
 

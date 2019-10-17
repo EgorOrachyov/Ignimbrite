@@ -14,7 +14,7 @@ set(SOURCES)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/thirdparty/include)
 
-# Lib
+# Libds
 
 if (WIN32)
     if (${CMAKE_GENERATOR_PLATFORM} MATCHES "x64")
@@ -37,6 +37,7 @@ set(SOURCES ${SOURCES} source/VulkanTriangle.cpp)
 set(SOURCES ${SOURCES} source/ValidationLayers.cpp)
 set(SOURCES ${SOURCES} source/UniformBuffer.cpp)
 set(SOURCES ${SOURCES} source/Shader.cpp)
+set(SOURCES ${SOURCES} source/VertexBuffer.cpp)
 
 add_executable(VulkanRenderer ${SOURCES})
 target_link_libraries(VulkanRenderer ${THIRD_PARTY_LIBS})
