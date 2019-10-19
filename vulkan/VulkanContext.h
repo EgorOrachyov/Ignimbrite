@@ -24,6 +24,8 @@ public:
     VulkanContext(VulkanApplication &app);
     ~VulkanContext();
 
+    void drawFrame();
+
 private:
     void _createInstance();
     void _destroyInstance();
@@ -61,6 +63,8 @@ private:
     void _createCommandPool();
     void _destroyCommandPool();
     void _createCommandBuffers(VulkanWindow &window);
+    void _createSemaphores();
+    void _destroySemaphores();
 
     static void _outDeviceInfoVerbose(
             VkPhysicalDevice device);
@@ -100,6 +104,9 @@ private:
     VkPipeline mGraphicsPipeline = VK_NULL_HANDLE;
 
     VkCommandPool mCommandPool = VK_NULL_HANDLE;
+
+    VkSemaphore mImageAvailableSemaphore = VK_NULL_HANDLE;
+    VkSemaphore mRenderFinishedSemaphore = VK_NULL_HANDLE;
 
     VulkanApplication &mApp;
     VulkanWindow &mWindow;

@@ -26,9 +26,11 @@ VulkanContext::VulkanContext(VulkanApplication &app)
     _createFramebuffers(mWindow);
     _createCommandPool();
     _createCommandBuffers(mWindow);
+    _createSemaphores();
 }
 
 VulkanContext::~VulkanContext() {
+    _destroySemaphores();
     _destroyCommandPool();
     _destroyFramebuffers(mWindow);
     _destroyGraphicsPipeline();
@@ -888,4 +890,22 @@ void VulkanContext::_createCommandBuffers(VulkanWindow &window) {
             throw std::runtime_error("Failed to end recording command buffer");
         }
     }
+}
+
+void VulkanContext::_createSemaphores() {
+    VkSemaphoreCreateInfo semaphoreInfo = {};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mRenderFinishedSemaphore) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create semaphore");
+    }
+
+    if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mImageAvailableSemaphore) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create semaphore");
+    }
+}
+
+void VulkanContext::_destroySemaphores() {
+    vkDestroySemaphore(mDevice, mImageAvailableSemaphore, nullptr);
+    vkDestroySemaphore(mDevice, mRenderFinishedSemaphore, nullptr);
 }
