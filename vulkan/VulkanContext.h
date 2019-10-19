@@ -56,6 +56,10 @@ private:
     void _destroyPipelineLayout();
     void _createRenderPass();
     void _destroyRenderPass();
+    void _createFramebuffers(VulkanWindow& window);
+    void _destroyFramebuffers(VulkanWindow& window);
+    void _createCommandPool();
+    void _destroyCommandPool();
 
     static void _outDeviceInfoVerbose(
             VkPhysicalDevice device);
@@ -93,6 +97,8 @@ private:
     VkRenderPass mRenderPass = VK_NULL_HANDLE;
     VkPipelineLayout mPipelineLayout = VK_NULL_HANDLE;
     VkPipeline mGraphicsPipeline = VK_NULL_HANDLE;
+
+    VkCommandPool mCommandPool = VK_NULL_HANDLE;
 
     VulkanApplication &mApp;
     VulkanWindow &mWindow;

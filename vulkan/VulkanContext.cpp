@@ -23,9 +23,13 @@ VulkanContext::VulkanContext(VulkanApplication &app)
     _createRenderPass();
     _createPipelineLayout();
     _createGraphicsPipeline();
+    _createFramebuffers(mWindow);
+    _createCommandPool();
 }
 
 VulkanContext::~VulkanContext() {
+    _destroyCommandPool();
+    _destroyFramebuffers(mWindow);
     _destroyGraphicsPipeline();
     _destroyPipelineLayout();
     _destroyRenderPass();
@@ -796,3 +800,32 @@ void VulkanContext::_createRenderPass() {
 void VulkanContext::_destroyRenderPass() {
     vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
 }
+
+void VulkanContext::_createFramebuffers(VulkanWindow &window) {
+    window.swapChainFramebuffers.resize(window.swapChainImageViews.size());
+
+    for (size_t i = 0; i < window.swapChainImageViews.size(); i++) {
+        VkImageView attachments[] = { window.swapChainImageViews[i] };
+
+        VkFramebufferCreateInfo framebufferInfo = {};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = mRenderPass;
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.width = window.swapChainExtent.width;
+        framebufferInfo.height = window.swapChainExtent.height;
+        framebufferInfo.layers = 1;
+
+        if (vkCreateFramebuffer(mDevice, &framebufferInfo, nullptr, &window.swapChainFramebuffers[i]) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create framebuffer");
+        }
+    }
+}
+
+void VulkanContext::_destroyFramebuffers(VulkanWindow &window) {
+    for (auto &framebuffer: window.swapChainFramebuffers) {
+        vkDestroyFramebuffer(mDevice, framebuffer, nullptr);
+    }
+}
+
+

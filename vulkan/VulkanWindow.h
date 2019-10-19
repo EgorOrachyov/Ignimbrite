@@ -18,6 +18,7 @@ struct VulkanWindow {
     VkSwapchainKHR swapChain = VK_NULL_HANDLE;
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
+    std::vector<VkFramebuffer> swapChainFramebuffers;
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
 
