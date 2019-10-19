@@ -828,4 +828,17 @@ void VulkanContext::_destroyFramebuffers(VulkanWindow &window) {
     }
 }
 
+void VulkanContext::_createCommandPool() {
+    VkCommandPoolCreateInfo poolInfo = {};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.queueFamilyIndex = mIndices.graphicsFamily.get();
+    poolInfo.flags = 0; // Optional
 
+    if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create command pool");
+    }
+}
+
+void VulkanContext::_destroyCommandPool() {
+    vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
+}
