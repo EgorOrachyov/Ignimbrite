@@ -25,6 +25,7 @@ VulkanContext::VulkanContext(VulkanApplication &app)
     _createGraphicsPipeline();
     _createFramebuffers(mWindow);
     _createCommandPool();
+    _createCommandBuffers(mWindow);
 }
 
 VulkanContext::~VulkanContext() {
@@ -841,4 +842,50 @@ void VulkanContext::_createCommandPool() {
 
 void VulkanContext::_destroyCommandPool() {
     vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
+}
+
+void VulkanContext::_createCommandBuffers(VulkanWindow &window) {
+    window.commandBuffers.resize(window.swapChainFramebuffers.size());
+
+    VkCommandBufferAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = mCommandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = (uint32_t) window.commandBuffers.size();
+
+    if (vkAllocateCommandBuffers(mDevice, &allocInfo, window.commandBuffers.data()) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to allocate command buffers");
+    }
+
+    for (uint32 i = 0; i < window.commandBuffers.size(); i++) {
+        VkCommandBufferBeginInfo beginInfo = {};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+        beginInfo.pInheritanceInfo = nullptr; // Optional
+
+        if (vkBeginCommandBuffer(window.commandBuffers[i], &beginInfo) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to begin recording command buffer");
+        }
+
+        VkRenderPassBeginInfo renderPassInfo = {};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass = mRenderPass;
+        renderPassInfo.framebuffer = window.swapChainFramebuffers[i];
+        renderPassInfo.renderArea.offset = {0, 0};
+        renderPassInfo.renderArea.extent = window.swapChainExtent;
+
+        VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+
+        renderPassInfo.clearValueCount = 1;
+        renderPassInfo.pClearValues = &clearColor;
+
+        vkCmdBeginRenderPass(window.commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBindPipeline(window.commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
+        vkCmdDraw(window.commandBuffers[i], 3, 1, 0, 0);
+        vkCmdEndRenderPass(window.commandBuffers[i]);
+
+        if (vkEndCommandBuffer(window.commandBuffers[i]) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to end recording command buffer");
+        }
+    }
 }

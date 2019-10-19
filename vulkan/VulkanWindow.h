@@ -16,12 +16,12 @@ struct VulkanWindow {
     GLFWwindow* handle = nullptr;
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VkSwapchainKHR swapChain = VK_NULL_HANDLE;
+    VkFormat swapChainImageFormat;
+    VkExtent2D swapChainExtent;
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
     std::vector<VkFramebuffer> swapChainFramebuffers;
-    VkFormat swapChainImageFormat;
-    VkExtent2D swapChainExtent;
-
+    std::vector<VkCommandBuffer> commandBuffers;
 };
 
 #endif //VULKANRENDERER_VULKANWINDOW_H

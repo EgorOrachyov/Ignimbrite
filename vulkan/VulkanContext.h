@@ -60,6 +60,7 @@ private:
     void _destroyFramebuffers(VulkanWindow& window);
     void _createCommandPool();
     void _destroyCommandPool();
+    void _createCommandBuffers(VulkanWindow &window);
 
     static void _outDeviceInfoVerbose(
             VkPhysicalDevice device);
