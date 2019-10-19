@@ -63,8 +63,8 @@ private:
     void _createCommandPool();
     void _destroyCommandPool();
     void _createCommandBuffers(VulkanWindow &window);
-    void _createSemaphores();
-    void _destroySemaphores();
+    void _createSyncObjects();
+    void _destroySyncObjects();
     void _waitForDevice();
 
     static void _outDeviceInfoVerbose(
@@ -92,6 +92,7 @@ private:
     const std::vector<const char*> mDeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
     const std::vector<const char*> mValidationLayers = { "VK_LAYER_KHRONOS_validation" };
     const bool mEnableValidationLayers;
+    const int32 MAX_FRAMES_IN_FLIGHT = 2;
 
     VkInstance mInstance = VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT mDebugMessenger = VK_NULL_HANDLE;
@@ -106,8 +107,11 @@ private:
 
     VkCommandPool mCommandPool = VK_NULL_HANDLE;
 
-    VkSemaphore mImageAvailableSemaphore = VK_NULL_HANDLE;
-    VkSemaphore mRenderFinishedSemaphore = VK_NULL_HANDLE;
+    std::vector<VkSemaphore> mImageAvailableSemaphores;
+    std::vector<VkSemaphore> mRenderFinishedSemaphores;
+    std::vector<VkFence> mFlightFences;
+    uint32 mCurrentFrame = 0;
+    uint64 mFramesCount = 0;
 
     VulkanApplication &mApp;
     VulkanWindow &mWindow;

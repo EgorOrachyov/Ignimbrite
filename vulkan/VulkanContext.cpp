@@ -26,12 +26,12 @@ VulkanContext::VulkanContext(VulkanApplication &app)
     _createFramebuffers(mWindow);
     _createCommandPool();
     _createCommandBuffers(mWindow);
-    _createSemaphores();
+    _createSyncObjects();
 }
 
 VulkanContext::~VulkanContext() {
     _waitForDevice();
-    _destroySemaphores();
+    _destroySyncObjects();
     _destroyCommandPool();
     _destroyFramebuffers(mWindow);
     _destroyGraphicsPipeline();
@@ -903,39 +903,65 @@ void VulkanContext::_createCommandBuffers(VulkanWindow &window) {
     }
 }
 
-void VulkanContext::_createSemaphores() {
+void VulkanContext::_createSyncObjects() {
+    mImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    mRenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    mFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
     VkSemaphoreCreateInfo semaphoreInfo = {};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-    if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mRenderFinishedSemaphore) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create semaphore");
-    }
+    VkFenceCreateInfo fenceInfo = {};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mImageAvailableSemaphore) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create semaphore");
+    for (uint32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mRenderFinishedSemaphores[i]) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create semaphores");
+        }
+
+        if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mImageAvailableSemaphores[i]) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create semaphores");
+        }
+
+        if (vkCreateFence(mDevice, &fenceInfo, nullptr, &mFlightFences[i]) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create fences");
+        }
     }
 }
 
-void VulkanContext::_destroySemaphores() {
-    vkDestroySemaphore(mDevice, mImageAvailableSemaphore, nullptr);
-    vkDestroySemaphore(mDevice, mRenderFinishedSemaphore, nullptr);
+void VulkanContext::_destroySyncObjects() {
+    for (uint32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroySemaphore(mDevice, mImageAvailableSemaphores[i], nullptr);
+        vkDestroySemaphore(mDevice, mRenderFinishedSemaphores[i], nullptr);
+        vkDestroyFence(mDevice, mFlightFences[i], nullptr);
+    }
 }
 
 
 void VulkanContext::drawFrame() {
+    vkWaitForFences(
+            mDevice,
+            1,
+            &mFlightFences[mCurrentFrame],
+            VK_TRUE,
+            std::numeric_limits<uint64_t>::max()
+    );
+    vkResetFences(mDevice, 1, &mFlightFences[mCurrentFrame]);
+
     uint32_t imageIndex;
 
     vkAcquireNextImageKHR(
             mDevice,
             mWindow.swapChain,
             std::numeric_limits<uint64_t>::max(),
-            mImageAvailableSemaphore,
+            mImageAvailableSemaphores[mCurrentFrame],
             VK_NULL_HANDLE,
             &imageIndex
     );
 
-    VkSemaphore waitSemaphores[] = { mImageAvailableSemaphore };
-    VkSemaphore signalSemaphores[] = { mRenderFinishedSemaphore };
+    VkSemaphore waitSemaphores[] = { mImageAvailableSemaphores[mCurrentFrame] };
+    VkSemaphore signalSemaphores[] = { mRenderFinishedSemaphores[mCurrentFrame] };
     VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
     VkSubmitInfo submitInfo = {};
@@ -948,7 +974,7 @@ void VulkanContext::drawFrame() {
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    if (vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+    if (vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, mFlightFences[mCurrentFrame]) != VK_SUCCESS) {
         throw std::runtime_error("Failed to submit draw command buffer");
     }
 
@@ -964,6 +990,9 @@ void VulkanContext::drawFrame() {
     presentInfo.pResults = nullptr; // Optional
 
     vkQueuePresentKHR(mPresentQueue, &presentInfo);
+
+    mCurrentFrame = (mCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    mFramesCount += 1;
 }
 
 void VulkanContext::_waitForDevice() {
