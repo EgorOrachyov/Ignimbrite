@@ -49,6 +49,13 @@ private:
     void _destroySwapChain();
     void _createImageViews(VulkanWindow& window);
     void _destroyImageViews(VulkanWindow& window);
+    void _createGraphicsPipeline();
+    void _destroyGraphicsPipeline();
+    VkShaderModule _createShaderModule(const std::vector<char> &code);
+    void _createPipelineLayout();
+    void _destroyPipelineLayout();
+    void _createRenderPass();
+    void _destroyRenderPass();
 
     static void _outDeviceInfoVerbose(
             VkPhysicalDevice device);
@@ -82,6 +89,10 @@ private:
     VkDevice mDevice = VK_NULL_HANDLE;
     VkQueue mGraphicsQueue = VK_NULL_HANDLE;
     VkQueue mPresentQueue = VK_NULL_HANDLE;
+
+    VkRenderPass mRenderPass = VK_NULL_HANDLE;
+    VkPipelineLayout mPipelineLayout = VK_NULL_HANDLE;
+    VkPipeline mGraphicsPipeline = VK_NULL_HANDLE;
 
     VulkanApplication &mApp;
     VulkanWindow &mWindow;
