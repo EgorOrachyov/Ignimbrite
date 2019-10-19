@@ -47,6 +47,8 @@ private:
     VkExtent2D _chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
     void _createSwapChain();
     void _destroySwapChain();
+    void _createImageViews(VulkanWindow& window);
+    void _destroyImageViews(VulkanWindow& window);
 
     static void _outDeviceInfoVerbose(
             VkPhysicalDevice device);

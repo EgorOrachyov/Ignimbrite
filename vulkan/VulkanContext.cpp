@@ -18,9 +18,11 @@ VulkanContext::VulkanContext(VulkanApplication &app)
     _createLogicalDevice();
     _setupQueue();
     _createSwapChain();
+    _createImageViews(mWindow);
 }
 
 VulkanContext::~VulkanContext() {
+    _destroyImageViews(mWindow);
     _destroySwapChain();
     _destroyLogicalDevice();
     _destroySurface();
@@ -549,3 +551,38 @@ void VulkanContext::_createSwapChain() {
 void VulkanContext::_destroySwapChain() {
     vkDestroySwapchainKHR(mDevice, mWindow.swapChain, nullptr);
 }
+
+void VulkanContext::_createImageViews(VulkanWindow &window) {
+    window.swapChainImageViews.resize(window.swapChainImages.size());
+
+    for (uint32 i = 0; i < window.swapChainImages.size(); i++) {
+        VkImageViewCreateInfo createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.image = window.swapChainImages[i];
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.format = window.swapChainImageFormat;
+
+        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        createInfo.subresourceRange.baseMipLevel = 0;
+        createInfo.subresourceRange.levelCount = 1;
+        createInfo.subresourceRange.baseArrayLayer = 0;
+        createInfo.subresourceRange.layerCount = 1;
+
+        if (vkCreateImageView(mDevice, &createInfo, nullptr, &window.swapChainImageViews[i]) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create image views!");
+        }
+    }
+}
+
+void VulkanContext::_destroyImageViews(VulkanWindow &window) {
+    for (auto &imageView: window.swapChainImageViews) {
+        vkDestroyImageView(mDevice, imageView, nullptr);
+    }
+}
+
+
