@@ -42,6 +42,11 @@ private:
     void _setupQueue();
     void _createSurface();
     void _destroySurface();
+    VkSurfaceFormatKHR _chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
+    VkPresentModeKHR _chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
+    VkExtent2D _chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+    void _createSwapChain();
+    void _destroySwapChain();
 
     static void _outDeviceInfoVerbose(
             VkPhysicalDevice device);

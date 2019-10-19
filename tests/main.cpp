@@ -14,7 +14,7 @@ int main() {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    window.handle = glfwCreateWindow(600, 400, "Vulkan", nullptr, nullptr);
+    window.handle = glfwCreateWindow(window.width, window.height, application.name.c_str(), nullptr, nullptr);
     glfwSetErrorCallback(callback);
     application.extensions = glfwGetRequiredInstanceExtensions(&application.extensionsCount);
 
