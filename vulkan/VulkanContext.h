@@ -65,6 +65,7 @@ private:
     void _createCommandBuffers(VulkanWindow &window);
     void _createSemaphores();
     void _destroySemaphores();
+    void _waitForDevice();
 
     static void _outDeviceInfoVerbose(
             VkPhysicalDevice device);

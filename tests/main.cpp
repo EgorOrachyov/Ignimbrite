@@ -24,6 +24,7 @@ int main() {
 
     while (!glfwWindowShouldClose(window.handle)) {
         glfwPollEvents();
+        device->drawFrame();
     }
 
     delete device;

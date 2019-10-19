@@ -30,6 +30,7 @@ VulkanContext::VulkanContext(VulkanApplication &app)
 }
 
 VulkanContext::~VulkanContext() {
+    _waitForDevice();
     _destroySemaphores();
     _destroyCommandPool();
     _destroyFramebuffers(mWindow);
@@ -788,12 +789,22 @@ void VulkanContext::_createRenderPass() {
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
 
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
     VkRenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = 1;
     renderPassInfo.pAttachments = &colorAttachment;
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
 
     if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mRenderPass) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create render pass");
@@ -876,7 +887,7 @@ void VulkanContext::_createCommandBuffers(VulkanWindow &window) {
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = window.swapChainExtent;
 
-        VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+        VkClearValue clearColor = { { { 0.0f, 0.0f, 0.0f, 1.0f } } };
 
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;
@@ -908,4 +919,53 @@ void VulkanContext::_createSemaphores() {
 void VulkanContext::_destroySemaphores() {
     vkDestroySemaphore(mDevice, mImageAvailableSemaphore, nullptr);
     vkDestroySemaphore(mDevice, mRenderFinishedSemaphore, nullptr);
+}
+
+
+void VulkanContext::drawFrame() {
+    uint32_t imageIndex;
+
+    vkAcquireNextImageKHR(
+            mDevice,
+            mWindow.swapChain,
+            std::numeric_limits<uint64_t>::max(),
+            mImageAvailableSemaphore,
+            VK_NULL_HANDLE,
+            &imageIndex
+    );
+
+    VkSemaphore waitSemaphores[] = { mImageAvailableSemaphore };
+    VkSemaphore signalSemaphores[] = { mRenderFinishedSemaphore };
+    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStages;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &mWindow.commandBuffers[imageIndex];
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
+
+    if (vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to submit draw command buffer");
+    }
+
+    VkSwapchainKHR swapChains[] = { mWindow.swapChain };
+
+    VkPresentInfoKHR presentInfo = {};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores;
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapChains;
+    presentInfo.pImageIndices = &imageIndex;
+    presentInfo.pResults = nullptr; // Optional
+
+    vkQueuePresentKHR(mPresentQueue, &presentInfo);
+}
+
+void VulkanContext::_waitForDevice() {
+    vkDeviceWaitIdle(mDevice);
 }
