@@ -17,6 +17,8 @@ struct VulkanWindow {
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VkSwapchainKHR swapChain = VK_NULL_HANDLE;
     std::vector<VkImage> swapChainImages;
+    VkFormat swapChainImageFormat;
+    VkExtent2D swapChainExtent;
 };
 
 #endif //VULKANRENDERER_VULKANWINDOW_H

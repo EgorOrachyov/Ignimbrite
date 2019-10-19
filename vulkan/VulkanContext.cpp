@@ -537,6 +537,13 @@ void VulkanContext::_createSwapChain() {
     if (vkCreateSwapchainKHR(mDevice, &createInfo, nullptr, &mWindow.swapChain)) {
         throw std::runtime_error("Failed to create swap chain");
     }
+
+    vkGetSwapchainImagesKHR(mDevice, mWindow.swapChain, &imageCount, nullptr);
+    mWindow.swapChainImages.resize(imageCount);
+    vkGetSwapchainImagesKHR(mDevice, mWindow.swapChain, &imageCount, mWindow.swapChainImages.data());
+
+    mWindow.swapChainImageFormat = surfaceFormat.format;
+    mWindow.swapChainExtent = extent;
 }
 
 void VulkanContext::_destroySwapChain() {
