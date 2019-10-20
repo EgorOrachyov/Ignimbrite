@@ -73,6 +73,8 @@ private:
     void _createVertexBuffer();
     void _destroyVertexBuffer();
     uint32 _findMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties);
+    void _createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+    void _copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
     static void _outDeviceInfoVerbose(
             VkPhysicalDevice device);
