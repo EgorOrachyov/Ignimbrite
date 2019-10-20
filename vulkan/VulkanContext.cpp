@@ -489,7 +489,10 @@ VkExtent2D VulkanContext::_chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capa
     if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
         return capabilities.currentExtent;
     } else {
-        VkExtent2D actualExtent = { mWindow.width, mWindow.height };
+        VkExtent2D actualExtent = {
+                (uint32) mWindow.frameBufferWidth,
+                (uint32) mWindow.frameBufferHeight
+        };
 
         actualExtent.width =
                 std::max(capabilities.minImageExtent.width,
@@ -903,6 +906,10 @@ void VulkanContext::_createCommandBuffers(VulkanWindow &window) {
     }
 }
 
+void VulkanContext::_freeCommandBuffers(VulkanWindow &window) {
+    vkFreeCommandBuffers(mDevice, mCommandPool, (uint32) window.commandBuffers.size(), window.commandBuffers.data());
+}
+
 void VulkanContext::_createSyncObjects() {
     mImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     mRenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -995,6 +1002,35 @@ void VulkanContext::drawFrame() {
     mFramesCount += 1;
 }
 
+void VulkanContext::windowResized() {
+    _recreateSwapChain();
+}
+
 void VulkanContext::_waitForDevice() {
     vkDeviceWaitIdle(mDevice);
+}
+
+
+void VulkanContext::_cleanupSwapChain() {
+    _destroyFramebuffers(mWindow);
+    _freeCommandBuffers(mWindow);
+    _destroyGraphicsPipeline();
+    _destroyPipelineLayout();
+    _destroyRenderPass();
+    _destroyImageViews(mWindow);
+    _destroySwapChain();
+}
+
+void VulkanContext::_recreateSwapChain() {
+    _waitForDevice();
+    vkQueueWaitIdle(mGraphicsQueue);
+    vkQueueWaitIdle(mPresentQueue);
+    _cleanupSwapChain();
+    _createSwapChain();
+    _createImageViews(mWindow);
+    _createRenderPass();
+    _createPipelineLayout();
+    _createGraphicsPipeline();
+    _createFramebuffers(mWindow);
+    _createCommandBuffers(mWindow);
 }

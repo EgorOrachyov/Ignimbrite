@@ -25,6 +25,7 @@ public:
     ~VulkanContext();
 
     void drawFrame();
+    void windowResized();
 
 private:
     void _createInstance();
@@ -63,9 +64,12 @@ private:
     void _createCommandPool();
     void _destroyCommandPool();
     void _createCommandBuffers(VulkanWindow &window);
+    void _freeCommandBuffers(VulkanWindow& window);
     void _createSyncObjects();
     void _destroySyncObjects();
     void _waitForDevice();
+    void _cleanupSwapChain();
+    void _recreateSwapChain();
 
     static void _outDeviceInfoVerbose(
             VkPhysicalDevice device);
