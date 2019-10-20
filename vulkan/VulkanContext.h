@@ -72,6 +72,8 @@ private:
     void _recreateSwapChain();
     void _createVertexBuffer();
     void _destroyVertexBuffer();
+    void _createIndexBuffer();
+    void _destroyIndexBuffer();
     uint32 _findMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties);
     void _createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void _copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
@@ -122,18 +124,25 @@ private:
     uint32 mCurrentFrame = 0;
     uint64 mFramesCount = 0;
 
-    std::vector<VulkanVertex> mVertices = {
-            { {0.0f, -0.5f}, {1.0f, 0.0f, 0.0f} },
-            { {0.5f, 0.5f},  {0.0f, 1.0f, 0.0f} },
-            { {-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f} }
+    const std::vector<VulkanVertex> mVertices = {
+            { {-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f} },
+            { {0.5f,  -0.5f}, {0.0f, 1.0f, 0.0f} },
+            { {0.5f,   0.5f}, {0.0f, 0.0f, 1.0f} },
+            { {-0.5f,  0.5f}, {1.0f, 1.0f, 1.0f} }
+    };
+
+    const std::vector<uint16_t> mIndices = {
+            0, 1, 2, 2, 3, 0
     };
 
     VkBuffer mVertexBuffer = VK_NULL_HANDLE;
     VkDeviceMemory mVertexBufferMemory = VK_NULL_HANDLE;
+    VkBuffer mIndexBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory mIndexBufferMemory = VK_NULL_HANDLE;
 
     VulkanApplication &mApp;
     VulkanWindow &mWindow;
-    VulkanQueueFamilyIndices mIndices;
+    VulkanQueueFamilyIndices mQueueIndices;
 
 };
 

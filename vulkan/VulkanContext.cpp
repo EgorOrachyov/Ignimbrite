@@ -26,6 +26,7 @@ VulkanContext::VulkanContext(VulkanApplication &app)
     _createFramebuffers(mWindow);
     _createCommandPool();
     _createVertexBuffer();
+    _createIndexBuffer();
     _createCommandBuffers(mWindow);
     _createSyncObjects();
 }
@@ -41,6 +42,7 @@ VulkanContext::~VulkanContext() {
     _destroyImageViews(mWindow);
     _destroySwapChain();
     _destroyVertexBuffer();
+    _destroyIndexBuffer();
     _destroyLogicalDevice();
     _destroySurface();
     _destroyDebugMessenger();
@@ -396,10 +398,10 @@ void VulkanContext::_outDeviceInfoVerbose(VkPhysicalDevice device) {
 
 void VulkanContext::_createLogicalDevice() {
     /** Fill data about the needed queues */
-    _findQueueFamilies(mPhysicalDevice, mIndices);
+    _findQueueFamilies(mPhysicalDevice, mQueueIndices);
 
     /** Want to create only one instance of the same queue */
-    std::set<uint32> uniqueQueueFamilies = { mIndices.graphicsFamily.get(), mIndices.presentFamily.get() };
+    std::set<uint32> uniqueQueueFamilies = { mQueueIndices.graphicsFamily.get(), mQueueIndices.presentFamily.get() };
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
     float queuePriority = 1.0f;
@@ -440,8 +442,8 @@ void VulkanContext::_destroyLogicalDevice() {
 }
 
 void VulkanContext::_setupQueue() {
-    vkGetDeviceQueue(mDevice, mIndices.graphicsFamily.get(), 0, &mGraphicsQueue);
-    vkGetDeviceQueue(mDevice, mIndices.presentFamily.get(), 0, &mPresentQueue);
+    vkGetDeviceQueue(mDevice, mQueueIndices.graphicsFamily.get(), 0, &mGraphicsQueue);
+    vkGetDeviceQueue(mDevice, mQueueIndices.presentFamily.get(), 0, &mPresentQueue);
 }
 
 void VulkanContext::_createSurface() {
@@ -532,8 +534,8 @@ void VulkanContext::_createSwapChain() {
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    uint32 graphicsFamily = mIndices.graphicsFamily.get();
-    uint32 presentFamily = mIndices.presentFamily.get();
+    uint32 graphicsFamily = mQueueIndices.graphicsFamily.get();
+    uint32 presentFamily = mQueueIndices.presentFamily.get();
 
     uint32_t queueFamilyIndices[] = {
             graphicsFamily,
@@ -853,7 +855,7 @@ void VulkanContext::_destroyFramebuffers(VulkanWindow &window) {
 void VulkanContext::_createCommandPool() {
     VkCommandPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.queueFamilyIndex = mIndices.graphicsFamily.get();
+    poolInfo.queueFamilyIndex = mQueueIndices.graphicsFamily.get();
     poolInfo.flags = 0; // Optional
 
     if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool) != VK_SUCCESS) {
@@ -905,8 +907,11 @@ void VulkanContext::_createCommandBuffers(VulkanWindow &window) {
 
         VkBuffer vertexBuffers[] = { mVertexBuffer };
         VkDeviceSize offsets[] = { 0 };
+
         vkCmdBindVertexBuffers(window.commandBuffers[i], 0, 1, vertexBuffers, offsets);
-        vkCmdDraw(window.commandBuffers[i], (uint32) mVertices.size(), 1, 0, 0);
+        vkCmdBindIndexBuffer(window.commandBuffers[i], mIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
+        vkCmdDrawIndexed(window.commandBuffers[i], (uint32) mIndices.size(), 1, 0, 0, 0);
 
         vkCmdDraw(window.commandBuffers[i], 3, 1, 0, 0);
         vkCmdEndRenderPass(window.commandBuffers[i]);
@@ -1098,6 +1103,45 @@ void VulkanContext::_createVertexBuffer() {
 void VulkanContext::_destroyVertexBuffer() {
     vkDestroyBuffer(mDevice, mVertexBuffer, nullptr);
     vkFreeMemory(mDevice, mVertexBufferMemory, nullptr);
+}
+
+void VulkanContext::_createIndexBuffer() {
+    VkDeviceSize bufferSize = sizeof(mIndices[0]) * mIndices.size();
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    _createBuffer(
+            bufferSize,
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            stagingBuffer,
+            stagingBufferMemory
+    );
+
+    void* data;
+    vkMapMemory(mDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+    std::memcpy(data, mIndices.data(), (size_t) bufferSize);
+    vkUnmapMemory(mDevice, stagingBufferMemory);
+
+    _createBuffer(
+            bufferSize,
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+            VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            mIndexBuffer,
+            mIndexBufferMemory
+    );
+
+    _copyBuffer(stagingBuffer, mIndexBuffer, bufferSize);
+
+    vkDestroyBuffer(mDevice, stagingBuffer, nullptr);
+    vkFreeMemory(mDevice, stagingBufferMemory, nullptr);
+}
+
+void VulkanContext::_destroyIndexBuffer() {
+    vkDestroyBuffer(mDevice, mIndexBuffer, nullptr);
+    vkFreeMemory(mDevice, mIndexBufferMemory, nullptr);
 }
 
 uint32 VulkanContext::_findMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties) {
