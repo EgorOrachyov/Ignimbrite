@@ -11,12 +11,11 @@
 #include <vector>
 
 struct VulkanWindow {
-    uint32 width = 600;
-    uint32 height = 400;
+    uint32 width = 480;
+    uint32 height = 480;
     int32 frameBufferWidth = 0;
     int32 frameBufferHeight = 0;
-    int32 frameBufferWidthOld = 0;
-    int32 frameBufferHeightOld = 0;
+    bool resized = false;
 #ifdef WSI_GLFW
     GLFWwindow* handle = nullptr;
 #endif

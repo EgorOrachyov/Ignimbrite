@@ -25,7 +25,6 @@ public:
     ~VulkanContext();
 
     void drawFrame();
-    void windowResized();
 
 private:
     void _createInstance();

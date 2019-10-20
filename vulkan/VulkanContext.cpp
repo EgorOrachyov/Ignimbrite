@@ -947,6 +947,8 @@ void VulkanContext::_destroySyncObjects() {
 
 
 void VulkanContext::drawFrame() {
+    VkResult result;
+
     vkWaitForFences(
             mDevice,
             1,
@@ -954,11 +956,10 @@ void VulkanContext::drawFrame() {
             VK_TRUE,
             std::numeric_limits<uint64_t>::max()
     );
-    vkResetFences(mDevice, 1, &mFlightFences[mCurrentFrame]);
 
     uint32_t imageIndex;
 
-    vkAcquireNextImageKHR(
+    result = vkAcquireNextImageKHR(
             mDevice,
             mWindow.swapChain,
             std::numeric_limits<uint64_t>::max(),
@@ -966,6 +967,14 @@ void VulkanContext::drawFrame() {
             VK_NULL_HANDLE,
             &imageIndex
     );
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        _recreateSwapChain();
+        printf("1\n");
+        return;
+    } else if (result != VK_SUCCESS) {
+        throw std::runtime_error("Failed to acquire swap chain image");
+    }
 
     VkSemaphore waitSemaphores[] = { mImageAvailableSemaphores[mCurrentFrame] };
     VkSemaphore signalSemaphores[] = { mRenderFinishedSemaphores[mCurrentFrame] };
@@ -980,6 +989,8 @@ void VulkanContext::drawFrame() {
     submitInfo.pCommandBuffers = &mWindow.commandBuffers[imageIndex];
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
+
+    vkResetFences(mDevice, 1, &mFlightFences[mCurrentFrame]);
 
     if (vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, mFlightFences[mCurrentFrame]) != VK_SUCCESS) {
         throw std::runtime_error("Failed to submit draw command buffer");
@@ -996,14 +1007,17 @@ void VulkanContext::drawFrame() {
     presentInfo.pImageIndices = &imageIndex;
     presentInfo.pResults = nullptr; // Optional
 
-    vkQueuePresentKHR(mPresentQueue, &presentInfo);
+    result = vkQueuePresentKHR(mPresentQueue, &presentInfo);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mWindow.resized) {
+        _recreateSwapChain();
+        printf("2\n");
+    } else if (result != VK_SUCCESS) {
+        throw std::runtime_error("Failed to present swap chain image");
+    }
 
     mCurrentFrame = (mCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     mFramesCount += 1;
-}
-
-void VulkanContext::windowResized() {
-    _recreateSwapChain();
 }
 
 void VulkanContext::_waitForDevice() {
@@ -1023,8 +1037,6 @@ void VulkanContext::_cleanupSwapChain() {
 
 void VulkanContext::_recreateSwapChain() {
     _waitForDevice();
-    vkQueueWaitIdle(mGraphicsQueue);
-    vkQueueWaitIdle(mPresentQueue);
     _cleanupSwapChain();
     _createSwapChain();
     _createImageViews(mWindow);
