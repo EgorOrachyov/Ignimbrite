@@ -22,12 +22,6 @@ int main() {
 
     auto device = new VulkanContext(application);
 
-    std::vector<VulkanVertex> vertices {
-        { {0.0f, -0.5f}, {1.0f, 0.0f, 0.0f} },
-        { {0.5f, 0.5f},  {0.0f, 1.0f, 0.0f} },
-        { {-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f} }
-    };
-
     while (!glfwWindowShouldClose(window.handle)) {
         /** Check window system changes */
         glfwPollEvents();

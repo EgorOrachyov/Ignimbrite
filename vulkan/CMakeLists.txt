@@ -10,6 +10,8 @@ set(SOURCES
         VulkanWindow.h
         VulkanApplication.h
         VulkanGlfw.h
-        VulkanSwapChainSupportDetails.h ../misc/FileUtils.h VulkanVertex.h)
+        VulkanSwapChainSupportDetails.h
+        VulkanVertex.h
+)
 
 add_library(VulkanDevice STATIC ${SOURCES})

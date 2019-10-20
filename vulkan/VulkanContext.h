@@ -70,6 +70,9 @@ private:
     void _waitForDevice();
     void _cleanupSwapChain();
     void _recreateSwapChain();
+    void _createVertexBuffer();
+    void _destroyVertexBuffer();
+    uint32 _findMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties);
 
     static void _outDeviceInfoVerbose(
             VkPhysicalDevice device);
@@ -116,6 +119,15 @@ private:
     std::vector<VkFence> mFlightFences;
     uint32 mCurrentFrame = 0;
     uint64 mFramesCount = 0;
+
+    std::vector<VulkanVertex> mVertices = {
+            { {0.0f, -0.5f}, {1.0f, 0.0f, 0.0f} },
+            { {0.5f, 0.5f},  {0.0f, 1.0f, 0.0f} },
+            { {-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f} }
+    };
+
+    VkBuffer mVertexBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory mVertexBufferMemory = VK_NULL_HANDLE;
 
     VulkanApplication &mApp;
     VulkanWindow &mWindow;
