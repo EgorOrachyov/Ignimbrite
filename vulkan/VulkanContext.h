@@ -10,6 +10,7 @@
 #include <VulkanQueueFamilyIndices.h>
 #include <VulkanApplication.h>
 #include <VulkanSwapChainSupportDetails.h>
+#include <VulkanVertex.h>
 
 /**
  * Contains all the vulkan specific functionality for

@@ -11,8 +11,8 @@
 #include <vector>
 
 struct VulkanWindow {
-    uint32 width = 480;
-    uint32 height = 480;
+    uint32 width = 400;
+    uint32 height = 400;
     int32 frameBufferWidth = 0;
     int32 frameBufferHeight = 0;
     bool resized = false;

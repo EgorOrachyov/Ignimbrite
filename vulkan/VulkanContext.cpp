@@ -664,12 +664,15 @@ void VulkanContext::_createGraphicsPipeline() {
             fragShaderStageInfo
     };
 
+    auto bindingDescription = VulkanVertex::getBindingDescription();
+    auto attributeDescriptions = VulkanVertex::getAttributeDescriptions();
+
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription; // Optional
+    vertexInputInfo.vertexAttributeDescriptionCount = (uint32) attributeDescriptions.size();
+    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data(); // Optional
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -947,6 +950,11 @@ void VulkanContext::_destroySyncObjects() {
 
 
 void VulkanContext::drawFrame() {
+    if (mWindow.frameBufferWidth == 0 ||
+        mWindow.frameBufferHeight == 0) {
+        return;
+    }
+
     VkResult result;
 
     vkWaitForFences(
@@ -970,7 +978,6 @@ void VulkanContext::drawFrame() {
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         _recreateSwapChain();
-        printf("1\n");
         return;
     } else if (result != VK_SUCCESS) {
         throw std::runtime_error("Failed to acquire swap chain image");
@@ -1011,7 +1018,6 @@ void VulkanContext::drawFrame() {
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mWindow.resized) {
         _recreateSwapChain();
-        printf("2\n");
     } else if (result != VK_SUCCESS) {
         throw std::runtime_error("Failed to present swap chain image");
     }

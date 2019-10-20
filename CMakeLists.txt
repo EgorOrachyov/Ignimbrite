@@ -44,5 +44,6 @@ set(SOURCES
 set(PROJECT_LIBS
         VulkanDevice)
 
+add_subdirectory(${CMAKE_SOURCE_DIR}/thirdparty/include/glm)
 add_subdirectory(vulkan)
 add_subdirectory(tests)

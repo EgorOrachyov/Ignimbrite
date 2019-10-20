@@ -1,5 +1,3 @@
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
 #include <VulkanContext.h>
 
 static void callback(int a, const char* message) {
@@ -15,7 +13,6 @@ int main() {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     window.handle = glfwCreateWindow(window.width, window.height, application.name.c_str(), nullptr, nullptr);
-    glfwSetWindowSizeLimits(window.handle, window.width, window.height, window.width * 2, window.height * 2);
     glfwGetFramebufferSize(window.handle, &window.frameBufferWidth, &window.frameBufferHeight);
     glfwSetErrorCallback(callback);
 
@@ -24,6 +21,12 @@ int main() {
     printf("[GLFW]: Vulkan %s\n", (glfwVulkanSupported() ? "supported" : "is not supported"));
 
     auto device = new VulkanContext(application);
+
+    std::vector<VulkanVertex> vertices {
+        { {0.0f, -0.5f}, {1.0f, 0.0f, 0.0f} },
+        { {0.5f, 0.5f},  {0.0f, 1.0f, 0.0f} },
+        { {-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f} }
+    };
 
     while (!glfwWindowShouldClose(window.handle)) {
         /** Check window system changes */
