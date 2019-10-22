@@ -8,6 +8,10 @@
 #include "glm/glm.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 
+	// create shader
+	Shader cubeShader;
+	Scene scene;
+
 void VulkanTriangle::Start()
 {
 	// use 1 sample
@@ -16,23 +20,15 @@ void VulkanTriangle::Start()
 	CreateWindow();
 	InitVulkan();
 
-	// create shader
-	Shader cubeShader;
 	// create descriptor set layout for this shader
 	cubeShader.Init(device);
 
 	// load spirv binary to shader
 	cubeShader.Load("shaders/vert.spv", "shaders/frag.spv");
 
-	// create scene
-	Scene scene;
-	scene.Setup(*this);
-
 	// init uniform buffer
 	cubeShader.mvpUniform.Init(choosedDeviceMemProperties, device, sizeof(scene.MVP));
-	cubeShader.mvpUniform.MapAndCopy(scene.MVP, sizeof(scene.MVP));
-	cubeShader.mvpUniform.Unmap();
-
+	
 	vertexBuffer.Init(choosedDeviceMemProperties, device);
 	vertexBuffer.MapAndCopy();
 	vertexBuffer.Unmap();
@@ -141,65 +137,69 @@ void VulkanTriangle::MainLoop()
 
 	VkCommandBuffer cmdBuffer = commandBuffers[0];
 
+	BeginCommandBuffer(cmdBuffer);
+
+	r = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, swapSemaphore, VK_NULL_HANDLE,
+		&currentBuffer);
+	assert(r == VK_SUCCESS);
+
+	VkRenderPassBeginInfo rpBegin;
+	rpBegin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	rpBegin.pNext = NULL;
+	rpBegin.renderPass = renderPass;
+	rpBegin.framebuffer = framebuffers[currentBuffer];
+	rpBegin.renderArea.offset.x = 0;
+	rpBegin.renderArea.offset.y = 0;
+	rpBegin.renderArea.extent.width = WindowWidth;
+	rpBegin.renderArea.extent.height = WindowHeight;
+	rpBegin.clearValueCount = 2;
+	rpBegin.pClearValues = clearValues;
+
+	vkCmdBeginRenderPass(cmdBuffer, &rpBegin, VK_SUBPASS_CONTENTS_INLINE);
+
+
+	// bind graphics pipeline
+	vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[0]);
+
+
+	// bind description sets for specific shader program
+	vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptorSets.size(),
+		descriptorSets.data(), 0, NULL);
+
+	const VkDeviceSize offsets[1] = { 0 };
+	vkCmdBindVertexBuffers(cmdBuffer, 0, 1, &vertexBuffer.Buffer, offsets);
+
+
+	// set viewport and scissors dynamically
+	viewports[0].height = (float)WindowHeight;
+	viewports[0].width = (float)WindowWidth;
+	viewports[0].minDepth = (float)0.0f;
+	viewports[0].maxDepth = (float)1.0f;
+	viewports[0].x = 0;
+	viewports[0].y = 0;
+	scissors[0].extent.height = WindowHeight;
+	scissors[0].extent.width = WindowWidth;
+	scissors[0].offset.x = 0;
+	scissors[0].offset.y = 0;
+
+	vkCmdSetViewport(cmdBuffer, 0, viewportCount, viewports);
+	vkCmdSetScissor(cmdBuffer, 0, scissorCount, scissors);
+
+
+	// draw
+	vkCmdDraw(cmdBuffer, 12 * 3, 1, 0, 0);
+	vkCmdEndRenderPass(cmdBuffer);
+
+
+	EndCommandBuffer(cmdBuffer);
+
 
 	while (!glfwWindowShouldClose(window)) 
 	{
-		BeginCommandBuffer(cmdBuffer);
-
-		r = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, swapSemaphore, VK_NULL_HANDLE,
-			&currentBuffer);
-		assert(r == VK_SUCCESS);
-
-		VkRenderPassBeginInfo rpBegin;
-		rpBegin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		rpBegin.pNext = NULL;
-		rpBegin.renderPass = renderPass;
-		rpBegin.framebuffer = framebuffers[currentBuffer];
-		rpBegin.renderArea.offset.x = 0;
-		rpBegin.renderArea.offset.y = 0;
-		rpBegin.renderArea.extent.width = WindowWidth;
-		rpBegin.renderArea.extent.height = WindowHeight;
-		rpBegin.clearValueCount = 2;
-		rpBegin.pClearValues = clearValues;
-
-		vkCmdBeginRenderPass(cmdBuffer, &rpBegin, VK_SUBPASS_CONTENTS_INLINE);
-		
-
-		// bind graphics pipeline
-		vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[0]);
-	
-
-		// bind description sets for specific shader program
-		vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptorSets.size(),
-			descriptorSets.data(), 0, NULL);
-
-		const VkDeviceSize offsets[1] = { 0 };
-		vkCmdBindVertexBuffers(cmdBuffer, 0, 1, &vertexBuffer.Buffer, offsets);
-
-
-		// set viewport and scissors dynamically
-		viewports[0].height = (float)WindowHeight;
-		viewports[0].width = (float)WindowWidth;
-		viewports[0].minDepth = (float)0.0f;
-		viewports[0].maxDepth = (float)1.0f;
-		viewports[0].x = 0;
-		viewports[0].y = 0;
-		scissors[0].extent.height = WindowHeight;
-		scissors[0].extent.width = WindowWidth;
-		scissors[0].offset.x = 0;
-		scissors[0].offset.y = 0;
-
-		vkCmdSetViewport(cmdBuffer, 0, viewportCount, viewports);
-		vkCmdSetScissor(cmdBuffer, 0, scissorCount, scissors);
-
-
-		// draw
-		vkCmdDraw(cmdBuffer, 12 * 3, 1, 0, 0);
-		vkCmdEndRenderPass(cmdBuffer);
-
-
-		EndCommandBuffer(cmdBuffer);
-
+		// calc
+		scene.CalculateMVP(WindowWidth, WindowHeight, time);
+		cubeShader.mvpUniform.MapAndCopy(scene.MVP, sizeof(scene.MVP));
+		cubeShader.mvpUniform.Unmap();
 
 		// create fence
 		VkFenceCreateInfo fenceInfo;
@@ -254,6 +254,7 @@ void VulkanTriangle::MainLoop()
 
 		vkDestroyFence(device, drawFence, TR_VK_ALLOCATION_CALLBACKS_MARK);
 		
+		time += 0.02f;
 
 		glfwPollEvents();
 	}
@@ -357,6 +358,8 @@ void VulkanTriangle::EnumerateDevices()
 	vkGetPhysicalDeviceMemoryProperties(physicalDevices[choosedPhysDevice], &choosedDeviceMemProperties);
 	vkGetPhysicalDeviceProperties(physicalDevices[choosedPhysDevice], &choosedDeviceProperties);
 	// device extension properties?
+
+	std::cout << choosedDeviceProperties.deviceName << std::endl;
 
 	// get queue family count 
 	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevices[choosedPhysDevice], &queueFamilyCount, NULL);
@@ -1288,23 +1291,24 @@ void VulkanTriangle::DestroyWindow()
 	glfwTerminate();
 }
 
-void Scene::Setup(const VulkanTriangle &t)
+void Scene::CalculateMVP(float width, float height, float angle)
 {
 	float fov = glm::radians(45.0f);
-	if (800 > 600)
+	if (width > height)
 	{
-		fov *= static_cast<float>(600) / static_cast<float>(800);
+		fov *= height / width;
 	}
 
-	auto projection = glm::perspective(fov, static_cast<float>(800) / static_cast<float>(600), 0.1f, 100.0f);
+	auto projection = glm::perspective(fov, width / height, 0.1f, 100.0f);
 	
 	auto view = glm::lookAt(
 		glm::vec3(-5, 3, -10), // Camera is at (-5,3,-10), in World Space
 		glm::vec3(0, 0, 0),    // and looks at the origin
-		glm::vec3(0, -1, 0)    // Head is up (set to 0,-1,0 to look upside-down)
+		glm::vec3(0, 1, 0)   
 	);
 	
 	auto model = glm::mat4(1.0f);
+	model = glm::rotate(model, angle, glm::vec3(0, 1, 0));
 
 	auto clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
 		0.0f, -1.0f, 0.0f, 0.0f,

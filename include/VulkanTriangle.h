@@ -35,7 +35,7 @@ public:
 	// Model view projection matrix
 	float				MVP[16];
 
-	void				Setup(const VulkanTriangle& t);
+	void				CalculateMVP(float width, float height, float angle);
 	void				Destroy();
 };
 
@@ -50,6 +50,8 @@ class VulkanTriangle
 private:
 	int WindowWidth = 800;
 	int WindowHeight = 600;
+
+	float time = 0;
 
 #ifdef NDEBUG
 	const bool enableValidationLayers = false;
