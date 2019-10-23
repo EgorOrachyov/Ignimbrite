@@ -74,9 +74,17 @@ private:
     void _destroyVertexBuffer();
     void _createIndexBuffer();
     void _destroyIndexBuffer();
+    void _createUniformBuffers();
+    void _destroyUniformBuffers();
+    void _updateUniformBuffer(uint32 currentImage);
+    void _createDescriptorPool();
+    void _destroyDescriptorPool();
+    void _createDescriptorSets();
     uint32 _findMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties);
     void _createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void _copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+    void _createDescriptorSetLayout();
+    void _destroyDescriptorSetLayout();
 
     static void _outDeviceInfoVerbose(
             VkPhysicalDevice device);
@@ -113,10 +121,13 @@ private:
     VkQueue mPresentQueue = VK_NULL_HANDLE;
 
     VkRenderPass mRenderPass = VK_NULL_HANDLE;
+    VkDescriptorSetLayout mDescriptorSetLayout = VK_NULL_HANDLE;
     VkPipelineLayout mPipelineLayout = VK_NULL_HANDLE;
     VkPipeline mGraphicsPipeline = VK_NULL_HANDLE;
 
     VkCommandPool mCommandPool = VK_NULL_HANDLE;
+    VkDescriptorPool mDescriptorPool = VK_NULL_HANDLE;
+    std::vector<VkDescriptorSet> descriptorSets;
 
     std::vector<VkSemaphore> mImageAvailableSemaphores;
     std::vector<VkSemaphore> mRenderFinishedSemaphores;
@@ -135,10 +146,18 @@ private:
             0, 1, 2, 2, 3, 0
     };
 
+    struct UniformBufferObject {
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 proj;
+    };
+
     VkBuffer mVertexBuffer = VK_NULL_HANDLE;
     VkDeviceMemory mVertexBufferMemory = VK_NULL_HANDLE;
     VkBuffer mIndexBuffer = VK_NULL_HANDLE;
     VkDeviceMemory mIndexBufferMemory = VK_NULL_HANDLE;
+    std::vector<VkBuffer> mUniformBuffers;
+    std::vector<VkDeviceMemory> mUniformBuffersMemory;
 
     VulkanApplication &mApp;
     VulkanWindow &mWindow;
