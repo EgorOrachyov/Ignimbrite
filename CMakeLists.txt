@@ -32,12 +32,9 @@ endif()
 
 ########################## Project h/cpp files ##########################
 
-set(SOURCES
-)
+set(PROJECT_LIBS Misc)
 
-set(PROJECT_LIBS
-        VulkanDevice)
-
-add_subdirectory(${CMAKE_SOURCE_DIR}/thirdparty/include/glm)
-add_subdirectory(${CMAKE_SOURCE_DIR}/vulkan)
-add_subdirectory(${CMAKE_SOURCE_DIR}/tests)
+add_subdirectory(thirdparty/include/glm)
+add_subdirectory(misc)
+add_subdirectory(vulkan)
+add_subdirectory(tests)

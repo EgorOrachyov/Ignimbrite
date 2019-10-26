@@ -5,4 +5,4 @@ set(SOURCES
 
 )
 
-add_library(VulkanDevice STATIC ${SOURCES})
+# add_library(VulkanDevice STATIC ${SOURCES})
