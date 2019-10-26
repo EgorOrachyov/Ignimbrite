@@ -33,14 +33,7 @@ endif()
 ########################## Project h/cpp files ##########################
 
 set(SOURCES
-        device/RenderDevice.h
-        device/ResourceIDBuffer.h
-        device/ResourceID.h
-        misc/Compilation.h
-        misc/Platform.h
-        misc/Types.h
-        misc/Optional.h
-        misc/FileUtils.h)
+)
 
 set(PROJECT_LIBS
         VulkanDevice)

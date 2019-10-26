@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.11)
 project(VulkanTests)
 
-set(SOURCES main.cpp)
+set(SOURCES 
+
+)
 
 variable_watch(PROJECT_LIBS)
 variable_watch(THIRD_PARTY_LIBS)

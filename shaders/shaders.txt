@@ -1,0 +1,2 @@
+Directory containing all the requered shader programs' source code.
+Languages: GLSL, SPIR-V, HLSL (optional)  
