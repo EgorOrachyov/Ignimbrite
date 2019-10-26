@@ -1,7 +1,5 @@
 # VulkanRenderer
 
-[![Trello](https://img.shields.io/badge/board-trello-blue.svg)](https://trello.com/b/RhIGG2Z2)
-
 C/C++ library for visualization dynamic 3D scene with GPU hardware acceleration via Vulkan API
 
 ## Features
