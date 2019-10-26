@@ -83,8 +83,16 @@ private:
     uint32 _findMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties);
     void _createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void _copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+    void _createImage(uint32 width, uint32 height, VkFormat format,
+                      VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
     void _createDescriptorSetLayout();
     void _destroyDescriptorSetLayout();
+    void _createTextureImage();
+    void _destroyTextureImage();
+    void _transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void _copyBufferToImage(VkBuffer buffer, VkImage image, uint32 width, uint32 height);
+    VkCommandBuffer _beginSingleTimeCommands();
+    void _endSingleTimeCommands(VkCommandBuffer commandBuffer);
 
     static void _outDeviceInfoVerbose(
             VkPhysicalDevice device);
@@ -147,9 +155,9 @@ private:
     };
 
     struct UniformBufferObject {
-        glm::mat4 model;
-        glm::mat4 view;
-        glm::mat4 proj;
+        alignas(16) glm::mat4 model;
+        alignas(16) glm::mat4 view;
+        alignas(16) glm::mat4 proj;
     };
 
     VkBuffer mVertexBuffer = VK_NULL_HANDLE;
@@ -158,6 +166,8 @@ private:
     VkDeviceMemory mIndexBufferMemory = VK_NULL_HANDLE;
     std::vector<VkBuffer> mUniformBuffers;
     std::vector<VkDeviceMemory> mUniformBuffersMemory;
+    VkImage mTextureImage;
+    VkDeviceMemory mTextureImageMemory;
 
     VulkanApplication &mApp;
     VulkanWindow &mWindow;
