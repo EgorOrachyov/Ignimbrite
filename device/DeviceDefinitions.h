@@ -52,6 +52,7 @@ enum class IndicesType {
     Uint16
 };
 
+
 /** Types of the supported textures (1D,2D,3D) */
 enum class TextureType {
     Texture2D

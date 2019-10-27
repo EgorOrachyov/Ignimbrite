@@ -41,12 +41,12 @@ public:
     };
 
     /** Single vertex buffer descriptor */
-    struct VertexDesc {
+    struct VertexLayoutDesc {
         VertexUsage usage;
         std::vector<VertexAttributeDesc> attributes;
     };
 
-    virtual ID createVertexLayout(const VertexDesc& vertexDesc) = 0;
+    virtual ID createVertexLayout(const VertexLayoutDesc& vertexDesc) = 0;
     virtual void destroyVertexLayout(ID layout) = 0;
 
     virtual ID createVertexBuffer(BufferUsage usage, uint32 size, const void* data) = 0;
@@ -56,6 +56,27 @@ public:
     virtual ID createIndexBuffer(BufferUsage usage, uint32 size, const void* data) = 0;
     virtual void updateIndexBuffer(ID buffer, uint32 size, uint32 offset, const void* data) = 0;
     virtual void destroyIndexBuffer(ID buffer) = 0;
+
+    struct UniformTextureDesc {
+        uint32 binding = 0;
+        ID texture = INVALID;
+        ID sampler = INVALID;
+    };
+
+    struct UniformBufferDesc {
+        uint32 binding = 0;
+        uint32 offset = 0;
+        uint32 range = 0;
+        ID buffer = INVALID;
+    };
+
+    struct UniformLayoutDesc {
+        std::vector<UniformTextureDesc> textures;
+        std::vector<UniformBufferDesc> buffers;
+    };
+
+    virtual ID createUniformLayout(const UniformLayoutDesc& layoutDesc) = 0;
+    virtual void destroyUniformLayout(ID layout) = 0;
 
     virtual ID createUniformBuffer(BufferUsage usage, uint32 size, const void* data) = 0;
     virtual void updateUniformBuffer(ID buffer, uint32 size, uint32 offset, const void* data) = 0;
@@ -124,6 +145,7 @@ public:
 
     virtual ID createGraphicsPipeline(const PipelineRasterizationDesc& rasterizationDesc,
             const PipelineBlendStateDesc& blendStateDesc, const PipelineDepthStateDesc& depthStateDesc) = 0;
+    virtual void destroyGraphicsPipeline(ID pipeline) = 0;
 
     /** @return Readable hardware API name */
     virtual const std::string& getDeviceName() const;
