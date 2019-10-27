@@ -92,6 +92,8 @@ private:
     void _destroyTextureImage();
     void _createTextureImageView();
     void _destroyTextureImageView();
+    void _createTextureSampler();
+    void _destroyTextureSampler();
     void _transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
     void _copyBufferToImage(VkBuffer buffer, VkImage image, uint32 width, uint32 height);
     VkCommandBuffer _beginSingleTimeCommands();
@@ -172,6 +174,7 @@ private:
     VkImage mTextureImage = VK_NULL_HANDLE;
     VkDeviceMemory mTextureImageMemory = VK_NULL_HANDLE;
     VkImageView mTextureImageView = VK_NULL_HANDLE;
+    VkSampler mTextureSampler = VK_NULL_HANDLE;
 
     VulkanApplication &mApp;
     VulkanWindow &mWindow;

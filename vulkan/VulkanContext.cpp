@@ -32,6 +32,7 @@ VulkanContext::VulkanContext(VulkanApplication &app)
     _createCommandPool();
     _createTextureImage();
     _createTextureImageView();
+    _createTextureSampler();
     _createVertexBuffer();
     _createIndexBuffer();
     _createCommandBuffers(mWindow);
@@ -50,6 +51,7 @@ VulkanContext::~VulkanContext() {
     _destroyRenderPass();
     _destroyImageViews(mWindow);
     _destroySwapChain();
+    _destroyTextureSampler();
     _destroyTextureImageView();
     _destroyTextureImage();
     _destroyDescriptorSetLayout();
@@ -280,7 +282,11 @@ bool VulkanContext::_isDeviceSuitable(VkPhysicalDevice device) {
         swapChainAdequate = !details.formats.empty() && !details.presentModes.empty();
     }
 
-    return queueFamilySupport && extensionsSupported && swapChainAdequate;
+
+    VkPhysicalDeviceFeatures supportedFeatures;
+    vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+
+    return queueFamilySupport && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 }
 
 bool VulkanContext::_checkDeviceExtensionSupport(VkPhysicalDevice device) {
@@ -427,6 +433,7 @@ void VulkanContext::_createLogicalDevice() {
     }
 
     VkPhysicalDeviceFeatures deviceFeatures = {};
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
 
     VkDeviceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -1404,6 +1411,34 @@ void VulkanContext::_createTextureImageView() {
 
 void VulkanContext::_destroyTextureImageView() {
     vkDestroyImageView(mDevice, mTextureImageView, nullptr);
+}
+
+void VulkanContext::_createTextureSampler() {
+    VkSamplerCreateInfo samplerInfo = {};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.anisotropyEnable = VK_TRUE;
+    samplerInfo.maxAnisotropy = 16;
+    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable = VK_FALSE;
+    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = 0.0f;
+
+    if (vkCreateSampler(mDevice, &samplerInfo, nullptr, &mTextureSampler) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create sampler");
+    }
+}
+
+void VulkanContext::_destroyTextureSampler() {
+    vkDestroySampler(mDevice, mTextureSampler, nullptr);
 }
 
 void VulkanContext::_createImage(uint32 width, uint32 height, VkFormat format, VkImageTiling tiling,
