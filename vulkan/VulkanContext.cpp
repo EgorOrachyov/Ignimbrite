@@ -31,6 +31,7 @@ VulkanContext::VulkanContext(VulkanApplication &app)
     _createDescriptorSets();
     _createCommandPool();
     _createTextureImage();
+    _createTextureImageView();
     _createVertexBuffer();
     _createIndexBuffer();
     _createCommandBuffers(mWindow);
@@ -49,6 +50,8 @@ VulkanContext::~VulkanContext() {
     _destroyRenderPass();
     _destroyImageViews(mWindow);
     _destroySwapChain();
+    _destroyTextureImageView();
+    _destroyTextureImage();
     _destroyDescriptorSetLayout();
     _destroyVertexBuffer();
     _destroyIndexBuffer();
@@ -587,26 +590,10 @@ void VulkanContext::_createImageViews(VulkanWindow &window) {
     window.swapChainImageViews.resize(window.swapChainImages.size());
 
     for (uint32 i = 0; i < window.swapChainImages.size(); i++) {
-        VkImageViewCreateInfo createInfo = {};
-        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        createInfo.image = window.swapChainImages[i];
-        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        createInfo.format = window.swapChainImageFormat;
-
-        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        createInfo.subresourceRange.baseMipLevel = 0;
-        createInfo.subresourceRange.levelCount = 1;
-        createInfo.subresourceRange.baseArrayLayer = 0;
-        createInfo.subresourceRange.layerCount = 1;
-
-        if (vkCreateImageView(mDevice, &createInfo, nullptr, &window.swapChainImageViews[i]) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create image views");
-        }
+        window.swapChainImageViews[i] = _createImageView(
+                window.swapChainImages[i],
+                window.swapChainImageFormat
+        );
     }
 }
 
@@ -1406,6 +1393,19 @@ void VulkanContext::_createTextureImage() {
     vkFreeMemory(mDevice, stagingBufferMemory, nullptr);
 }
 
+void VulkanContext::_destroyTextureImage() {
+    vkDestroyImage(mDevice, mTextureImage, nullptr);
+    vkFreeMemory(mDevice, mTextureImageMemory, nullptr);
+}
+
+void VulkanContext::_createTextureImageView() {
+    mTextureImageView = _createImageView(mTextureImage, VK_FORMAT_R8G8B8A8_UNORM);
+}
+
+void VulkanContext::_destroyTextureImageView() {
+    vkDestroyImageView(mDevice, mTextureImageView, nullptr);
+}
+
 void VulkanContext::_createImage(uint32 width, uint32 height, VkFormat format, VkImageTiling tiling,
                                  VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image,
                                  VkDeviceMemory &imageMemory) {
@@ -1441,6 +1441,31 @@ void VulkanContext::_createImage(uint32 width, uint32 height, VkFormat format, V
     }
 
     vkBindImageMemory(mDevice, image, imageMemory, 0);
+}
+
+VkImageView VulkanContext::_createImageView(VkImage image, VkFormat format) {
+    VkImageViewCreateInfo viewInfo = {};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = image;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = format;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+    viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+    VkImageView view;
+
+    if (vkCreateImageView(mDevice, &viewInfo, nullptr, &view) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create image view");
+    }
+
+    return view;
 }
 
 void VulkanContext::_transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,

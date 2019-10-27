@@ -85,10 +85,13 @@ private:
     void _copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     void _createImage(uint32 width, uint32 height, VkFormat format,
                       VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+    VkImageView _createImageView(VkImage image, VkFormat format);
     void _createDescriptorSetLayout();
     void _destroyDescriptorSetLayout();
     void _createTextureImage();
     void _destroyTextureImage();
+    void _createTextureImageView();
+    void _destroyTextureImageView();
     void _transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
     void _copyBufferToImage(VkBuffer buffer, VkImage image, uint32 width, uint32 height);
     VkCommandBuffer _beginSingleTimeCommands();
@@ -168,6 +171,7 @@ private:
     std::vector<VkDeviceMemory> mUniformBuffersMemory;
     VkImage mTextureImage = VK_NULL_HANDLE;
     VkDeviceMemory mTextureImageMemory = VK_NULL_HANDLE;
+    VkImageView mTextureImageView = VK_NULL_HANDLE;
 
     VulkanApplication &mApp;
     VulkanWindow &mWindow;
