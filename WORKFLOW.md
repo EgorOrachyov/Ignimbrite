@@ -5,7 +5,7 @@
 The order of the actions to complete single task:
 
 1. Take chosen tast in project board. Mark as (in progress)
-2. Create new branch for that task. Brunch name must follow the same pattern "[num]name",
+2. Create new branch for that task. Brunch name must follow the same pattern "(num)name",
     where num - is the number of the task in project board, 
     name - some descriptive name for task (one of two words).
 3. Start implementing task. 
