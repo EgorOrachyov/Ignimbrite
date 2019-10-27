@@ -42,6 +42,18 @@ public:
     virtual void updateUniformBuffer(ID buffer, uint32 size, uint32 offset, const void* data) = 0;
     virtual void destroyUniformBuffer(ID buffer) = 0;
 
+    struct SamplerDesc {
+        SamplerFilter min = SamplerFilter::Nearest;
+        SamplerFilter mag = SamplerFilter::Nearest;
+        SamplerRepeatMode u = SamplerRepeatMode::ClampToEdge;
+        SamplerRepeatMode v = SamplerRepeatMode::ClampToEdge;
+        SamplerRepeatMode w =  SamplerRepeatMode::ClampToEdge;
+        float32 borderColor[4] = {0.0f,0.0f,0.0f,0.0f};
+    };
+
+    virtual ID createSampler(const SamplerDesc& samplerDesc) = 0;
+    virtual void destroySampler(ID sampler) = 0;
+
     struct ShaderDataDesc {
         ShaderType type;
         ShaderLanguage language;
@@ -49,14 +61,15 @@ public:
     };
 
     virtual ID createShaderProgram(const std::vector<ShaderDataDesc> &shaders) = 0;
-    virtual void destroyShaderProgram(ID program);
+    virtual void destroyShaderProgram(ID program) = 0;
 
     struct AttachmentDesc {
+        ID texture;
         DataFormat format;
         TextureSamples samples;
     };
 
-    virtual ID createFramebuffer(const std::vector<AttachmentDesc> attachments, const std::vector<ID> textures) = 0;
+    virtual ID createFramebuffer(const std::vector<AttachmentDesc> &attachments) = 0;
     virtual void destroyFramebuffer(ID framebuffer) = 0;
 
     /** @return Readable hardware API name */
