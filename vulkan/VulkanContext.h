@@ -140,7 +140,7 @@ private:
 
     VkCommandPool mCommandPool = VK_NULL_HANDLE;
     VkDescriptorPool mDescriptorPool = VK_NULL_HANDLE;
-    std::vector<VkDescriptorSet> descriptorSets;
+    std::vector<VkDescriptorSet> mDescriptorSets;
 
     std::vector<VkSemaphore> mImageAvailableSemaphores;
     std::vector<VkSemaphore> mRenderFinishedSemaphores;

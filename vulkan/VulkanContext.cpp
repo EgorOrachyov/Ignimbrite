@@ -914,7 +914,7 @@ void VulkanContext::_createCommandBuffers(VulkanWindow &window) {
         vkCmdBindVertexBuffers(window.commandBuffers[i], 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(window.commandBuffers[i], mIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-        vkCmdBindDescriptorSets(window.commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
+        vkCmdBindDescriptorSets(window.commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mDescriptorSets[i], 0, nullptr);
         vkCmdDrawIndexed(window.commandBuffers[i], (uint32) mIndices.size(), 1, 0, 0, 0);
 
         vkCmdDraw(window.commandBuffers[i], 3, 1, 0, 0);
@@ -1247,9 +1247,9 @@ void VulkanContext::_createDescriptorSets() {
     allocInfo.descriptorSetCount = (uint32) mWindow.swapChainImages.size();
     allocInfo.pSetLayouts = layouts.data();
 
-    descriptorSets.resize(mWindow.swapChainImages.size());
+    mDescriptorSets.resize(mWindow.swapChainImages.size());
 
-    if (vkAllocateDescriptorSets(mDevice, &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
+    if (vkAllocateDescriptorSets(mDevice, &allocInfo, mDescriptorSets.data()) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
 
@@ -1267,7 +1267,7 @@ void VulkanContext::_createDescriptorSets() {
         std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
 
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet = descriptorSets[i];
+        descriptorWrites[0].dstSet = mDescriptorSets[i];
         descriptorWrites[0].dstBinding = 0;
         descriptorWrites[0].dstArrayElement = 0;
         descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1275,7 +1275,7 @@ void VulkanContext::_createDescriptorSets() {
         descriptorWrites[0].pBufferInfo = &bufferInfo;
 
         descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[1].dstSet = descriptorSets[i];
+        descriptorWrites[1].dstSet = mDescriptorSets[i];
         descriptorWrites[1].dstBinding = 1;
         descriptorWrites[1].dstArrayElement = 0;
         descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
