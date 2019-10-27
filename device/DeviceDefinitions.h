@@ -38,6 +38,14 @@ enum class BufferUsage {
     Dynamic
 };
 
+/** Data usage in vertex buffer among several vertex/instance draws */
+enum class VertexUsage {
+    /** Data of that vertex buffer is iterated per vertex draw call */
+    PerVertex,
+    /** Data of that vertex buffer is iterated per instance draw call */
+    PerInstance
+};
+
 /** Type indices for index buffer */
 enum class IndicesType {
     Uint32,
@@ -81,6 +89,23 @@ enum class SamplerRepeatMode {
 /** Vulkan has only predefined colors */
 enum class SamplerBorderColor {
     Black
+};
+
+enum PolygonMode {
+    Fill,
+    Line,
+    Point
+};
+
+enum class PolygonCullMode {
+    Disabled,
+    Front,
+    Back
+};
+
+enum class PolygonFrontFace {
+    FrontClockwise,
+    FrontCounterClockwise
 };
 
 

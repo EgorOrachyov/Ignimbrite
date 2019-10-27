@@ -30,6 +30,25 @@ public:
 
     virtual ~RenderDevice() = default;
 
+    /** Single vertex shader input value description */
+    struct VertexAttributeDesc {
+        /** Shader in location */
+        uint32 location;
+        /** Offset from stride beginning */
+        uint32 offset;
+        /** Format of the value in the shader */
+        DataFormat format;
+    };
+
+    /** Single vertex buffer descriptor */
+    struct VertexDesc {
+        VertexUsage usage;
+        std::vector<VertexAttributeDesc> attributes;
+    };
+
+    virtual ID createVertexLayout(const VertexDesc& vertexDesc) = 0;
+    virtual void destroyVertexLayout(ID layout) = 0;
+
     virtual ID createVertexBuffer(BufferUsage usage, uint32 size, const void* data) = 0;
     virtual void updateVertexBuffer(ID buffer, uint32 size, uint32 offset, const void* data) = 0;
     virtual void destroyVertexBuffer(ID buffer) = 0;
@@ -87,6 +106,24 @@ public:
 
     virtual ID createFramebuffer(const std::vector<AttachmentDesc> &attachments) = 0;
     virtual void destroyFramebuffer(ID framebuffer) = 0;
+
+    struct PipelineRasterizationDesc {
+        PolygonMode mode;
+        PolygonCullMode cullMode;
+        PolygonFrontFace frontFace;
+        float32 lineWidth;
+    };
+
+    struct PipelineBlendStateDesc {
+
+    };
+
+    struct PipelineDepthStateDesc {
+
+    };
+
+    virtual ID createGraphicsPipeline(const PipelineRasterizationDesc& rasterizationDesc,
+            const PipelineBlendStateDesc& blendStateDesc, const PipelineDepthStateDesc& depthStateDesc) = 0;
 
     /** @return Readable hardware API name */
     virtual const std::string& getDeviceName() const;
