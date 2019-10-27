@@ -149,10 +149,10 @@ private:
     uint64 mFramesCount = 0;
 
     const std::vector<VulkanVertex> mVertices = {
-            { {-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f} },
-            { {0.5f,  -0.5f}, {0.0f, 1.0f, 0.0f} },
-            { {0.5f,   0.5f}, {0.0f, 0.0f, 1.0f} },
-            { {-0.5f,  0.5f}, {1.0f, 1.0f, 1.0f} }
+            { {-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f} },
+            { {0.5f,  -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f} },
+            { {0.5f,   0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f} },
+            { {-0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f} }
     };
 
     const std::vector<uint16_t> mIndices = {
