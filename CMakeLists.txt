@@ -36,5 +36,6 @@ set(PROJECT_LIBS Misc)
 
 add_subdirectory(thirdparty/include/glm)
 add_subdirectory(misc)
+add_subdirectory(device)
 add_subdirectory(vulkan)
 add_subdirectory(tests)
