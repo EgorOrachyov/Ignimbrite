@@ -30,15 +30,15 @@ public:
 
     virtual ~RenderDevice() = default;
 
-    virtual ID createVertexBuffer(uint32 size, const void* data) = 0;
+    virtual ID createVertexBuffer(BufferUsage usage, uint32 size, const void* data) = 0;
     virtual void updateVertexBuffer(ID buffer, uint32 size, uint32 offset, const void* data) = 0;
     virtual void destroyVertexBuffer(ID buffer) = 0;
 
-    virtual ID createIndexBuffer(uint32 size, const void* data) = 0;
+    virtual ID createIndexBuffer(BufferUsage usage, uint32 size, const void* data) = 0;
     virtual void updateIndexBuffer(ID buffer, uint32 size, uint32 offset, const void* data) = 0;
     virtual void destroyIndexBuffer(ID buffer) = 0;
 
-    virtual ID createUniformBuffer(uint32 size, const void* data) = 0;
+    virtual ID createUniformBuffer(BufferUsage usage, uint32 size, const void* data) = 0;
     virtual void updateUniformBuffer(ID buffer, uint32 size, uint32 offset, const void* data) = 0;
     virtual void destroyUniformBuffer(ID buffer) = 0;
 
@@ -48,11 +48,27 @@ public:
         SamplerRepeatMode u = SamplerRepeatMode::ClampToEdge;
         SamplerRepeatMode v = SamplerRepeatMode::ClampToEdge;
         SamplerRepeatMode w =  SamplerRepeatMode::ClampToEdge;
-        float32 borderColor[4] = {0.0f,0.0f,0.0f,0.0f};
+        SamplerBorderColor color = SamplerBorderColor::Black;
+        bool useAnisotropy = false;
+        float32 anisotropyMax = 1.0f;
     };
 
     virtual ID createSampler(const SamplerDesc& samplerDesc) = 0;
     virtual void destroySampler(ID sampler) = 0;
+
+    struct TextureDesc {
+        TextureType type = TextureType::Texture2D;
+        DataFormat format = DataFormat::R8G8B8A8_UNORM;
+        uint32 mipmaps = 1;
+        uint32 width = 0;
+        uint32 height = 0;
+        uint32 depth = 1;
+        uint32 usageFlags = 0;
+        void* data = nullptr;
+    };
+
+    virtual ID createTexture(const TextureDesc& textureDesc) = 0;
+    virtual void destroyTexture(ID texture) = 0;
 
     struct ShaderDataDesc {
         ShaderType type;
@@ -64,7 +80,7 @@ public:
     virtual void destroyShaderProgram(ID program) = 0;
 
     struct AttachmentDesc {
-        ID texture;
+        ID texture = INVALID;
         DataFormat format;
         TextureSamples samples;
     };

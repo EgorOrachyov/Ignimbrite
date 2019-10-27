@@ -6,6 +6,7 @@
 #define VULKANRENDERER_DEVICEDEFINITIONS_H
 
 #include <Types.h>
+#define BIT_SHIFT(x) (1u << x)
 
 /** Shader Program stages */
 enum class ShaderType {
@@ -31,6 +32,33 @@ enum class DataFormat {
     R32G32B32A32_SFLOAT,
 };
 
+/** Buffer usage for frequently updated or static buffer (has performance impact) */
+enum class BufferUsage {
+    Static,
+    Dynamic
+};
+
+/** Type indices for index buffer */
+enum class IndicesType {
+    Uint32,
+    Uint16
+};
+
+/** Types of the supported textures (1D,2D,3D) */
+enum class TextureType {
+    Texture2D
+};
+
+/** Texture usage for optimal target device representation */
+enum class TextureUsageBit {
+    /** Could be used as framebuffer color attachment */
+    ColorAttachment = BIT_SHIFT(1u),
+    /** Could be used as framebuffer depth-stencil attachment */
+    DepthStencilAttachment = BIT_SHIFT(2u),
+    /** Could be used sampled from shader program as uniform texture */
+    ShaderSampling = BIT_SHIFT(3u)
+};
+
 /** Num of samples **/
 enum TextureSamples {
     Samples1
@@ -50,6 +78,10 @@ enum class SamplerRepeatMode {
     ClampToBorder
 };
 
+/** Vulkan has only predefined colors */
+enum class SamplerBorderColor {
+    Black
+};
 
 
 #endif //VULKANRENDERER_DEVICEDEFINITIONS_H
