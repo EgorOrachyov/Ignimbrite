@@ -4,10 +4,14 @@
 
 #include <RenderDevice.h>
 
+const ObjectID RenderDevice::INVALID = ObjectID(0,0);
+
 const std::string& RenderDevice::getDeviceName() const {
-    return "Default Device";
+    static const std::string device = "Default Device";
+    return device;
 }
 
 const std::string& RenderDevice::getVendor() const {
-    return "Default Vendor";
+    static const std::string device = "Default Vendor";
+    return device;
 }

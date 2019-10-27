@@ -4,6 +4,6 @@ project(Device)
 set(SOURCES
         RenderDevice.h
         RenderDevice.cpp
-)
+        DeviceDefinitions.h)
 
 add_library(Device ${SOURCES})
