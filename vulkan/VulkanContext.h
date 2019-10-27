@@ -166,8 +166,8 @@ private:
     VkDeviceMemory mIndexBufferMemory = VK_NULL_HANDLE;
     std::vector<VkBuffer> mUniformBuffers;
     std::vector<VkDeviceMemory> mUniformBuffersMemory;
-    VkImage mTextureImage;
-    VkDeviceMemory mTextureImageMemory;
+    VkImage mTextureImage = VK_NULL_HANDLE;
+    VkDeviceMemory mTextureImageMemory = VK_NULL_HANDLE;
 
     VulkanApplication &mApp;
     VulkanWindow &mWindow;
