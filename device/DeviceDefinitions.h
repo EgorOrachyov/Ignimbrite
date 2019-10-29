@@ -190,4 +190,13 @@ enum class BlendOperation {
     Max
 };
 
+enum class PrimitiveTopology {
+    PointList,
+    LineList,
+    LineStrips,
+    TriangleStrips,
+    TriangleFans,
+    TriangleList
+};
+
 #endif //VULKANRENDERER_DEVICEDEFINITIONS_H
