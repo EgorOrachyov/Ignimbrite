@@ -71,7 +71,7 @@ enum class TextureUsageBit {
 };
 
 /** Num of samples **/
-enum TextureSamples {
+enum class TextureSamples {
     Samples1
 };
 
@@ -94,7 +94,7 @@ enum class SamplerBorderColor {
     Black
 };
 
-enum PolygonMode {
+enum class PolygonMode {
     Fill,
     Line,
     Point
@@ -133,40 +133,6 @@ enum class StencilOperation {
     DecrementAndWrap
 };
 
-enum class BlendFactor {
-    Zero,
-    One,
-
-    // first source color
-    SrcColor,
-    OneMinusSrcColor,
-
-    // first destination color
-    DstColor,
-    OneMinusDstColor,
-
-    SrcAlpha,
-    OneMinusSrcAlpha,
-
-    DstAlpha,
-    OneMinusDstAlpha,
-
-    // constants specified in PipelineBlendStateDesc
-    ConstantColor,
-    OneMinusConstantColor,
-
-    ConstantAlpha,
-    OneMinusConstantAlpha,
-
-    SrcAlphaSaturate,
-
-    // second source color
-    Src1Color,
-    OneMinusSrc1Color,
-
-    Src1Alpha,
-    OneMinusSrc1Alpha
-};
 
 enum class LogicOperation {
     Clear,
@@ -185,6 +151,29 @@ enum class LogicOperation {
     OrInverted,
     Nand,
     Set
+};
+
+enum class BlendFactor {
+    Zero,
+    One,
+    SrcColor,
+    OneMinusSrcColor,
+    DstColor,
+    OneMinusDstColor,
+    SrcAlpha,
+    OneMinusSrcAlpha,
+    DstAlpha,
+    OneMinusDstAlpha,
+    ConstantColor,
+    OneMinusConstantColor,
+    ConstantAlpha,
+    OneMinusConstantAlpha,
+    SrcAlphaSaturate,
+    /** For dual source blending modes */
+    Src1Color,
+    OneMinusSrc1Color,
+    Src1Alpha,
+    OneMinusSrc1Alpha
 };
 
 enum class BlendOperation {

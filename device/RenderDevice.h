@@ -41,12 +41,20 @@ public:
     };
 
     /** Single vertex buffer descriptor */
-    struct VertexLayoutDesc {
+    struct VertexBufferLayoutDesc {
+        /** Size of the stride (step) fro single vertex */
+        uint32 stride;
+        /** Interate per instance/vertex */
         VertexUsage usage;
+        /** Attributes, updated from that vertex buffer */
         std::vector<VertexAttributeDesc> attributes;
     };
 
-    virtual ID createVertexLayout(const VertexLayoutDesc& vertexDesc) = 0;
+    /**
+     * Layout for all vertex buffers, bound to vertex shader.
+     * @note Each buffer automatically will get binding num as index in that array
+     */
+    virtual ID createVertexLayout(const std::vector<VertexBufferLayoutDesc> &vertexBuffersDesc) = 0;
     virtual void destroyVertexLayout(ID layout) = 0;
 
     virtual ID createVertexBuffer(BufferUsage usage, uint32 size, const void* data) = 0;
@@ -119,13 +127,13 @@ public:
     virtual ID createShaderProgram(const std::vector<ShaderDataDesc> &shaders) = 0;
     virtual void destroyShaderProgram(ID program) = 0;
 
-    struct AttachmentDesc {
+    struct FramebufferAttachmentDesc {
         ID texture = INVALID;
-        DataFormat format;
-        TextureSamples samples;
+        DataFormat format = DataFormat::R8G8B8A8_UNORM;
+        TextureSamples samples = TextureSamples::Samples1;
     };
 
-    virtual ID createFramebuffer(const std::vector<AttachmentDesc> &attachments) = 0;
+    virtual ID createFramebuffer(const std::vector<FramebufferAttachmentDesc> &attachments) = 0;
     virtual void destroyFramebuffer(ID framebuffer) = 0;
 
     struct PipelineRasterizationDesc {
@@ -135,25 +143,41 @@ public:
         float32 lineWidth;
     };
 
-    struct BlendAttachmentState {
-        bool blendEnable;
-
-        BlendFactor srcColorBlendFactor;
-        BlendFactor dstColorBlendFactor;
-        BlendOperation colorBlendOp;
-
-        BlendFactor srcAlphaBlendFactor;
-        BlendFactor dstAlphaBlendFactor;
-        BlendOperation alphaBlendOp;
-
-        bool writeR, writeG, writeB, writeA;
+    /**
+     * Blend settings for single framebuffer attachment
+     * The following equation is used to to compute blend color:
+     *
+     * if (blendEnable) {
+     *  finalColor.rgb = (srcColorBlendFactor * newColor.rgb)
+     *      <colorBlendOp> (dstColorBlendFactor * oldColor.rgb);
+     *  finalColor.a = (srcAlphaBlendFactor * newColor.a) <
+     *      alphaBlendOp> (dstAlphaBlendFactor * oldColor.a);
+     * } else {
+     *  color = newColor;
+     * }
+     * finalColor = finalColor & colorWriteMask;
+     */
+    struct BlendAttachmentDesc {
+        bool blendEnable = false;
+        /** Operation on color rgb components */
+        BlendFactor srcColorBlendFactor = BlendFactor::One;
+        BlendFactor dstColorBlendFactor = BlendFactor::Zero;
+        BlendOperation colorBlendOp = BlendOperation::Add;
+        /** Operation on color a component */
+        BlendFactor srcAlphaBlendFactor = BlendFactor::One;
+        BlendFactor dstAlphaBlendFactor = BlendFactor::Zero;
+        BlendOperation alphaBlendOp = BlendOperation::Add;
+        bool writeR = true;
+        bool writeG = true;
+        bool writeB = true;
+        bool writeA = true;
     };
 
     struct PipelineBlendStateDesc {
-        bool logicOpEnable;
-        LogicOperation logicOp;
-        std::vector<BlendAttachmentState> attachments;
-        float blendConstants[4];
+        bool logicOpEnable = false;
+        LogicOperation logicOp = LogicOperation::Copy;
+        float blendConstants[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        std::vector<BlendAttachmentDesc> attachments;
     };
 
     struct StencilOpState {
@@ -170,14 +194,14 @@ public:
         bool depthTestEnable;
         CompareOperation depthCompareOp;
         bool stencilTestEnable;
-        // processing rasterized fragments from points, lines and front-facing polygons
+        /** processing rasterized fragments from points, lines and front-facing polygons */
         StencilOpState front;
-        // processing rasterized fragments from back-facing polygons
+        /** processing rasterized fragments from back-facing polygons */
         StencilOpState back;
     };
 
     virtual ID createGraphicsPipeline(const PipelineRasterizationDesc& rasterizationDesc,
-            const PipelineBlendStateDesc& blendStateDesc, const PipelineDepthStencilStateDesc& depthStateDesc) = 0;
+            const PipelineBlendStateDesc& blendStateDesc, const PipelineDepthStencilStateDesc& depthStencilStateDesc) = 0;
     virtual void destroyGraphicsPipeline(ID pipeline) = 0;
 
     /** @return Readable hardware API name */
