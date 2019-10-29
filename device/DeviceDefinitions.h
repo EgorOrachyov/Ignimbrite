@@ -30,6 +30,8 @@ enum class DataFormat {
     R32G32_SFLOAT,
     R32G32B32_SFLOAT,
     R32G32B32A32_SFLOAT,
+    D24_UNORM_S8_UINT,
+    D32_SFLOAT_S8_UINT,
 };
 
 /** Buffer usage for frequently updated or static buffer (has performance impact) */
@@ -109,5 +111,88 @@ enum class PolygonFrontFace {
     FrontCounterClockwise
 };
 
+enum class CompareOperation {
+    Never,
+    Less,
+    Equal,
+    LessOrEqual,
+    Greater,
+    NotEqual,
+    GreaterOrEqual,
+    Always
+};
+
+enum class StencilOperation {
+    Keep,
+    Zero,
+    Replace,
+    IncrementAndClamp,
+    DecrementAndClamp,
+    Invert,
+    IncrementAndWrap,
+    DecrementAndWrap
+};
+
+enum class BlendFactor {
+    Zero,
+    One,
+
+    // first source color
+    SrcColor,
+    OneMinusSrcColor,
+
+    // first destination color
+    DstColor,
+    OneMinusDstColor,
+
+    SrcAlpha,
+    OneMinusSrcAlpha,
+
+    DstAlpha,
+    OneMinusDstAlpha,
+
+    // constants specified in PipelineBlendStateDesc
+    ConstantColor,
+    OneMinusConstantColor,
+
+    ConstantAlpha,
+    OneMinusConstantAlpha,
+
+    SrcAlphaSaturate,
+
+    // second source color
+    Src1Color,
+    OneMinusSrc1Color,
+
+    Src1Alpha,
+    OneMinusSrc1Alpha
+};
+
+enum class LogicOperation {
+    Clear,
+    And,
+    AndReverse,
+    Copy,
+    AndInverted,
+    NoOp,
+    Xor,
+    Or,
+    Nor,
+    Equivalent,
+    Invert,
+    OrReverse,
+    CopyInverted,
+    OrInverted,
+    Nand,
+    Set
+};
+
+enum class BlendOperation {
+    Add,
+    Subtract,
+    ReverseSubtract,
+    Min,
+    Max
+};
 
 #endif //VULKANRENDERER_DEVICEDEFINITIONS_H

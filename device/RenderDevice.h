@@ -135,23 +135,55 @@ public:
         float32 lineWidth;
     };
 
-    struct PipelineBlendStateDesc {
+    struct BlendAttachmentState {
+        bool blendEnable;
 
+        BlendFactor srcColorBlendFactor;
+        BlendFactor dstColorBlendFactor;
+        BlendOperation colorBlendOp;
+
+        BlendFactor srcAlphaBlendFactor;
+        BlendFactor dstAlphaBlendFactor;
+        BlendOperation alphaBlendOp;
+
+        bool writeR, writeG, writeB, writeA;
     };
 
-    struct PipelineDepthStateDesc {
+    struct PipelineBlendStateDesc {
+        bool logicOpEnable;
+        LogicOperation logicOp;
+        std::vector<BlendAttachmentState> attachments;
+        float blendConstants[4];
+    };
 
+    struct StencilOpState {
+        StencilOperation failOp;
+        StencilOperation passOp;
+        StencilOperation depthFailOp;
+        StencilOperation compareOp;
+        uint32 compareMask;
+        uint32 writeMask;
+        uint32 reference;
+    };
+
+    struct PipelineDepthStencilStateDesc {
+        bool depthTestEnable;
+        CompareOperation depthCompareOp;
+        bool stencilTestEnable;
+        // processing rasterized fragments from points, lines and front-facing polygons
+        StencilOpState front;
+        // processing rasterized fragments from back-facing polygons
+        StencilOpState back;
     };
 
     virtual ID createGraphicsPipeline(const PipelineRasterizationDesc& rasterizationDesc,
-            const PipelineBlendStateDesc& blendStateDesc, const PipelineDepthStateDesc& depthStateDesc) = 0;
+            const PipelineBlendStateDesc& blendStateDesc, const PipelineDepthStencilStateDesc& depthStateDesc) = 0;
     virtual void destroyGraphicsPipeline(ID pipeline) = 0;
 
     /** @return Readable hardware API name */
     virtual const std::string& getDeviceName() const;
     /** @return Video card vendor name */
     virtual const std::string& getVendor() const;
-
 };
 
 #endif //VULKANRENDERER_RENDERDEVICE_H
