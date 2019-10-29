@@ -129,6 +129,7 @@ public:
 
     struct FramebufferAttachmentDesc {
         ID texture = INVALID;
+        AttachmentType type = AttachmentType::Color;
         DataFormat format = DataFormat::R8G8B8A8_UNORM;
         TextureSamples samples = TextureSamples::Samples1;
     };

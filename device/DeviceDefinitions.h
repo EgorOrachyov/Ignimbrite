@@ -54,10 +54,16 @@ enum class IndicesType {
     Uint16
 };
 
+/** Specifies how to attach texture to framebuffer */
+enum class AttachmentType {
+    Color,
+    Depth,
+    DepthStencil
+};
 
 /** Types of the supported textures (1D,2D,3D) */
 enum class TextureType {
-    Texture2D
+    Texture2D,
 };
 
 /** Texture usage for optimal target device representation */
