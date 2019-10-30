@@ -11,7 +11,7 @@ const std::string& RenderDevice::getDeviceName() const {
     return device;
 }
 
-const std::string& RenderDevice::getVendor() const {
+const std::string& RenderDevice::getVendorName() const {
     static const std::string device = "Default Vendor";
     return device;
 }

@@ -201,14 +201,51 @@ public:
         StencilOpState back;
     };
 
-    virtual ID createGraphicsPipeline(const PipelineRasterizationDesc& rasterizationDesc,
-            const PipelineBlendStateDesc& blendStateDesc, const PipelineDepthStencilStateDesc& depthStencilStateDesc) = 0;
+    virtual ID createGraphicsPipeline(PrimitiveTopology topology,
+                                      ID vertexLayout,
+                                      const PipelineRasterizationDesc& rasterizationDesc,
+                                      const PipelineBlendStateDesc& blendStateDesc,
+                                      const PipelineDepthStencilStateDesc& depthStencilStateDesc) = 0;
     virtual void destroyGraphicsPipeline(ID pipeline) = 0;
+
+    struct Color {
+        float32 components[4];
+    };
+
+    struct Extent {
+        float32 x;
+        float32 y;
+    };
+
+    struct Region {
+        float32 xOffset;
+        float32 yOffset;
+        Extent extent;
+    };
+
+    virtual ID drawListBegin(ID framebuffer,
+                             std::vector<Color> clearColors,
+                             const Region& drawArea) = 0;
+    virtual ID drawListBegin(ID framebuffer,
+                             std::vector<Color> clearColors,
+                             float32 clearDepth,
+                             uint32 clearStencil,
+                             const Region& drawArea) = 0;
+
+    virtual void drawListBindPipeline(ID drawList, ID graphicsPipeline) = 0;
+    virtual void drawListBindUniformLayout(ID drawList, ID uniformLayout) = 0;
+    virtual void drawListBindVertexBuffer(ID drawList, ID vertexBuffer, uint32 binding, uint32 offset) = 0;
+    virtual void drawListBindIndexBuffer(ID drawList, ID indexBuffer, IndicesType indicesType, uint32 offset) = 0;
+
+    virtual void drawListDraw(ID drawList, uint32 verticesCount, uint32 instancesCount) = 0;
+    virtual void drawListDrawIndexed(ID drawList, uint32 indicesCount, uint32 instancesCount) = 0;
+
+    virtual void drawListEnd(ID drawList) = 0;
 
     /** @return Readable hardware API name */
     virtual const std::string& getDeviceName() const;
     /** @return Video card vendor name */
-    virtual const std::string& getVendor() const;
+    virtual const std::string& getVendorName() const;
 };
 
 #endif //VULKANRENDERER_RENDERDEVICE_H
