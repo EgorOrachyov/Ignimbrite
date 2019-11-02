@@ -5,8 +5,8 @@
 #ifndef VULKANRENDERER_TESTOBJECTID_H
 #define VULKANRENDERER_TESTOBJECTID_H
 
-#include <ObjectID.h>
-#include <ObjectIDBuffer.h>
+#include "renderer/ObjectIDBuffer.h"
+#include "renderer/FileUtils.h"
 #include <string>
 
 struct TestObjectIDBuffer {
@@ -68,6 +68,9 @@ struct TestObjectIDBuffer {
         for (uint32 i = remove; i < count; i++) {
             strings.remove(ids[i]);
         }
+
+        std::vector<char> data;
+        FileUtils::loadData("mu file", data);
     }
 
     static void run() {

@@ -5,7 +5,7 @@
 #ifndef VULKANRENDERER_DEVICEDEFINITIONS_H
 #define VULKANRENDERER_DEVICEDEFINITIONS_H
 
-#include <Types.h>
+#include "Types.h"
 #define BIT_SHIFT(x) (1u << x)
 
 /** Shader Program stages */

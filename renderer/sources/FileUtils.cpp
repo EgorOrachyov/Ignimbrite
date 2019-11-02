@@ -2,7 +2,7 @@
 // Created by Egor Orachyov on 2019-10-26.
 //
 
-#include <FileUtils.h>
+#include "../include/renderer/FileUtils.h"
 #include <fstream>
 
 void FileUtils::loadData(const std::string &filename, std::vector<char> &data) {

@@ -1,12 +1,17 @@
 cmake_minimum_required(VERSION 3.11)
 project(Tests)
 
-set(SOURCES
-        main.cpp
-        TestObjectID.h)
+add_executable(Tests "")
 
-variable_watch(PROJECT_LIBS)
-variable_watch(THIRD_PARTY_LIBS)
+set_property(TARGET Tests PROPERTY CXX_STANDARD 11)
+set_property(TARGET Tests PROPERTY CXX_STANDARD_REQUIRED ON)
 
-add_executable(Tests ${SOURCES})
-target_link_libraries(Tests ${PROJECT_LIBS} ${THIRD_PARTY_LIBS})
+include_directories(${Renderer_SOURCE_DIR}/include)
+target_link_libraries(Tests Renderer)
+
+target_sources(Tests
+    PUBLIC
+        ${CMAKE_CURRENT_LIST_DIR}/TestObjectID.h
+    PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}/main.cpp
+)
