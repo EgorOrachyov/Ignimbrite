@@ -2,12 +2,13 @@ cmake_minimum_required(VERSION 3.11)
 project(Tests)
 
 add_executable(Tests "")
+message(STATUS "Build Tests executable")
 
 set_property(TARGET Tests PROPERTY CXX_STANDARD 11)
 set_property(TARGET Tests PROPERTY CXX_STANDARD_REQUIRED ON)
 
-include_directories(${Renderer_SOURCE_DIR}/include)
-target_link_libraries(Tests Renderer)
+target_include_directories(Tests PRIVATE ${Renderer_SOURCE_DIR}/include)
+target_link_libraries(Tests PRIVATE Renderer)
 
 target_sources(Tests
     PUBLIC

@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.11)
 project(Renderer)
 
 add_library(Renderer STATIC "")
+message(STATUS "Build Renderer library")
 
 set_property(TARGET Renderer PROPERTY CXX_STANDARD 11)
 set_property(TARGET Renderer PROPERTY CXX_STANDARD_REQUIRED ON)

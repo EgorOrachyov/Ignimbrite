@@ -68,9 +68,6 @@ struct TestObjectIDBuffer {
         for (uint32 i = remove; i < count; i++) {
             strings.remove(ids[i]);
         }
-
-        std::vector<char> data;
-        FileUtils::loadData("mu file", data);
     }
 
     static void run() {
