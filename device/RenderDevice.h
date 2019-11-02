@@ -66,15 +66,22 @@ public:
     virtual void destroyIndexBuffer(ID buffer) = 0;
 
     struct UniformTextureDesc {
+        /** Binding of the texture in the shader */
         uint32 binding = 0;
+        /** Actual texture with data */
         ID texture = INVALID;
+        /** Specific sampler for data access in the shader */
         ID sampler = INVALID;
     };
 
     struct UniformBufferDesc {
+        /** Binding point in target shader */
         uint32 binding = 0;
+        /** Offset from the buffer where data starts */
         uint32 offset = 0;
+        /** Actual data range to map into shader uniform buffer */
         uint32 range = 0;
+        /** Uniform buffer with actual data */
         ID buffer = INVALID;
     };
 
@@ -213,13 +220,13 @@ public:
     };
 
     struct Extent {
-        float32 x;
-        float32 y;
+        uint32 x;
+        uint32 y;
     };
 
     struct Region {
-        float32 xOffset;
-        float32 yOffset;
+        uint32 xOffset;
+        uint32 yOffset;
         Extent extent;
     };
 
@@ -228,6 +235,14 @@ public:
                              const Region& drawArea) = 0;
     virtual ID drawListBegin(ID framebuffer,
                              std::vector<Color> clearColors,
+                             float32 clearDepth,
+                             uint32 clearStencil,
+                             const Region& drawArea) = 0;
+    virtual ID drawListBegin(ID surface,
+                             Color clearColor,
+                             const Region& drawArea) = 0;
+    virtual ID drawListBegin(ID surface,
+                             Color clearColor,
                              float32 clearDepth,
                              uint32 clearStencil,
                              const Region& drawArea) = 0;
@@ -241,6 +256,29 @@ public:
     virtual void drawListDrawIndexed(ID drawList, uint32 indicesCount, uint32 instancesCount) = 0;
 
     virtual void drawListEnd(ID drawList) = 0;
+
+    /**
+     * @brief Return ID of surface with specified name
+     *
+     * Allows to get surface ID for specific window rendering.
+     * All the application windows are created by target window
+     * manager (GLFW, QT)
+     *
+     * @throw Exception if surface with specified name not found
+     * @return ID of the surface if found
+     */
+    virtual ID getSurface(const std::string& surfaceName) = 0;
+    virtual void getSurfaceSize(ID surface, uint32 &width, uint32 &height) = 0;
+
+    /**
+     * @brief Swap buffers to present images for all windows
+     *
+     * Render API primary uses double-buffering present mode.
+     * This function allows to submit all the currently filled
+     * command buffers for rendering and wait, until
+     * previous submit session is completed.
+     */
+    virtual void swapBuffers() = 0;
 
     /** @return Readable hardware API name */
     virtual const std::string& getDeviceName() const;
