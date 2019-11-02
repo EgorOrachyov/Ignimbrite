@@ -29,19 +29,19 @@ endif()
 
 option(WITH_GLFW "GLFW Window system" YES)
 if (WITH_GLFW)
-    message(STATUS "Use GLFW as window system")
+    message(STATUS "Using GLFW as window system")
     set(GLFW_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/thirdparty/include")
 endif()
 
 option(WITH_VULKAN "Vulkan rendering API" YES)
 if (WITH_VULKAN)
-    message(STATUS "Use Vulkan as rendering API")
+    message(STATUS "Using Vulkan as rendering API")
     set(VULKAN_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/thirdparty/include")
 endif()
 
 option(WITH_GLM "GLM math header library" NO)
 if (WITH_GLM)
-    message(STATUS "Use Vulkan API")
+    message(STATUS "Using Vulkan API")
     set(GLM_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/thirdparty/include")
 endif()
 
@@ -49,5 +49,7 @@ endif()
 # Include actual sub directories
 
 add_subdirectory(renderer)
-add_subdirectory(tests)
 add_subdirectory(device)
+
+enable_testing()
+add_subdirectory(tests)

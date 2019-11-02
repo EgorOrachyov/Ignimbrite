@@ -16,3 +16,5 @@ target_sources(Tests
     PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/main.cpp
 )
+
+add_test(NAME Tests COMMAND Tests)
