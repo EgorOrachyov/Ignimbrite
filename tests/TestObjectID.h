@@ -5,8 +5,8 @@
 #ifndef VULKANRENDERER_TESTOBJECTID_H
 #define VULKANRENDERER_TESTOBJECTID_H
 
-#include <ObjectID.h>
-#include <ObjectIDBuffer.h>
+#include "renderer/ObjectIDBuffer.h"
+#include "renderer/FileUtils.h"
 #include <string>
 
 struct TestObjectIDBuffer {

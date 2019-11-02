@@ -1,41 +1,55 @@
-########################## Vulkan Renderer ##########################
+#################################################################
+# Overall project setup
 
 cmake_minimum_required(VERSION 3.11)
-project(VulkanRenderer)
+project(RenderingLibrary)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -O0 -Wall")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -g")
 
-set(POJECT_LIBS)
+#################################################################
+# Platform specific setup
+
 set(THIRD_PARTY_LIBS)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -Wall")
-
-########################## Headers paths ##########################
-
-include_directories(${PROJECT_SOURCE_DIR}/thirdparty/include)
-include_directories(${PROJECT_SOURCE_DIR}/misc)
-include_directories(${PROJECT_SOURCE_DIR}/device)
-include_directories(${PROJECT_SOURCE_DIR}/vulkan)
-include_directories(${PROJECT_SOURCE_DIR}/tests)
-
-########################## Third-party ##########################
+set(THIRD_PARTY_LIBS_PATH)
 
 if(APPLE)
-    set(THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} vulkan glfw)
-    link_directories(${CMAKE_SOURCE_DIR}/thirdparty/lib/apple)
+    list(APPEND THIRD_PARTY_LIBS vulkan glfw)
+    list(APPEND THIRD_PARTY_LIBS_PATH ${CMAKE_SOURCE_DIR}/thirdparty/lib/apple)
 elseif(WIN32)
-    set(THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} vulkan-1 glfw3)
-    link_directories(${CMAKE_SOURCE_DIR}/thirdparty/lib/win32)
+    list(APPEND THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} vulkan-1 glfw3)
+    list(APPEND THIRD_PARTY_LIBS_PATH ${CMAKE_SOURCE_DIR}/thirdparty/lib/win32)
 elseif(UNIX)
-    set(THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} vulkan glfw)
-    link_directories(${CMAKE_SOURCE_DIR}/thirdparty/lib/unix)
+    list(APPEND THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} vulkan glfw)
+    list(APPEND THIRD_PARTY_LIBS_PATH ${CMAKE_SOURCE_DIR}/thirdparty/lib/unix)
 endif()
 
-########################## Project h/cpp files ##########################
+#################################################################
+# Third-party setup
 
-set(PROJECT_LIBS Misc)
+option(WITH_GLFW "GLFW Window system" YES)
+if (WITH_GLFW)
+    message(STATUS "Using GLFW as window system")
+    set(GLFW_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/thirdparty/include")
+endif()
 
-add_subdirectory(thirdparty/include/glm)
-add_subdirectory(misc)
+option(WITH_VULKAN "Vulkan rendering API" YES)
+if (WITH_VULKAN)
+    message(STATUS "Using Vulkan as rendering API")
+    set(VULKAN_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/thirdparty/include")
+endif()
+
+option(WITH_GLM "GLM math header library" NO)
+if (WITH_GLM)
+    message(STATUS "Using Vulkan API")
+    set(GLM_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/thirdparty/include")
+endif()
+
+#################################################################
+# Include actual sub directories
+
+add_subdirectory(renderer)
 add_subdirectory(device)
-add_subdirectory(vulkan)
+
+enable_testing()
 add_subdirectory(tests)

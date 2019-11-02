@@ -5,8 +5,8 @@
 #ifndef VULKANRENDERER_RENDERDEVICE_H
 #define VULKANRENDERER_RENDERDEVICE_H
 
-#include <ObjectID.h>
-#include <DeviceDefinitions.h>
+#include "ObjectID.h"
+#include "DeviceDefinitions.h"
 #include <string>
 #include <vector>
 

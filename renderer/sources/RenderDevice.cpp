@@ -2,7 +2,7 @@
 // Created by Egor Orachyov on 2019-10-27.
 //
 
-#include <RenderDevice.h>
+#include "include/renderer/RenderDevice.h"
 
 const ObjectID RenderDevice::INVALID = ObjectID(0,0);
 

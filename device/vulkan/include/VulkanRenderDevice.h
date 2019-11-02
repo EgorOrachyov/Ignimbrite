@@ -1,0 +1,12 @@
+//
+// Created by Egor Orachyov on 2019-11-02.
+//
+
+#ifndef VULKANRENDERER_VULKANRENDERDEVICE_H
+#define VULKANRENDERER_VULKANRENDERDEVICE_H
+
+class VulkanRenderDevice {
+
+};
+
+#endif //VULKANRENDERER_VULKANRENDERDEVICE_H
