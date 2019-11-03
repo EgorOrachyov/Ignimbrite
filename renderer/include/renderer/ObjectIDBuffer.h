@@ -24,6 +24,15 @@ public:
     ObjectIDBuffer();
     ~ObjectIDBuffer();
     ObjectID add(const T& object);
+    /**
+     * @brief Moves object into container.
+     * @note Old object references becomes invalid.
+     * Preferred for use, because this method is more optimal
+     * and allows you not to copy object, instead it moves (std::move)
+     * object into this buffer memory
+     * @return Object ID in the buffer
+     */
+    ObjectID move(T& object);
     T& get(ObjectID id) const;
     T* getPtr(ObjectID id) const;
     void remove(ObjectID id);
@@ -97,6 +106,34 @@ ObjectID ObjectIDBuffer<T>::add(const T &object) {
 
     void* memory = &mObjects[index];
     new (memory) T(object);
+
+    mUsedIDs += 1;
+
+    return { index, generation };
+}
+
+template <typename T>
+ObjectID ObjectIDBuffer<T>::move(T &object) {
+    uint32 index;
+    uint32 generation;
+
+    if (mFreeIDs == 0) {
+        index = mGens.size();
+        generation = INITIAL_GENERATION;
+
+        mGens.push_back(generation);
+        mObjects.push_back(RawObject());
+    }
+    else {
+        index = mFreeGensIndices.back();
+        mFreeGensIndices.pop_back();
+        generation = mGens[index] + 1;
+
+        mFreeIDs -= 1;
+    }
+
+    void* memory = &mObjects[index];
+    new (memory) T(std::move(object));
 
     mUsedIDs += 1;
 
