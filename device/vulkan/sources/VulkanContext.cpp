@@ -153,3 +153,11 @@ void VulkanContext::updateBufferMemory(const VkDeviceMemory &bufferMemory, const
 
     vkUnmapMemory(device, bufferMemory);
 }
+
+void VulkanContext::createTextureImage(const void *imageData, uint32_t width, uint32_t height, uint32_t depth,
+                                       VkCommandPool commandPool, VkQueue queue) {
+    VkDeviceSize imageSize = (VkDeviceSize)width * height * depth;
+
+    //createBufferLocal(imageData, imageSize, VK_IMAGE_USAGE_SAMPLED_BIT)
+
+}

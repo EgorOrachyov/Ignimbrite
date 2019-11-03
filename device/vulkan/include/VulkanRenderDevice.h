@@ -23,6 +23,11 @@ public:
     void updateIndexBuffer(ID buffer, uint32 size, uint32 offset, const void *data) override;
     void destroyIndexBuffer(ID buffer) override;
 
+    ID createSampler(const SamplerDesc &samplerDesc) override;
+    void destroySampler(ID sampler) override;
+
+    ID createTexture(const TextureDesc &textureDesc) override;
+    void destroyTexture(ID texture) override;
 
 private:
     VulkanContext context;
@@ -32,9 +37,16 @@ private:
         std::vector<VkVertexInputAttributeDescription> vertAttributes;
     };
 
+    struct TextureObject {
+        VkImage image;
+        VkSampler sampler;
+    };
+
     ObjectIDBuffer<VertexLayoutBatch> vertexLayoutBatches;
     ObjectIDBuffer<VulkanContext::BufferObject> vertexBuffers;
     ObjectIDBuffer<VulkanContext::BufferObject> indexBuffers;
+    ObjectIDBuffer<VkSampler> samplers;
+    ObjectIDBuffer<TextureObject> textures;
 };
 
 #endif //VULKANRENDERER_VULKANRENDERDEVICE_H

@@ -74,6 +74,8 @@ public:
 
     void updateBufferMemory(const VkDeviceMemory &bufferMemory, const void *data, VkDeviceSize size, VkDeviceSize offset);
 
+    void createTextureImage(const void *imageData, uint32_t width, uint32_t height, uint32_t depth, VkCommandPool commandPool, VkQueue queue);
+
 private:
     VkInstance instance = VK_NULL_HANDLE;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
