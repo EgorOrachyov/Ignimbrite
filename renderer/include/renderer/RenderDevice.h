@@ -135,13 +135,15 @@ public:
     virtual void destroyShaderProgram(ID program) = 0;
 
     struct FramebufferAttachmentDesc {
-        ID texture = INVALID;
         AttachmentType type = AttachmentType::Color;
         DataFormat format = DataFormat::R8G8B8A8_UNORM;
         TextureSamples samples = TextureSamples::Samples1;
     };
 
-    virtual ID createFramebuffer(const std::vector<FramebufferAttachmentDesc> &attachments) = 0;
+    virtual ID createFramebufferFormat(const std::vector<FramebufferAttachmentDesc> &attachments) = 0;
+    virtual void destroyFramebufferFormat(ID framebufferFormat) = 0;
+
+    virtual ID createFramebuffer(const std::vector<ID> &attachments, ID framebufferFormat) = 0;
     virtual void destroyFramebuffer(ID framebuffer) = 0;
 
     struct PipelineRasterizationDesc {
@@ -210,6 +212,7 @@ public:
 
     virtual ID createGraphicsPipeline(PrimitiveTopology topology,
                                       ID vertexLayout,
+                                      ID framebufferFormat,
                                       const PipelineRasterizationDesc& rasterizationDesc,
                                       const PipelineBlendStateDesc& blendStateDesc,
                                       const PipelineDepthStencilStateDesc& depthStencilStateDesc) = 0;
