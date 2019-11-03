@@ -44,30 +44,18 @@ void VulkanRenderDevice::destroyVertexLayout(RenderDevice::ID layout) {
     vertexLayoutBatches.remove(layout);
 }
 
-RenderDevice::ID VulkanRenderDevice::createVertexBuffer(BufferUsage usage, uint32 size, const void *data) {
-    const VkDevice device = context.getDevice();
-
-    VertexBufferObject vertexBufferObj = {};
-
-    if (usage == BufferUsage::Dynamic)
-    {
-        // create vertex buffer and allocate memory
-        _createBuffer(size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                // to be visible from host for updating buffer memory
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                vertexBufferObj.buffer, vertexBufferObj.memory);
-
-        // copy data to allocated memory
-    }
-    else
-    {
-        // allocate in device local memory
-        // and set data
-        _createBufferLocal(data, size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                vertexBufferObj.buffer, vertexBufferObj.memory);
-    }
+RenderDevice::ID VulkanRenderDevice::createVertexBuffer(BufferUsage type, uint32 size, const void *data) {
+    BufferObject vertexBufferObj = {};
+    _createBufferObject(type, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, size, data, vertexBufferObj);
 
     return vertexBuffers.add(vertexBufferObj);
+}
+
+RenderDevice::ID VulkanRenderDevice::createIndexBuffer(BufferUsage type, uint32 size, const void *data) {
+    BufferObject indexBufferObj = {};
+    _createBufferObject(type, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, size, data, indexBufferObj);
+
+    return indexBuffers.add(indexBufferObj);
 }
 
 void VulkanRenderDevice::updateVertexBuffer(RenderDevice::ID bufferId, uint32 size, uint32 offset, const void *data) {
@@ -75,12 +63,29 @@ void VulkanRenderDevice::updateVertexBuffer(RenderDevice::ID bufferId, uint32 si
     _updateBufferMemory(bufferMemory, data, size, offset);
 }
 
+void VulkanRenderDevice::updateIndexBuffer(RenderDevice::ID bufferId, uint32 size, uint32 offset, const void *data) {
+    const VkDeviceMemory &bufferMemory = indexBuffers.getPtr(bufferId)->memory;
+    _updateBufferMemory(bufferMemory, data, size, offset);
+}
+
 void VulkanRenderDevice::destroyVertexBuffer(RenderDevice::ID bufferId) {
     const VkDevice &device = context.getDevice();
-    VertexBufferObject *vb = vertexBuffers.getPtr(bufferId);
+    BufferObject *vb = vertexBuffers.getPtr(bufferId);
 
     vkDestroyBuffer(device, vb->buffer, nullptr);
     vkFreeMemory(device, vb->memory, nullptr);
+
+    vertexBuffers.remove(bufferId);
+}
+
+void VulkanRenderDevice::destroyIndexBuffer(RenderDevice::ID bufferId) {
+    const VkDevice &device = context.getDevice();
+    BufferObject *ib = indexBuffers.getPtr(bufferId);
+
+    vkDestroyBuffer(device, ib->buffer, nullptr);
+    vkFreeMemory(device, ib->memory, nullptr);
+
+    indexBuffers.remove(bufferId);
 }
 
 void VulkanRenderDevice::_createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
@@ -149,6 +154,28 @@ void VulkanRenderDevice::_createBufferLocal(const void *data, VkDeviceSize size,
     // delete staging buffer
     vkDestroyBuffer(device, stagingBuffer, nullptr);
     vkFreeMemory(device, stagingBufferMemory, nullptr);
+}
+
+void VulkanRenderDevice::_createBufferObject(BufferUsage type, VkBufferUsageFlags usage, uint32 size, const void *data,
+                                             VulkanRenderDevice::BufferObject &outBuffer) {
+    if (type == BufferUsage::Dynamic)
+    {
+        // create vertex buffer and allocate memory
+        _createBuffer(size, usage,
+                // to be visible from host for updating buffer memory
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                outBuffer.buffer, outBuffer.memory);
+
+        // copy data to allocated memory
+        _updateBufferMemory(outBuffer.memory, data, size, 0);
+    }
+    else
+    {
+        // allocate in device local memory
+        // and set data
+        _createBufferLocal(data, size, usage,
+                outBuffer.buffer, outBuffer.memory);
+    }
 }
 
 void VulkanRenderDevice::_copyBuffer(VkCommandPool commandPool, VkQueue queue, VkBuffer srcBuffer, VkBuffer dstBuffer,

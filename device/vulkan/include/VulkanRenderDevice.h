@@ -19,6 +19,10 @@ public:
     void updateVertexBuffer(ID buffer, uint32 size, uint32 offset, const void *data) override;
     void destroyVertexBuffer(ID buffer) override;
 
+    ID createIndexBuffer(BufferUsage usage, uint32 size, const void *data) override;
+    void updateIndexBuffer(ID buffer, uint32 size, uint32 offset, const void *data) override;
+    void destroyIndexBuffer(ID buffer) override;
+
 
 private:
     VulkanContext context;
@@ -28,19 +32,20 @@ private:
         std::vector<VkVertexInputAttributeDescription> vertAtributes;
     };
 
-    struct VertexBufferObject {
+    struct BufferObject {
         VkBuffer buffer;
         VkDeviceMemory memory;
     };
 
     ObjectIDBuffer<VertexLayoutBatch> vertexLayoutBatches;
-    ObjectIDBuffer<VertexBufferObject> vertexBuffers;
+    ObjectIDBuffer<BufferObject> vertexBuffers;
+    ObjectIDBuffer<BufferObject> indexBuffers;
 
 private:
     /**
      * Create vulkan buffer, allocate memory and bind this memory to buffer
      * @param size size in bytes of the buffer to create
-     * @param usage usage of this buffer
+     * @param usage specifies usage of this buffer: vertex, index etc
      * @param properties required properties for memory allocation
      * @param outBuffer result buffer
      * @param outBufferMemory result buffer memory
@@ -50,7 +55,7 @@ private:
     /**
      * Create vulkan buffer using staging buffer,
      * @note should be used if buffer is meant to be device local
-     * @param usage usage of this buffer
+     * @param usage specifies usage of this buffer: vertex, index etc
      *      (actually will be transformed to "usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT"
      *      to copy data from staging buffer)
      * @param data data to fill the buffer
@@ -58,6 +63,14 @@ private:
      */
     void _createBufferLocal(const void *data, VkDeviceSize size, VkBufferUsageFlags usage,
             VkBuffer &outBuffer, VkDeviceMemory &outBufferMemory);
+
+    /**
+     * Create buffer object
+     * @param type dynamic / static
+     * @param usage specifies usage of this buffer: vertex, index etc
+     * @param outBuffer result buffer
+     */
+    void _createBufferObject(BufferUsage type, VkBufferUsageFlags usage, uint32 size, const void *data, BufferObject &outBuffer);
 
     /**
      * Copy buffer using command pool
