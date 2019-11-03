@@ -14,6 +14,14 @@
  */
 class VulkanContext {
 public:
+    VkInstance getInstance() const;
+    VkDevice getDevice() const;
+    VkCommandPool getCommandPool() const;
+    VkQueue getTransferQueue() const;
+
+    const VkPhysicalDeviceMemoryProperties &getDeviceMemoryProperties() const;
+
+    uint32_t getMemoryTypeIndex(uint32_t memoryTypeBits, VkFlags requirementsMask) const;
 
 private:
     VkInstance instance = VK_NULL_HANDLE;
@@ -24,6 +32,10 @@ private:
     VkQueue presentQueue = VK_NULL_HANDLE;
     VkQueue transferQueue = VK_NULL_HANDLE;
 
+    // TODO: init deviceMemoryProperties
+    VkPhysicalDeviceMemoryProperties deviceMemoryProperties;
+    // TODO: init command pool
+    VkCommandPool commandPool;
 };
 
 
