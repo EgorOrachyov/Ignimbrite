@@ -30,6 +30,16 @@ public:
         }
     }
 
+    static VkVertexInputRate vertexInputRate(VertexUsage vertexUsage) {
+        switch (vertexUsage) {
+            case VertexUsage::PerVertex:
+                return VkVertexInputRate::VK_VERTEX_INPUT_RATE_VERTEX;
+            case VertexUsage::PerInstance:
+                return VkVertexInputRate::VK_VERTEX_INPUT_RATE_INSTANCE;
+            default:
+                throw InvalidEnum();
+        }
+    }
 };
 
 #endif //RENDERINGLIBRARY_VULKANDEFINITIONS_H
