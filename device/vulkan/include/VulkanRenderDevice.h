@@ -29,7 +29,7 @@ private:
 
     struct VertexLayoutBatch {
         std::vector<VkVertexInputBindingDescription> vertBindings;
-        std::vector<VkVertexInputAttributeDescription> vertAtributes;
+        std::vector<VkVertexInputAttributeDescription> vertAttributes;
     };
 
     struct BufferObject {

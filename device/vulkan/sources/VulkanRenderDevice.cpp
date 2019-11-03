@@ -11,7 +11,7 @@ RenderDevice::ID VulkanRenderDevice::createVertexLayout(const std::vector<Vertex
     VertexLayoutBatch batch;
 
     auto& vertBindings = batch.vertBindings;
-    auto& vertAtributes = batch.vertAtributes;
+    auto& vertAttributes = batch.vertAttributes;
 
     for (size_t i = 0; i < vertexBuffersDesc.size(); i++) {
         const VertexBufferLayoutDesc& desc = vertexBuffersDesc[i];
@@ -33,11 +33,11 @@ RenderDevice::ID VulkanRenderDevice::createVertexLayout(const std::vector<Vertex
             attrDesc.location = attr.location;
             attrDesc.offset = attr.offset;
 
-            vertAtributes.push_back(attrDesc);
+            vertAttributes.push_back(attrDesc);
         }
     }
 
-    return vertexLayoutBatches.add(batch);
+    return vertexLayoutBatches.move(batch);
 }
 
 void VulkanRenderDevice::destroyVertexLayout(RenderDevice::ID layout) {
@@ -48,23 +48,23 @@ RenderDevice::ID VulkanRenderDevice::createVertexBuffer(BufferUsage type, uint32
     BufferObject vertexBufferObj = {};
     _createBufferObject(type, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, size, data, vertexBufferObj);
 
-    return vertexBuffers.add(vertexBufferObj);
+    return vertexBuffers.move(vertexBufferObj);
 }
 
 RenderDevice::ID VulkanRenderDevice::createIndexBuffer(BufferUsage type, uint32 size, const void *data) {
     BufferObject indexBufferObj = {};
     _createBufferObject(type, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, size, data, indexBufferObj);
 
-    return indexBuffers.add(indexBufferObj);
+    return indexBuffers.move(indexBufferObj);
 }
 
 void VulkanRenderDevice::updateVertexBuffer(RenderDevice::ID bufferId, uint32 size, uint32 offset, const void *data) {
-    const VkDeviceMemory &bufferMemory = vertexBuffers.getPtr(bufferId)->memory;
+    const VkDeviceMemory &bufferMemory = vertexBuffers.get(bufferId).memory;
     _updateBufferMemory(bufferMemory, data, size, offset);
 }
 
 void VulkanRenderDevice::updateIndexBuffer(RenderDevice::ID bufferId, uint32 size, uint32 offset, const void *data) {
-    const VkDeviceMemory &bufferMemory = indexBuffers.getPtr(bufferId)->memory;
+    const VkDeviceMemory &bufferMemory = indexBuffers.get(bufferId).memory;
     _updateBufferMemory(bufferMemory, data, size, offset);
 }
 
