@@ -15,14 +15,17 @@ set(THIRD_PARTY_LIBS_PATH)
 
 if(APPLE)
     list(APPEND THIRD_PARTY_LIBS vulkan glfw)
-    list(APPEND THIRD_PARTY_LIBS_PATH ${CMAKE_SOURCE_DIR}/thirdparty/lib/apple)
+    set(THIRD_PARTY_LIBS_PATH ${CMAKE_SOURCE_DIR}/thirdparty/lib/apple)
 elseif(WIN32)
     list(APPEND THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} vulkan-1 glfw3)
-    list(APPEND THIRD_PARTY_LIBS_PATH ${CMAKE_SOURCE_DIR}/thirdparty/lib/win32)
+    set(APPEND THIRD_PARTY_LIBS_PATH ${CMAKE_SOURCE_DIR}/thirdparty/lib/win32)
 elseif(UNIX)
     list(APPEND THIRD_PARTY_LIBS ${THIRD_PARTY_LIBS} vulkan glfw)
-    list(APPEND THIRD_PARTY_LIBS_PATH ${CMAKE_SOURCE_DIR}/thirdparty/lib/unix)
+    set(APPEND THIRD_PARTY_LIBS_PATH ${CMAKE_SOURCE_DIR}/thirdparty/lib/unix)
 endif()
+
+link_directories(${THIRD_PARTY_LIBS_PATH})
+link_libraries(${THIRD_PARTY_LIBS})
 
 #################################################################
 # Third-party setup
@@ -31,18 +34,21 @@ option(WITH_GLFW "GLFW Window system" YES)
 if (WITH_GLFW)
     message(STATUS "Using GLFW as window system")
     set(GLFW_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/thirdparty/include")
+    include_directories(${GLFW_INCLUDE})
 endif()
 
 option(WITH_VULKAN "Vulkan rendering API" YES)
 if (WITH_VULKAN)
     message(STATUS "Using Vulkan as rendering API")
     set(VULKAN_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/thirdparty/include")
+    include_directories(${VULKAN_INCLUDE})
 endif()
 
 option(WITH_GLM "GLM math header library" NO)
 if (WITH_GLM)
     message(STATUS "Using Vulkan API")
     set(GLM_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/thirdparty/include")
+    include_directories(${GLM_INCLUDE})
 endif()
 
 #################################################################

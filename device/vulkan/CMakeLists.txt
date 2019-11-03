@@ -9,9 +9,7 @@ target_sources(VulkanDevice
         ${CMAKE_CURRENT_LIST_DIR}/include/VulkanRenderDevice.h
     PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/sources/VulkanRenderDevice.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/sources/VulkanDefinitions.h
 )
 
-variable_watch(VULKAN_INCLUDE)
-
-target_include_directories(VulkanDevice PUBLIC ${CMAKE_CURRENT_LIST_DIR})
-target_include_directories(VulkanDevice PUBLIC ${VULKAN_INCLUDE})
+target_include_directories(VulkanDevice PRIVATE ${CMAKE_CURRENT_LIST_DIR})
