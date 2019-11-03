@@ -10,8 +10,6 @@
 class VulkanDefinitions {
 public:
 
-    static
-
 };
 
 #endif //RENDERINGLIBRARY_VULKANDEFINITIONS_H

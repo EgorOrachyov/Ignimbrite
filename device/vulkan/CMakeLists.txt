@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.11)
 project(VulkanDevice)
 
-add_library(VulkanDevice STATIC)
+add_library(VulkanDevice STATIC ..)
 message(STATUS "Build VulkanDevice library")
 
 target_sources(VulkanDevice
