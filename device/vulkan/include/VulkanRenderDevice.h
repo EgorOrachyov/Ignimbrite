@@ -37,16 +37,20 @@ private:
         std::vector<VkVertexInputAttributeDescription> vertAttributes;
     };
 
-    struct TextureObject {
+    /**
+     * Vulkan image object
+     */
+    struct ImageObject {
         VkImage image;
-        VkSampler sampler;
+        VkDeviceMemory imageMemory;
+        VkImageView imageView;
     };
 
     ObjectIDBuffer<VertexLayoutBatch> vertexLayoutBatches;
     ObjectIDBuffer<VulkanContext::BufferObject> vertexBuffers;
     ObjectIDBuffer<VulkanContext::BufferObject> indexBuffers;
     ObjectIDBuffer<VkSampler> samplers;
-    ObjectIDBuffer<TextureObject> textures;
+    ObjectIDBuffer<ImageObject> imageObjects;
 };
 
 #endif //VULKANRENDERER_VULKANRENDERDEVICE_H

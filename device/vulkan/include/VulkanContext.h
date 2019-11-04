@@ -21,7 +21,7 @@ public:
     VkQueue getTransferQueue() const;
 
     const VkPhysicalDeviceMemoryProperties &getDeviceMemoryProperties() const;
-
+    VkFormatProperties getDeviceFormatProperties(VkFormat format) const;
     uint32_t getMemoryTypeIndex(uint32_t memoryTypeBits, VkFlags requirementsMask) const;
 
     struct BufferObject {
@@ -74,7 +74,21 @@ public:
 
     void updateBufferMemory(const VkDeviceMemory &bufferMemory, const void *data, VkDeviceSize size, VkDeviceSize offset);
 
-    void createTextureImage(const void *imageData, uint32_t width, uint32_t height, uint32_t depth, VkCommandPool commandPool, VkQueue queue);
+    void createTextureImage(const void *imageData, uint32_t width, uint32_t height, uint32_t depth, 
+                                VkImageType imageType, VkFormat format, VkImageTiling tiling,
+                                VkImage &outTextureImage, VkDeviceMemory &outTextureMemory, 
+                                VkImageLayout textureLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    void createImage(uint32_t width, uint32_t height, uint32_t depth, VkImageType imageType, VkFormat format,
+                        VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, 
+                        VkImage &outImage, VkDeviceMemory &outImageMemory);
+
+    void copyBufferToImage(const VkBuffer buffer, const VkImage image, uint32_t width, uint32_t height, uint32_t depth);
+
+    void transitionImageLayout(const VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);
+
+    void createImageView(VkImageView& outImageView, const VkImage image, VkImageViewType viewType, VkFormat format, const VkImageSubresourceRange &subresourceRange,
+        VkComponentMapping components = {});
 
 private:
     VkInstance instance = VK_NULL_HANDLE;
