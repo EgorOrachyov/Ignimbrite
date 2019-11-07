@@ -9,17 +9,17 @@
 
 VkFormatProperties VulkanContext::getDeviceFormatProperties(VkFormat format) const {
     VkFormatProperties properties;
-    vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &properties);
+    vkGetPhysicalDeviceFormatProperties(mPhysicalDevice, format, &properties);
 
     return properties;
 }
 
 uint32_t VulkanContext::getMemoryTypeIndex(uint32_t memoryTypeBits, VkFlags requirementsMask) const {
     // for each memory type available for this device
-    for (uint32_t i = 0; i < deviceMemoryProperties.memoryTypeCount; i++) {
+    for (uint32_t i = 0; i < mDeviceMemoryProperties.memoryTypeCount; i++) {
         // if type is available
         if ((memoryTypeBits & 1) == 1) {
-            if ((deviceMemoryProperties.memoryTypes[i].propertyFlags & requirementsMask) == requirementsMask) {
+            if ((mDeviceMemoryProperties.memoryTypes[i].propertyFlags & requirementsMask) == requirementsMask) {
                 return i;
             }
         }
@@ -38,25 +38,25 @@ void VulkanContext::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, Vk
     bufferInfo.usage = usage;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VkResult r = vkCreateBuffer(device, &bufferInfo, nullptr, &outBuffer);
+    VkResult r = vkCreateBuffer(mDevice, &bufferInfo, nullptr, &outBuffer);
     if (r != VK_SUCCESS) {
         throw VulkanException("Can't create buffer for vertex data");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(device, outBuffer, &memRequirements);
+    vkGetBufferMemoryRequirements(mDevice, outBuffer, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = getMemoryTypeIndex(memRequirements.memoryTypeBits, properties);
 
-    r = vkAllocateMemory(device, &allocInfo, nullptr, &outBufferMemory);
+    r = vkAllocateMemory(mDevice, &allocInfo, nullptr, &outBufferMemory);
     if (r != VK_SUCCESS) {
         throw VulkanException("Can't allocate memory for vertex buffer");
     }
 
-    r = vkBindBufferMemory(device, outBuffer, outBufferMemory, 0);
+    r = vkBindBufferMemory(mDevice, outBuffer, outBufferMemory, 0);
     if (r != VK_SUCCESS) {
         throw VulkanException("Can't bind buffer memory for vertex buffer");
     }
@@ -64,53 +64,30 @@ void VulkanContext::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, Vk
 
 void VulkanContext::createBufferLocal(const void *data, VkDeviceSize size, VkBufferUsageFlags usage,
                                       VkBuffer &outBuffer, VkDeviceMemory &outBufferMemory) {
-
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
 
-    // create staging buffer, visible to host
     createBuffer(size,
                  VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                 stagingBuffer, stagingBufferMemory);
+                 stagingBuffer,
+                 stagingBufferMemory);
 
-    // copy data to staging buffer memory
     updateBufferMemory(stagingBufferMemory, data, size, 0);
 
-    // create actual buffer
     createBuffer(size,
                  usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                 outBuffer, outBufferMemory);
+                 outBuffer,
+                 outBufferMemory);
 
-    copyBuffer(commandPool, transferQueue, stagingBuffer, outBuffer, size);
+    copyBuffer(mCommandPool, mTransferQueue, stagingBuffer, outBuffer, size);
 
-    // delete staging buffer
-    vkDestroyBuffer(device, stagingBuffer, nullptr);
-    vkFreeMemory(device, stagingBufferMemory, nullptr);
+    vkDestroyBuffer(mDevice, stagingBuffer, nullptr);
+    vkFreeMemory(mDevice, stagingBufferMemory, nullptr);
 }
 
-void VulkanContext::createBufferObject(BufferUsage type, VkBufferUsageFlags usage, uint32 size, const void *data,
-                                       BufferObject &outBuffer) {
-    if (type == BufferUsage::Dynamic) {
-        // create vertex buffer and allocate memory
-        createBuffer(size, usage,
-                // to be visible from host for updating buffer memory
-                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     outBuffer.buffer, outBuffer.memory);
-
-        // copy data to allocated memory
-        updateBufferMemory(outBuffer.memory, data, size, 0);
-    } else {
-        // allocate in device local memory
-        // and set data
-        createBufferLocal(data, size, usage,
-                          outBuffer.buffer, outBuffer.memory);
-    }
-}
-
-void VulkanContext::copyBuffer(VkCommandPool commandPool, VkQueue queue, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                               VkDeviceSize size) {
+void VulkanContext::copyBuffer(VkCommandPool commandPool, VkQueue queue, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
     // TODO: create _beginTempCommandBuffer and _endTempCommandBuffer
     VkCommandBuffer commandBuffer; // = _beginTempCommandBuffer(device, commandPool);
 
@@ -128,10 +105,9 @@ void VulkanContext::copyBuffer(VkCommandPool commandPool, VkQueue queue, VkBuffe
 void VulkanContext::updateBufferMemory(const VkDeviceMemory &bufferMemory, const void *data, VkDeviceSize size,
                                        VkDeviceSize offset) {
     void *mappedData;
-    vkMapMemory(device, bufferMemory, offset, size, 0, &mappedData);
-    memcpy(mappedData, data, (size_t) size);
-
-    vkUnmapMemory(device, bufferMemory);
+    vkMapMemory(mDevice, bufferMemory, offset, size, 0, &mappedData);
+    std::memcpy(mappedData, data, (size_t) size);
+    vkUnmapMemory(mDevice, bufferMemory);
 }
 
 void VulkanContext::createTextureImage(const void *imageData, uint32_t width, uint32_t height, uint32_t depth,
@@ -167,8 +143,8 @@ void VulkanContext::createTextureImage(const void *imageData, uint32_t width, ui
     // layout transition from transfer destination to shader readonly
     transitionImageLayout(outTextureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, textureLayout);
 
-    vkDestroyBuffer(device, stagingBuffer, nullptr);
-    vkFreeMemory(device, stagingBufferMemory, nullptr);
+    vkDestroyBuffer(mDevice, stagingBuffer, nullptr);
+    vkFreeMemory(mDevice, stagingBufferMemory, nullptr);
 }
 
 void VulkanContext::createImage(uint32_t width, uint32_t height, uint32_t depth,
@@ -192,25 +168,25 @@ void VulkanContext::createImage(uint32_t width, uint32_t height, uint32_t depth,
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VkResult r = vkCreateImage(device, &imageInfo, nullptr, &outImage);
+    VkResult r = vkCreateImage(mDevice, &imageInfo, nullptr, &outImage);
     if (r != VK_SUCCESS) {
         throw VulkanException("Can't create image");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(device, outImage, &memRequirements);
+    vkGetImageMemoryRequirements(mDevice, outImage, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = getMemoryTypeIndex(memRequirements.memoryTypeBits, properties);
 
-    r = vkAllocateMemory(device, &allocInfo, nullptr, &outImageMemory);
+    r = vkAllocateMemory(mDevice, &allocInfo, nullptr, &outImageMemory);
     if (r != VK_SUCCESS) {
         throw VulkanException("Can't allocate memory for image");
     }
 
-    r = vkBindImageMemory(device, outImage, outImageMemory, 0);
+    r = vkBindImageMemory(mDevice, outImage, outImageMemory, 0);
     if (r != VK_SUCCESS) {
         throw VulkanException("Can't bind image memory");
     }
@@ -300,7 +276,7 @@ void VulkanContext::createImageView(VkImageView &outImageView, VkImage image, Vk
     imageViewInfo.components = components;
     imageViewInfo.subresourceRange = subresourceRange;
 
-    VkResult r = vkCreateImageView(device, &imageViewInfo, nullptr, &outImageView);
+    VkResult r = vkCreateImageView(mDevice, &imageViewInfo, nullptr, &outImageView);
     if (r != VK_SUCCESS) {
         throw VulkanException("Can't create image view");
     }

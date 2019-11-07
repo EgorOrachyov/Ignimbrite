@@ -15,10 +15,10 @@
  */
 class VulkanContext {
 public:
-    VkInstance getInstance() const { return instance; }
-    VkDevice getDevice() const { return device; }
-    VkCommandPool getCommandPool() const { return commandPool; }
-    VkQueue getTransferQueue() const { return transferQueue; }
+    VkInstance getInstance() const { return mInstance; }
+    VkDevice getDevice() const { return mDevice; }
+    VkCommandPool getCommandPool() const { return mCommandPool; }
+    VkQueue getTransferQueue() const { return mTransferQueue; }
 
     const VkPhysicalDeviceMemoryProperties &getDeviceMemoryProperties() const;
     VkFormatProperties getDeviceFormatProperties(VkFormat format) const;
@@ -45,14 +45,6 @@ public:
      */
     void createBufferLocal(const void *data, VkDeviceSize size, VkBufferUsageFlags usage,
                             VkBuffer &outBuffer, VkDeviceMemory &outBufferMemory);
-
-    /**
-     * Create buffer object
-     * @param type dynamic / static
-     * @param usage specifies usage of this buffer: vertex, index etc
-     * @param outBuffer result buffer
-     */
-    void createBufferObject(BufferUsage type, VkBufferUsageFlags usage, uint32 size, const void *data, BufferObject &outBuffer);
 
     /**
      * Copy buffer using command pool
@@ -87,18 +79,19 @@ public:
                          VkComponentMapping components = {});
 
 private:
-    VkInstance instance = VK_NULL_HANDLE;
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    VkDevice device = VK_NULL_HANDLE;
 
-    VkQueue graphicsQueue = VK_NULL_HANDLE;
-    VkQueue presentQueue = VK_NULL_HANDLE;
-    VkQueue transferQueue = VK_NULL_HANDLE;
+    VkInstance mInstance = VK_NULL_HANDLE;
+    VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;
+    VkDevice mDevice = VK_NULL_HANDLE;
+
+    VkQueue mGraphicsQueue = VK_NULL_HANDLE;
+    VkQueue mPresentQueue = VK_NULL_HANDLE;
+    VkQueue mTransferQueue = VK_NULL_HANDLE;
 
     // TODO: init deviceMemoryProperties
-    VkPhysicalDeviceMemoryProperties deviceMemoryProperties;
+    VkPhysicalDeviceMemoryProperties mDeviceMemoryProperties = { };
     // TODO: init command pool
-    VkCommandPool commandPool;
+    VkCommandPool mCommandPool = VK_NULL_HANDLE;
 };
 
 

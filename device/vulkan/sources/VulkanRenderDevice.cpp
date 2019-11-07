@@ -8,18 +8,18 @@
 #include <exception>
 
 RenderDevice::ID VulkanRenderDevice::createVertexLayout(const std::vector<VertexBufferLayoutDesc> &vertexBuffersDesc) {
-    VertexLayout batch;
+    VertexLayout layout;
 
-    auto &vertBindings = batch.vertBindings;
-    auto &vertAttributes = batch.vertAttributes;
+    auto &vertBindings = layout.vkBindings;
+    auto &vertAttributes = layout.vkAttributes;
 
     for (size_t i = 0; i < vertexBuffersDesc.size(); i++) {
         const VertexBufferLayoutDesc &desc = vertexBuffersDesc[i];
 
         VkVertexInputBindingDescription bindingDesc;
-        bindingDesc.binding = (uint32_t) i;
+        bindingDesc.binding = (uint32) i;
         bindingDesc.inputRate = VulkanDefinitions::vertexInputRate(desc.usage);
-        bindingDesc.stride = (uint32_t) desc.stride;
+        bindingDesc.stride = (uint32) desc.stride;
 
         vertBindings.push_back(bindingDesc);
 
@@ -36,55 +36,99 @@ RenderDevice::ID VulkanRenderDevice::createVertexLayout(const std::vector<Vertex
         }
     }
 
-    return vertexLayoutBatches.move(batch);
+    return mVertexLayouts.move(layout);
 }
 
 void VulkanRenderDevice::destroyVertexLayout(RenderDevice::ID layout) {
-    vertexLayoutBatches.remove(layout);
+    mVertexLayouts.remove(layout);
 }
 
 RenderDevice::ID VulkanRenderDevice::createVertexBuffer(BufferUsage type, uint32 size, const void *data) {
-    BufferObject vertexBufferObj = {};
-    context.createBufferObject(type, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, size, data, vertexBufferObj);
+    VertexBuffer vertexBuffer = { };
+    vertexBuffer.size = size;
+    vertexBuffer.usage = type;
 
-    return vertexBuffers.move(vertexBufferObj);
+    VkBufferUsageFlagBits usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+
+    if (type == BufferUsage::Dynamic) {
+        context.createBuffer(size, usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     vertexBuffer.vkBuffer, vertexBuffer.vkDeviceMemory
+        );
+        context.updateBufferMemory(vertexBuffer.vkDeviceMemory, data, size, 0);
+    } else {
+        context.createBufferLocal(data, size, usage, vertexBuffer.vkBuffer, vertexBuffer.vkDeviceMemory);
+    }
+
+    return mVertexBuffers.move(vertexBuffer);
 }
 
 RenderDevice::ID VulkanRenderDevice::createIndexBuffer(BufferUsage type, uint32 size, const void *data) {
-    BufferObject indexBufferObj = {};
-    context.createBufferObject(type, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, size, data, indexBufferObj);
+    IndexBuffer indexBuffer = { };
+    indexBuffer.size = size;
+    indexBuffer.usage = type;
 
-    return indexBuffers.move(indexBufferObj);
+    VkBufferUsageFlagBits usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+
+    if (type == BufferUsage::Dynamic) {
+        context.createBuffer(size, usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     indexBuffer.vkBuffer, indexBuffer.vkDeviceMemory
+        );
+        context.updateBufferMemory(indexBuffer.vkDeviceMemory, data, size, 0);
+    } else {
+        context.createBufferLocal(data, size, usage, indexBuffer.vkBuffer, indexBuffer.vkDeviceMemory);
+    }
+
+    return mIndexBuffers.move(indexBuffer);
 }
 
 void VulkanRenderDevice::updateVertexBuffer(RenderDevice::ID bufferId, uint32 size, uint32 offset, const void *data) {
-    const VkDeviceMemory &bufferMemory = vertexBuffers.get(bufferId).memory;
-    context.updateBufferMemory(bufferMemory, data, size, offset);
+    const VertexBuffer& buffer = mVertexBuffers.get(bufferId);
+    const VkDeviceMemory &memory = buffer.vkDeviceMemory;
+
+    if (buffer.usage != BufferUsage::Dynamic) {
+        throw VulkanException("Attempt to update static vertex buffer");
+    }
+
+    if (size + offset > buffer.size) {
+        throw VulkanException("Attempt to update out-of-buffer memory region for vertex buffer");
+    }
+
+    context.updateBufferMemory(memory, data, size, offset);
 }
 
 void VulkanRenderDevice::updateIndexBuffer(RenderDevice::ID bufferId, uint32 size, uint32 offset, const void *data) {
-    const VkDeviceMemory &bufferMemory = indexBuffers.get(bufferId).memory;
-    context.updateBufferMemory(bufferMemory, data, size, offset);
+    const IndexBuffer& buffer = mIndexBuffers.get(bufferId);
+    const VkDeviceMemory &memory = buffer.vkDeviceMemory;
+
+    if (buffer.usage != BufferUsage::Dynamic) {
+        throw VulkanException("Attempt to update static index buffer");
+    }
+
+    if (size + offset > buffer.size) {
+        throw VulkanException("Attempt to update out-of-buffer memory region for index buffer");
+    }
+
+    context.updateBufferMemory(memory, data, size, offset);
 }
 
 void VulkanRenderDevice::destroyVertexBuffer(RenderDevice::ID bufferId) {
     const VkDevice &device = context.getDevice();
-    BufferObject &vb = vertexBuffers.get(bufferId);
+    VertexBuffer& buffer = mVertexBuffers.get(bufferId);
 
-    vkDestroyBuffer(device, vb.buffer, nullptr);
-    vkFreeMemory(device, vb.memory, nullptr);
+    vkDestroyBuffer(device, buffer.vkBuffer, nullptr);
+    vkFreeMemory(device, buffer.vkDeviceMemory, nullptr);
 
-    vertexBuffers.remove(bufferId);
+    mVertexBuffers.remove(bufferId);
 }
 
 void VulkanRenderDevice::destroyIndexBuffer(RenderDevice::ID bufferId) {
     const VkDevice &device = context.getDevice();
-    BufferObject &ib = indexBuffers.get(bufferId);
+    IndexBuffer& buffer = mIndexBuffers.get(bufferId);
 
-    vkDestroyBuffer(device, ib.buffer, nullptr);
-    vkFreeMemory(device, ib.memory, nullptr);
+    vkDestroyBuffer(device, buffer.vkBuffer, nullptr);
+    vkFreeMemory(device, buffer.vkDeviceMemory, nullptr);
 
-    indexBuffers.remove(bufferId);
+    mVertexBuffers.remove(bufferId);
 }
 
 RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDesc &textureDesc) {
@@ -111,7 +155,7 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
 
         context.createImageView(imo.imageView, imo.image, viewType, format, subresourceRange);
 
-        return imageObjects.move(imo);
+        return mImageObjects.move(imo);
     } else if (textureDesc.usageFlags & (uint32) TextureUsageBit::DepthStencilAttachment) {
         ImageObject depthStencil;
 
@@ -125,7 +169,7 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
         } else if (properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
             tiling = VK_IMAGE_TILING_OPTIMAL;
         } else {
-            throw VulkanException("Vulkan::Unsupported depth format");
+            throw VulkanException("Unsupported depth format");
         }
 
         context.createImage(textureDesc.width, textureDesc.height, textureDesc.depth,
@@ -151,9 +195,9 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
         context.createImageView(depthStencil.imageView, depthStencil.image,
                                 viewType, format, subresourceRange, components);
 
-        return imageObjects.move(depthStencil);
+        return mImageObjects.move(depthStencil);
     } else if (textureDesc.usageFlags & (uint32) TextureUsageBit::ColorAttachment) {
-        throw VulkanException("Vulkan::Color attachments must created with swapchain");
+        throw VulkanException("Color attachments must created with swapchain");
     } else {
         throw InvalidEnum();
     }
@@ -161,13 +205,13 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
 
 void VulkanRenderDevice::destroyTexture(RenderDevice::ID textureId) {
     const VkDevice &device = context.getDevice();
-    ImageObject &imo = imageObjects.get(textureId);
+    ImageObject &imo = mImageObjects.get(textureId);
 
     vkDestroyImageView(device, imo.imageView, nullptr);
     vkDestroyImage(device, imo.image, nullptr);
     vkFreeMemory(device, imo.imageMemory, nullptr);
 
-    imageObjects.remove(textureId);
+    mImageObjects.remove(textureId);
 }
 
 RenderDevice::ID VulkanRenderDevice::createSampler(const RenderDevice::SamplerDesc &samplerDesc) {
@@ -192,10 +236,10 @@ RenderDevice::ID VulkanRenderDevice::createSampler(const RenderDevice::SamplerDe
         throw InvalidEnum();
     }
 
-    return samplers.add(sampler);
+    return mSamplers.add(sampler);
 }
 
 void VulkanRenderDevice::destroySampler(RenderDevice::ID samplerId) {
-    vkDestroySampler(context.getDevice(), samplers.get(samplerId), nullptr);
-    samplers.remove(samplerId);
+    vkDestroySampler(context.getDevice(), mSamplers.get(samplerId), nullptr);
+    mSamplers.remove(samplerId);
 }

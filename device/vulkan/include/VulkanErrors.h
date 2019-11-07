@@ -29,4 +29,10 @@ private:
     std::string message;
 };
 
+inline void VulkanCheck(VkResult result) {
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Operation failed");
+    }
+}
+
 #endif //RENDERINGLIBRARY_VULKANERRORS_H

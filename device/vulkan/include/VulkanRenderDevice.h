@@ -9,6 +9,7 @@
 #include <include/renderer/ObjectIDBuffer.h>
 #include "VulkanContext.h"
 
+/** Vulkan implementation for Render Device interface */
 class VulkanRenderDevice : public RenderDevice {
 public:
 
@@ -30,11 +31,24 @@ public:
     void destroyTexture(ID texture) override;
 
 private:
-    VulkanContext context;
 
     struct VertexLayout {
-        std::vector<VkVertexInputBindingDescription> vertBindings;
-        std::vector<VkVertexInputAttributeDescription> vertAttributes;
+        std::vector<VkVertexInputBindingDescription> vkBindings;
+        std::vector<VkVertexInputAttributeDescription> vkAttributes;
+    };
+
+    struct VertexBuffer {
+        BufferUsage usage;
+        uint32 size;
+        VkBuffer vkBuffer;
+        VkDeviceMemory vkDeviceMemory;
+    };
+
+    struct IndexBuffer {
+        BufferUsage usage;
+        uint32 size;
+        VkBuffer vkBuffer;
+        VkDeviceMemory vkDeviceMemory;
     };
 
     struct ImageObject {
@@ -43,11 +57,13 @@ private:
         VkImageView imageView;
     };
 
-    ObjectIDBuffer<VertexLayout> vertexLayoutBatches;
-    ObjectIDBuffer<BufferObject> vertexBuffers;
-    ObjectIDBuffer<BufferObject> indexBuffers;
-    ObjectIDBuffer<VkSampler> samplers;
-    ObjectIDBuffer<ImageObject> imageObjects;
+    VulkanContext context;
+
+    ObjectIDBuffer<VertexLayout> mVertexLayouts;
+    ObjectIDBuffer<VertexBuffer> mVertexBuffers;
+    ObjectIDBuffer<IndexBuffer> mIndexBuffers;
+    ObjectIDBuffer<VkSampler> mSamplers;
+    ObjectIDBuffer<ImageObject> mImageObjects;
 };
 
 #endif //VULKANRENDERER_VULKANRENDERDEVICE_H

@@ -7,9 +7,4 @@
 
 #include <vulkan/vulkan.h>
 
-struct BufferObject {
-    VkBuffer buffer;
-    VkDeviceMemory memory;
-};
-
 #endif //RENDERINGLIBRARY_VULKANSTRUCTURES_H
