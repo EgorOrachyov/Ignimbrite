@@ -13,17 +13,17 @@ RenderDevice::ID VulkanRenderDevice::createVertexLayout(const std::vector<Vertex
     auto &vertBindings = layout.vkBindings;
     auto &vertAttributes = layout.vkAttributes;
 
-    for (size_t i = 0; i < vertexBuffersDesc.size(); i++) {
+    for (uint32 i = 0; i < vertexBuffersDesc.size(); i++) {
         const VertexBufferLayoutDesc &desc = vertexBuffersDesc[i];
 
         VkVertexInputBindingDescription bindingDesc;
-        bindingDesc.binding = (uint32) i;
+        bindingDesc.binding = i;
         bindingDesc.inputRate = VulkanDefinitions::vertexInputRate(desc.usage);
-        bindingDesc.stride = (uint32) desc.stride;
+        bindingDesc.stride = desc.stride;
 
         vertBindings.push_back(bindingDesc);
 
-        for (size_t j = 0; j < desc.attributes.size(); j++) {
+        for (uint32 j = 0; j < desc.attributes.size(); j++) {
             const VertexAttributeDesc &attr = desc.attributes[j];
 
             VkVertexInputAttributeDescription attrDesc;
