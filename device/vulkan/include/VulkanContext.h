@@ -5,8 +5,8 @@
 #ifndef RENDERINGLIBRARY_VULKANCONTEXT_H
 #define RENDERINGLIBRARY_VULKANCONTEXT_H
 
-#include <vulkan/vulkan.h>
-#include <renderer/DeviceDefinitions.h>
+#include "VulkanDefinitions.h"
+#include "VulkanStructures.h"
 
 /**
  * Handles vulkan instance setup. Defines physical
@@ -15,19 +15,14 @@
  */
 class VulkanContext {
 public:
-    VkInstance getInstance() const;
-    VkDevice getDevice() const;
-    VkCommandPool getCommandPool() const;
-    VkQueue getTransferQueue() const;
+    VkInstance getInstance() const { return instance; }
+    VkDevice getDevice() const { return device; }
+    VkCommandPool getCommandPool() const { return commandPool; }
+    VkQueue getTransferQueue() const { return transferQueue; }
 
     const VkPhysicalDeviceMemoryProperties &getDeviceMemoryProperties() const;
     VkFormatProperties getDeviceFormatProperties(VkFormat format) const;
     uint32_t getMemoryTypeIndex(uint32_t memoryTypeBits, VkFlags requirementsMask) const;
-
-    struct BufferObject {
-        VkBuffer buffer;
-        VkDeviceMemory memory;
-    };
 
     /**
      * Create vulkan buffer, allocate memory and bind this memory to buffer
@@ -74,21 +69,22 @@ public:
 
     void updateBufferMemory(const VkDeviceMemory &bufferMemory, const void *data, VkDeviceSize size, VkDeviceSize offset);
 
-    void createTextureImage(const void *imageData, uint32_t width, uint32_t height, uint32_t depth, 
+    void createTextureImage(const void *imageData, uint32_t width, uint32_t height, uint32_t depth,
                                 VkImageType imageType, VkFormat format, VkImageTiling tiling,
-                                VkImage &outTextureImage, VkDeviceMemory &outTextureMemory, 
+                                VkImage &outTextureImage, VkDeviceMemory &outTextureMemory,
                                 VkImageLayout textureLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     void createImage(uint32_t width, uint32_t height, uint32_t depth, VkImageType imageType, VkFormat format,
-                        VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, 
+                        VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
                         VkImage &outImage, VkDeviceMemory &outImageMemory);
 
-    void copyBufferToImage(const VkBuffer buffer, const VkImage image, uint32_t width, uint32_t height, uint32_t depth);
+    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t depth);
 
-    void transitionImageLayout(const VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void transitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);
 
-    void createImageView(VkImageView& outImageView, const VkImage image, VkImageViewType viewType, VkFormat format, const VkImageSubresourceRange &subresourceRange,
-        VkComponentMapping components = {});
+    void createImageView(VkImageView &outImageView, VkImage image, VkImageViewType viewType, VkFormat format,
+                         const VkImageSubresourceRange &subresourceRange,
+                         VkComponentMapping components = {});
 
 private:
     VkInstance instance = VK_NULL_HANDLE;

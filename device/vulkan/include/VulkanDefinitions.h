@@ -5,18 +5,9 @@
 #ifndef RENDERINGLIBRARY_VULKANDEFINITIONS_H
 #define RENDERINGLIBRARY_VULKANDEFINITIONS_H
 
-#include <vulkan/vulkan.h>
-#include <renderer/DeviceDefinitions.h>
-#include <exception>
-#include <string>
-
-class InvalidEnum : public std::exception {
-public:
-    ~InvalidEnum() override = default;
-    const char *what() const noexcept override {
-        return "VulkanDefinitions: invalid input enum";
-    }
-};
+#include "vulkan/vulkan.h"
+#include "renderer/DeviceDefinitions.h"
+#include "VulkanErrors.h"
 
 class VulkanDefinitions {
 public:
@@ -42,8 +33,7 @@ public:
     }
 
     static VkImageViewType imageViewType(TextureType type) {
-        switch (type)
-        {
+        switch (type) {
             case TextureType::Texture2D:
                 return VkImageViewType::VK_IMAGE_VIEW_TYPE_2D;
             default:
@@ -52,40 +42,36 @@ public:
     }
 
     static VkImageType imageType(TextureType type) {
-        switch (type)
-        {
-        case TextureType::Texture2D:
-            return VkImageType::VK_IMAGE_TYPE_2D;
-        default:
-            throw InvalidEnum();
+        switch (type) {
+            case TextureType::Texture2D:
+                return VkImageType::VK_IMAGE_TYPE_2D;
+            default:
+                throw InvalidEnum();
         }
     }
 
     static VkBorderColor borderColor(SamplerBorderColor color) {
-        switch (color)
-        {
-        case SamplerBorderColor::Black:
-            return VkBorderColor::VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-        default:
-            throw InvalidEnum();
+        switch (color) {
+            case SamplerBorderColor::Black:
+                return VkBorderColor::VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+            default:
+                throw InvalidEnum();
         }
     }
 
     static VkFilter filter(SamplerFilter filter) {
-        switch (filter)
-        {
-        case SamplerFilter::Linear:
-            return VkFilter::VK_FILTER_LINEAR;
-        case SamplerFilter::Nearest:
-            return VkFilter::VK_FILTER_NEAREST;
-        default:
-            throw InvalidEnum();
+        switch (filter) {
+            case SamplerFilter::Linear:
+                return VkFilter::VK_FILTER_LINEAR;
+            case SamplerFilter::Nearest:
+                return VkFilter::VK_FILTER_NEAREST;
+            default:
+                throw InvalidEnum();
         }
     }
 
     static VkSamplerAddressMode samplerAddressMode(SamplerRepeatMode mode) {
-        switch (mode)
-        {
+        switch (mode) {
             case SamplerRepeatMode::ClampToBorder:
                 return VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
             case SamplerRepeatMode::ClampToEdge:

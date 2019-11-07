@@ -8,23 +8,22 @@
 #include <exception>
 
 RenderDevice::ID VulkanRenderDevice::createVertexLayout(const std::vector<VertexBufferLayoutDesc> &vertexBuffersDesc) {
-    VertexLayoutBatch batch;
+    VertexLayout batch;
 
-    auto& vertBindings = batch.vertBindings;
-    auto& vertAttributes = batch.vertAttributes;
+    auto &vertBindings = batch.vertBindings;
+    auto &vertAttributes = batch.vertAttributes;
 
     for (size_t i = 0; i < vertexBuffersDesc.size(); i++) {
-        const VertexBufferLayoutDesc& desc = vertexBuffersDesc[i];
+        const VertexBufferLayoutDesc &desc = vertexBuffersDesc[i];
 
         VkVertexInputBindingDescription bindingDesc;
-        bindingDesc.binding = (uint32_t)i;
+        bindingDesc.binding = (uint32_t) i;
         bindingDesc.inputRate = VulkanDefinitions::vertexInputRate(desc.usage);
-        bindingDesc.stride = (uint32_t)desc.stride;
+        bindingDesc.stride = (uint32_t) desc.stride;
 
         vertBindings.push_back(bindingDesc);
 
-        for (size_t j = 0; j < desc.attributes.size(); j++)
-        {
+        for (size_t j = 0; j < desc.attributes.size(); j++) {
             const VertexAttributeDesc &attr = desc.attributes[j];
 
             VkVertexInputAttributeDescription attrDesc;
@@ -45,14 +44,14 @@ void VulkanRenderDevice::destroyVertexLayout(RenderDevice::ID layout) {
 }
 
 RenderDevice::ID VulkanRenderDevice::createVertexBuffer(BufferUsage type, uint32 size, const void *data) {
-    VulkanContext::BufferObject vertexBufferObj = {};
+    BufferObject vertexBufferObj = {};
     context.createBufferObject(type, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, size, data, vertexBufferObj);
 
     return vertexBuffers.move(vertexBufferObj);
 }
 
 RenderDevice::ID VulkanRenderDevice::createIndexBuffer(BufferUsage type, uint32 size, const void *data) {
-    VulkanContext::BufferObject indexBufferObj = {};
+    BufferObject indexBufferObj = {};
     context.createBufferObject(type, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, size, data, indexBufferObj);
 
     return indexBuffers.move(indexBufferObj);
@@ -70,7 +69,7 @@ void VulkanRenderDevice::updateIndexBuffer(RenderDevice::ID bufferId, uint32 siz
 
 void VulkanRenderDevice::destroyVertexBuffer(RenderDevice::ID bufferId) {
     const VkDevice &device = context.getDevice();
-    VulkanContext::BufferObject &vb = vertexBuffers.get(bufferId);
+    BufferObject &vb = vertexBuffers.get(bufferId);
 
     vkDestroyBuffer(device, vb.buffer, nullptr);
     vkFreeMemory(device, vb.memory, nullptr);
@@ -80,7 +79,7 @@ void VulkanRenderDevice::destroyVertexBuffer(RenderDevice::ID bufferId) {
 
 void VulkanRenderDevice::destroyIndexBuffer(RenderDevice::ID bufferId) {
     const VkDevice &device = context.getDevice();
-    VulkanContext::BufferObject &ib = indexBuffers.get(bufferId);
+    BufferObject &ib = indexBuffers.get(bufferId);
 
     vkDestroyBuffer(device, ib.buffer, nullptr);
     vkFreeMemory(device, ib.memory, nullptr);
@@ -94,14 +93,13 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
     VkImageType imageType = VulkanDefinitions::imageType(textureDesc.type);
     VkImageViewType viewType = VulkanDefinitions::imageViewType(textureDesc.type);
 
-    if (textureDesc.usageFlags & (uint32)TextureUsageBit::ShaderSampling)
-    {
+    if (textureDesc.usageFlags & (uint32) TextureUsageBit::ShaderSampling) {
         ImageObject imo;
 
         context.createTextureImage(textureDesc.data,
-            textureDesc.width, textureDesc.height, textureDesc.depth,
-            imageType, format, VK_IMAGE_TILING_OPTIMAL,
-            imo.image, imo.imageMemory, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                   textureDesc.width, textureDesc.height, textureDesc.depth,
+                                   imageType, format, VK_IMAGE_TILING_OPTIMAL,
+                                   imo.image, imo.imageMemory, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
         VkImageSubresourceRange subresourceRange;
         subresourceRange.aspectMask = aspectMask;
@@ -114,9 +112,7 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
         context.createImageView(imo.imageView, imo.image, viewType, format, subresourceRange);
 
         return imageObjects.move(imo);
-    }
-    else if (textureDesc.usageFlags & (uint32)TextureUsageBit::DepthStencilAttachment)
-    {
+    } else if (textureDesc.usageFlags & (uint32) TextureUsageBit::DepthStencilAttachment) {
         ImageObject depthStencil;
 
         // get properties of depth stencil format
@@ -124,25 +120,20 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
 
         VkImageTiling tiling;
 
-        if (properties.linearTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
-        {
+        if (properties.linearTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
             tiling = VK_IMAGE_TILING_LINEAR;
-        }
-        else if (properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
-        {
+        } else if (properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
             tiling = VK_IMAGE_TILING_OPTIMAL;
-        }
-        else
-        {
-            throw std::exception("Vulkan::Unsupported depth format");
+        } else {
+            throw VulkanException("Vulkan::Unsupported depth format");
         }
 
         context.createImage(textureDesc.width, textureDesc.height, textureDesc.depth,
-            imageType, format, tiling, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-            // depth stencil buffer is device local
-            // TODO: make visible from cpu
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            depthStencil.image, depthStencil.imageMemory);
+                            imageType, format, tiling, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                // depth stencil buffer is device local
+                // TODO: make visible from cpu
+                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                            depthStencil.image, depthStencil.imageMemory);
 
         VkComponentMapping components;
         components.r = VK_COMPONENT_SWIZZLE_R;
@@ -158,23 +149,18 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
         subresourceRange.layerCount = 1;
 
         context.createImageView(depthStencil.imageView, depthStencil.image,
-            viewType, format, subresourceRange, components);
+                                viewType, format, subresourceRange, components);
 
         return imageObjects.move(depthStencil);
-    }
-    else if (textureDesc.usageFlags & (uint32)TextureUsageBit::ColorAttachment)
-    {
-        throw std::exception("Vulkan::Color attachments must created with swapchain");
-    }
-    else
-    {
+    } else if (textureDesc.usageFlags & (uint32) TextureUsageBit::ColorAttachment) {
+        throw VulkanException("Vulkan::Color attachments must created with swapchain");
+    } else {
         throw InvalidEnum();
-        return RenderDevice::ID();
     }
 }
 
 void VulkanRenderDevice::destroyTexture(RenderDevice::ID textureId) {
-    const VkDevice& device = context.getDevice();
+    const VkDevice &device = context.getDevice();
     ImageObject &imo = imageObjects.get(textureId);
 
     vkDestroyImageView(device, imo.imageView, nullptr);
@@ -202,8 +188,7 @@ RenderDevice::ID VulkanRenderDevice::createSampler(const RenderDevice::SamplerDe
 
     VkSampler sampler;
     VkResult r = vkCreateSampler(context.getDevice(), &samplerInfo, nullptr, &sampler);
-    if (r != VK_SUCCESS)
-    {
+    if (r != VK_SUCCESS) {
         throw InvalidEnum();
     }
 

@@ -32,23 +32,20 @@ public:
 private:
     VulkanContext context;
 
-    struct VertexLayoutBatch {
+    struct VertexLayout {
         std::vector<VkVertexInputBindingDescription> vertBindings;
         std::vector<VkVertexInputAttributeDescription> vertAttributes;
     };
 
-    /**
-     * Vulkan image object
-     */
     struct ImageObject {
         VkImage image;
         VkDeviceMemory imageMemory;
         VkImageView imageView;
     };
 
-    ObjectIDBuffer<VertexLayoutBatch> vertexLayoutBatches;
-    ObjectIDBuffer<VulkanContext::BufferObject> vertexBuffers;
-    ObjectIDBuffer<VulkanContext::BufferObject> indexBuffers;
+    ObjectIDBuffer<VertexLayout> vertexLayoutBatches;
+    ObjectIDBuffer<BufferObject> vertexBuffers;
+    ObjectIDBuffer<BufferObject> indexBuffers;
     ObjectIDBuffer<VkSampler> samplers;
     ObjectIDBuffer<ImageObject> imageObjects;
 };

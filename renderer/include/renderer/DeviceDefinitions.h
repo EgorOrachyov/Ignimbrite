@@ -199,4 +199,6 @@ enum class PrimitiveTopology {
     TriangleList
 };
 
+#undef BIT_SHIFT
+
 #endif //VULKANRENDERER_DEVICEDEFINITIONS_H
