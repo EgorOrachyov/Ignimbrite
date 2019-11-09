@@ -3,8 +3,10 @@
 //
 
 #include "TestObjectID.h"
+#include "VulkanStartUp.h"
 
 int main() {
     TestObjectIDBuffer::run();
+    VulkanStartUp::run();
     return 0;
 }

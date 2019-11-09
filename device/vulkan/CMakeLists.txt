@@ -4,6 +4,11 @@ project(VulkanDevice)
 add_library(VulkanDevice STATIC ..  )
 message(STATUS "Build VulkanDevice library")
 
+target_include_directories(VulkanDevice PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+
+target_include_directories(VulkanDevice PRIVATE ${Renderer_SOURCE_DIR}/include)
+target_link_libraries(VulkanDevice PRIVATE Renderer)
+
 target_sources(VulkanDevice
     PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/include/VulkanRenderDevice.h
@@ -16,6 +21,3 @@ target_sources(VulkanDevice
         ${CMAKE_CURRENT_LIST_DIR}/include/VulkanStructures.h
 )
 
-target_include_directories(VulkanDevice PRIVATE ${CMAKE_CURRENT_LIST_DIR})
-target_include_directories(VulkanDevice PRIVATE ${Renderer_SOURCE_DIR}/include)
-target_link_libraries(VulkanDevice PRIVATE Renderer)
