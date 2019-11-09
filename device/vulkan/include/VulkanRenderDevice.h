@@ -13,6 +13,9 @@
 class VulkanRenderDevice : public RenderDevice {
 public:
 
+    VulkanRenderDevice(uint32 extensionsCount, const char* const* extensions);
+    ~VulkanRenderDevice() override = default;
+
     ID createVertexLayout(const std::vector<VertexBufferLayoutDesc> &vertexBuffersDesc) override;
     void destroyVertexLayout(ID layout) override;
 

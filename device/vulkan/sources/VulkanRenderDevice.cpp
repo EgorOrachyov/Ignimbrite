@@ -7,6 +7,11 @@
 #include <vulkan/vulkan.h>
 #include <exception>
 
+VulkanRenderDevice::VulkanRenderDevice(uint32 extensionsCount, const char *const *extensions)
+    : context(extensionsCount, extensions) {
+
+}
+
 RenderDevice::ID VulkanRenderDevice::createVertexLayout(const std::vector<VertexBufferLayoutDesc> &vertexBuffersDesc) {
     VertexLayout layout;
 
@@ -54,7 +59,7 @@ RenderDevice::ID VulkanRenderDevice::createVertexBuffer(BufferUsage type, uint32
         context.createBuffer(size, usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                      vertexBuffer.vkBuffer, vertexBuffer.vkDeviceMemory
         );
-        context.updateBufferMemory(vertexBuffer.vkDeviceMemory, data, size, 0);
+        context.updateBufferMemory(vertexBuffer.vkDeviceMemory, 0, size, data);
     } else {
         context.createBufferLocal(data, size, usage, vertexBuffer.vkBuffer, vertexBuffer.vkDeviceMemory);
     }
@@ -73,7 +78,7 @@ RenderDevice::ID VulkanRenderDevice::createIndexBuffer(BufferUsage type, uint32 
         context.createBuffer(size, usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                      indexBuffer.vkBuffer, indexBuffer.vkDeviceMemory
         );
-        context.updateBufferMemory(indexBuffer.vkDeviceMemory, data, size, 0);
+        context.updateBufferMemory(indexBuffer.vkDeviceMemory, 0, size, data);
     } else {
         context.createBufferLocal(data, size, usage, indexBuffer.vkBuffer, indexBuffer.vkDeviceMemory);
     }
@@ -93,7 +98,7 @@ void VulkanRenderDevice::updateVertexBuffer(RenderDevice::ID bufferId, uint32 si
         throw VulkanException("Attempt to update out-of-buffer memory region for vertex buffer");
     }
 
-    context.updateBufferMemory(memory, data, size, offset);
+    context.updateBufferMemory(memory, offset, size, data);
 }
 
 void VulkanRenderDevice::updateIndexBuffer(RenderDevice::ID bufferId, uint32 size, uint32 offset, const void *data) {
@@ -108,7 +113,7 @@ void VulkanRenderDevice::updateIndexBuffer(RenderDevice::ID bufferId, uint32 siz
         throw VulkanException("Attempt to update out-of-buffer memory region for index buffer");
     }
 
-    context.updateBufferMemory(memory, data, size, offset);
+    context.updateBufferMemory(memory, offset, size, data);
 }
 
 void VulkanRenderDevice::destroyVertexBuffer(RenderDevice::ID bufferId) {

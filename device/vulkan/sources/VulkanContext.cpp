@@ -3,9 +3,197 @@
 //
 
 #include "include/VulkanContext.h"
+#include "renderer/Compilation.h"
 #include <exception>
 #include <cstring>
 #include <renderer/DeviceDefinitions.h>
+
+VulkanContext::VulkanContext(uint32 extensionsCount, const char *const *extensions) {
+    _fillRequiredExt(extensionsCount, extensions);
+    _createInstance();
+    _setupDebugMessenger();
+}
+
+
+VulkanContext::~VulkanContext() {
+    _destroyDebugMessenger();
+    _destroyInstance();
+}
+
+void VulkanContext::_createInstance() {
+    /** General application info */
+    VkApplicationInfo appInfo = {};
+    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    appInfo.pApplicationName = "default";
+    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+    appInfo.pEngineName = "default";
+    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+    appInfo.apiVersion = VK_API_VERSION_1_0;
+
+    VkInstanceCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    createInfo.pApplicationInfo = &appInfo;
+    createInfo.enabledExtensionCount = (uint32) mRequiredExtensions.size();
+    createInfo.ppEnabledExtensionNames = mRequiredExtensions.data();
+
+    /** Validation layers check*/
+    if (mEnableValidationLayers) {
+        if (_checkValidationLayers()) {
+            createInfo.enabledLayerCount = (uint32) mValidationLayers.size();
+            createInfo.ppEnabledLayerNames = mValidationLayers.data();
+        } else {
+            throw VulkanException("Required validation layer is not available");
+        }
+    } else {
+        createInfo.enabledLayerCount = 0;
+        createInfo.ppEnabledLayerNames = nullptr;
+    }
+
+    /** Debug extensions info check and output */
+    _checkSupportedExtensions();
+
+    VkResult result = vkCreateInstance(&createInfo, nullptr, &mInstance);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Cannot create Vulkan instance");
+    }
+}
+
+void VulkanContext::_destroyInstance() {
+    vkDestroyInstance(mInstance, nullptr);
+}
+
+void VulkanContext::_fillRequiredExt(uint32 count, const char *const *ext) {
+    if (count > 0) {
+        mRequiredExtensions.reserve(count + 1);
+        for (uint32 i = 0; i < count; i++) {
+            mRequiredExtensions.push_back(ext[i]);
+        }
+    }
+
+    if (mEnableValidationLayers) {
+        mRequiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    }
+}
+
+void VulkanContext::_checkSupportedExtensions() {
+    uint32 extensionsCount = 0;
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionsCount, nullptr);
+
+    std::vector<VkExtensionProperties> extensions(extensionsCount);
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionsCount, extensions.data());
+
+#ifdef MODE_DEBUG
+    printf("Required (count: %u) extensions for vulkan:\n", (uint32) mRequiredExtensions.size());
+    for (const auto &e: mRequiredExtensions) {
+        printf("%s\n", e);
+    }
+
+    printf("Supported (count: %u) extensions by vulkan:\n", (uint32) extensions.size());
+    for (const auto &e: extensions) {
+        printf("%s\n", e.extensionName);
+    }
+#endif
+}
+
+bool VulkanContext::_checkValidationLayers() {
+    uint32_t layerCount;
+    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+    std::vector<VkLayerProperties> availableLayers(layerCount);
+    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+#ifdef MODE_DEBUG
+    printf("Required (count: %u) validation layers for vulkan:\n", (uint32) mValidationLayers.size());
+    for (const auto &required: mValidationLayers) {
+        printf("%s\n", required);
+    }
+
+    printf("Available (count: %u) validation layers by vulkan:\n", layerCount);
+    for (const auto &available: availableLayers) {
+        printf("%s\n", available.layerName);
+    }
+#endif
+
+    for (const auto &required: mValidationLayers) {
+        bool found = false;
+        for (const auto &available: availableLayers) {
+            if (std::strcmp(required, available.layerName) == 0) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void VulkanContext::_setupDebugMessenger() {
+    if (!mEnableValidationLayers) {
+        return;
+    }
+
+    VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    createInfo.messageSeverity =
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    createInfo.messageType =
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    createInfo.pfnUserCallback = _debugCallback;
+    createInfo.pUserData = this; // Optional
+
+    if (_createDebugUtilsMessengerEXT(&createInfo, nullptr, &mDebugMessenger) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create debug utils messenger");
+    }
+}
+
+void VulkanContext::_destroyDebugMessenger() {
+    if (!mEnableValidationLayers) {
+        return;
+    }
+
+    _destroyDebugUtilsMessengerEXT(mDebugMessenger, nullptr);
+}
+
+VkResult VulkanContext::_createDebugUtilsMessengerEXT(const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
+                                                      const VkAllocationCallbacks *pAllocator,
+                                                      VkDebugUtilsMessengerEXT *pDebugMessenger) {
+    auto pFunction = (PFN_vkCreateDebugUtilsMessengerEXT)
+            vkGetInstanceProcAddr(mInstance, "vkCreateDebugUtilsMessengerEXT");
+
+    if (pFunction != nullptr) {
+        return pFunction(mInstance, pCreateInfo, pAllocator, pDebugMessenger);
+    } else {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+}
+
+void VulkanContext::_destroyDebugUtilsMessengerEXT(VkDebugUtilsMessengerEXT debugMessenger,
+                                                   const VkAllocationCallbacks *pAllocator) {
+    auto pFunction = (PFN_vkDestroyDebugUtilsMessengerEXT)
+            vkGetInstanceProcAddr(mInstance, "vkDestroyDebugUtilsMessengerEXT");
+    if (pFunction != nullptr) {
+        pFunction(mInstance, debugMessenger, pAllocator);
+    } else {
+        throw VulkanException("Cannot load \"vkDestroyDebugUtilsMessengerEXT\" function");
+    }
+}
+
+VkBool32 VulkanContext::_debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                       VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                       const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+                                       void *pUserData) {
+    printf("[Vk Validation layer]: %s\n", pCallbackData->pMessage);
+    return VK_FALSE;
+}
+
 
 VkFormatProperties VulkanContext::getDeviceFormatProperties(VkFormat format) const {
     VkFormatProperties properties;
@@ -73,7 +261,7 @@ void VulkanContext::createBufferLocal(const void *data, VkDeviceSize size, VkBuf
                  stagingBuffer,
                  stagingBufferMemory);
 
-    updateBufferMemory(stagingBufferMemory, data, size, 0);
+    updateBufferMemory(stagingBufferMemory, 0, size, data);
 
     createBuffer(size,
                  usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
@@ -87,7 +275,8 @@ void VulkanContext::createBufferLocal(const void *data, VkDeviceSize size, VkBuf
     vkFreeMemory(mDevice, stagingBufferMemory, nullptr);
 }
 
-void VulkanContext::copyBuffer(VkCommandPool commandPool, VkQueue queue, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+void VulkanContext::copyBuffer(VkCommandPool commandPool, VkQueue queue, VkBuffer srcBuffer, VkBuffer dstBuffer,
+                               VkDeviceSize size) {
     // TODO: create _beginTempCommandBuffer and _endTempCommandBuffer
     VkCommandBuffer commandBuffer; // = _beginTempCommandBuffer(device, commandPool);
 
@@ -102,8 +291,8 @@ void VulkanContext::copyBuffer(VkCommandPool commandPool, VkQueue queue, VkBuffe
     // _endTempCommandBuffer(device, transitionQueue or graphicsQueue, commandPool, commandBuffer);
 }
 
-void VulkanContext::updateBufferMemory(const VkDeviceMemory &bufferMemory, const void *data, VkDeviceSize size,
-                                       VkDeviceSize offset) {
+void VulkanContext::updateBufferMemory(VkDeviceMemory bufferMemory, VkDeviceSize offset, VkDeviceSize size,
+                                       const void *data) {
     void *mappedData;
     vkMapMemory(mDevice, bufferMemory, offset, size, 0, &mappedData);
     std::memcpy(mappedData, data, (size_t) size);
@@ -125,7 +314,7 @@ void VulkanContext::createTextureImage(const void *imageData, uint32_t width, ui
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                  stagingBuffer, stagingBufferMemory);
 
-    updateBufferMemory(stagingBufferMemory, imageData, imageSize, 0);
+    updateBufferMemory(stagingBufferMemory, 0, imageSize, imageData);
 
     createImage(width, height, depth, imageType, format, tiling,
             // for copying and sampling in shaders
@@ -266,7 +455,7 @@ void VulkanContext::transitionImageLayout(VkImage image, VkImageLayout oldLayout
 }
 
 void VulkanContext::createImageView(VkImageView &outImageView, VkImage image, VkImageViewType viewType,
-                                    VkFormat format, const VkImageSubresourceRange &subresourceRange,
+                                    VkFormat format, const VkImageSubresourceRange &subResourceRange,
                                     VkComponentMapping components) {
     VkImageViewCreateInfo imageViewInfo = {};
     imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -274,7 +463,7 @@ void VulkanContext::createImageView(VkImageView &outImageView, VkImage image, Vk
     imageViewInfo.viewType = viewType;
     imageViewInfo.format = format;
     imageViewInfo.components = components;
-    imageViewInfo.subresourceRange = subresourceRange;
+    imageViewInfo.subresourceRange = subResourceRange;
 
     VkResult r = vkCreateImageView(mDevice, &imageViewInfo, nullptr, &outImageView);
     if (r != VK_SUCCESS) {

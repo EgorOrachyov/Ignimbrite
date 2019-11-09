@@ -18,40 +18,48 @@
 class VulkanContext {
 public:
 
-    /* Explicitly called by VulkanRenderDevice */
-    void init();
-
-    void destroy();
+    VulkanContext(uint32 extensionsCount, const char *const *extensions);
+    ~VulkanContext();
 
 private:
 
     /* Private section: setup vulkan instance */
     void _createInstance();
-
     void _destroyInstance();
 
     void _checkSupportedExtensions();
+    void _fillRequiredExt(uint32 count, const char *const *ext);
 
     bool _checkValidationLayers();
 
-    void _fillRequiredExt(uint32 count, const char *const *ext);
-
     void _setupDebugMessenger();
-
     void _destroyDebugMessenger();
 
+    VkResult _createDebugUtilsMessengerEXT(
+            const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
+            const VkAllocationCallbacks *pAllocator,
+            VkDebugUtilsMessengerEXT *pDebugMessenger
+    );
+
+    void _destroyDebugUtilsMessengerEXT(
+            VkDebugUtilsMessengerEXT debugMessenger,
+            const VkAllocationCallbacks *pAllocator
+    );
+
+    static VKAPI_ATTR VkBool32 VKAPI_CALL _debugCallback(
+            VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+            VkDebugUtilsMessageTypeFlagsEXT messageType,
+            const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+            void* pUserData
+    );
+
     void _pickPhysicalDevice();
-
     bool _isDeviceSuitable(VkPhysicalDevice device);
-
     bool _checkDeviceExtensionSupport(VkPhysicalDevice device);
-
     void _querySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails &details);
-
     void _findQueueFamilies(VkPhysicalDevice device, QueueFamilyIndices &indices);
 
     void _createLogicalDevice();
-
     void _destroyLogicalDevice();
 
     void _setupQueue();
@@ -64,42 +72,71 @@ public:
 
     uint32_t getMemoryTypeIndex(uint32_t memoryTypeBits, VkFlags requirementsMask) const;
 
-    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-                      VkBuffer &outBuffer, VkDeviceMemory &outBufferMemory);
+    void createBuffer(
+            VkDeviceSize size,
+            VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
+            VkBuffer &outBuffer, VkDeviceMemory &outBufferMemory
+    );
 
-    void createBufferLocal(const void *data, VkDeviceSize size, VkBufferUsageFlags usage,
-                           VkBuffer &outBuffer, VkDeviceMemory &outBufferMemory);
+    void createBufferLocal(
+            const void *data,
+            VkDeviceSize size, VkBufferUsageFlags usage,
+            VkBuffer &outBuffer, VkDeviceMemory &outBufferMemory
+    );
 
-    void copyBuffer(VkCommandPool commandPool, VkQueue queue,
-                    VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+    void copyBuffer(
+            VkCommandPool commandPool,
+            VkQueue queue,
+            VkBuffer srcBuffer, VkBuffer dstBuffer,
+            VkDeviceSize size
+    );
 
-    void
-    updateBufferMemory(const VkDeviceMemory &bufferMemory, const void *data, VkDeviceSize size, VkDeviceSize offset);
+    void updateBufferMemory(
+            VkDeviceMemory bufferMemory,
+            VkDeviceSize offset, VkDeviceSize size,
+            const void *data
+    );
 
-    void createTextureImage(const void *imageData, uint32_t width, uint32_t height, uint32_t depth,
-                            VkImageType imageType, VkFormat format, VkImageTiling tiling,
-                            VkImage &outTextureImage, VkDeviceMemory &outTextureMemory,
-                            VkImageLayout textureLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    void createTextureImage(
+            const void *imageData,
+            uint32_t width, uint32_t height, uint32_t depth,
+            VkImageType imageType, VkFormat format, VkImageTiling tiling,
+            VkImage &outTextureImage, VkDeviceMemory &outTextureMemory,
+            VkImageLayout textureLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    );
 
-    void createImage(uint32_t width, uint32_t height, uint32_t depth, VkImageType imageType, VkFormat format,
-                     VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
-                     VkImage &outImage, VkDeviceMemory &outImageMemory);
+    void createImage(
+            uint32_t width, uint32_t height, uint32_t depth,
+            VkImageType imageType, VkFormat format,
+            VkImageTiling tiling, VkImageUsageFlags usage,
+            VkMemoryPropertyFlags properties,
+            VkImage &outImage, VkDeviceMemory &outImageMemory
+    );
 
-    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t depth);
+    void copyBufferToImage(
+            VkBuffer buffer,
+            VkImage image,
+            uint32_t width, uint32_t height, uint32_t depth
+    );
 
-    void transitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void transitionImageLayout(
+            VkImage image,
+            VkImageLayout oldLayout,
+            VkImageLayout newLayout
+    );
 
-    void createImageView(VkImageView &outImageView, VkImage image, VkImageViewType viewType, VkFormat format,
-                         const VkImageSubresourceRange &subresourceRange,
-                         VkComponentMapping components = {});
+    void createImageView(
+            VkImageView &outImageView,
+            VkImage image,
+            VkImageViewType viewType, VkFormat format,
+            const VkImageSubresourceRange &subResourceRange,
+            VkComponentMapping components = {}
+    );
 
     /* Get functions section */
     VkInstance getInstance() const { return mInstance; }
-
     VkDevice getDevice() const { return mDevice; }
-
     VkCommandPool getCommandPool() const { return mCommandPool; }
-
     VkQueue getTransferQueue() const { return mTransferQueue; }
 
 private:
@@ -107,7 +144,7 @@ private:
     std::vector<const char *> mRequiredExtensions;
     const std::vector<const char *> mDeviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
     const std::vector<const char *> mValidationLayers = {"VK_LAYER_KHRONOS_validation"};
-    const bool mEnableValidationLayers;
+    const bool mEnableValidationLayers = true;
 
     VkInstance mInstance = VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT mDebugMessenger = VK_NULL_HANDLE;
