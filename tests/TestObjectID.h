@@ -70,10 +70,33 @@ struct TestObjectIDBuffer {
         }
     }
 
+    static void test4() {
+
+        ObjectIDBuffer<int64> buffer;
+
+        uint32 remove[] { 1, 2, 3, 4, 5, 6 };
+        int64 data[] = { 12312, 232, 12312, 213, 123, 77777, 100000 };
+
+        ObjectID ids[sizeof(data)/ sizeof(int64)];
+
+        for (uint32 i = 0; i < sizeof(data)/sizeof(int64); i++) {
+            ids[i] = buffer.add(data[i]);
+        }
+
+        for (auto toRemove: remove) {
+            buffer.remove(ids[toRemove]);
+        }
+
+        for (auto object: buffer) {
+            printf("Object: %lli\n", object);
+        }
+    }
+
     static void run() {
         test1();
         test2();
         test3();
+        test4();
     }
 
 };

@@ -39,7 +39,9 @@ public:
     bool contains(ObjectID id) const;
     uint32 getNumUsedIDs() const;
     uint32 getNumFreeIDs() const;
+
 private:
+
     struct RawObject {
         uint8 mem[sizeof(T)];
     };
@@ -52,6 +54,27 @@ private:
 
     uint32 mFreeIDs = 0;
     uint32 mUsedIDs = 0;
+
+public:
+
+    class Iterator {
+    public:
+        Iterator(uint32 current, const std::vector<RawObject> &objects, const std::vector<uint32> &gens, const std::vector<uint32> &freeGensIndices);
+        bool operator!=(const Iterator& other);
+        T& operator*();
+        void operator++();
+    private:
+        T* object = nullptr;
+        bool found = false;
+        uint32 current;
+        const std::vector<RawObject> &objects;
+        const std::vector<uint32> &gens;
+        const std::vector<uint32> &freeGensIndices;
+    };
+
+    Iterator begin();
+    Iterator end();
+
 };
 
 template <typename T>
@@ -201,6 +224,60 @@ uint32 ObjectIDBuffer<T>::getNumUsedIDs() const {
 template <typename T>
 uint32 ObjectIDBuffer<T>::getNumFreeIDs() const {
     return mFreeIDs;
+}
+
+template <typename T>
+typename ObjectIDBuffer<T>::Iterator ObjectIDBuffer<T>::begin() {
+    return Iterator(0, mObjects, mGens, mFreeGensIndices);
+}
+
+template <typename T>
+typename ObjectIDBuffer<T>::Iterator ObjectIDBuffer<T>::end() {
+    return Iterator(mGens.size(), mObjects, mGens, mFreeGensIndices);
+}
+
+template <typename T>
+ObjectIDBuffer<T>::Iterator::Iterator(uint32 current, const std::vector<ObjectIDBuffer::RawObject> &objects,
+                                      const std::vector<uint32> &gens, const std::vector<uint32> &freeGensIndices)
+  : current(current), objects(objects), gens(gens), freeGensIndices(freeGensIndices) {
+    operator++();
+}
+
+template <typename T>
+bool ObjectIDBuffer<T>::Iterator::operator!=(const ObjectIDBuffer<T>::Iterator &other) {
+    return object != other.object;
+}
+
+template <typename T>
+T& ObjectIDBuffer<T>::Iterator::operator*() {
+    return *object;
+}
+
+template <typename T>
+void ObjectIDBuffer<T>::Iterator::operator++() {
+    found = false;
+
+    for (current; current < gens.size(); current++) {
+        bool isValid = true;
+        for (auto notUsed: freeGensIndices) {
+            if (notUsed == current) {
+                isValid = false;
+                break;
+            }
+        }
+
+        if (isValid) {
+            found = true;
+            object = (T*) & objects[current];
+            break;
+        }
+    }
+
+    if (!found) {
+        object = nullptr;
+    } else {
+        current += 1;
+    }
 }
 
 #endif //VULKANRENDERER_OBJECTIDBUFFER_H

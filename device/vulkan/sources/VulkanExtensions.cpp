@@ -3,6 +3,7 @@
 //
 
 #include "include/VulkanExtensions.h"
+#include "include/VulkanErrors.h"
 
 void VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device, GLFWwindow *handle, uint32 width, uint32 height,
                                          uint32 widthFramebuffer, uint32 heightFramebuffer, const std::string &name) {
@@ -10,7 +11,7 @@ void VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device, GLFWwindow 
     VkResult result = glfwCreateWindowSurface(device.context.getInstance(), handle, nullptr, &surface);
 
     if (result != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create window surface");
+        throw VulkanException("Failed to create window surface");
     }
 
     VulkanRenderDevice::Window window = { };

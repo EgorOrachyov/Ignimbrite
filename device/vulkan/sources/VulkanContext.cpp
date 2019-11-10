@@ -142,6 +142,7 @@ void VulkanContext::_setupDebugMessenger() {
     createInfo.messageSeverity =
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
     createInfo.messageType =
             VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
@@ -374,7 +375,6 @@ void VulkanContext::_outDeviceInfoVerbose(VkPhysicalDevice device) {
     printf("maxFragmentOutputAttachments = %u\n", limits.maxFragmentOutputAttachments);
     printf("maxFragmentDualSrcAttachments = %u\n", limits.maxFragmentDualSrcAttachments);
     printf("maxFragmentCombinedOutputResources = %u\n", limits.maxFragmentCombinedOutputResources);
-
 }
 
 

@@ -249,3 +249,11 @@ void VulkanRenderDevice::destroySampler(RenderDevice::ID samplerId) {
     vkDestroySampler(context.getDevice(), mSamplers.get(samplerId), nullptr);
     mSamplers.remove(samplerId);
 }
+
+RenderDevice::ID VulkanRenderDevice::getSurface(const std::string &surfaceName) {
+
+}
+
+void VulkanRenderDevice::getSurfaceSize(RenderDevice::ID surface, uint32 &width, uint32 &height) {
+
+}

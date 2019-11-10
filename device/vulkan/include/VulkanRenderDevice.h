@@ -33,6 +33,9 @@ public:
     ID createTexture(const TextureDesc &textureDesc) override;
     void destroyTexture(ID texture) override;
 
+    ID getSurface(const std::string &surfaceName) override;
+    void getSurfaceSize(ID surface, uint32 &width, uint32 &height) override;
+
 private:
 
     friend class VulkanExtensions;
