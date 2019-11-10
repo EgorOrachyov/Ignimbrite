@@ -90,6 +90,14 @@ struct TestObjectIDBuffer {
         for (auto object: buffer) {
             printf("Object: %lli\n", object);
         }
+
+        buffer.remove(ids[0]);
+        ids[0] = buffer.add(66666);
+
+        for (auto i = buffer.begin(); i != buffer.end(); ++i) {
+            auto id = i.getID();
+            printf("Object: %lli id: (%u,%u)\n", *i, id.getIndex(), id.getGeneration());
+        }
     }
 
     static void run() {

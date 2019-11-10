@@ -63,10 +63,12 @@ public:
         bool operator!=(const Iterator& other);
         T& operator*();
         void operator++();
+        ObjectID getID();
     private:
         T* object = nullptr;
         bool found = false;
         uint32 current;
+        ObjectID id;
         const std::vector<RawObject> &objects;
         const std::vector<uint32> &gens;
         const std::vector<uint32> &freeGensIndices;
@@ -269,6 +271,7 @@ void ObjectIDBuffer<T>::Iterator::operator++() {
         if (isValid) {
             found = true;
             object = (T*) & objects[current];
+            id = ObjectID(current, gens[current]);
             break;
         }
     }
@@ -278,6 +281,11 @@ void ObjectIDBuffer<T>::Iterator::operator++() {
     } else {
         current += 1;
     }
+}
+
+template <typename T>
+ObjectID ObjectIDBuffer<T>::Iterator::getID() {
+    return id;
 }
 
 #endif //VULKANRENDERER_OBJECTIDBUFFER_H
