@@ -204,7 +204,7 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
     } else if (textureDesc.usageFlags & (uint32) TextureUsageBit::ColorAttachment) {
         throw VulkanException("Color attachments must created with swapchain");
     } else {
-        throw InvalidEnum();
+        throw VulkanException("Failed to create texture object");
     }
 }
 
@@ -237,8 +237,9 @@ RenderDevice::ID VulkanRenderDevice::createSampler(const RenderDevice::SamplerDe
 
     VkSampler sampler;
     VkResult r = vkCreateSampler(context.getDevice(), &samplerInfo, nullptr, &sampler);
+
     if (r != VK_SUCCESS) {
-        throw InvalidEnum();
+        throw VulkanException("Failed to create sampler object");
     }
 
     return mSamplers.add(sampler);

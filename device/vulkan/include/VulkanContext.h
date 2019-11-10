@@ -54,6 +54,7 @@ private:
     );
 
     void _pickPhysicalDevice();
+    void _outDeviceInfoVerbose(VkPhysicalDevice device);
     bool _isDeviceSuitable(VkPhysicalDevice device);
     bool _checkDeviceExtensionSupport(VkPhysicalDevice device);
     void _querySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails &details);
@@ -157,7 +158,6 @@ private:
     VkQueue mPresentQueue = VK_NULL_HANDLE;
     VkQueue mTransferQueue = VK_NULL_HANDLE;
 
-    // TODO: init deviceMemoryProperties
     VkPhysicalDeviceMemoryProperties mDeviceMemoryProperties = {};
     // TODO: init command pool
     VkCommandPool mCommandPool = VK_NULL_HANDLE;

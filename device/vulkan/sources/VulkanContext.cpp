@@ -12,6 +12,7 @@ VulkanContext::VulkanContext(uint32 extensionsCount, const char *const *extensio
     _fillRequiredExt(extensionsCount, extensions);
     _createInstance();
     _setupDebugMessenger();
+    _pickPhysicalDevice();
 }
 
 
@@ -150,7 +151,7 @@ void VulkanContext::_setupDebugMessenger() {
     createInfo.pUserData = this; // Optional
 
     if (_createDebugUtilsMessengerEXT(&createInfo, nullptr, &mDebugMessenger) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create debug utils messenger");
+        throw VulkanException("Failed to create debug utils messenger");
     }
 }
 
@@ -193,6 +194,190 @@ VkBool32 VulkanContext::_debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT me
     printf("[Vk Validation layer]: %s\n", pCallbackData->pMessage);
     return VK_FALSE;
 }
+
+void VulkanContext::_pickPhysicalDevice() {
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
+
+    if (deviceCount == 0) {
+        throw VulkanException("No target GPUs with Vulkan support");
+    }
+
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
+
+#ifdef MODE_DEBUG
+    printf("Physical devices (count: %u) info:\n", (uint32) devices.size());
+    for (auto &device: devices) {
+        _outDeviceInfoVerbose(device);
+    }
+#endif
+
+    for (auto &device: devices) {
+        if (_isDeviceSuitable(device)) {
+            mPhysicalDevice = device;
+            break;
+        }
+    }
+
+    if (mPhysicalDevice == VK_NULL_HANDLE) {
+        throw VulkanException("Failed to find a suitable GPU");
+    }
+
+    vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &mDeviceMemoryProperties);
+}
+
+bool VulkanContext::_isDeviceSuitable(VkPhysicalDevice device) {
+    QueueFamilyIndices indices;
+    _findQueueFamilies(device, indices);
+
+    auto queueFamilySupport = indices.isComplete();
+    auto extensionsSupported = _checkDeviceExtensionSupport(device);
+    auto swapChainAdequate = false;
+
+    if (extensionsSupported) {
+        SwapChainSupportDetails details;
+        _querySwapChainSupport(device, details);
+        // swapChainAdequate = !details.formats.empty() && !details.presentModes.empty();
+        // todo: handle check of swap chain and surface capabilities for physical device
+        swapChainAdequate = true;
+    }
+
+
+    VkPhysicalDeviceFeatures supportedFeatures;
+    vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+
+    return queueFamilySupport && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
+}
+
+bool VulkanContext::_checkDeviceExtensionSupport(VkPhysicalDevice device) {
+    uint32_t extensionCount;
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+#ifdef MODE_DEBUG
+    printf("Required (count: %u) physical device extensions:\n", (uint32) mDeviceExtensions.size());
+    for (auto& ext: mDeviceExtensions) {
+        printf("%s\n", ext);
+    }
+    printf("Available (count: %u) physical device extensions:\n", (uint32) availableExtensions.size());
+    for (auto& ext: availableExtensions) {
+        printf("%s\n", ext.extensionName);
+    }
+#endif
+
+    for (auto &required: mDeviceExtensions) {
+        bool found = false;
+        for (auto &available: availableExtensions) {
+            if (std::strcmp(required, available.extensionName) == 0) {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void VulkanContext::_querySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails &details) {
+//     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, mWindow.surface, &details.capabilities);
+//
+//     uint32_t formatCount;
+//     vkGetPhysicalDeviceSurfaceFormatsKHR(device, mWindow.surface, &formatCount, nullptr);
+//
+//     if (formatCount != 0) {
+//         details.formats.resize(formatCount);
+//         vkGetPhysicalDeviceSurfaceFormatsKHR(device, mWindow.surface, &formatCount, details.formats.data());
+//     }
+//
+//     uint32_t presentModeCount;
+//     vkGetPhysicalDeviceSurfacePresentModesKHR(device, mWindow.surface, &presentModeCount, nullptr);
+//
+//     if (presentModeCount != 0) {
+//         details.presentModes.resize(presentModeCount);
+//         vkGetPhysicalDeviceSurfacePresentModesKHR(device, mWindow.surface, &presentModeCount, details.presentModes.data());
+//     }
+}
+
+void VulkanContext::_findQueueFamilies(VkPhysicalDevice device, QueueFamilyIndices &indices) {
+    uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+    for (uint32 i = 0; i < queueFamilies.size(); i++) {
+        VkQueueFamilyProperties& p = queueFamilies[i];
+
+        if (p.queueCount > 0 && (p.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
+            indices.graphicsFamily.setValue(i);
+        }
+
+        VkBool32 presentSupport = false;
+        //vkGetPhysicalDeviceSurfaceSupportKHR(device, i, mWindow.surface, &presentSupport);
+
+        if (p.queueCount > 0 && presentSupport) {
+            indices.presentFamily.setValue(i);
+        }
+
+        if (indices.isComplete()) {
+            return;
+        }
+    }
+}
+
+void VulkanContext::_outDeviceInfoVerbose(VkPhysicalDevice device) {
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+    VkPhysicalDeviceLimits& limits = deviceProperties.limits;
+
+    printf("Name: %s\n", deviceProperties.deviceName);
+    printf("Device ID: %u\n", deviceProperties.deviceID);
+    printf("Vendor ID: %u\n", deviceProperties.vendorID);
+    printf("API version: %u\n", deviceProperties.apiVersion);
+    printf("Driver version: %u\n", deviceProperties.driverVersion);
+
+    printf("maxImageDimension1D = %u\n", limits.maxImageDimension1D);
+    printf("maxImageDimension2D = %u\n", limits.maxImageDimension2D);
+    printf("maxImageDimension3D = %u\n", limits.maxImageDimension3D);
+    printf("maxImageDimensionCube = %u\n", limits.maxImageDimensionCube);
+
+    printf("maxUniformBufferRange = %u\n", limits.maxUniformBufferRange);
+    printf("maxMemoryAllocationCount = %u\n", limits.maxMemoryAllocationCount);
+    printf("maxSamplerAllocationCount = %u\n", limits.maxSamplerAllocationCount);
+
+    printf("maxPerStageDescriptorSamplers = %u\n", limits.maxPerStageDescriptorSamplers);
+    printf("maxPerStageDescriptorUniformBuffers = %u\n", limits.maxPerStageDescriptorUniformBuffers);
+    printf("maxPerStageDescriptorStorageBuffers = %u\n", limits.maxPerStageDescriptorStorageBuffers);
+    printf("maxPerStageDescriptorSampledImages = %u\n", limits.maxPerStageDescriptorSampledImages);
+    printf("maxPerStageDescriptorStorageImages = %u\n", limits.maxPerStageDescriptorStorageImages);
+    printf("maxPerStageDescriptorInputAttachments = %u\n", limits.maxPerStageDescriptorInputAttachments);
+    printf("maxPerStageResources = %u\n", limits.maxPerStageResources);
+
+    printf("maxVertexInputAttributes = %u\n", limits.maxVertexInputAttributes);
+    printf("maxVertexInputBindings = %u\n", limits.maxVertexInputBindings);
+    printf("maxVertexInputAttributeOffset = %u\n", limits.maxVertexInputAttributeOffset);
+    printf("maxVertexInputBindingStride = %u\n", limits.maxVertexInputBindingStride);
+    printf("maxVertexOutputComponents = %u\n", limits.maxVertexOutputComponents);
+
+    printf("maxFragmentInputComponents = %u\n", limits.maxFragmentInputComponents);
+    printf("maxFragmentOutputAttachments = %u\n", limits.maxFragmentOutputAttachments);
+    printf("maxFragmentDualSrcAttachments = %u\n", limits.maxFragmentDualSrcAttachments);
+    printf("maxFragmentCombinedOutputResources = %u\n", limits.maxFragmentCombinedOutputResources);
+
+}
+
+
 
 
 VkFormatProperties VulkanContext::getDeviceFormatProperties(VkFormat format) const {
