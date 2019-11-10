@@ -52,6 +52,14 @@ if (WITH_GLM)
 endif()
 
 #################################################################
+# Configure project options
+
+configure_file(
+    ${PROJECT_SOURCE_DIR}/renderer/include/renderer/Options.h.in
+    ${PROJECT_SOURCE_DIR}/renderer/include/renderer/Options.h
+)
+
+#################################################################
 # Include actual sub directories
 
 add_subdirectory(renderer)

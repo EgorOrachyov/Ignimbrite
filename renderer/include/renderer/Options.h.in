@@ -1,0 +1,7 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#cmakedefine WITH_GLFW
+#cmakedefine WITH_GLM
+
+#endif // CONFIG_H

@@ -7,7 +7,6 @@
 
 #include "VulkanDefinitions.h"
 #include "VulkanStructures.h"
-
 #include <vector>
 
 /**
@@ -152,7 +151,7 @@ private:
     VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;
     VkDevice mDevice = VK_NULL_HANDLE;
 
-    QueueFamilyIndices familyIndices;
+    QueueFamilyIndices familyIndices = { };
 
     VkQueue mGraphicsQueue = VK_NULL_HANDLE;
     VkQueue mPresentQueue = VK_NULL_HANDLE;

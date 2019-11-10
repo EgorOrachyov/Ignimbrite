@@ -35,6 +35,8 @@ public:
 
 private:
 
+    friend class VulkanExtensions;
+
     struct VertexLayout {
         std::vector<VkVertexInputBindingDescription> vkBindings;
         std::vector<VkVertexInputAttributeDescription> vkAttributes;
@@ -60,8 +62,18 @@ private:
         VkImageView imageView;
     };
 
+    struct Window {
+        uint32 width;
+        uint32 height;
+        uint32 widthFramebuffer;
+        uint32 heightFramebuffer;
+        std::string name;
+        VkSurfaceKHR surface;
+    };
+
     VulkanContext context;
 
+    ObjectIDBuffer<Window> mWindows;
     ObjectIDBuffer<VertexLayout> mVertexLayouts;
     ObjectIDBuffer<VertexBuffer> mVertexBuffers;
     ObjectIDBuffer<IndexBuffer> mIndexBuffers;
