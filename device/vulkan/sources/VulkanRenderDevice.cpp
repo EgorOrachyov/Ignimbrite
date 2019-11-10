@@ -251,8 +251,18 @@ void VulkanRenderDevice::destroySampler(RenderDevice::ID samplerId) {
 }
 
 RenderDevice::ID VulkanRenderDevice::getSurface(const std::string &surfaceName) {
+    for (auto i = mWindows.begin(); i != mWindows.end(); ++i) {
+        auto& window = *i;
+        if (window.name == surfaceName) {
+            return i.getID();
+        }
+    }
+    return INVALID;
 }
 
 void VulkanRenderDevice::getSurfaceSize(RenderDevice::ID surface, uint32 &width, uint32 &height) {
+    auto& window = mWindows.get(surface);
 
+    width = window.width;
+    height = window.height;
 }
