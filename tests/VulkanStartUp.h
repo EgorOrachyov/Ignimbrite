@@ -17,7 +17,9 @@ struct VulkanStartUp {
         context.createInstance();
         context.setupDebugMessenger();
         context.pickPhysicalDevice();
+        context.createLogicalDevice();
 
+        context.destroyLogicalDevice();
         context.destroyDebugMessenger();
         context.destroyInstance();
     }

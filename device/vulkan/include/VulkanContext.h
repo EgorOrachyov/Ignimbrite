@@ -116,7 +116,7 @@ struct VulkanContext {
             VkComponentMapping components = {}
     );
 
-    std::vector<const char *> requiredExtensions;
+    std::vector<const char *> requiredExtensions = {VK_KHR_SURFACE_EXTENSION_NAME};
     const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
     const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
     const bool enableValidationLayers = true;

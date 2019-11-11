@@ -4,10 +4,10 @@
 
 #include <VulkanContext.h>
 #include <renderer/Compilation.h>
+#include <renderer/DeviceDefinitions.h>
 #include <exception>
 #include <cstring>
-#include <renderer/DeviceDefinitions.h>
-
+#include <set>
 
 void VulkanContext::createInstance() {
     VkApplicationInfo appInfo = {};
@@ -317,6 +317,49 @@ void VulkanContext::outDeviceInfoVerbose() {
     printf("maxFragmentOutputAttachments = %u\n", limits.maxFragmentOutputAttachments);
     printf("maxFragmentDualSrcAttachments = %u\n", limits.maxFragmentDualSrcAttachments);
     printf("maxFragmentCombinedOutputResources = %u\n", limits.maxFragmentCombinedOutputResources);
+}
+
+void VulkanContext::createLogicalDevice() {
+    /** Want to create only one instance of the same queue */
+    std::set<uint32> uniqueQueueFamilies = { familyIndices.graphicsFamily.get(), familyIndices.transferFamily.get() };
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+
+    float queuePriority = 1.0f;
+    for (uint32_t queueFamily : uniqueQueueFamilies) {
+        VkDeviceQueueCreateInfo queueCreateInfo = {};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = queueFamily;
+        queueCreateInfo.queueCount = 1;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+        queueCreateInfos.push_back(queueCreateInfo);
+    }
+
+    VkDeviceCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.queueCreateInfoCount = (uint32) queueCreateInfos.size();
+    createInfo.pQueueCreateInfos = queueCreateInfos.data();
+    createInfo.pEnabledFeatures = &deviceFeatures;
+    createInfo.enabledExtensionCount = (uint32) deviceExtensions.size();
+    createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+
+    if (enableValidationLayers) {
+        createInfo.enabledLayerCount = (uint32 )validationLayers.size();
+        createInfo.ppEnabledLayerNames = validationLayers.data();
+    } else {
+        createInfo.enabledLayerCount = 0;
+        createInfo.ppEnabledLayerNames = nullptr;
+    }
+
+    if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
+        throw VulkanException("Failed to create logical device");
+    }
+
+    vkGetDeviceQueue(device, familyIndices.graphicsFamily.get(), 0, &graphicsQueue);
+    vkGetDeviceQueue(device, familyIndices.transferFamily.get(), 0, &transferQueue);
+}
+
+void VulkanContext::destroyLogicalDevice() {
+    vkDestroyDevice(device, nullptr);
 }
 
 VkFormatProperties VulkanContext::getDeviceFormatProperties(VkFormat format) const {
