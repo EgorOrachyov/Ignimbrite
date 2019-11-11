@@ -5,8 +5,9 @@
 #ifndef RENDERINGLIBRARY_VULKANCONTEXT_H
 #define RENDERINGLIBRARY_VULKANCONTEXT_H
 
-#include "VulkanDefinitions.h"
-#include "VulkanUtils.h"
+#include <VulkanDefinitions.h>
+#include <VulkanUtils.h>
+#include <VulkanObjects.h>
 #include <vector>
 
 /**
@@ -54,6 +55,9 @@ struct VulkanContext {
     VkFormatProperties getDeviceFormatProperties(VkFormat format) const;
 
     uint32_t getMemoryTypeIndex(uint32_t memoryTypeBits, VkFlags requirementsMask) const;
+
+    void createSwapChain(VulkanSurface& surface);
+    void destroySwapChain();
 
     void createBuffer(
             VkDeviceSize size,
