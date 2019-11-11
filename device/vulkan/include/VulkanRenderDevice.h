@@ -5,9 +5,9 @@
 #ifndef VULKANRENDERER_VULKANRENDERDEVICE_H
 #define VULKANRENDERER_VULKANRENDERDEVICE_H
 
-#include <include/renderer/RenderDevice.h>
-#include <include/renderer/ObjectIDBuffer.h>
-#include "VulkanContext.h"
+#include <renderer/ObjectIDBuffer.h>
+#include <VulkanObjects.h>
+#include <VulkanContext.h>
 
 /** Vulkan implementation for Render Device interface */
 class VulkanRenderDevice : public RenderDevice {
@@ -40,48 +40,14 @@ private:
 
     friend class VulkanExtensions;
 
-    struct VertexLayout {
-        std::vector<VkVertexInputBindingDescription> vkBindings;
-        std::vector<VkVertexInputAttributeDescription> vkAttributes;
-    };
-
-    struct VertexBuffer {
-        BufferUsage usage;
-        uint32 size;
-        VkBuffer vkBuffer;
-        VkDeviceMemory vkDeviceMemory;
-    };
-
-    struct IndexBuffer {
-        BufferUsage usage;
-        uint32 size;
-        VkBuffer vkBuffer;
-        VkDeviceMemory vkDeviceMemory;
-    };
-
-    struct ImageObject {
-        VkImage image;
-        VkDeviceMemory imageMemory;
-        VkImageView imageView;
-    };
-
-    struct Window {
-        uint32 width;
-        uint32 height;
-        uint32 widthFramebuffer;
-        uint32 heightFramebuffer;
-        std::string name;
-        VkSurfaceKHR surface;
-    };
-
     VulkanContext context;
 
-    ObjectIDBuffer<Window> mWindows;
-    ObjectIDBuffer<VertexLayout> mVertexLayouts;
-    ObjectIDBuffer<VertexBuffer> mVertexBuffers;
-    ObjectIDBuffer<IndexBuffer> mIndexBuffers;
+    ObjectIDBuffer<VulkanSurface> mSurfaces;
+    ObjectIDBuffer<VulkanVertexLayout> mVertexLayouts;
+    ObjectIDBuffer<VulkanVertexBuffer> mVertexBuffers;
+    ObjectIDBuffer<VulkanIndexBuffer> mIndexBuffers;
     ObjectIDBuffer<VkSampler> mSamplers;
-    ObjectIDBuffer<ImageObject> mImageObjects;
+    ObjectIDBuffer<VulkanImageObject> mImageObjects;
 };
 
 #endif //VULKANRENDERER_VULKANRENDERDEVICE_H

@@ -12,9 +12,7 @@
 struct VulkanStartUp {
 
     static void run() {
-
-        VulkanContext context(0, nullptr);
-
+        VulkanContext context;
     }
 
 };

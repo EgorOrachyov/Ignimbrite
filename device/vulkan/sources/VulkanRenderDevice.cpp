@@ -2,18 +2,17 @@
 // Created by Egor Orachyov on 2019-11-02.
 //
 
-#include "include/VulkanRenderDevice.h"
-#include "include/VulkanDefinitions.h"
+#include <VulkanRenderDevice.h>
+#include <VulkanDefinitions.h>
 #include <vulkan/vulkan.h>
 #include <exception>
 
-VulkanRenderDevice::VulkanRenderDevice(uint32 extensionsCount, const char *const *extensions)
-    : context(extensionsCount, extensions) {
+VulkanRenderDevice::VulkanRenderDevice(uint32 extensionsCount, const char *const *extensions) {
 
 }
 
 RenderDevice::ID VulkanRenderDevice::createVertexLayout(const std::vector<VertexBufferLayoutDesc> &vertexBuffersDesc) {
-    VertexLayout layout;
+    VulkanVertexLayout layout;
 
     auto &vertBindings = layout.vkBindings;
     auto &vertAttributes = layout.vkAttributes;
@@ -49,7 +48,7 @@ void VulkanRenderDevice::destroyVertexLayout(RenderDevice::ID layout) {
 }
 
 RenderDevice::ID VulkanRenderDevice::createVertexBuffer(BufferUsage type, uint32 size, const void *data) {
-    VertexBuffer vertexBuffer = { };
+    VulkanVertexBuffer vertexBuffer = { };
     vertexBuffer.size = size;
     vertexBuffer.usage = type;
 
@@ -68,7 +67,7 @@ RenderDevice::ID VulkanRenderDevice::createVertexBuffer(BufferUsage type, uint32
 }
 
 RenderDevice::ID VulkanRenderDevice::createIndexBuffer(BufferUsage type, uint32 size, const void *data) {
-    IndexBuffer indexBuffer = { };
+    VulkanIndexBuffer indexBuffer = { };
     indexBuffer.size = size;
     indexBuffer.usage = type;
 
@@ -87,7 +86,7 @@ RenderDevice::ID VulkanRenderDevice::createIndexBuffer(BufferUsage type, uint32 
 }
 
 void VulkanRenderDevice::updateVertexBuffer(RenderDevice::ID bufferId, uint32 size, uint32 offset, const void *data) {
-    const VertexBuffer& buffer = mVertexBuffers.get(bufferId);
+    const VulkanVertexBuffer& buffer = mVertexBuffers.get(bufferId);
     const VkDeviceMemory &memory = buffer.vkDeviceMemory;
 
     if (buffer.usage != BufferUsage::Dynamic) {
@@ -102,7 +101,7 @@ void VulkanRenderDevice::updateVertexBuffer(RenderDevice::ID bufferId, uint32 si
 }
 
 void VulkanRenderDevice::updateIndexBuffer(RenderDevice::ID bufferId, uint32 size, uint32 offset, const void *data) {
-    const IndexBuffer& buffer = mIndexBuffers.get(bufferId);
+    const VulkanIndexBuffer& buffer = mIndexBuffers.get(bufferId);
     const VkDeviceMemory &memory = buffer.vkDeviceMemory;
 
     if (buffer.usage != BufferUsage::Dynamic) {
@@ -117,8 +116,8 @@ void VulkanRenderDevice::updateIndexBuffer(RenderDevice::ID bufferId, uint32 siz
 }
 
 void VulkanRenderDevice::destroyVertexBuffer(RenderDevice::ID bufferId) {
-    const VkDevice &device = context.getDevice();
-    VertexBuffer& buffer = mVertexBuffers.get(bufferId);
+    const VkDevice &device = context.mDevice;
+    VulkanVertexBuffer& buffer = mVertexBuffers.get(bufferId);
 
     vkDestroyBuffer(device, buffer.vkBuffer, nullptr);
     vkFreeMemory(device, buffer.vkDeviceMemory, nullptr);
@@ -127,8 +126,8 @@ void VulkanRenderDevice::destroyVertexBuffer(RenderDevice::ID bufferId) {
 }
 
 void VulkanRenderDevice::destroyIndexBuffer(RenderDevice::ID bufferId) {
-    const VkDevice &device = context.getDevice();
-    IndexBuffer& buffer = mIndexBuffers.get(bufferId);
+    const VkDevice &device = context.mDevice;
+    VulkanIndexBuffer& buffer = mIndexBuffers.get(bufferId);
 
     vkDestroyBuffer(device, buffer.vkBuffer, nullptr);
     vkFreeMemory(device, buffer.vkDeviceMemory, nullptr);
@@ -143,7 +142,7 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
     VkImageViewType viewType = VulkanDefinitions::imageViewType(textureDesc.type);
 
     if (textureDesc.usageFlags & (uint32) TextureUsageBit::ShaderSampling) {
-        ImageObject imo;
+        VulkanImageObject imo;
 
         context.createTextureImage(textureDesc.data,
                                    textureDesc.width, textureDesc.height, textureDesc.depth,
@@ -162,7 +161,7 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
 
         return mImageObjects.move(imo);
     } else if (textureDesc.usageFlags & (uint32) TextureUsageBit::DepthStencilAttachment) {
-        ImageObject depthStencil;
+        VulkanImageObject depthStencil;
 
         // get properties of depth stencil format
         const VkFormatProperties &properties = context.getDeviceFormatProperties(format);
@@ -209,8 +208,8 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
 }
 
 void VulkanRenderDevice::destroyTexture(RenderDevice::ID textureId) {
-    const VkDevice &device = context.getDevice();
-    ImageObject &imo = mImageObjects.get(textureId);
+    const VkDevice &device = context.mDevice;
+    VulkanImageObject &imo = mImageObjects.get(textureId);
 
     vkDestroyImageView(device, imo.imageView, nullptr);
     vkDestroyImage(device, imo.image, nullptr);
@@ -236,7 +235,7 @@ RenderDevice::ID VulkanRenderDevice::createSampler(const RenderDevice::SamplerDe
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
     VkSampler sampler;
-    VkResult r = vkCreateSampler(context.getDevice(), &samplerInfo, nullptr, &sampler);
+    VkResult r = vkCreateSampler(context.mDevice, &samplerInfo, nullptr, &sampler);
 
     if (r != VK_SUCCESS) {
         throw VulkanException("Failed to create sampler object");
@@ -246,12 +245,12 @@ RenderDevice::ID VulkanRenderDevice::createSampler(const RenderDevice::SamplerDe
 }
 
 void VulkanRenderDevice::destroySampler(RenderDevice::ID samplerId) {
-    vkDestroySampler(context.getDevice(), mSamplers.get(samplerId), nullptr);
+    vkDestroySampler(context.mDevice, mSamplers.get(samplerId), nullptr);
     mSamplers.remove(samplerId);
 }
 
 RenderDevice::ID VulkanRenderDevice::getSurface(const std::string &surfaceName) {
-    for (auto i = mWindows.begin(); i != mWindows.end(); ++i) {
+    for (auto i = mSurfaces.begin(); i != mSurfaces.end(); ++i) {
         auto& window = *i;
         if (window.name == surfaceName) {
             return i.getID();
@@ -261,7 +260,7 @@ RenderDevice::ID VulkanRenderDevice::getSurface(const std::string &surfaceName) 
 }
 
 void VulkanRenderDevice::getSurfaceSize(RenderDevice::ID surface, uint32 &width, uint32 &height) {
-    auto& window = mWindows.get(surface);
+    auto& window = mSurfaces.get(surface);
 
     width = window.width;
     height = window.height;

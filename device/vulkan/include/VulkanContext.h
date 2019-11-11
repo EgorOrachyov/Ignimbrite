@@ -6,7 +6,7 @@
 #define RENDERINGLIBRARY_VULKANCONTEXT_H
 
 #include "VulkanDefinitions.h"
-#include "VulkanStructures.h"
+#include "VulkanUtils.h"
 #include <vector>
 
 /**
@@ -14,57 +14,49 @@
  * device and creates logical device for application.
  * defines queue families, finds graphics, present and transfer queues
  */
-class VulkanContext {
-public:
-
-    VulkanContext(uint32 extensionsCount, const char *const *extensions);
-    ~VulkanContext();
-
-private:
+struct VulkanContext {
 
     /* Private section: setup vulkan instance */
-    void _createInstance();
-    void _destroyInstance();
+    void createInstance();
+    void destroyInstance();
 
-    void _checkSupportedExtensions();
-    void _fillRequiredExt(uint32 count, const char *const *ext);
+    void checkSupportedExtensions();
+    void fillRequiredExt(uint32 count, const char *const *ext);
 
-    bool _checkValidationLayers();
+    bool checkValidationLayers();
 
-    void _setupDebugMessenger();
-    void _destroyDebugMessenger();
+    void setupDebugMessenger();
+    void destroyDebugMessenger();
 
-    VkResult _createDebugUtilsMessengerEXT(
+    VkResult createDebugUtilsMessengerEXT(
             const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
             const VkAllocationCallbacks *pAllocator,
             VkDebugUtilsMessengerEXT *pDebugMessenger
     );
 
-    void _destroyDebugUtilsMessengerEXT(
+    void destroyDebugUtilsMessengerEXT(
             VkDebugUtilsMessengerEXT debugMessenger,
             const VkAllocationCallbacks *pAllocator
     );
 
-    static VKAPI_ATTR VkBool32 VKAPI_CALL _debugCallback(
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
             VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
             VkDebugUtilsMessageTypeFlagsEXT messageType,
             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
             void* pUserData
     );
 
-    void _pickPhysicalDevice();
-    void _outDeviceInfoVerbose(VkPhysicalDevice device);
-    bool _isDeviceSuitable(VkPhysicalDevice device);
-    bool _checkDeviceExtensionSupport(VkPhysicalDevice device);
-    void _querySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails &details);
-    void _findQueueFamilies(VkPhysicalDevice device, QueueFamilyIndices &indices);
+    void pickPhysicalDevice();
+    void outDeviceInfoVerbose(VkPhysicalDevice device);
+    bool isDeviceSuitable(VkPhysicalDevice device);
+    bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+    void querySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails &details);
+    void findQueueFamilies(VkPhysicalDevice device, QueueFamilyIndices &indices);
 
-    void _createLogicalDevice();
-    void _destroyLogicalDevice();
+    void createLogicalDevice();
+    void destroyLogicalDevice();
 
-    void _setupQueue();
-
-public:
+    void setupQueues();
 
     const VkPhysicalDeviceMemoryProperties &getDeviceMemoryProperties() const {}
 
@@ -132,14 +124,6 @@ public:
             const VkImageSubresourceRange &subResourceRange,
             VkComponentMapping components = {}
     );
-
-    /* Get functions section */
-    VkInstance getInstance() const { return mInstance; }
-    VkDevice getDevice() const { return mDevice; }
-    VkCommandPool getCommandPool() const { return mCommandPool; }
-    VkQueue getTransferQueue() const { return mTransferQueue; }
-
-private:
 
     std::vector<const char *> mRequiredExtensions;
     const std::vector<const char *> mDeviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};

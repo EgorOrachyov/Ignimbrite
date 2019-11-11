@@ -2,19 +2,19 @@
 // Created by Egor Orachyov on 2019-11-11.
 //
 
-#include "include/VulkanExtensions.h"
-#include "include/VulkanErrors.h"
+#include <VulkanExtensions.h>
+#include <VulkanErrors.h>
 
 void VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device, GLFWwindow *handle, uint32 width, uint32 height,
                                          uint32 widthFramebuffer, uint32 heightFramebuffer, const std::string &name) {
     VkSurfaceKHR surface;
-    VkResult result = glfwCreateWindowSurface(device.context.getInstance(), handle, nullptr, &surface);
+    VkResult result = glfwCreateWindowSurface(device.context.mInstance, handle, nullptr, &surface);
 
     if (result != VK_SUCCESS) {
         throw VulkanException("Failed to create window surface");
     }
 
-    VulkanRenderDevice::Window window = { };
+    VulkanSurface window = { };
     window.name = name;
     window.width = width;
     window.widthFramebuffer = widthFramebuffer;
@@ -22,5 +22,5 @@ void VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device, GLFWwindow 
     window.height = height;
     window.surface = surface;
 
-    device.mWindows.move(window);
+    device.mSurfaces.move(window);
 }

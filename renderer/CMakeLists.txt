@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.11)
 project(Renderer)
 
-add_library(Renderer STATIC "")
+add_library(Renderer STATIC ..)
 message(STATUS "Build Renderer library")
 
 set_property(TARGET Renderer PROPERTY CXX_STANDARD 11)
 set_property(TARGET Renderer PROPERTY CXX_STANDARD_REQUIRED ON)
 
-target_include_directories(Renderer PUBLIC ${CMAKE_CURRENT_LIST_DIR})
+target_include_directories(Renderer PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include/)
 
 target_sources(Renderer
     PUBLIC

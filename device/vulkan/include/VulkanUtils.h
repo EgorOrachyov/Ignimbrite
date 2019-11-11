@@ -2,11 +2,11 @@
 // Created by Egor Orachyov on 2019-11-07.
 //
 
-#ifndef RENDERINGLIBRARY_VULKANSTRUCTURES_H
-#define RENDERINGLIBRARY_VULKANSTRUCTURES_H
+#ifndef RENDERINGLIBRARY_VULKANUTILS_H
+#define RENDERINGLIBRARY_VULKANUTILS_H
 
-#include "renderer/Optional.h"
-#include "vulkan/vulkan.h"
+#include <renderer/Optional.h>
+#include <vulkan/vulkan.h>
 #include <vector>
 
 struct QueueFamilyIndices {
@@ -27,4 +27,4 @@ struct SwapChainSupportDetails {
     std::vector<VkPresentModeKHR> presentModes;
 };
 
-#endif //RENDERINGLIBRARY_VULKANSTRUCTURES_H
+#endif //RENDERINGLIBRARY_VULKANUTILS_H
