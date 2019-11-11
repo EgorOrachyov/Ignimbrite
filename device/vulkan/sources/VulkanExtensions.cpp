@@ -8,7 +8,9 @@
 void VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device, GLFWwindow *handle, uint32 width, uint32 height,
                                          uint32 widthFramebuffer, uint32 heightFramebuffer, const std::string &name) {
     VkSurfaceKHR surface;
-    VkResult result = glfwCreateWindowSurface(device.context.instance, handle, nullptr, &surface);
+    VkResult result;
+
+    result = glfwCreateWindowSurface(device.context.instance, handle, nullptr, &surface);
 
     if (result != VK_SUCCESS) {
         throw VulkanException("Failed to create window surface");
@@ -21,6 +23,12 @@ void VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device, GLFWwindow 
     window.heightFramebuffer = heightFramebuffer;
     window.height = height;
     window.surface = surface;
+
+    result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.context.physicalDevice, surface, &window.surfaceCapabilities);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to get surface capabilities");
+    }
 
     device.mSurfaces.move(window);
 }

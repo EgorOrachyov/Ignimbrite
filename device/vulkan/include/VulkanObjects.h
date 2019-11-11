@@ -40,6 +40,7 @@ struct VulkanSurface {
     uint32 heightFramebuffer;
     std::string name;
     VkSurfaceKHR surface;
+    VkSurfaceCapabilitiesKHR surfaceCapabilities;
 };
 
 #endif //RENDERINGLIBRARY_VULKANOBJECTS_H
