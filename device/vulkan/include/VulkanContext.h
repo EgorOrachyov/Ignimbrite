@@ -19,14 +19,19 @@ struct VulkanContext {
     /* Private section: setup vulkan instance */
     void createInstance();
     void destroyInstance();
+    void fillRequiredExt(uint32 count, const char *const *ext);
+    void pickPhysicalDevice();
+    void createLogicalDevice();
+    void destroyLogicalDevice();
 
     void checkSupportedExtensions();
-    void fillRequiredExt(uint32 count, const char *const *ext);
-
     bool checkValidationLayers();
 
     void setupDebugMessenger();
     void destroyDebugMessenger();
+    void outDeviceInfoVerbose(VkPhysicalDevice device);
+    bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+    void findQueueFamilies(VkPhysicalDevice device, QueueFamilyIndices &indices);
 
     VkResult createDebugUtilsMessengerEXT(
             const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
@@ -46,19 +51,7 @@ struct VulkanContext {
             void* pUserData
     );
 
-    void pickPhysicalDevice();
-    void outDeviceInfoVerbose(VkPhysicalDevice device);
-    bool isDeviceSuitable(VkPhysicalDevice device);
-    bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-    void querySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails &details);
-    void findQueueFamilies(VkPhysicalDevice device, QueueFamilyIndices &indices);
 
-    void createLogicalDevice();
-    void destroyLogicalDevice();
-
-    void setupQueues();
-
-    const VkPhysicalDeviceMemoryProperties &getDeviceMemoryProperties() const {}
 
     VkFormatProperties getDeviceFormatProperties(VkFormat format) const;
 
@@ -125,25 +118,26 @@ struct VulkanContext {
             VkComponentMapping components = {}
     );
 
-    std::vector<const char *> mRequiredExtensions;
-    const std::vector<const char *> mDeviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-    const std::vector<const char *> mValidationLayers = {"VK_LAYER_KHRONOS_validation"};
-    const bool mEnableValidationLayers = true;
+    std::vector<const char *> requiredExtensions;
+    const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
+    const bool enableValidationLayers = true;
 
-    VkInstance mInstance = VK_NULL_HANDLE;
-    VkDebugUtilsMessengerEXT mDebugMessenger = VK_NULL_HANDLE;
-    VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;
-    VkDevice mDevice = VK_NULL_HANDLE;
+    VkInstance instance = VK_NULL_HANDLE;
+    VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkDevice device = VK_NULL_HANDLE;
 
     QueueFamilyIndices familyIndices = { };
 
-    VkQueue mGraphicsQueue = VK_NULL_HANDLE;
-    VkQueue mPresentQueue = VK_NULL_HANDLE;
-    VkQueue mTransferQueue = VK_NULL_HANDLE;
+    VkQueue graphicsQueue = VK_NULL_HANDLE;
+    VkQueue transferQueue = VK_NULL_HANDLE;
 
-    VkPhysicalDeviceMemoryProperties mDeviceMemoryProperties = {};
+    VkPhysicalDeviceProperties deviceProperties = {};
+    VkPhysicalDeviceFeatures deviceFeatures = {};
+    VkPhysicalDeviceMemoryProperties deviceMemoryProperties = {};
     // TODO: init command pool
-    VkCommandPool mCommandPool = VK_NULL_HANDLE;
+    VkCommandPool commandPool = VK_NULL_HANDLE;
 };
 
 

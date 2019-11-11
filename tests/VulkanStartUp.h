@@ -13,6 +13,13 @@ struct VulkanStartUp {
 
     static void run() {
         VulkanContext context;
+        context.fillRequiredExt(0, nullptr);
+        context.createInstance();
+        context.setupDebugMessenger();
+        context.pickPhysicalDevice();
+
+        context.destroyDebugMessenger();
+        context.destroyInstance();
     }
 
 };

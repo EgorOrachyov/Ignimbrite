@@ -11,20 +11,12 @@
 
 struct QueueFamilyIndices {
     Optional<uint32> graphicsFamily;
-    Optional<uint32> presentFamily;
     Optional<uint32> transferFamily;
 
     bool isComplete() {
         return graphicsFamily.hasValue() &&
-               presentFamily.hasValue() &&
                transferFamily.hasValue();
     }
-};
-
-struct SwapChainSupportDetails {
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
 };
 
 #endif //RENDERINGLIBRARY_VULKANUTILS_H

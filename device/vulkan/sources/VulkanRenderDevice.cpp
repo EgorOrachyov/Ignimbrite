@@ -116,7 +116,7 @@ void VulkanRenderDevice::updateIndexBuffer(RenderDevice::ID bufferId, uint32 siz
 }
 
 void VulkanRenderDevice::destroyVertexBuffer(RenderDevice::ID bufferId) {
-    const VkDevice &device = context.mDevice;
+    const VkDevice &device = context.device;
     VulkanVertexBuffer& buffer = mVertexBuffers.get(bufferId);
 
     vkDestroyBuffer(device, buffer.vkBuffer, nullptr);
@@ -126,7 +126,7 @@ void VulkanRenderDevice::destroyVertexBuffer(RenderDevice::ID bufferId) {
 }
 
 void VulkanRenderDevice::destroyIndexBuffer(RenderDevice::ID bufferId) {
-    const VkDevice &device = context.mDevice;
+    const VkDevice &device = context.device;
     VulkanIndexBuffer& buffer = mIndexBuffers.get(bufferId);
 
     vkDestroyBuffer(device, buffer.vkBuffer, nullptr);
@@ -208,7 +208,7 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
 }
 
 void VulkanRenderDevice::destroyTexture(RenderDevice::ID textureId) {
-    const VkDevice &device = context.mDevice;
+    const VkDevice &device = context.device;
     VulkanImageObject &imo = mImageObjects.get(textureId);
 
     vkDestroyImageView(device, imo.imageView, nullptr);
@@ -235,7 +235,7 @@ RenderDevice::ID VulkanRenderDevice::createSampler(const RenderDevice::SamplerDe
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
     VkSampler sampler;
-    VkResult r = vkCreateSampler(context.mDevice, &samplerInfo, nullptr, &sampler);
+    VkResult r = vkCreateSampler(context.device, &samplerInfo, nullptr, &sampler);
 
     if (r != VK_SUCCESS) {
         throw VulkanException("Failed to create sampler object");
@@ -245,7 +245,7 @@ RenderDevice::ID VulkanRenderDevice::createSampler(const RenderDevice::SamplerDe
 }
 
 void VulkanRenderDevice::destroySampler(RenderDevice::ID samplerId) {
-    vkDestroySampler(context.mDevice, mSamplers.get(samplerId), nullptr);
+    vkDestroySampler(context.device, mSamplers.get(samplerId), nullptr);
     mSamplers.remove(samplerId);
 }
 

@@ -22,14 +22,14 @@ void VulkanContext::createInstance() {
     VkInstanceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
-    createInfo.enabledExtensionCount = (uint32) mRequiredExtensions.size();
-    createInfo.ppEnabledExtensionNames = mRequiredExtensions.data();
+    createInfo.enabledExtensionCount = (uint32) requiredExtensions.size();
+    createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
     /** Validation layers check*/
-    if (mEnableValidationLayers) {
+    if (enableValidationLayers) {
         if (checkValidationLayers()) {
-            createInfo.enabledLayerCount = (uint32) mValidationLayers.size();
-            createInfo.ppEnabledLayerNames = mValidationLayers.data();
+            createInfo.enabledLayerCount = (uint32) validationLayers.size();
+            createInfo.ppEnabledLayerNames = validationLayers.data();
         } else {
             throw VulkanException("Required validation layer is not available");
         }
@@ -41,7 +41,7 @@ void VulkanContext::createInstance() {
     /** Debug extensions info check and output */
     checkSupportedExtensions();
 
-    VkResult result = vkCreateInstance(&createInfo, nullptr, &mInstance);
+    VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
 
     if (result != VK_SUCCESS) {
         throw VulkanException("Cannot create Vulkan instance");
@@ -49,19 +49,19 @@ void VulkanContext::createInstance() {
 }
 
 void VulkanContext::destroyInstance() {
-    vkDestroyInstance(mInstance, nullptr);
+    vkDestroyInstance(instance, nullptr);
 }
 
 void VulkanContext::fillRequiredExt(uint32 count, const char *const *ext) {
     if (count > 0) {
-        mRequiredExtensions.reserve(count + 1);
+        requiredExtensions.reserve(count + 1);
         for (uint32 i = 0; i < count; i++) {
-            mRequiredExtensions.push_back(ext[i]);
+            requiredExtensions.push_back(ext[i]);
         }
     }
 
-    if (mEnableValidationLayers) {
-        mRequiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    if (enableValidationLayers) {
+        requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
 }
 
@@ -73,8 +73,8 @@ void VulkanContext::checkSupportedExtensions() {
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionsCount, extensions.data());
 
 #ifdef MODE_DEBUG
-    printf("Required (count: %u) extensions for vulkan:\n", (uint32) mRequiredExtensions.size());
-    for (const auto &e: mRequiredExtensions) {
+    printf("Required (count: %u) extensions for vulkan:\n", (uint32) requiredExtensions.size());
+    for (const auto &e: requiredExtensions) {
         printf("%s\n", e);
     }
 
@@ -93,8 +93,8 @@ bool VulkanContext::checkValidationLayers() {
     vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
 #ifdef MODE_DEBUG
-    printf("Required (count: %u) validation layers for vulkan:\n", (uint32) mValidationLayers.size());
-    for (const auto &required: mValidationLayers) {
+    printf("Required (count: %u) validation layers for vulkan:\n", (uint32) validationLayers.size());
+    for (const auto &required: validationLayers) {
         printf("%s\n", required);
     }
 
@@ -104,7 +104,7 @@ bool VulkanContext::checkValidationLayers() {
     }
 #endif
 
-    for (const auto &required: mValidationLayers) {
+    for (const auto &required: validationLayers) {
         bool found = false;
         for (const auto &available: availableLayers) {
             if (std::strcmp(required, available.layerName) == 0) {
@@ -121,7 +121,7 @@ bool VulkanContext::checkValidationLayers() {
 }
 
 void VulkanContext::setupDebugMessenger() {
-    if (!mEnableValidationLayers) {
+    if (!enableValidationLayers) {
         return;
     }
 
@@ -130,7 +130,6 @@ void VulkanContext::setupDebugMessenger() {
     createInfo.messageSeverity =
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
     createInfo.messageType =
             VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
@@ -139,27 +138,27 @@ void VulkanContext::setupDebugMessenger() {
     createInfo.pfnUserCallback = debugCallback;
     createInfo.pUserData = this; // Optional
 
-    if (createDebugUtilsMessengerEXT(&createInfo, nullptr, &mDebugMessenger) != VK_SUCCESS) {
+    if (createDebugUtilsMessengerEXT(&createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
         throw VulkanException("Failed to create debug utils messenger");
     }
 }
 
 void VulkanContext::destroyDebugMessenger() {
-    if (!mEnableValidationLayers) {
+    if (!enableValidationLayers) {
         return;
     }
 
-    destroyDebugUtilsMessengerEXT(mDebugMessenger, nullptr);
+    destroyDebugUtilsMessengerEXT(debugMessenger, nullptr);
 }
 
 VkResult VulkanContext::createDebugUtilsMessengerEXT(const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
                                                       const VkAllocationCallbacks *pAllocator,
                                                       VkDebugUtilsMessengerEXT *pDebugMessenger) {
     auto pFunction = (PFN_vkCreateDebugUtilsMessengerEXT)
-            vkGetInstanceProcAddr(mInstance, "vkCreateDebugUtilsMessengerEXT");
+            vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
 
     if (pFunction != nullptr) {
-        return pFunction(mInstance, pCreateInfo, pAllocator, pDebugMessenger);
+        return pFunction(instance, pCreateInfo, pAllocator, pDebugMessenger);
     } else {
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
@@ -168,9 +167,9 @@ VkResult VulkanContext::createDebugUtilsMessengerEXT(const VkDebugUtilsMessenger
 void VulkanContext::destroyDebugUtilsMessengerEXT(VkDebugUtilsMessengerEXT debugMessenger,
                                                    const VkAllocationCallbacks *pAllocator) {
     auto pFunction = (PFN_vkDestroyDebugUtilsMessengerEXT)
-            vkGetInstanceProcAddr(mInstance, "vkDestroyDebugUtilsMessengerEXT");
+            vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
     if (pFunction != nullptr) {
-        pFunction(mInstance, debugMessenger, pAllocator);
+        pFunction(instance, debugMessenger, pAllocator);
     } else {
         throw VulkanException("Cannot load \"vkDestroyDebugUtilsMessengerEXT\" function");
     }
@@ -186,58 +185,43 @@ VkBool32 VulkanContext::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT mes
 
 void VulkanContext::pickPhysicalDevice() {
     uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
+    vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
     if (deviceCount == 0) {
         throw VulkanException("No target GPUs with Vulkan support");
     }
 
     std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
+    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
 #ifdef MODE_DEBUG
     printf("Physical devices (count: %u) info:\n", (uint32) devices.size());
-    for (auto &device: devices) {
-        outDeviceInfoVerbose(device);
-    }
 #endif
 
-    for (auto &device: devices) {
-        if (isDeviceSuitable(device)) {
-            mPhysicalDevice = device;
+    for (auto device: devices) {
+        findQueueFamilies(device, familyIndices);
+
+        bool queueFamilySupport = familyIndices.isComplete();
+        bool extensionsSupported = checkDeviceExtensionSupport(device);
+        bool suitable = queueFamilySupport && extensionsSupported;
+
+        if (suitable) {
+            vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+            vkGetPhysicalDeviceMemoryProperties(device, &deviceMemoryProperties);
+            vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+            outDeviceInfoVerbose(device);
+            physicalDevice = device;
+
             break;
         }
     }
 
-    if (mPhysicalDevice == VK_NULL_HANDLE) {
+    if (physicalDevice == VK_NULL_HANDLE) {
         throw VulkanException("Failed to find a suitable GPU");
     }
-
-    vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &mDeviceMemoryProperties);
 }
 
-bool VulkanContext::isDeviceSuitable(VkPhysicalDevice device) {
-    QueueFamilyIndices indices;
-    findQueueFamilies(device, indices);
-
-    auto queueFamilySupport = indices.isComplete();
-    auto extensionsSupported = checkDeviceExtensionSupport(device);
-    auto swapChainAdequate = false;
-
-    if (extensionsSupported) {
-        SwapChainSupportDetails details;
-        querySwapChainSupport(device, details);
-        // swapChainAdequate = !details.formats.empty() && !details.presentModes.empty();
-        // todo: handle check of swap chain and surface capabilities for physical device
-        swapChainAdequate = true;
-    }
-
-
-    VkPhysicalDeviceFeatures supportedFeatures;
-    vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
-
-    return queueFamilySupport && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
-}
 
 bool VulkanContext::checkDeviceExtensionSupport(VkPhysicalDevice device) {
     uint32_t extensionCount;
@@ -247,8 +231,8 @@ bool VulkanContext::checkDeviceExtensionSupport(VkPhysicalDevice device) {
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
 
 #ifdef MODE_DEBUG
-    printf("Required (count: %u) physical device extensions:\n", (uint32) mDeviceExtensions.size());
-    for (auto& ext: mDeviceExtensions) {
+    printf("Required (count: %u) physical device extensions:\n", (uint32) deviceExtensions.size());
+    for (auto& ext: deviceExtensions) {
         printf("%s\n", ext);
     }
     printf("Available (count: %u) physical device extensions:\n", (uint32) availableExtensions.size());
@@ -257,7 +241,7 @@ bool VulkanContext::checkDeviceExtensionSupport(VkPhysicalDevice device) {
     }
 #endif
 
-    for (auto &required: mDeviceExtensions) {
+    for (auto &required: deviceExtensions) {
         bool found = false;
         for (auto &available: availableExtensions) {
             if (std::strcmp(required, available.extensionName) == 0) {
@@ -274,26 +258,6 @@ bool VulkanContext::checkDeviceExtensionSupport(VkPhysicalDevice device) {
     return true;
 }
 
-void VulkanContext::querySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails &details) {
-//     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, mWindow.surface, &details.capabilities);
-//
-//     uint32_t formatCount;
-//     vkGetPhysicalDeviceSurfaceFormatsKHR(device, mWindow.surface, &formatCount, nullptr);
-//
-//     if (formatCount != 0) {
-//         details.formats.resize(formatCount);
-//         vkGetPhysicalDeviceSurfaceFormatsKHR(device, mWindow.surface, &formatCount, details.formats.data());
-//     }
-//
-//     uint32_t presentModeCount;
-//     vkGetPhysicalDeviceSurfacePresentModesKHR(device, mWindow.surface, &presentModeCount, nullptr);
-//
-//     if (presentModeCount != 0) {
-//         details.presentModes.resize(presentModeCount);
-//         vkGetPhysicalDeviceSurfacePresentModesKHR(device, mWindow.surface, &presentModeCount, details.presentModes.data());
-//     }
-}
-
 void VulkanContext::findQueueFamilies(VkPhysicalDevice device, QueueFamilyIndices &indices) {
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -308,11 +272,10 @@ void VulkanContext::findQueueFamilies(VkPhysicalDevice device, QueueFamilyIndice
             indices.graphicsFamily.setValue(i);
         }
 
-        VkBool32 presentSupport = false;
-        //vkGetPhysicalDeviceSurfaceSupportKHR(device, i, mWindow.surface, &presentSupport);
-
-        if (p.queueCount > 0 && presentSupport) {
-            indices.presentFamily.setValue(i);
+        if (p.queueCount > 0 && (p.queueFlags & VK_QUEUE_TRANSFER_BIT)) {
+            if (i != indices.graphicsFamily.get() || !indices.transferFamily.hasValue()) {
+                indices.transferFamily.setValue(i);
+            }
         }
 
         if (indices.isComplete()) {
@@ -322,19 +285,14 @@ void VulkanContext::findQueueFamilies(VkPhysicalDevice device, QueueFamilyIndice
 }
 
 void VulkanContext::outDeviceInfoVerbose(VkPhysicalDevice device) {
-    VkPhysicalDeviceProperties deviceProperties;
-    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+    VkPhysicalDeviceProperties& properties = deviceProperties;
+    VkPhysicalDeviceLimits& limits = properties.limits;
 
-    VkPhysicalDeviceFeatures deviceFeatures;
-    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-
-    VkPhysicalDeviceLimits& limits = deviceProperties.limits;
-
-    printf("Name: %s\n", deviceProperties.deviceName);
-    printf("Device ID: %u\n", deviceProperties.deviceID);
-    printf("Vendor ID: %u\n", deviceProperties.vendorID);
-    printf("API version: %u\n", deviceProperties.apiVersion);
-    printf("Driver version: %u\n", deviceProperties.driverVersion);
+    printf("Name: %s\n", properties.deviceName);
+    printf("Device ID: %u\n", properties.deviceID);
+    printf("Vendor ID: %u\n", properties.vendorID);
+    printf("API version: %u\n", properties.apiVersion);
+    printf("Driver version: %u\n", properties.driverVersion);
 
     printf("maxImageDimension1D = %u\n", limits.maxImageDimension1D);
     printf("maxImageDimension2D = %u\n", limits.maxImageDimension2D);
@@ -365,22 +323,19 @@ void VulkanContext::outDeviceInfoVerbose(VkPhysicalDevice device) {
     printf("maxFragmentCombinedOutputResources = %u\n", limits.maxFragmentCombinedOutputResources);
 }
 
-
-
-
 VkFormatProperties VulkanContext::getDeviceFormatProperties(VkFormat format) const {
     VkFormatProperties properties;
-    vkGetPhysicalDeviceFormatProperties(mPhysicalDevice, format, &properties);
+    vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &properties);
 
     return properties;
 }
 
 uint32_t VulkanContext::getMemoryTypeIndex(uint32_t memoryTypeBits, VkFlags requirementsMask) const {
     // for each memory type available for this device
-    for (uint32_t i = 0; i < mDeviceMemoryProperties.memoryTypeCount; i++) {
+    for (uint32_t i = 0; i < deviceMemoryProperties.memoryTypeCount; i++) {
         // if type is available
         if ((memoryTypeBits & 1) == 1) {
-            if ((mDeviceMemoryProperties.memoryTypes[i].propertyFlags & requirementsMask) == requirementsMask) {
+            if ((deviceMemoryProperties.memoryTypes[i].propertyFlags & requirementsMask) == requirementsMask) {
                 return i;
             }
         }
@@ -399,25 +354,25 @@ void VulkanContext::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, Vk
     bufferInfo.usage = usage;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VkResult r = vkCreateBuffer(mDevice, &bufferInfo, nullptr, &outBuffer);
+    VkResult r = vkCreateBuffer(device, &bufferInfo, nullptr, &outBuffer);
     if (r != VK_SUCCESS) {
         throw VulkanException("Can't create buffer for vertex data");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(mDevice, outBuffer, &memRequirements);
+    vkGetBufferMemoryRequirements(device, outBuffer, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = getMemoryTypeIndex(memRequirements.memoryTypeBits, properties);
 
-    r = vkAllocateMemory(mDevice, &allocInfo, nullptr, &outBufferMemory);
+    r = vkAllocateMemory(device, &allocInfo, nullptr, &outBufferMemory);
     if (r != VK_SUCCESS) {
         throw VulkanException("Can't allocate memory for vertex buffer");
     }
 
-    r = vkBindBufferMemory(mDevice, outBuffer, outBufferMemory, 0);
+    r = vkBindBufferMemory(device, outBuffer, outBufferMemory, 0);
     if (r != VK_SUCCESS) {
         throw VulkanException("Can't bind buffer memory for vertex buffer");
     }
@@ -442,10 +397,10 @@ void VulkanContext::createBufferLocal(const void *data, VkDeviceSize size, VkBuf
                  outBuffer,
                  outBufferMemory);
 
-    copyBuffer(mCommandPool, mTransferQueue, stagingBuffer, outBuffer, size);
+    copyBuffer(commandPool, transferQueue, stagingBuffer, outBuffer, size);
 
-    vkDestroyBuffer(mDevice, stagingBuffer, nullptr);
-    vkFreeMemory(mDevice, stagingBufferMemory, nullptr);
+    vkDestroyBuffer(device, stagingBuffer, nullptr);
+    vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
 
 void VulkanContext::copyBuffer(VkCommandPool commandPool, VkQueue queue, VkBuffer srcBuffer, VkBuffer dstBuffer,
@@ -467,9 +422,9 @@ void VulkanContext::copyBuffer(VkCommandPool commandPool, VkQueue queue, VkBuffe
 void VulkanContext::updateBufferMemory(VkDeviceMemory bufferMemory, VkDeviceSize offset, VkDeviceSize size,
                                        const void *data) {
     void *mappedData;
-    vkMapMemory(mDevice, bufferMemory, offset, size, 0, &mappedData);
+    vkMapMemory(device, bufferMemory, offset, size, 0, &mappedData);
     std::memcpy(mappedData, data, (size_t) size);
-    vkUnmapMemory(mDevice, bufferMemory);
+    vkUnmapMemory(device, bufferMemory);
 }
 
 void VulkanContext::createTextureImage(const void *imageData, uint32_t width, uint32_t height, uint32_t depth,
@@ -505,8 +460,8 @@ void VulkanContext::createTextureImage(const void *imageData, uint32_t width, ui
     // layout transition from transfer destination to shader readonly
     transitionImageLayout(outTextureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, textureLayout);
 
-    vkDestroyBuffer(mDevice, stagingBuffer, nullptr);
-    vkFreeMemory(mDevice, stagingBufferMemory, nullptr);
+    vkDestroyBuffer(device, stagingBuffer, nullptr);
+    vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
 
 void VulkanContext::createImage(uint32_t width, uint32_t height, uint32_t depth,
@@ -530,25 +485,25 @@ void VulkanContext::createImage(uint32_t width, uint32_t height, uint32_t depth,
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VkResult r = vkCreateImage(mDevice, &imageInfo, nullptr, &outImage);
+    VkResult r = vkCreateImage(device, &imageInfo, nullptr, &outImage);
     if (r != VK_SUCCESS) {
         throw VulkanException("Can't create image");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(mDevice, outImage, &memRequirements);
+    vkGetImageMemoryRequirements(device, outImage, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = getMemoryTypeIndex(memRequirements.memoryTypeBits, properties);
 
-    r = vkAllocateMemory(mDevice, &allocInfo, nullptr, &outImageMemory);
+    r = vkAllocateMemory(device, &allocInfo, nullptr, &outImageMemory);
     if (r != VK_SUCCESS) {
         throw VulkanException("Can't allocate memory for image");
     }
 
-    r = vkBindImageMemory(mDevice, outImage, outImageMemory, 0);
+    r = vkBindImageMemory(device, outImage, outImageMemory, 0);
     if (r != VK_SUCCESS) {
         throw VulkanException("Can't bind image memory");
     }
@@ -638,7 +593,7 @@ void VulkanContext::createImageView(VkImageView &outImageView, VkImage image, Vk
     imageViewInfo.components = components;
     imageViewInfo.subresourceRange = subResourceRange;
 
-    VkResult r = vkCreateImageView(mDevice, &imageViewInfo, nullptr, &outImageView);
+    VkResult r = vkCreateImageView(device, &imageViewInfo, nullptr, &outImageView);
     if (r != VK_SUCCESS) {
         throw VulkanException("Can't create image view");
     }
