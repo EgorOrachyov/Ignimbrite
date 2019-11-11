@@ -29,7 +29,7 @@ struct VulkanContext {
 
     void setupDebugMessenger();
     void destroyDebugMessenger();
-    void outDeviceInfoVerbose(VkPhysicalDevice device);
+    void outDeviceInfoVerbose();
     bool checkDeviceExtensionSupport(VkPhysicalDevice device);
     void findQueueFamilies(VkPhysicalDevice device, QueueFamilyIndices &indices);
 
@@ -50,8 +50,6 @@ struct VulkanContext {
             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
             void* pUserData
     );
-
-
 
     VkFormatProperties getDeviceFormatProperties(VkFormat format) const;
 

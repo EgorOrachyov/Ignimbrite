@@ -11,7 +11,7 @@
 
 struct VulkanStartUp {
 
-    static void run() {
+    static void test1() {
         VulkanContext context;
         context.fillRequiredExt(0, nullptr);
         context.createInstance();
@@ -20,6 +20,10 @@ struct VulkanStartUp {
 
         context.destroyDebugMessenger();
         context.destroyInstance();
+    }
+
+    static void run() {
+        test1();
     }
 
 };

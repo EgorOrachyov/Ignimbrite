@@ -10,7 +10,6 @@
 
 
 void VulkanContext::createInstance() {
-    /** General application info */
     VkApplicationInfo appInfo = {};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pApplicationName = "default";
@@ -25,7 +24,6 @@ void VulkanContext::createInstance() {
     createInfo.enabledExtensionCount = (uint32) requiredExtensions.size();
     createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
-    /** Validation layers check*/
     if (enableValidationLayers) {
         if (checkValidationLayers()) {
             createInfo.enabledLayerCount = (uint32) validationLayers.size();
@@ -38,7 +36,6 @@ void VulkanContext::createInstance() {
         createInfo.ppEnabledLayerNames = nullptr;
     }
 
-    /** Debug extensions info check and output */
     checkSupportedExtensions();
 
     VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
@@ -194,10 +191,6 @@ void VulkanContext::pickPhysicalDevice() {
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
-#ifdef MODE_DEBUG
-    printf("Physical devices (count: %u) info:\n", (uint32) devices.size());
-#endif
-
     for (auto device: devices) {
         findQueueFamilies(device, familyIndices);
 
@@ -210,7 +203,10 @@ void VulkanContext::pickPhysicalDevice() {
             vkGetPhysicalDeviceMemoryProperties(device, &deviceMemoryProperties);
             vkGetPhysicalDeviceProperties(device, &deviceProperties);
 
-            outDeviceInfoVerbose(device);
+#ifdef MODE_DEBUG
+            printf("Physical devices (count: %u). Chosen device info:\n", (uint32) devices.size());
+            outDeviceInfoVerbose();
+#endif
             physicalDevice = device;
 
             break;
@@ -284,15 +280,15 @@ void VulkanContext::findQueueFamilies(VkPhysicalDevice device, QueueFamilyIndice
     }
 }
 
-void VulkanContext::outDeviceInfoVerbose(VkPhysicalDevice device) {
+void VulkanContext::outDeviceInfoVerbose() {
     VkPhysicalDeviceProperties& properties = deviceProperties;
     VkPhysicalDeviceLimits& limits = properties.limits;
 
     printf("Name: %s\n", properties.deviceName);
-    printf("Device ID: %u\n", properties.deviceID);
-    printf("Vendor ID: %u\n", properties.vendorID);
-    printf("API version: %u\n", properties.apiVersion);
-    printf("Driver version: %u\n", properties.driverVersion);
+    printf("Device ID: %x\n", properties.deviceID);
+    printf("Vendor ID: %x\n", properties.vendorID);
+    printf("API version: %x\n", properties.apiVersion);
+    printf("Driver version: %x\n", properties.driverVersion);
 
     printf("maxImageDimension1D = %u\n", limits.maxImageDimension1D);
     printf("maxImageDimension2D = %u\n", limits.maxImageDimension2D);
