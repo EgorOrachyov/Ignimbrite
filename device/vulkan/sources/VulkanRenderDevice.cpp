@@ -6,6 +6,7 @@
 #include <VulkanDefinitions.h>
 #include <vulkan/vulkan.h>
 #include <exception>
+#include "VulkanUtils.h"
 
 VulkanRenderDevice::VulkanRenderDevice(uint32 extensionsCount, const char *const *extensions) {
 
@@ -55,12 +56,12 @@ RenderDevice::ID VulkanRenderDevice::createVertexBuffer(BufferUsage type, uint32
     VkBufferUsageFlagBits usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 
     if (type == BufferUsage::Dynamic) {
-        context.createBuffer(size, usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        VulkanUtils::createBuffer(context, size, usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                      vertexBuffer.vkBuffer, vertexBuffer.vkDeviceMemory
         );
-        context.updateBufferMemory(vertexBuffer.vkDeviceMemory, 0, size, data);
+        VulkanUtils::updateBufferMemory(context, vertexBuffer.vkDeviceMemory, 0, size, data);
     } else {
-        context.createBufferLocal(data, size, usage, vertexBuffer.vkBuffer, vertexBuffer.vkDeviceMemory);
+        VulkanUtils::createBufferLocal(context, data, size, usage, vertexBuffer.vkBuffer, vertexBuffer.vkDeviceMemory);
     }
 
     return mVertexBuffers.move(vertexBuffer);
@@ -74,12 +75,12 @@ RenderDevice::ID VulkanRenderDevice::createIndexBuffer(BufferUsage type, uint32 
     VkBufferUsageFlagBits usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 
     if (type == BufferUsage::Dynamic) {
-        context.createBuffer(size, usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        VulkanUtils::createBuffer(context, size, usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                      indexBuffer.vkBuffer, indexBuffer.vkDeviceMemory
         );
-        context.updateBufferMemory(indexBuffer.vkDeviceMemory, 0, size, data);
+        VulkanUtils::updateBufferMemory(context, indexBuffer.vkDeviceMemory, 0, size, data);
     } else {
-        context.createBufferLocal(data, size, usage, indexBuffer.vkBuffer, indexBuffer.vkDeviceMemory);
+        VulkanUtils::createBufferLocal(context, data, size, usage, indexBuffer.vkBuffer, indexBuffer.vkDeviceMemory);
     }
 
     return mIndexBuffers.move(indexBuffer);
@@ -97,7 +98,7 @@ void VulkanRenderDevice::updateVertexBuffer(RenderDevice::ID bufferId, uint32 si
         throw VulkanException("Attempt to update out-of-buffer memory region for vertex buffer");
     }
 
-    context.updateBufferMemory(memory, offset, size, data);
+    VulkanUtils::updateBufferMemory(context, memory, offset, size, data);
 }
 
 void VulkanRenderDevice::updateIndexBuffer(RenderDevice::ID bufferId, uint32 size, uint32 offset, const void *data) {
@@ -112,7 +113,7 @@ void VulkanRenderDevice::updateIndexBuffer(RenderDevice::ID bufferId, uint32 siz
         throw VulkanException("Attempt to update out-of-buffer memory region for index buffer");
     }
 
-    context.updateBufferMemory(memory, offset, size, data);
+    VulkanUtils::updateBufferMemory(context, memory, offset, size, data);
 }
 
 void VulkanRenderDevice::destroyVertexBuffer(RenderDevice::ID bufferId) {
@@ -144,7 +145,8 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
     if (textureDesc.usageFlags & (uint32) TextureUsageBit::ShaderSampling) {
         VulkanImageObject imo;
 
-        context.createTextureImage(textureDesc.data,
+        VulkanUtils::createTextureImage(context,
+                                   textureDesc.data,
                                    textureDesc.width, textureDesc.height, textureDesc.depth,
                                    imageType, format, VK_IMAGE_TILING_OPTIMAL,
                                    imo.image, imo.imageMemory, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -157,14 +159,14 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
         subresourceRange.baseArrayLayer = 0;
         subresourceRange.layerCount = 1;
 
-        context.createImageView(imo.imageView, imo.image, viewType, format, subresourceRange);
+        VulkanUtils::createImageView(context, imo.imageView, imo.image, viewType, format, subresourceRange);
 
         return mImageObjects.move(imo);
     } else if (textureDesc.usageFlags & (uint32) TextureUsageBit::DepthStencilAttachment) {
         VulkanImageObject depthStencil;
 
         // get properties of depth stencil format
-        const VkFormatProperties &properties = context.getDeviceFormatProperties(format);
+        const VkFormatProperties &properties = VulkanUtils::getDeviceFormatProperties(context, format);
 
         VkImageTiling tiling;
 
@@ -176,7 +178,7 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
             throw VulkanException("Unsupported depth format");
         }
 
-        context.createImage(textureDesc.width, textureDesc.height, textureDesc.depth,
+        VulkanUtils::createImage(context, textureDesc.width, textureDesc.height, textureDesc.depth,
                             imageType, format, tiling, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                 // depth stencil buffer is device local
                 // TODO: make visible from cpu
@@ -196,7 +198,7 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
         subresourceRange.baseArrayLayer = 0;
         subresourceRange.layerCount = 1;
 
-        context.createImageView(depthStencil.imageView, depthStencil.image,
+        VulkanUtils::createImageView(context, depthStencil.imageView, depthStencil.image,
                                 viewType, format, subresourceRange, components);
 
         return mImageObjects.move(depthStencil);

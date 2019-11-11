@@ -7,6 +7,17 @@
 
 #include <vulkan/vulkan.h>
 #include <renderer/RenderDevice.h>
+#include <renderer/Optional.h>
+
+struct VulkanQueueFamilyIndices {
+    Optional<uint32> graphicsFamily;
+    Optional<uint32> transferFamily;
+
+    bool isComplete() {
+        return graphicsFamily.hasValue() &&
+               transferFamily.hasValue();
+    }
+};
 
 struct VulkanVertexLayout {
     std::vector<VkVertexInputBindingDescription> vkBindings;

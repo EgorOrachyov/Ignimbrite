@@ -25,5 +25,6 @@ target_sources(VulkanDevice
         ${CMAKE_CURRENT_LIST_DIR}/sources/VulkanRenderDevice.cpp
         ${CMAKE_CURRENT_LIST_DIR}/sources/VulkanContext.cpp
         ${CMAKE_CURRENT_LIST_DIR}/sources/VulkanExtensions.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/sources/VulkanUtils.cpp
 )
 
