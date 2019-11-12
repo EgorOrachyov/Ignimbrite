@@ -57,7 +57,6 @@ enum class IndicesType {
 /** Specifies how to attach texture to framebuffer */
 enum class AttachmentType {
     Color,
-    Depth,
     DepthStencil
 };
 

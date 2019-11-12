@@ -27,6 +27,9 @@ public:
     void updateIndexBuffer(ID buffer, uint32 size, uint32 offset, const void *data) override;
     void destroyIndexBuffer(ID buffer) override;
 
+    ID createFramebufferFormat(const std::vector<FramebufferAttachmentDesc> &attachments) override;
+    void destroyFramebufferFormat(ID framebufferFormat) override;
+
     ID createSampler(const SamplerDesc &samplerDesc) override;
     void destroySampler(ID sampler) override;
 
@@ -46,6 +49,7 @@ private:
     ObjectIDBuffer<VulkanVertexLayout> mVertexLayouts;
     ObjectIDBuffer<VulkanVertexBuffer> mVertexBuffers;
     ObjectIDBuffer<VulkanIndexBuffer> mIndexBuffers;
+    ObjectIDBuffer<VulkanFrameBufferFormat> mFrameBufferFormats;
     ObjectIDBuffer<VkSampler> mSamplers;
     ObjectIDBuffer<VulkanImageObject> mImageObjects;
 };

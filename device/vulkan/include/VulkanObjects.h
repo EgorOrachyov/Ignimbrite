@@ -54,4 +54,8 @@ struct VulkanSurface {
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
 };
 
+struct VulkanFrameBufferFormat {
+    VkRenderPass renderPass;
+};
+
 #endif //RENDERINGLIBRARY_VULKANOBJECTS_H

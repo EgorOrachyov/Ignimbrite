@@ -267,3 +267,72 @@ void VulkanRenderDevice::getSurfaceSize(RenderDevice::ID surface, uint32 &width,
     width = window.width;
     height = window.height;
 }
+
+RenderDevice::ID VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::FramebufferAttachmentDesc> &attachments) {
+    std::vector<VkAttachmentDescription> attachmentDescriptions(attachments.size());
+    std::vector<VkAttachmentReference> attachmentReferences(attachments.size());
+
+    bool useDepthStencil = false;
+    VkAttachmentReference depthStencilAttachmentReference;
+
+    for (uint32 i = 0; i < attachments.size(); i++) {
+        const RenderDevice::FramebufferAttachmentDesc& attachment = attachments[i];
+        VkImageLayout layout = VulkanDefinitions::imageLayout(attachment.type);
+
+        VkAttachmentDescription description = {};
+        description.format = VulkanDefinitions::dataFormat(attachment.format);
+        description.samples = VulkanDefinitions::samplesCount(attachment.samples);
+        description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        description.finalLayout = layout;
+
+        VkAttachmentReference reference = {};
+        reference.attachment = i;
+        reference.layout = layout;
+
+        if (attachment.type == AttachmentType::DepthStencil) {
+            if (useDepthStencil) {
+                throw VulkanException("An attempt to use more then 1 depth stencil attachment");
+            } else {
+                useDepthStencil = true;
+                depthStencilAttachmentReference = reference;
+            }
+        } else {
+            attachmentReferences.push_back(reference);
+        }
+
+        attachmentDescriptions.push_back(description);
+    }
+
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = (uint32) attachmentReferences.size();
+    subpass.pColorAttachments = attachmentReferences.data();
+    if (useDepthStencil) subpass.pDepthStencilAttachment = &depthStencilAttachmentReference;
+
+    VkRenderPassCreateInfo renderPassInfo = {};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = (uint32) attachmentDescriptions.size();
+    renderPassInfo.pAttachments = attachmentDescriptions.data();
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+
+    VkRenderPass renderPass;
+
+    if (vkCreateRenderPass(context.device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+        throw VulkanException("Failed to create render pass");
+    }
+
+    VulkanFrameBufferFormat format = {};
+    format.renderPass = renderPass;
+
+    return mFrameBufferFormats.move(format);
+}
+
+void VulkanRenderDevice::destroyFramebufferFormat(RenderDevice::ID framebufferFormat) {
+    vkDestroyRenderPass(context.device, mFrameBufferFormats.get(framebufferFormat).renderPass, nullptr);
+    mFrameBufferFormats.remove(framebufferFormat);
+}

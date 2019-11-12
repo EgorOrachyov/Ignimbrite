@@ -84,6 +84,27 @@ public:
                 throw InvalidEnum();
         }
     }
+
+    static VkSampleCountFlagBits samplesCount(TextureSamples samples) {
+        switch (samples) {
+            case TextureSamples::Samples1:
+                return VkSampleCountFlagBits::VK_SAMPLE_COUNT_1_BIT;
+            default:
+                throw InvalidEnum();
+        }
+    }
+
+    static VkImageLayout imageLayout(AttachmentType type) {
+        switch (type) {
+            case AttachmentType::Color:
+                return VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            case AttachmentType ::DepthStencil:
+                return VkImageLayout::VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            default:
+                throw InvalidEnum();
+        }
+    }
+
 };
 
 #endif //RENDERINGLIBRARY_VULKANDEFINITIONS_H
