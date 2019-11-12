@@ -38,10 +38,17 @@ struct VulkanIndexBuffer {
     VkDeviceMemory vkDeviceMemory;
 };
 
-struct VulkanImageObject {
+struct VulkanTextureObject {
     VkImage image;
     VkDeviceMemory imageMemory;
     VkImageView imageView;
+    VkImageType type;
+    VkFormat format;
+    uint32 width;
+    uint32 height;
+    uint32 depth;
+    uint32 mipmaps;
+    VkImageUsageFlags usageFlags;
 };
 
 struct VulkanSurface {
@@ -52,10 +59,19 @@ struct VulkanSurface {
     std::string name;
     VkSurfaceKHR surface;
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
+    bool tripleBuffering = false;
+    VkPresentModeKHR preferredPresentMode = VkPresentModeKHR::VK_PRESENT_MODE_FIFO_KHR;
+    VkFormat preferredSurfFormat = VkFormat::VK_FORMAT_B8G8R8A8_UNORM;
+    VkColorSpaceKHR preferredColorSpace = VkColorSpaceKHR::VK_COLORSPACE_SRGB_NONLINEAR_KHR;
 };
 
 struct VulkanFrameBufferFormat {
     VkRenderPass renderPass;
+};
+
+struct VulkanSwapchainBuffer {
+    VkImage         image;
+    VkImageView     imageView;
 };
 
 #endif //RENDERINGLIBRARY_VULKANOBJECTS_H

@@ -74,6 +74,9 @@ struct VulkanContext {
     VkPhysicalDeviceMemoryProperties deviceMemoryProperties = {};
     // TODO: init command pool
     VkCommandPool commandPool = VK_NULL_HANDLE;
+
+    std::vector<VulkanSwapchainBuffer> swapchainBuffers;
+    VkSwapchainKHR swapchain;
 };
 
 

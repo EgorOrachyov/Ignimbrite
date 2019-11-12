@@ -106,6 +106,10 @@ public:
         SamplerBorderColor color = SamplerBorderColor::Black;
         bool useAnisotropy = false;
         float32 anisotropyMax = 1.0f;
+        float32 minLod = 0.0f;
+        float32 maxLod = 0.0f;
+        SamplerFilter mipmapMode = SamplerFilter::Linear;
+        float32 mipLodBias = 0.0f;
     };
 
     virtual ID createSampler(const SamplerDesc& samplerDesc) = 0;

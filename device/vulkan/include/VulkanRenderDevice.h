@@ -30,6 +30,9 @@ public:
     ID createFramebufferFormat(const std::vector<FramebufferAttachmentDesc> &attachments) override;
     void destroyFramebufferFormat(ID framebufferFormat) override;
 
+    ID createFramebuffer(const std::vector<ID>& attachments, ID framebufferFormat) override;
+    void destroyFramebuffer(ID framebuffer) override;
+
     ID createSampler(const SamplerDesc &samplerDesc) override;
     void destroySampler(ID sampler) override;
 
@@ -53,8 +56,9 @@ private:
     Buffer<VulkanVertexBuffer> mVertexBuffers;
     Buffer<VulkanIndexBuffer> mIndexBuffers;
     Buffer<VulkanFrameBufferFormat> mFrameBufferFormats;
+    Buffer<VkFramebuffer> mFramebuffers;
     Buffer<VkSampler> mSamplers;
-    Buffer<VulkanImageObject> mImageObjects;
+    Buffer<VulkanTextureObject> mTextureObjects;
 };
 
 #endif //VULKANRENDERER_VULKANRENDERDEVICE_H

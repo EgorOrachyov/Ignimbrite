@@ -54,7 +54,8 @@ public:
     static void createTextureImage(
             VulkanContext& context,
             const void *imageData,
-            uint32_t width, uint32_t height, uint32_t depth,
+            uint32_t width, uint32_t height, 
+            uint32_t depth, uint32_t mipLevels,
             VkImageType imageType, VkFormat format, VkImageTiling tiling,
             VkImage &outTextureImage, VkDeviceMemory &outTextureMemory,
             VkImageLayout textureLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
@@ -62,7 +63,8 @@ public:
 
     static void createImage(
             VulkanContext& context,
-            uint32_t width, uint32_t height, uint32_t depth,
+            uint32_t width, uint32_t height, 
+            uint32_t depth, uint32_t mipLevels,
             VkImageType imageType, VkFormat format,
             VkImageTiling tiling, VkImageUsageFlags usage,
             VkMemoryPropertyFlags properties,
@@ -80,7 +82,8 @@ public:
             VulkanContext& context,
             VkImage image,
             VkImageLayout oldLayout,
-            VkImageLayout newLayout
+            VkImageLayout newLayout,
+            uint32_t mipLevels
     );
 
     static void createImageView(
@@ -91,6 +94,31 @@ public:
             const VkImageSubresourceRange &subResourceRange,
             VkComponentMapping components = {}
     );
+
+    static void generateMipmaps(
+        VulkanContext& context,
+        VkImage image, VkFormat format,
+        uint32_t width, uint32_t height, 
+        uint32_t depth, uint32_t mipLevels
+    );
+
+    static void createDepthStencilBuffer(VulkanContext& context, 
+        uint32_t width, uint32_t height, uint32_t depth,
+        VkImageType imageType, VkFormat format, VkImageViewType viewType,
+        VkImage& outImage, VkDeviceMemory& outImageMemory, 
+        VkImageView& outImageView);
+
+    static void getSurfaceProperties(
+        VkPhysicalDevice physicalDevice, VkSurfaceKHR surfaceKhr,
+        std::vector<VkSurfaceFormatKHR>& outSurfFormats, 
+        std::vector<VkPresentModeKHR>& outPresentModes);
+    
+    static VkExtent2D getSwaphainExtent(
+        uint32_t preferredWidth, uint32_t preferredHeight, 
+        const VkSurfaceCapabilitiesKHR& surfCapabilities);
+    
+    static VkCompositeAlphaFlagBitsKHR getAvailableCompositeAlpha(
+        const VkSurfaceCapabilitiesKHR& surfCapabilities);
 };
 
 #endif //RENDERINGLIBRARY_VULKANUTILS_H
