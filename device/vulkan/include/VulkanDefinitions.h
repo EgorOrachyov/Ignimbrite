@@ -84,6 +84,18 @@ public:
                 throw InvalidEnum();
         }
     }
+
+    static VkSamplerMipmapMode samplerMipmapMode(SamplerFilter mipmapMode) {
+        switch (mipmapMode)
+        {
+        case SamplerFilter::Linear:
+            return VkSamplerMipmapMode::VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        case SamplerFilter::Nearest:
+            return VkSamplerMipmapMode::VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        default:
+            throw InvalidEnum();
+        }
+    }
 };
 
 #endif //RENDERINGLIBRARY_VULKANDEFINITIONS_H

@@ -145,15 +145,14 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
         VulkanImageObject imo;
 
         context.createTextureImage(textureDesc.data,
-                                   textureDesc.width, textureDesc.height, textureDesc.depth,
+                                   textureDesc.width, textureDesc.height, textureDesc.depth, textureDesc.mipmaps,
                                    imageType, format, VK_IMAGE_TILING_OPTIMAL,
                                    imo.image, imo.imageMemory, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
         VkImageSubresourceRange subresourceRange;
         subresourceRange.aspectMask = aspectMask;
-        // TODO: mipmaps
         subresourceRange.baseMipLevel = 0;
-        subresourceRange.levelCount = 1;
+        subresourceRange.levelCount = textureDesc.mipmaps;
         subresourceRange.baseArrayLayer = 0;
         subresourceRange.layerCount = 1;
 
@@ -176,7 +175,7 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
             throw VulkanException("Unsupported depth format");
         }
 
-        context.createImage(textureDesc.width, textureDesc.height, textureDesc.depth,
+        context.createImage(textureDesc.width, textureDesc.height, textureDesc.depth, 1,
                             imageType, format, tiling, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                 // depth stencil buffer is device local
                 // TODO: make visible from cpu
@@ -232,7 +231,10 @@ RenderDevice::ID VulkanRenderDevice::createSampler(const RenderDevice::SamplerDe
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
     samplerInfo.compareEnable = VK_FALSE;
     samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.mipmapMode = VulkanDefinitions::samplerMipmapMode(samplerDesc.mipmapMode);
+    samplerInfo.mipLodBias = samplerDesc.mipLodBias;
+    samplerInfo.minLod = samplerDesc.minLod;
+    samplerInfo.maxLod = samplerDesc.maxLod;
 
     VkSampler sampler;
     VkResult r = vkCreateSampler(context.device, &samplerInfo, nullptr, &sampler);

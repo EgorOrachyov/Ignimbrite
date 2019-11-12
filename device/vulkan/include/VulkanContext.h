@@ -82,30 +82,32 @@ struct VulkanContext {
 
     void createTextureImage(
             const void *imageData,
-            uint32_t width, uint32_t height, uint32_t depth,
+            uint32_t width, uint32_t height, uint32_t depth, uint32_t mipLevels,
             VkImageType imageType, VkFormat format, VkImageTiling tiling,
             VkImage &outTextureImage, VkDeviceMemory &outTextureMemory,
             VkImageLayout textureLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     );
 
     void createImage(
-            uint32_t width, uint32_t height, uint32_t depth,
+            uint32_t width, uint32_t height, uint32_t depth, uint32_t mipLevels,
             VkImageType imageType, VkFormat format,
             VkImageTiling tiling, VkImageUsageFlags usage,
             VkMemoryPropertyFlags properties,
             VkImage &outImage, VkDeviceMemory &outImageMemory
     );
 
-    void copyBufferToImage(
-            VkBuffer buffer,
-            VkImage image,
-            uint32_t width, uint32_t height, uint32_t depth
-    );
+    /**
+     * Copy buffer to image
+     * @note copying without mipmaps
+     */
+    void copyBufferToImage(VkBuffer buffer, VkImage image, 
+        uint32_t width, uint32_t height, uint32_t depth);
 
     void transitionImageLayout(
             VkImage image,
             VkImageLayout oldLayout,
-            VkImageLayout newLayout
+            VkImageLayout newLayout, 
+            uint32_t mipLevels
     );
 
     void createImageView(
@@ -115,6 +117,9 @@ struct VulkanContext {
             const VkImageSubresourceRange &subResourceRange,
             VkComponentMapping components = {}
     );
+
+    void generateMipmaps(VkImage image, VkFormat format, 
+        uint32_t width, uint32_t height, uint32_t depth, uint32_t mipLevels);
 
     std::vector<const char *> requiredExtensions;
     const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
