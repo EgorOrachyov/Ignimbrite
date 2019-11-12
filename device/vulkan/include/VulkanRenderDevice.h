@@ -43,15 +43,18 @@ private:
 
     friend class VulkanExtensions;
 
+    template <typename T>
+    using Buffer = ObjectIDBuffer<T>;
+
     VulkanContext context;
 
-    ObjectIDBuffer<VulkanSurface> mSurfaces;
-    ObjectIDBuffer<VulkanVertexLayout> mVertexLayouts;
-    ObjectIDBuffer<VulkanVertexBuffer> mVertexBuffers;
-    ObjectIDBuffer<VulkanIndexBuffer> mIndexBuffers;
-    ObjectIDBuffer<VulkanFrameBufferFormat> mFrameBufferFormats;
-    ObjectIDBuffer<VkSampler> mSamplers;
-    ObjectIDBuffer<VulkanImageObject> mImageObjects;
+    Buffer<VulkanSurface> mSurfaces;
+    Buffer<VulkanVertexLayout> mVertexLayouts;
+    Buffer<VulkanVertexBuffer> mVertexBuffers;
+    Buffer<VulkanIndexBuffer> mIndexBuffers;
+    Buffer<VulkanFrameBufferFormat> mFrameBufferFormats;
+    Buffer<VkSampler> mSamplers;
+    Buffer<VulkanImageObject> mImageObjects;
 };
 
 #endif //VULKANRENDERER_VULKANRENDERDEVICE_H
