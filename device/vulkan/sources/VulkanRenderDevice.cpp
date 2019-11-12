@@ -142,7 +142,7 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
     VkImageViewType viewType = VulkanDefinitions::imageViewType(textureDesc.type);
 
     if (textureDesc.usageFlags & (uint32) TextureUsageBit::ShaderSampling) {
-        VulkanImageObject imo;
+        VulkanTextureObject imo;
 
         context.createTextureImage(textureDesc.data,
                                    textureDesc.width, textureDesc.height, textureDesc.depth, textureDesc.mipmaps,
@@ -158,9 +158,9 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
 
         context.createImageView(imo.imageView, imo.image, viewType, format, subresourceRange);
 
-        return mImageObjects.move(imo);
+        return mTextureObjects.move(imo);
     } else if (textureDesc.usageFlags & (uint32) TextureUsageBit::DepthStencilAttachment) {
-        VulkanImageObject depthStencil;
+        VulkanTextureObject depthStencil;
 
         // get properties of depth stencil format
         const VkFormatProperties &properties = context.getDeviceFormatProperties(format);
@@ -198,7 +198,7 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
         context.createImageView(depthStencil.imageView, depthStencil.image,
                                 viewType, format, subresourceRange, components);
 
-        return mImageObjects.move(depthStencil);
+        return mTextureObjects.move(depthStencil);
     } else if (textureDesc.usageFlags & (uint32) TextureUsageBit::ColorAttachment) {
         throw VulkanException("Color attachments must created with swapchain");
     } else {
@@ -208,13 +208,13 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
 
 void VulkanRenderDevice::destroyTexture(RenderDevice::ID textureId) {
     const VkDevice &device = context.device;
-    VulkanImageObject &imo = mImageObjects.get(textureId);
+    VulkanTextureObject &imo = mTextureObjects.get(textureId);
 
     vkDestroyImageView(device, imo.imageView, nullptr);
     vkDestroyImage(device, imo.image, nullptr);
     vkFreeMemory(device, imo.imageMemory, nullptr);
 
-    mImageObjects.remove(textureId);
+    mTextureObjects.remove(textureId);
 }
 
 RenderDevice::ID VulkanRenderDevice::createSampler(const RenderDevice::SamplerDesc &samplerDesc) {
@@ -266,4 +266,121 @@ void VulkanRenderDevice::getSurfaceSize(RenderDevice::ID surface, uint32 &width,
 
     width = window.width;
     height = window.height;
+}
+
+RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderDevice::ID>& attachmentIds, 
+                                                            RenderDevice::ID framebufferFormatId) {
+    // get framebuffer attachemnts info
+    std::vector<VkImageView> framebufferAttchViews;
+
+    VulkanTextureObject &firstAtt = mTextureObjects.get(attachmentIds[0]);
+    uint32 width = firstAtt.width;
+    uint32 height = firstAtt.height;
+    framebufferAttchViews.push_back(firstAtt.imageView);
+
+    for (size_t i = 1; i < attachmentIds.size(); i++)
+    {
+        VulkanTextureObject &att = mTextureObjects.get(attachmentIds[i]);
+        if (width != att.width || height != att.height)
+        {
+            throw VulkanException("Framebuffer attachments must be same size");
+        }
+
+        framebufferAttchViews.push_back(att.imageView);
+    }
+
+    // TODO: get framebuffer attachement descriptions using "framebufferFormatId"
+    const std::vector<FramebufferAttachmentDesc> attchDescs = {};
+
+    // parse 
+    std::vector<VkAttachmentDescription> vAttchDescs;
+    std::vector<VkAttachmentReference> vColorAttchRefs;
+    VkAttachmentReference vDepthStencilAttchRef;
+    bool isDepthStencilSet = false;
+
+    for (uint32_t i = 0; i < attchDescs.size(); i++)
+    {
+        const FramebufferAttachmentDesc& att = attchDescs[i];
+
+        VkAttachmentDescription desc;
+        desc.format = VulkanDefinitions::dataFormat(att.format);
+        desc.samples = VulkanDefinitions::sampleCount(att.samples);
+        desc.flags = 0;
+
+        VkAttachmentReference ref;
+        ref.attachment = i;
+
+        if (att.type == AttachmentType::Color)
+        {
+            // TODO: should be defined by user
+            
+            // clear at the start of render pass
+            desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+            // leave rendering result in this buffer
+            desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+            desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            // initial layout is undefined
+            desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            // final layout must be appropriate for present operation
+            desc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+            ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            vColorAttchRefs.push_back(ref);
+        }
+        else
+        {
+            if (isDepthStencilSet)
+            {
+                throw VulkanException("Vulkan::Only one depth stencil attachment can be set to subpass");
+            }
+
+            // TODO: should be defined by user
+
+            // clear at the start of render pass
+            desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+            desc.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            // leave same as it will not be presented
+            desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+            ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+            vDepthStencilAttchRef = ref;
+            isDepthStencilSet = true;
+        }
+
+        vAttchDescs.push_back(desc);
+    }
+
+    VkFramebufferCreateInfo framebufferInfo;
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.pNext = NULL;
+    framebufferInfo.flags = 0;
+    framebufferInfo.width = width;
+    framebufferInfo.height = height;
+    framebufferInfo.layers = 1;
+    framebufferInfo.attachmentCount = framebufferAttchViews.size();
+    framebufferInfo.pAttachments = framebufferAttchViews.data();
+    framebufferInfo.renderPass = context.createRenderPass(vAttchDescs, vColorAttchRefs,
+        vDepthStencilAttchRef, isDepthStencilSet);
+
+    VkFramebuffer framebuffer;
+    VkResult r = vkCreateFramebuffer(context.device, &framebufferInfo, nullptr, &framebuffer);
+    
+    if (r != VK_SUCCESS)
+    {
+        throw VulkanException("Can't create framebuffer");
+    }
+
+    return mFramebuffers.add(framebuffer);
+}
+
+void VulkanRenderDevice::destroyFramebuffer(RenderDevice::ID framebufferId) {
+    VkFramebuffer framebuffer = mFramebuffers.get(framebufferId);
+    vkDestroyFramebuffer(context.device, framebuffer, nullptr);
+
+    mFramebuffers.remove(framebufferId);
 }

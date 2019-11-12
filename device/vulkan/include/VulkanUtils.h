@@ -19,4 +19,9 @@ struct QueueFamilyIndices {
     }
 };
 
+struct SwapchainBuffer {
+    VkImage         image;
+    VkImageView     imageView;
+};
+
 #endif //RENDERINGLIBRARY_VULKANUTILS_H

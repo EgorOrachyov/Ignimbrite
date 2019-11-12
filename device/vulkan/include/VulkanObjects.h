@@ -27,10 +27,17 @@ struct VulkanIndexBuffer {
     VkDeviceMemory vkDeviceMemory;
 };
 
-struct VulkanImageObject {
+struct VulkanTextureObject {
     VkImage image;
     VkDeviceMemory imageMemory;
     VkImageView imageView;
+    VkImageType type;
+    VkFormat format;
+    uint32 width;
+    uint32 height;
+    uint32 depth;
+    uint32 mipmaps;
+    VkImageUsageFlags usageFlags;
 };
 
 struct VulkanSurface {

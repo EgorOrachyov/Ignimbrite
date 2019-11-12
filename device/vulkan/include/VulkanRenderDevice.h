@@ -36,6 +36,9 @@ public:
     ID getSurface(const std::string &surfaceName) override;
     void getSurfaceSize(ID surface, uint32 &width, uint32 &height) override;
 
+    ID createFramebuffer(const std::vector<ID>& attachments, ID framebufferFormat) override;
+    void destroyFramebuffer(ID framebuffer) override;
+
 private:
 
     friend class VulkanExtensions;
@@ -47,7 +50,8 @@ private:
     ObjectIDBuffer<VulkanVertexBuffer> mVertexBuffers;
     ObjectIDBuffer<VulkanIndexBuffer> mIndexBuffers;
     ObjectIDBuffer<VkSampler> mSamplers;
-    ObjectIDBuffer<VulkanImageObject> mImageObjects;
+    ObjectIDBuffer<VulkanTextureObject> mTextureObjects;
+    ObjectIDBuffer<VkFramebuffer> mFramebuffers;
 };
 
 #endif //VULKANRENDERER_VULKANRENDERDEVICE_H

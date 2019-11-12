@@ -695,3 +695,364 @@ void VulkanContext::generateMipmaps(VkImage image, VkFormat format,
     // TODO
     // _endTempCommandBuffer(device, transitionQueue or graphicsQueue, commandPool, commandBuffer);
 }
+
+void VulkanContext::getSurfaceProperties(VkPhysicalDevice physicalDevice, VkSurfaceKHR surfaceKhr,
+    VkSurfaceCapabilitiesKHR& outCapabilities,
+    std::vector<VkSurfaceFormatKHR>& outSurfFormats,
+    std::vector<VkPresentModeKHR>& outPresentModes)
+{
+    uint32_t surfFormatCount;
+    uint32_t presentModeCount;
+    VkResult r;
+
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surfaceKhr, &outCapabilities);
+
+    // get count
+    r = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surfaceKhr, &surfFormatCount, nullptr);
+    if (r != VK_SUCCESS)
+    {
+        throw VulkanException("Can't get VkSurfaceKHR formats");
+    }
+
+    if (surfFormatCount == 0)
+    {
+        throw VulkanException("VkSurfaceKHR has no formats");
+    }
+
+    outSurfFormats.resize(surfFormatCount);
+
+    // get formats
+    r = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surfaceKhr, &surfFormatCount, outSurfFormats.data());
+    if (r != VK_SUCCESS)
+    {
+        throw VulkanException("Can't get VkSurfaceKHR formats");
+    }
+
+    // get count
+    r = vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surfaceKhr, &presentModeCount, nullptr);
+    if (r != VK_SUCCESS)
+    {
+        throw VulkanException("Can't get VkSurfaceKHR present modes");
+    }
+
+    if (presentModeCount == 0)
+    {
+        throw VulkanException("VkSurfaceKHR has no present modes");
+    }
+
+    outPresentModes.resize(presentModeCount);
+
+    r = vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surfaceKhr, &presentModeCount, outPresentModes.data());
+    if (r != VK_SUCCESS)
+    {
+        throw VulkanException("Can't get VkSurfaceKHR present modes");
+    }
+}
+
+void VulkanContext::createSwapchain(uint32_t swapchainMinImageCount,
+    uint32_t preferredWidth, uint32_t preferredHeight,
+    VkPresentModeKHR preferredPresentMode, VkFormat preferredSurfFormat,
+    VkColorSpaceKHR preferredColorSpace)
+{
+    VkSurfaceCapabilitiesKHR surfCapabilities;
+    std::vector<VkSurfaceFormatKHR> surfFormats;
+    std::vector<VkPresentModeKHR> presentModes;
+
+    VkSurfaceFormatKHR choosedSurfFormat;
+    VkPresentModeKHR choosedPresentMode;
+
+    getSurfaceProperties(physicalDevice, surfaceKhr, surfCapabilities, surfFormats, presentModes);
+
+    // choose surface format
+    choosedSurfFormat.format = surfFormats[0].format;
+    choosedSurfFormat.colorSpace = surfFormats[0].colorSpace;
+
+    for (auto& surfFormat : surfFormats)
+    {
+        if (surfFormat.format == preferredSurfFormat && surfFormat.colorSpace == preferredColorSpace)
+        {
+            choosedSurfFormat.format = surfFormat.format;
+            choosedSurfFormat.colorSpace = surfFormat.colorSpace;
+
+            break;
+        }
+    }
+
+    // choose present mode
+    choosedPresentMode = presentModes[0];
+
+    for (auto& presentMode : presentModes)
+    {
+        if (presentMode == preferredPresentMode)
+        {
+            choosedPresentMode = preferredPresentMode;
+            break;
+        }
+    }
+
+    VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
+    swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    swapchainCreateInfo.pNext = NULL;
+    swapchainCreateInfo.surface = surfaceKhr;
+
+    swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
+    swapchainCreateInfo.clipped = true;
+    swapchainCreateInfo.presentMode = choosedPresentMode;
+    swapchainCreateInfo.imageFormat = choosedSurfFormat.format;
+    swapchainCreateInfo.imageColorSpace = choosedSurfFormat.colorSpace;
+    swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    uint32_t graphicsQueueFamilyIndex = familyIndices.graphicsFamily.get();
+    // TODO: init present queue family index in findQueueFamilies
+    // using vkGetPhysicalDeviceSurfaceSupportKHR(..)
+    uint32_t presentQueueFamilyIndex = 0;
+    throw VulkanException("presentQueueFamilyIndex is not presented");
+
+    std::vector<uint32_t> queueFamilyIndices = { graphicsQueueFamilyIndex, presentQueueFamilyIndex };
+
+    // check queues, if they are from same queue families
+    if (graphicsQueueFamilyIndex == presentQueueFamilyIndex)
+    {
+        swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        // this parameters will be ignored as not concurrent sharing mode
+        swapchainCreateInfo.queueFamilyIndexCount = 0;
+        swapchainCreateInfo.pQueueFamilyIndices = NULL;
+    }
+    else
+    {
+        swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        swapchainCreateInfo.queueFamilyIndexCount = queueFamilyIndices.size();
+        swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices.data();
+    }
+
+    swapchainCreateInfo.imageExtent = getSwaphainExtent(preferredWidth, preferredHeight, surfCapabilities);
+    swapchainCreateInfo.compositeAlpha = getAvailableCompositeAlpha(surfCapabilities);
+
+    if (surfCapabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
+    {
+        swapchainCreateInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    }
+    else
+    {
+        swapchainCreateInfo.preTransform = surfCapabilities.currentTransform;
+    }
+
+    if (!(surfCapabilities.minImageCount <= swapchainMinImageCount && swapchainMinImageCount <= surfCapabilities.maxImageCount))
+    {
+        throw VulkanException("Given swapchainMinImageCount is not available on this surface and device");
+    }
+
+    swapchainCreateInfo.minImageCount = swapchainMinImageCount;
+    swapchainCreateInfo.imageArrayLayers = 1;
+
+    // create swapchain and images that associated with it
+    VkResult r = vkCreateSwapchainKHR(device, &swapchainCreateInfo, nullptr, &swapchain);
+    if (r != VK_SUCCESS)
+    {
+        throw VulkanException("Can't create swapchain");
+    }
+
+    // get actual amount of images in swapchain
+    uint32_t swapchainImageCount;
+    VkResult r = vkGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, nullptr);
+
+    if (r != VK_SUCCESS)
+    {
+        throw VulkanException("Can't get images from swapchain");
+    }
+
+    // allocate buffer memory
+    swapchainBuffers.resize(swapchainImageCount);
+
+    // get images themselves
+    std::vector<VkImage> swapchainImages(swapchainImageCount);
+    r = vkGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, swapchainImages.data());
+
+    if (r != VK_SUCCESS)
+    {
+        throw VulkanException("Can't get images from swapchain");
+    }
+
+    // create image view for each image in swapchain
+    for (uint32_t i = 0; i < swapchainImageCount; i++)
+    {
+        swapchainBuffers[i].image = swapchainImages[i];
+
+        VkImageViewCreateInfo viewInfo = {};
+        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.pNext = NULL;
+        viewInfo.flags = 0;
+
+        viewInfo.image = swapchainBuffers[i].image;
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = choosedSurfFormat.format;
+        viewInfo.components.r = VK_COMPONENT_SWIZZLE_R;
+        viewInfo.components.g = VK_COMPONENT_SWIZZLE_G;
+        viewInfo.components.b = VK_COMPONENT_SWIZZLE_B;
+        viewInfo.components.a = VK_COMPONENT_SWIZZLE_A;
+        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        viewInfo.subresourceRange.baseMipLevel = 0;
+        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount = 1;
+
+        r = vkCreateImageView(device, &viewInfo, nullptr, &swapchainBuffers[i].imageView);
+
+        if (r != VK_SUCCESS)
+        {
+            throw VulkanException("Can't create image view for swapchain");
+        }
+    }
+}
+
+void VulkanContext::destroySwapchain()
+{
+    // destroy only image views, images will be destroyed with swapchain
+    for (uint32_t i = 0; i < swapchainBuffers.size(); i++)
+    {
+        vkDestroyImageView(device, swapchainBuffers[i].imageView, nullptr);
+    }
+
+    vkDestroySwapchainKHR(device, swapchain, nullptr);
+}
+
+VkExtent2D VulkanContext::getSwaphainExtent(uint32_t preferredWidth, uint32_t preferredHeight, const VkSurfaceCapabilitiesKHR& surfCapabilities)
+{
+    if (surfCapabilities.currentExtent.width != UINT32_MAX)
+    {
+        // if current extent is defined, match swapchain size with it
+        return surfCapabilities.currentExtent;
+    }
+    else
+    {
+        VkExtent2D ext;
+
+        ext.width = preferredWidth;
+        ext.height = preferredHeight;
+
+        // min <= preferredWidth <= max
+        if (ext.width < surfCapabilities.minImageExtent.width)
+        {
+            ext.width = surfCapabilities.minImageExtent.width;
+        }
+        else if (ext.width > surfCapabilities.maxImageExtent.width)
+        {
+            ext.width = surfCapabilities.maxImageExtent.width;
+        }
+
+        // min <= preferredHeight <= max
+        if (ext.height < surfCapabilities.minImageExtent.height)
+        {
+            ext.height = surfCapabilities.minImageExtent.height;
+        }
+        else if (ext.height > surfCapabilities.maxImageExtent.height)
+        {
+            ext.height = surfCapabilities.maxImageExtent.height;
+        }
+
+        return ext;
+    }
+}
+
+VkCompositeAlphaFlagBitsKHR VulkanContext::getAvailableCompositeAlpha(const VkSurfaceCapabilitiesKHR& surfCapabilities)
+{
+    VkCompositeAlphaFlagBitsKHR compositeAlphaPr[4] = {
+        VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+        VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR,
+        VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR,
+        VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR };
+
+    for (uint32_t i = 0; i < 4; i++)
+    {
+        if (surfCapabilities.supportedCompositeAlpha & compositeAlphaPr[i])
+        {
+            return compositeAlphaPr[i];
+            break;
+        }
+    }
+
+    throw VulkanException("Can't find available composite alpha");
+}
+
+void VulkanContext::createDepthStencilBuffer(uint32_t width, uint32_t height, uint32_t depth,
+    VkImageType imageType, VkFormat format, VkImageViewType viewType,
+    VkImage& outImage, VkDeviceMemory& outImageMemory, VkImageView& outImageView) {
+
+    // get properties of depth stencil format
+    const VkFormatProperties& properties = getDeviceFormatProperties(format);
+
+    VkImageTiling tiling;
+
+    if (properties.linearTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+    {
+        tiling = VK_IMAGE_TILING_LINEAR;
+    }
+    else if (properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+    {
+        tiling = VK_IMAGE_TILING_OPTIMAL;
+    }
+    else
+    {
+        throw VulkanException("Unsupported depth format");
+    }
+
+    createImage(width, height, depth, 1,
+        imageType, format, tiling, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        // depth stencil buffer is device local
+        // TODO: make visible from cpu
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        outImage, outImageMemory);
+
+    VkComponentMapping components;
+    components.r = VK_COMPONENT_SWIZZLE_R;
+    components.g = VK_COMPONENT_SWIZZLE_G;
+    components.b = VK_COMPONENT_SWIZZLE_B;
+    components.a = VK_COMPONENT_SWIZZLE_A;
+
+    VkImageSubresourceRange subresourceRange;
+    subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    // depth stencil doesn't have mipmaps
+    subresourceRange.baseMipLevel = 0;
+    subresourceRange.levelCount = 1;
+    subresourceRange.baseArrayLayer = 0;
+    subresourceRange.layerCount = 1;
+
+    createImageView(outImageView, outImage, viewType, format, subresourceRange, components);
+}
+
+VkRenderPass VulkanContext::createRenderPass(const std::vector<VkAttachmentDescription> &descriptions,
+    const std::vector<VkAttachmentReference> &colorAttachments, 
+    const VkAttachmentReference &depthStencilAttachment, bool usingDepthStencil) {
+
+    VkSubpassDescription subpass;
+    // graphics pipeline type
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.flags = 0;
+    subpass.inputAttachmentCount = 0;
+    subpass.pInputAttachments = NULL;
+    subpass.colorAttachmentCount = colorAttachments.size();
+    subpass.pColorAttachments = colorAttachments.data();
+    subpass.pDepthStencilAttachment = usingDepthStencil ? &depthStencilAttachment : NULL;
+    subpass.pResolveAttachments = NULL;
+    subpass.preserveAttachmentCount = 0;
+    subpass.pPreserveAttachments = NULL;
+
+    VkRenderPassCreateInfo renderPassInfo = {};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.pNext = NULL;
+    renderPassInfo.attachmentCount = descriptions.size();
+    renderPassInfo.pAttachments = descriptions.data();
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.dependencyCount = 0;
+    renderPassInfo.pDependencies = NULL;
+
+    VkRenderPass renderPass;
+    VkResult r = vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass);
+    if (r != VK_SUCCESS)
+    {
+        throw VulkanException("Vulkan::Can't create render pass");
+    }
+
+    return renderPass;
+}
