@@ -137,72 +137,88 @@ void VulkanRenderDevice::destroyIndexBuffer(RenderDevice::ID bufferId) {
 
 RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDesc &textureDesc) {
     VkFormat format = VulkanDefinitions::dataFormat(textureDesc.format);
-    VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     VkImageType imageType = VulkanDefinitions::imageType(textureDesc.type);
     VkImageViewType viewType = VulkanDefinitions::imageViewType(textureDesc.type);
+    VkImageUsageFlags usageFlags = VulkanDefinitions::imageUsageFlags(textureDesc.usageFlags);
 
-    if (textureDesc.usageFlags & (uint32) TextureUsageBit::ShaderSampling) {
-        VulkanTextureObject imo;
+    VulkanTextureObject texture = {};
+    texture.type = imageType;
+    texture.format = format;
+    texture.usageFlags = usageFlags;
+    texture.width = textureDesc.width;
+    texture.height = textureDesc.height;
+    texture.depth = textureDesc.depth;
+    texture.mipmaps = textureDesc.mipmaps;
 
-        context.createTextureImage(textureDesc.data,
-                                   textureDesc.width, textureDesc.height, textureDesc.depth, textureDesc.mipmaps,
-                                   imageType, format, VK_IMAGE_TILING_OPTIMAL,
-                                   imo.image, imo.imageMemory, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    if (usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_SAMPLED_BIT)
+    {
+        if (usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT &&
+            usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT == 0)
+        {
+            // if texture can be sampled in shader and it's a color attachment
 
-        VkImageSubresourceRange subresourceRange;
-        subresourceRange.aspectMask = aspectMask;
-        subresourceRange.baseMipLevel = 0;
-        subresourceRange.levelCount = textureDesc.mipmaps;
-        subresourceRange.baseArrayLayer = 0;
-        subresourceRange.layerCount = 1;
-
-        context.createImageView(imo.imageView, imo.image, viewType, format, subresourceRange);
-
-        return mTextureObjects.move(imo);
-    } else if (textureDesc.usageFlags & (uint32) TextureUsageBit::DepthStencilAttachment) {
-        VulkanTextureObject depthStencil;
-
-        // get properties of depth stencil format
-        const VkFormatProperties &properties = context.getDeviceFormatProperties(format);
-
-        VkImageTiling tiling;
-
-        if (properties.linearTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-            tiling = VK_IMAGE_TILING_LINEAR;
-        } else if (properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-            tiling = VK_IMAGE_TILING_OPTIMAL;
-        } else {
-            throw VulkanException("Unsupported depth format");
+            // TODO
         }
+        else if (usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT == 0 &&
+            usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+        {
+            // if texture can be sampled in shader and it's a depth stencil attachment
 
-        context.createImage(textureDesc.width, textureDesc.height, textureDesc.depth, 1,
-                            imageType, format, tiling, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                // depth stencil buffer is device local
-                // TODO: make visible from cpu
-                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                            depthStencil.image, depthStencil.imageMemory);
+            // TODO
+        }
+        else if (usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT == 0 &&
+            usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT == 0)
+        {
+            // if texture can be sampled in shader and it's not an attachment
 
-        VkComponentMapping components;
-        components.r = VK_COMPONENT_SWIZZLE_R;
-        components.g = VK_COMPONENT_SWIZZLE_G;
-        components.b = VK_COMPONENT_SWIZZLE_B;
-        components.a = VK_COMPONENT_SWIZZLE_A;
+            // create texture image with mipmaps and allocate memory
+            context.createTextureImage(textureDesc.data,
+                textureDesc.width, textureDesc.height, textureDesc.depth, textureDesc.mipmaps,
+                imageType, format, VK_IMAGE_TILING_OPTIMAL,
+                texture.image, texture.imageMemory, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-        VkImageSubresourceRange subresourceRange;
-        subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        subresourceRange.baseMipLevel = 0;
-        subresourceRange.levelCount = 1;
-        subresourceRange.baseArrayLayer = 0;
-        subresourceRange.layerCount = 1;
+            // create image view
+            VkImageSubresourceRange subresourceRange;
+            subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            subresourceRange.baseMipLevel = 0;
+            subresourceRange.levelCount = textureDesc.mipmaps;
+            subresourceRange.baseArrayLayer = 0;
+            subresourceRange.layerCount = 1;
 
-        context.createImageView(depthStencil.imageView, depthStencil.image,
-                                viewType, format, subresourceRange, components);
+            context.createImageView(texture.imageView, texture.image, viewType, format, subresourceRange);
 
-        return mTextureObjects.move(depthStencil);
-    } else if (textureDesc.usageFlags & (uint32) TextureUsageBit::ColorAttachment) {
-        throw VulkanException("Color attachments must created with swapchain");
-    } else {
-        throw VulkanException("Failed to create texture object");
+            return mTextureObjects.move(texture);
+        }
+        else
+        {
+            VulkanException("VulkanRenderDevice::Texture can't be color and depth stencil attachment at the same time");
+        }
+    }
+    else if (usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT &&
+        usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT == 0)
+    {
+        // if depth stencil attahment
+
+        context.createDepthStencilBuffer(textureDesc.width, textureDesc.height, textureDesc.depth,
+            imageType, format, viewType, texture.image, texture.imageMemory, texture.imageView);
+
+        return mTextureObjects.move(texture);
+    }
+    else if (usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT &&
+        usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT == 0)
+    {
+        // if color attachment
+
+        // TODO
+        texture.image = VK_NULL_HANDLE;
+        texture.imageMemory = VK_NULL_HANDLE;
+        texture.imageView = VK_NULL_HANDLE;
+
+        return mTextureObjects.move(texture);
+    }
+    else
+    {
+        throw VulkanException("Texture can't be color and depth stencil attachment at the same time");
     }
 }
 
