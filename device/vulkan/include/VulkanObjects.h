@@ -12,10 +12,17 @@
 struct VulkanQueueFamilyIndices {
     Optional<uint32> graphicsFamily;
     Optional<uint32> transferFamily;
+    Optional<uint32> presentsFamily;
 
-    bool isComplete() {
+    bool isCompleteGT() {
         return graphicsFamily.hasValue() &&
                transferFamily.hasValue();
+    }
+
+    bool isCompleteGTP() {
+        return graphicsFamily.hasValue() &&
+               transferFamily.hasValue() &&
+                presentsFamily.hasValue();
     }
 };
 
@@ -57,25 +64,20 @@ struct VulkanSurface {
     uint32 widthFramebuffer;
     uint32 heightFramebuffer;
     std::string name;
+    bool tripleBuffering = false;
+    VkQueue presentQueue;
     VkSurfaceKHR surface;
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
-    bool tripleBuffering = false;
-    VkPresentModeKHR preferredPresentMode = VkPresentModeKHR::VK_PRESENT_MODE_FIFO_KHR;
-    VkFormat preferredSurfFormat = VkFormat::VK_FORMAT_B8G8R8A8_UNORM;
-    VkColorSpaceKHR preferredColorSpace = VkColorSpaceKHR::VK_COLORSPACE_SRGB_NONLINEAR_KHR;
-
-    // swapchain associated with this surface
-    VkSwapchainKHR swapchain;
-    std::vector<VulkanSwapchainBuffer> swapchainBuffers;
+    VkFormat surfaceFormat;
+    VkColorSpaceKHR colorSpace;
+    VkPresentModeKHR presentMode;
+    VkSwapchainKHR swapChain;
+    std::vector<VkImage> swapChainImages;
+    std::vector<VkImageView > swapChainImageViews;
 };
 
 struct VulkanFrameBufferFormat {
     VkRenderPass renderPass;
-};
-
-struct VulkanSwapchainBuffer {
-    VkImage         image;
-    VkImageView     imageView;
 };
 
 #endif //RENDERINGLIBRARY_VULKANOBJECTS_H

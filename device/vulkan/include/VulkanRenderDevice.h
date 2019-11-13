@@ -56,9 +56,10 @@ private:
     Buffer<VulkanVertexBuffer> mVertexBuffers;
     Buffer<VulkanIndexBuffer> mIndexBuffers;
     Buffer<VulkanFrameBufferFormat> mFrameBufferFormats;
-    Buffer<VkFramebuffer> mFramebuffers;
+    Buffer<VkFramebuffer> mFrameBuffers;
     Buffer<VkSampler> mSamplers;
     Buffer<VulkanTextureObject> mTextureObjects;
+
 };
 
 #endif //VULKANRENDERER_VULKANRENDERDEVICE_H

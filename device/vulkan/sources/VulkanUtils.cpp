@@ -395,16 +395,15 @@ void VulkanUtils::generateMipmaps(VulkanContext& context, VkImage image, VkForma
     // _endTempCommandBuffer(device, transitionQueue or graphicsQueue, commandPool, commandBuffer);
 }
 
-void VulkanUtils::getSurfaceProperties(VkPhysicalDevice physicalDevice, VkSurfaceKHR surfaceKhr,
-    std::vector<VkSurfaceFormatKHR>& outSurfFormats,
-    std::vector<VkPresentModeKHR>& outPresentModes)
+void VulkanUtils::getSurfaceProperties(VkPhysicalDevice physicalDevice, VkSurfaceKHR surfaceKHR,
+                                       std::vector<VkSurfaceFormatKHR> &outSurfaceFormats,
+                                       std::vector<VkPresentModeKHR> &outPresentModes)
 {
     uint32_t surfFormatCount;
     uint32_t presentModeCount;
     VkResult r;
 
-    // get count
-    r = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surfaceKhr, &surfFormatCount, nullptr);
+    r = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surfaceKHR, &surfFormatCount, nullptr);
     if (r != VK_SUCCESS) {
         throw VulkanException("Can't get VkSurfaceKHR formats");
     }
@@ -413,16 +412,14 @@ void VulkanUtils::getSurfaceProperties(VkPhysicalDevice physicalDevice, VkSurfac
         throw VulkanException("VkSurfaceKHR has no formats");
     }
 
-    outSurfFormats.resize(surfFormatCount);
+    outSurfaceFormats.resize(surfFormatCount);
 
-    // get formats
-    r = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surfaceKhr, &surfFormatCount, outSurfFormats.data());
+    r = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surfaceKHR, &surfFormatCount, outSurfaceFormats.data());
     if (r != VK_SUCCESS) {
         throw VulkanException("Can't get VkSurfaceKHR formats");
     }
 
-    // get count
-    r = vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surfaceKhr, &presentModeCount, nullptr);
+    r = vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surfaceKHR, &presentModeCount, nullptr);
     if (r != VK_SUCCESS) {
         throw VulkanException("Can't get VkSurfaceKHR present modes");
     }
@@ -433,55 +430,56 @@ void VulkanUtils::getSurfaceProperties(VkPhysicalDevice physicalDevice, VkSurfac
 
     outPresentModes.resize(presentModeCount);
 
-    r = vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surfaceKhr, &presentModeCount, outPresentModes.data());
+    r = vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surfaceKHR, &presentModeCount, outPresentModes.data());
     if (r != VK_SUCCESS) {
         throw VulkanException("Can't get VkSurfaceKHR present modes");
     }
 }
 
-VkExtent2D VulkanUtils::getSwaphainExtent(uint32_t preferredWidth, uint32_t preferredHeight, const VkSurfaceCapabilitiesKHR& surfCapabilities)
+VkExtent2D VulkanUtils::getSwapChainExtent(uint32_t preferredWidth, uint32_t preferredHeight,
+                                           const VkSurfaceCapabilitiesKHR &surfaceCapabilities)
 {
-    if (surfCapabilities.currentExtent.width != UINT32_MAX) {
-        // if current extent is defined, match swapchain size with it
-        return surfCapabilities.currentExtent;
+    if (surfaceCapabilities.currentExtent.width != UINT32_MAX) {
+        // if current extent is defined, match swap chain size with it
+        return surfaceCapabilities.currentExtent;
     } else {
         VkExtent2D ext;
 
         ext.width = preferredWidth;
         ext.height = preferredHeight;
 
-        // min <= preferredWidth <= max
-        if (ext.width < surfCapabilities.minImageExtent.width) {
-            ext.width = surfCapabilities.minImageExtent.width;
+        // min <= preferred width <= max
+        if (ext.width < surfaceCapabilities.minImageExtent.width) {
+            ext.width = surfaceCapabilities.minImageExtent.width;
         }
-        else if (ext.width > surfCapabilities.maxImageExtent.width) {
-            ext.width = surfCapabilities.maxImageExtent.width;
+        else if (ext.width > surfaceCapabilities.maxImageExtent.width) {
+            ext.width = surfaceCapabilities.maxImageExtent.width;
         }
 
-        // min <= preferredHeight <= max
-        if (ext.height < surfCapabilities.minImageExtent.height) {
-            ext.height = surfCapabilities.minImageExtent.height;
+        // min <= preferred height <= max
+        if (ext.height < surfaceCapabilities.minImageExtent.height) {
+            ext.height = surfaceCapabilities.minImageExtent.height;
         }
-        else if (ext.height > surfCapabilities.maxImageExtent.height) {
-            ext.height = surfCapabilities.maxImageExtent.height;
+        else if (ext.height > surfaceCapabilities.maxImageExtent.height) {
+            ext.height = surfaceCapabilities.maxImageExtent.height;
         }
 
         return ext;
     }
 }
 
-VkCompositeAlphaFlagBitsKHR VulkanUtils::getAvailableCompositeAlpha(const VkSurfaceCapabilitiesKHR& surfCapabilities)
+VkCompositeAlphaFlagBitsKHR VulkanUtils::getAvailableCompositeAlpha(const VkSurfaceCapabilitiesKHR &surfaceCapabilities)
 {
     VkCompositeAlphaFlagBitsKHR compositeAlphaPr[4] = {
         VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
         VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR,
         VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR,
-        VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR };
+        VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR
+    };
 
     for (uint32_t i = 0; i < 4; i++) {
-        if (surfCapabilities.supportedCompositeAlpha & compositeAlphaPr[i]) {
+        if (surfaceCapabilities.supportedCompositeAlpha & compositeAlphaPr[i]) {
             return compositeAlphaPr[i];
-            break;
         }
     }
 

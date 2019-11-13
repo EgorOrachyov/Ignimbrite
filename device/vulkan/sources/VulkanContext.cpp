@@ -195,7 +195,7 @@ void VulkanContext::pickPhysicalDevice() {
     for (auto device: devices) {
         findQueueFamilies(device, familyIndices);
 
-        bool queueFamilySupport = familyIndices.isComplete();
+        bool queueFamilySupport = familyIndices.isCompleteGT();
         bool extensionsSupported = checkDeviceExtensionSupport(device);
         bool suitable = queueFamilySupport && extensionsSupported;
 
@@ -275,7 +275,7 @@ void VulkanContext::findQueueFamilies(VkPhysicalDevice device, VulkanQueueFamily
             }
         }
 
-        if (indices.isComplete()) {
+        if (indices.isCompleteGT()) {
             return;
         }
     }
@@ -364,140 +364,123 @@ void VulkanContext::destroyLogicalDevice() {
 }
 
 void VulkanContext::createSwapChain(VulkanSurface& surface) {
-    const bool tripleBuffering = surface.tripleBuffering;
-    const VkPresentModeKHR preferredPresentMode = surface.preferredPresentMode;
-    const VkFormat preferredSurfFormat = surface.preferredSurfFormat;
-    const VkColorSpaceKHR preferredColorSpace = surface.preferredColorSpace;
+    bool tripleBuffering = surface.tripleBuffering;
+    uint32_t width = surface.widthFramebuffer;
+    uint32_t height = surface.heightFramebuffer;
+    uint32_t swapChainMinImageCount = tripleBuffering ? 3 : 2;
+    VkSurfaceKHR surfaceKHR = surface.surface;
+    VkSurfaceCapabilitiesKHR& surfaceCapabilities = surface.surfaceCapabilities;
 
-    const uint32_t preferredWidth = surface.width;
-    const uint32_t preferredHeight = surface.height;
-    const uint32_t swapchainMinImageCount = tripleBuffering ? 3 : 2;
-    const VkSurfaceCapabilitiesKHR& surfCapabilities = surface.surfaceCapabilities;
-    VkSurfaceKHR surfaceKhr = surface.surface;
+    VkSwapchainKHR swapChain = surface.swapChain;
 
-    std::vector<VulkanSwapchainBuffer> &swapchainBuffers = surface.swapchainBuffers;
-    VkSwapchainKHR swapchain = surface.swapchain;
-
-
-    std::vector<VkSurfaceFormatKHR> surfFormats;
+    std::vector<VkSurfaceFormatKHR> surfaceFormats;
     std::vector<VkPresentModeKHR> presentModes;
 
-    VkSurfaceFormatKHR choosedSurfFormat;
-    VkPresentModeKHR choosedPresentMode;
+    VulkanUtils::getSurfaceProperties(physicalDevice, surfaceKHR, surfaceFormats, presentModes);
 
-    VulkanUtils::getSurfaceProperties(physicalDevice, surfaceKhr, surfFormats, presentModes);
+    VkSurfaceFormatKHR chosenSurfaceFormat;
+    VkPresentModeKHR chosenPresentMode;
+
+    chosenSurfaceFormat.format = surfaceFormats[0].format;
+    chosenSurfaceFormat.colorSpace = surfaceFormats[0].colorSpace;
 
     // choose surface format
-    choosedSurfFormat.format = surfFormats[0].format;
-    choosedSurfFormat.colorSpace = surfFormats[0].colorSpace;
-
-    for (auto& surfFormat : surfFormats) {
-        if (surfFormat.format == preferredSurfFormat && surfFormat.colorSpace == preferredColorSpace) {
-            choosedSurfFormat.format = surfFormat.format;
-            choosedSurfFormat.colorSpace = surfFormat.colorSpace;
-
+    for (auto& surfaceFormat : surfaceFormats) {
+        if (surfaceFormat.format == PREFERRED_FORMAT && surfaceFormat.colorSpace == PREFERRED_COLOR_SPACE) {
+            chosenSurfaceFormat.format = surfaceFormat.format;
+            chosenSurfaceFormat.colorSpace = surfaceFormat.colorSpace;
             break;
         }
     }
 
-    // choose present mode
-    choosedPresentMode = presentModes[0];
+    chosenPresentMode = presentModes[0];
 
     for (auto& presentMode : presentModes) {
-        if (presentMode == preferredPresentMode) {
-            choosedPresentMode = preferredPresentMode;
+        if (presentMode == PREFERRED_PRESENT_MODE) {
+            chosenPresentMode = PREFERRED_PRESENT_MODE;
             break;
         }
     }
 
-    VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
-    swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    swapchainCreateInfo.pNext = NULL;
-    swapchainCreateInfo.surface = surfaceKhr;
+    VkSwapchainCreateInfoKHR swapChainCreateInfo = {};
+    swapChainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    swapChainCreateInfo.pNext = NULL;
+    swapChainCreateInfo.surface = surfaceKHR;
 
-    swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
-    swapchainCreateInfo.clipped = true;
-    swapchainCreateInfo.presentMode = choosedPresentMode;
-    swapchainCreateInfo.imageFormat = choosedSurfFormat.format;
-    swapchainCreateInfo.imageColorSpace = choosedSurfFormat.colorSpace;
-    swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapChainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
+    swapChainCreateInfo.clipped = true;
+    swapChainCreateInfo.presentMode = chosenPresentMode;
+    swapChainCreateInfo.imageFormat = chosenSurfaceFormat.format;
+    swapChainCreateInfo.imageColorSpace = chosenSurfaceFormat.colorSpace;
+    swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    uint32_t graphicsQueueFamilyIndex = familyIndices.graphicsFamily.get();
-    // TODO: init present queue family index in findQueueFamilies
-    // using vkGetPhysicalDeviceSurfaceSupportKHR(..)
-    uint32_t presentQueueFamilyIndex = 0;
-    // remove this, when "presentQueueFamilyIndex" will be initialized
-    throw VulkanException("presentQueueFamilyIndex is not presented");
-
-    std::vector<uint32_t> queueFamilyIndices = { graphicsQueueFamilyIndex, presentQueueFamilyIndex };
+    std::vector<uint32_t> queueFamilyIndices = {
+            familyIndices.graphicsFamily.get(),
+            familyIndices.presentsFamily.get()
+    };
 
     // check queues, if they are from same queue families
-    if (graphicsQueueFamilyIndex == presentQueueFamilyIndex) {
-        swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    if (familyIndices.presentsFamily.get() == familyIndices.graphicsFamily.get()) {
+        swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         // this parameters will be ignored as not concurrent sharing mode
-        swapchainCreateInfo.queueFamilyIndexCount = 0;
-        swapchainCreateInfo.pQueueFamilyIndices = NULL;
+        swapChainCreateInfo.queueFamilyIndexCount = 0;
+        swapChainCreateInfo.pQueueFamilyIndices = NULL;
     } else {
-        swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-        swapchainCreateInfo.queueFamilyIndexCount = queueFamilyIndices.size();
-        swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices.data();
+        swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        swapChainCreateInfo.queueFamilyIndexCount = queueFamilyIndices.size();
+        swapChainCreateInfo.pQueueFamilyIndices = queueFamilyIndices.data();
     }
 
-    swapchainCreateInfo.imageExtent = VulkanUtils::getSwaphainExtent(preferredWidth, preferredHeight, surfCapabilities);
-    swapchainCreateInfo.compositeAlpha = VulkanUtils::getAvailableCompositeAlpha(surfCapabilities);
+    swapChainCreateInfo.imageExtent = VulkanUtils::getSwapChainExtent(width, height, surfaceCapabilities);
+    swapChainCreateInfo.compositeAlpha = VulkanUtils::getAvailableCompositeAlpha(surfaceCapabilities);
 
-    if (surfCapabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
-        swapchainCreateInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    if (surfaceCapabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
+        swapChainCreateInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
     }
     else {
-        swapchainCreateInfo.preTransform = surfCapabilities.currentTransform;
+        swapChainCreateInfo.preTransform = surfaceCapabilities.currentTransform;
     }
 
-    if (!(surfCapabilities.minImageCount <= swapchainMinImageCount 
-        && swapchainMinImageCount <= surfCapabilities.maxImageCount)) {
-        throw VulkanException("Given swapchainMinImageCount is not available on this surface and device");
+    if (!(surfaceCapabilities.minImageCount <= swapChainMinImageCount
+        && swapChainMinImageCount <= surfaceCapabilities.maxImageCount)) {
+        throw VulkanException("Given swap chain min image count is not available on this surface and device");
     }
 
-    swapchainCreateInfo.minImageCount = swapchainMinImageCount;
-    swapchainCreateInfo.imageArrayLayers = 1;
+    swapChainCreateInfo.minImageCount = swapChainMinImageCount;
+    swapChainCreateInfo.imageArrayLayers = 1;
 
-    // create swapchain and images that associated with it
-    VkResult r = vkCreateSwapchainKHR(device, &swapchainCreateInfo, nullptr, &swapchain);
+    // create swap chain and images that associated with it
+    VkResult r = vkCreateSwapchainKHR(device, &swapChainCreateInfo, nullptr, &swapChain);
     if (r != VK_SUCCESS) {
-        throw VulkanException("Can't create swapchain");
+        throw VulkanException("Can't create swap chain");
     }
 
-    // get actual amount of images in swapchain
-    uint32_t swapchainImageCount;
-    VkResult r = vkGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, nullptr);
-
-    if (r != VK_SUCCESS) {
-        throw VulkanException("Can't get images from swapchain");
-    }
-
-    // allocate buffer memory
-    swapchainBuffers.resize(swapchainImageCount);
-
-    // get images themselves
-    std::vector<VkImage> swapchainImages(swapchainImageCount);
-    r = vkGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, swapchainImages.data());
+    // get actual amount of images in swap chain
+    uint32_t swapChainImageCount;
+    r = vkGetSwapchainImagesKHR(device, swapChain, &swapChainImageCount, nullptr);
 
     if (r != VK_SUCCESS) {
-        throw VulkanException("Can't get images from swapchain");
+        throw VulkanException("Can't get images from swap chain");
     }
 
-    // create image view for each image in swapchain
-    for (uint32_t i = 0; i < swapchainImageCount; i++) {
-        swapchainBuffers[i].image = swapchainImages[i];
+    surface.swapChainImages.resize(swapChainImageCount);
+    surface.swapChainImageViews.resize(swapChainImageCount);
 
+    r = vkGetSwapchainImagesKHR(device, swapChain, &swapChainImageCount, surface.swapChainImages.data());
+
+    if (r != VK_SUCCESS) {
+        throw VulkanException("Can't get images from swap chain");
+    }
+
+    for (uint32_t i = 0; i < swapChainImageCount; i++) {
         VkImageViewCreateInfo viewInfo = {};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.pNext = NULL;
         viewInfo.flags = 0;
 
-        viewInfo.image = swapchainBuffers[i].image;
+        viewInfo.image = surface.swapChainImages[i];
         viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format = choosedSurfFormat.format;
+        viewInfo.format = chosenSurfaceFormat.format;
         viewInfo.components.r = VK_COMPONENT_SWIZZLE_R;
         viewInfo.components.g = VK_COMPONENT_SWIZZLE_G;
         viewInfo.components.b = VK_COMPONENT_SWIZZLE_B;
@@ -508,7 +491,7 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
-        r = vkCreateImageView(device, &viewInfo, nullptr, &swapchainBuffers[i].imageView);
+        r = vkCreateImageView(device, &viewInfo, nullptr, &surface.swapChainImageViews[i]);
 
         if (r != VK_SUCCESS) {
             throw VulkanException("Can't create image view for swapchain");
@@ -518,12 +501,10 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
 
 void VulkanContext::destroySwapChain(VulkanSurface& surface)
 {
-    auto& swapchainBuffers = surface.swapchainBuffers;
-
     // destroy only image views, images will be destroyed with swapchain
-    for (uint32_t i = 0; i < swapchainBuffers.size(); i++) {
-        vkDestroyImageView(device, swapchainBuffers[i].imageView, nullptr);
+    for (auto view: surface.swapChainImageViews) {
+        vkDestroyImageView(device, view, nullptr);
     }
 
-    vkDestroySwapchainKHR(device, surface.swapchain, nullptr);
+    vkDestroySwapchainKHR(device, surface.swapChain, nullptr);
 }

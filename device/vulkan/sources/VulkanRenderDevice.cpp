@@ -399,12 +399,12 @@ RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderD
         throw VulkanException("Can't create framebuffer");
     }
 
-    return mFramebuffers.add(framebuffer);
+    return mFrameBuffers.add(framebuffer);
 }
 
 void VulkanRenderDevice::destroyFramebuffer(RenderDevice::ID framebufferId) {
-    VkFramebuffer framebuffer = mFramebuffers.get(framebufferId);
+    VkFramebuffer framebuffer = mFrameBuffers.get(framebufferId);
     vkDestroyFramebuffer(context.device, framebuffer, nullptr);
 
-    mFramebuffers.remove(framebufferId);
+    mFrameBuffers.remove(framebufferId);
 }
