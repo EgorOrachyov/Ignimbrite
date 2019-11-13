@@ -52,12 +52,16 @@ struct VulkanContext {
     );
 
     void createSwapChain(VulkanSurface& surface);
-    void destroySwapChain();
+    void destroySwapChain(VulkanSurface& surface);
 
     std::vector<const char *> requiredExtensions = {VK_KHR_SURFACE_EXTENSION_NAME};
     const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
     const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
     const bool enableValidationLayers = true;
+
+    static const VkFormat PREFERRED_FORMAT = VkFormat::VK_FORMAT_B8G8R8A8_UNORM;
+    static const VkColorSpaceKHR PREFERRED_COLOR_SPACE = VkColorSpaceKHR::VK_COLORSPACE_SRGB_NONLINEAR_KHR;
+    static const VkPresentModeKHR PREFERRED_PRESENT_MODE = VkPresentModeKHR::VK_PRESENT_MODE_FIFO_KHR;
 
     VkInstance instance = VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;

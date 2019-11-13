@@ -12,10 +12,17 @@
 struct VulkanQueueFamilyIndices {
     Optional<uint32> graphicsFamily;
     Optional<uint32> transferFamily;
+    Optional<uint32> presentsFamily;
 
-    bool isComplete() {
+    bool isCompleteGT() {
         return graphicsFamily.hasValue() &&
                transferFamily.hasValue();
+    }
+
+    bool isCompleteGTP() {
+        return graphicsFamily.hasValue() &&
+               transferFamily.hasValue() &&
+                presentsFamily.hasValue();
     }
 };
 
@@ -38,10 +45,17 @@ struct VulkanIndexBuffer {
     VkDeviceMemory vkDeviceMemory;
 };
 
-struct VulkanImageObject {
+struct VulkanTextureObject {
     VkImage image;
     VkDeviceMemory imageMemory;
     VkImageView imageView;
+    VkImageType type;
+    VkFormat format;
+    uint32 width;
+    uint32 height;
+    uint32 depth;
+    uint32 mipmaps;
+    VkImageUsageFlags usageFlags;
 };
 
 struct VulkanSurface {
@@ -50,8 +64,16 @@ struct VulkanSurface {
     uint32 widthFramebuffer;
     uint32 heightFramebuffer;
     std::string name;
+    bool tripleBuffering = false;
+    VkQueue presentQueue;
     VkSurfaceKHR surface;
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
+    VkFormat surfaceFormat;
+    VkColorSpaceKHR colorSpace;
+    VkPresentModeKHR presentMode;
+    VkSwapchainKHR swapChain;
+    std::vector<VkImage> swapChainImages;
+    std::vector<VkImageView > swapChainImageViews;
 };
 
 struct VulkanFrameBufferFormat {

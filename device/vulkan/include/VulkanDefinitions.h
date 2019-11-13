@@ -98,11 +98,49 @@ public:
         switch (type) {
             case AttachmentType::Color:
                 return VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            case AttachmentType ::DepthStencil:
+            case AttachmentType::DepthStencil:
                 return VkImageLayout::VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             default:
                 throw InvalidEnum();
         }
+    }
+
+    static VkSamplerMipmapMode samplerMipmapMode(SamplerFilter mipmapMode) {
+        switch (mipmapMode) {
+            case SamplerFilter::Linear:
+                return VkSamplerMipmapMode::VK_SAMPLER_MIPMAP_MODE_LINEAR;
+            case SamplerFilter::Nearest:
+                return VkSamplerMipmapMode::VK_SAMPLER_MIPMAP_MODE_NEAREST;
+            default:
+                throw InvalidEnum();
+        }
+    }
+
+    static VkSampleCountFlagBits sampleCount(TextureSamples samples) {
+        switch (samples) {
+            case TextureSamples::Samples1:
+                return VkSampleCountFlagBits::VK_SAMPLE_COUNT_1_BIT;
+            default:
+                throw InvalidEnum();
+        }
+    }
+
+    static VkImageUsageFlags imageUsageFlags(uint32 flags) {
+        VkImageUsageFlags result = 0;
+
+        if (flags & (uint32) TextureUsageBit::ShaderSampling) {
+            result |= VkImageUsageFlagBits::VK_IMAGE_USAGE_SAMPLED_BIT;
+        }
+
+        if (flags & (uint32) TextureUsageBit::ColorAttachment) {
+            result |= VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        }
+
+        if (flags & (uint32) TextureUsageBit::DepthStencilAttachment) {
+            result |= VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        }
+
+        return result;
     }
 
 };
