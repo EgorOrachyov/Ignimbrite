@@ -373,6 +373,11 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
     const uint32_t preferredHeight = surface.height;
     const uint32_t swapchainMinImageCount = tripleBuffering ? 3 : 2;
     const VkSurfaceCapabilitiesKHR& surfCapabilities = surface.surfaceCapabilities;
+    VkSurfaceKHR surfaceKhr = surface.surface;
+
+    std::vector<VulkanSwapchainBuffer> swapchainBuffers = surface.swapchainBuffers;
+    VkSwapchainKHR swapchain = surface.swapchain;
+
 
     std::vector<VkSurfaceFormatKHR> surfFormats;
     std::vector<VkPresentModeKHR> presentModes;
@@ -380,7 +385,7 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
     VkSurfaceFormatKHR choosedSurfFormat;
     VkPresentModeKHR choosedPresentMode;
 
-    VulkanUtils::getSurfaceProperties(physicalDevice, surface.surface, surfFormats, presentModes);
+    VulkanUtils::getSurfaceProperties(physicalDevice, surfaceKhr, surfFormats, presentModes);
 
     // choose surface format
     choosedSurfFormat.format = surfFormats[0].format;
@@ -408,7 +413,7 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
     VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
     swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     swapchainCreateInfo.pNext = NULL;
-    swapchainCreateInfo.surface = surface.surface;
+    swapchainCreateInfo.surface = surfaceKhr;
 
     swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
     swapchainCreateInfo.clipped = true;
@@ -511,12 +516,14 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
     }
 }
 
-void VulkanContext::destroySwapChain()
+void VulkanContext::destroySwapChain(VulkanSurface& surface)
 {
+    auto& swapchainBuffers = surface.swapchainBuffers;
+
     // destroy only image views, images will be destroyed with swapchain
     for (uint32_t i = 0; i < swapchainBuffers.size(); i++) {
         vkDestroyImageView(device, swapchainBuffers[i].imageView, nullptr);
     }
 
-    vkDestroySwapchainKHR(device, swapchain, nullptr);
+    vkDestroySwapchainKHR(device, surface.swapchain, nullptr);
 }

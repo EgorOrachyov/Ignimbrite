@@ -63,6 +63,10 @@ struct VulkanSurface {
     VkPresentModeKHR preferredPresentMode = VkPresentModeKHR::VK_PRESENT_MODE_FIFO_KHR;
     VkFormat preferredSurfFormat = VkFormat::VK_FORMAT_B8G8R8A8_UNORM;
     VkColorSpaceKHR preferredColorSpace = VkColorSpaceKHR::VK_COLORSPACE_SRGB_NONLINEAR_KHR;
+
+    // swapchain associated with this surface
+    VkSwapchainKHR swapchain;
+    std::vector<VulkanSwapchainBuffer> swapchainBuffers;
 };
 
 struct VulkanFrameBufferFormat {

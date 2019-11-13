@@ -52,7 +52,7 @@ struct VulkanContext {
     );
 
     void createSwapChain(VulkanSurface& surface);
-    void destroySwapChain();
+    void destroySwapChain(VulkanSurface& surface);
 
     std::vector<const char *> requiredExtensions = {VK_KHR_SURFACE_EXTENSION_NAME};
     const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
@@ -74,9 +74,6 @@ struct VulkanContext {
     VkPhysicalDeviceMemoryProperties deviceMemoryProperties = {};
     // TODO: init command pool
     VkCommandPool commandPool = VK_NULL_HANDLE;
-
-    std::vector<VulkanSwapchainBuffer> swapchainBuffers;
-    VkSwapchainKHR swapchain;
 };
 
 
