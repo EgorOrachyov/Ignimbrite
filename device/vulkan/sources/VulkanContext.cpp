@@ -375,7 +375,7 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
     const VkSurfaceCapabilitiesKHR& surfCapabilities = surface.surfaceCapabilities;
     VkSurfaceKHR surfaceKhr = surface.surface;
 
-    std::vector<VulkanSwapchainBuffer> swapchainBuffers = surface.swapchainBuffers;
+    std::vector<VulkanSwapchainBuffer> &swapchainBuffers = surface.swapchainBuffers;
     VkSwapchainKHR swapchain = surface.swapchain;
 
 
