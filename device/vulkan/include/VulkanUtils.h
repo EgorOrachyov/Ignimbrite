@@ -106,19 +106,24 @@ public:
         uint32_t width, uint32_t height, uint32_t depth,
         VkImageType imageType, VkFormat format, VkImageViewType viewType,
         VkImage& outImage, VkDeviceMemory& outImageMemory, 
-        VkImageView& outImageView);
+        VkImageView& outImageView
+    );
 
     static void getSurfaceProperties(
             VkPhysicalDevice physicalDevice, VkSurfaceKHR surfaceKHR,
             std::vector<VkSurfaceFormatKHR> &outSurfaceFormats,
-            std::vector<VkPresentModeKHR> &outPresentModes);
+            std::vector<VkPresentModeKHR> &outPresentModes
+    );
     
     static VkExtent2D getSwapChainExtent(
             uint32_t preferredWidth, uint32_t preferredHeight,
-            const VkSurfaceCapabilitiesKHR &surfaceCapabilities);
+            const VkSurfaceCapabilitiesKHR &surfaceCapabilities
+    );
     
     static VkCompositeAlphaFlagBitsKHR getAvailableCompositeAlpha(
-            const VkSurfaceCapabilitiesKHR &surfaceCapabilities);
+            const VkSurfaceCapabilitiesKHR &surfaceCapabilities
+    );
+    
 };
 
 #endif //RENDERINGLIBRARY_VULKANUTILS_H

@@ -18,7 +18,7 @@
  * needed for OS creating and managing windows, surfaces, etc.
  */
 class VulkanExtensions {
-
+    typedef ObjectID ID;
 #ifdef WITH_GLFW
     /**
      * Creates surface for specified GLFW window instance
@@ -42,6 +42,12 @@ class VulkanExtensions {
             const std::string &name
     );
 #endif
+
+    /** Idle device and destroy surface with all its relative data */
+    static void destroySurface(
+            VulkanRenderDevice &device,
+            ID surface
+    );
 
 };
 
