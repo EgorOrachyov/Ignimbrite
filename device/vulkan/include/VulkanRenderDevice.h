@@ -42,25 +42,17 @@ public:
     ID getSurface(const std::string &surfaceName) override;
     void getSurfaceSize(ID surface, uint32 &width, uint32 &height) override;
 
-    ID createUniformLayout(const UniformLayoutDesc &layoutDesc) override {
-        return RenderDevice::ID();
-    }
+    ID createUniformLayout(const UniformLayoutDesc &layoutDesc) override;
+    void destroyUniformLayout(ID layout) override;
 
-    void destroyUniformLayout(ID layout) override {
-
-    }
-
-    ID createUniformBuffer(BufferUsage usage, uint32 size, const void *data) override {
-        return RenderDevice::ID();
-    }
-
-    void updateUniformBuffer(ID buffer, uint32 size, uint32 offset, const void *data) override {
-
-    }
-
-    void destroyUniformBuffer(ID buffer) override {
-
-    }
+    /**
+     * @param size size of data
+     * @param data pointer to data
+     * @note if usage is Dynamic, \a data must be null and \a size is a size of data that will be loaded
+     */
+    ID createUniformBuffer(BufferUsage usage, uint32 size, const void *data) override;
+    void updateUniformBuffer(ID buffer, uint32 size, uint32 offset, const void *data) override;
+    void destroyUniformBuffer(ID buffer) override;
 
     ID createShaderProgram(const std::vector<ShaderDataDesc> &shaders) override {
         return RenderDevice::ID();
@@ -148,6 +140,8 @@ private:
     Buffer<VkFramebuffer> mFrameBuffers;
     Buffer<VkSampler> mSamplers;
     Buffer<VulkanTextureObject> mTextureObjects;
+    Buffer<VulkanUniformBuffer> mUniformBuffers;
+    Buffer<VulkanUniformLayout> mUniformLayouts;
 
 };
 

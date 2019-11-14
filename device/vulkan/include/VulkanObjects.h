@@ -43,6 +43,7 @@ struct VulkanTextureObject {
     VkDeviceMemory imageMemory;
     VkImageView imageView;
     VkImageType type;
+    VkImageLayout layout;
     VkFormat format;
     uint32 width;
     uint32 height;
@@ -72,6 +73,23 @@ struct VulkanSurface {
 
 struct VulkanFrameBufferFormat {
     VkRenderPass renderPass;
+};
+
+struct VulkanUniformBuffer {
+    VkBuffer buffer;
+    VkDeviceMemory memory;
+    VkMemoryAllocateFlags memoryProperties;
+};
+
+struct VulkanUniformLayout {
+    VkDescriptorSetLayout descriptorSetLayout;
+    VkDescriptorSet descriptorSet;
+};
+
+struct VulkanDescriptorPool {
+    VkDescriptorPool pool;
+    uint32_t remainingAllocations;
+    uint32_t descriptorAmounts[VK_DESCRIPTOR_TYPE_RANGE_SIZE];
 };
 
 #endif //RENDERINGLIBRARY_VULKANOBJECTS_H

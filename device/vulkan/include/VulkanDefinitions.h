@@ -129,20 +129,33 @@ public:
         VkImageUsageFlags result = 0;
 
         if (flags & (uint32) TextureUsageBit::ShaderSampling) {
-            result |= VkImageUsageFlagBits::VK_IMAGE_USAGE_SAMPLED_BIT;
+            result |= (uint32) VkImageUsageFlagBits::VK_IMAGE_USAGE_SAMPLED_BIT;
         }
 
         if (flags & (uint32) TextureUsageBit::ColorAttachment) {
-            result |= VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            result |= (uint32) VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         }
 
         if (flags & (uint32) TextureUsageBit::DepthStencilAttachment) {
-            result |= VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+            result |= (uint32) VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
         }
 
         return result;
     }
 
+    static VkShaderStageFlags shaderStageFlags(ShaderStageFlags flags) {
+        VkShaderStageFlags result = 0;
+
+        if (flags & (uint32) ShaderStageFlagBits::VertexBit) {
+            result |= (uint32) VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
+        }
+
+        if (flags & (uint32) ShaderStageFlagBits::FragmentBit) {
+            result |= (uint32) VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
+        }
+
+        return result;
+    }
 };
 
 #endif //RENDERINGLIBRARY_VULKANDEFINITIONS_H

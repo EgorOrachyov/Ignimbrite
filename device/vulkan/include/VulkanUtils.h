@@ -99,7 +99,7 @@ public:
         VulkanContext& context,
         VkImage image, VkFormat format,
         uint32_t width, uint32_t height, 
-        uint32_t depth, uint32_t mipLevels
+        uint32_t depth, uint32_t mipLevels, VkImageLayout newLayout
     );
 
     static void createDepthStencilBuffer(VulkanContext& context, 
@@ -123,7 +123,6 @@ public:
     static VkCompositeAlphaFlagBitsKHR getAvailableCompositeAlpha(
             const VkSurfaceCapabilitiesKHR &surfaceCapabilities
     );
-    
 };
 
 #endif //RENDERINGLIBRARY_VULKANUTILS_H

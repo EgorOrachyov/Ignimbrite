@@ -547,3 +547,72 @@ void VulkanContext::destroySwapChain(VulkanSurface& surface)
 
     vkDestroySwapchainKHR(device, surface.swapChain, nullptr);
 }
+
+VkDescriptorPool VulkanContext::getDescriptorPool(const std::vector<VkDescriptorPoolSize> &poolSizes) {
+    if (poolSizes.empty()) {
+        throw VulkanException("Can't get descriptor pool as poolSizes is empty");
+    }
+
+    // try to find available descriptor pool
+    for (VulkanDescriptorPool &pool : descriptorPools) {
+
+        if (pool.remainingAllocations > 0) {
+
+            bool found = true;
+
+            for (const VkDescriptorPoolSize &poolSize : poolSizes) {
+
+                if (pool.descriptorAmounts[poolSize.type] < poolSize.descriptorCount) {
+                    // if descriptor amount in this pool is not enough, skip it
+                    found = false;
+                    break;
+                }
+            }
+
+            if (found) {
+                pool.remainingAllocations--;
+                return pool.pool;
+            }
+        }
+    }
+
+    // if not found, create new
+    descriptorPools.push_back({});
+
+    VulkanDescriptorPool &newPool = descriptorPools[descriptorPools.size() - 1];
+    newPool.remainingAllocations = DESC_POOL_MAX_ALLOCATIONS;
+
+    // multiply amount of each type by DESC_POOL_MAX_ALLOCATIONS
+    std::vector<VkDescriptorPoolSize> newPoolSizes(poolSizes.size());
+
+    for (uint32_t i = 0; i < poolSizes.size(); i++) {
+        newPoolSizes[i].type = poolSizes[i].type;
+        newPoolSizes[i].descriptorCount = poolSizes[i].descriptorCount * DESC_POOL_MAX_ALLOCATIONS;
+
+        // save VulkanDescriptorPool info
+        newPool.descriptorAmounts[poolSizes[i].type] = newPoolSizes[i].descriptorCount;
+    }
+
+    VkDescriptorPoolCreateInfo descriptorPoolInfo = {};
+    descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    descriptorPoolInfo.pNext = nullptr;
+    descriptorPoolInfo.maxSets = DESC_POOL_MAX_ALLOCATIONS;
+    descriptorPoolInfo.poolSizeCount = newPoolSizes.size();
+    descriptorPoolInfo.pPoolSizes = newPoolSizes.data();
+
+    VkResult r = vkCreateDescriptorPool(device, &descriptorPoolInfo, nullptr, &newPool.pool);
+
+    if (r == VK_SUCCESS) {
+        throw VulkanException("Can't create descriptor pool");
+    }
+
+    newPool.remainingAllocations--;
+    return newPool.pool;
+}
+
+void VulkanContext::destroyDescriptorPools() {
+    // destroy all descriptor pools
+    for (VulkanDescriptorPool &pool : descriptorPools) {
+        vkDestroyDescriptorPool(device, pool.pool, nullptr);
+    }
+}

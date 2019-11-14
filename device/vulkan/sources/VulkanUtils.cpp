@@ -159,7 +159,7 @@ void VulkanUtils::createTextureImage(VulkanContext &context, const void *imageDa
 
     // generate mipmaps and layout transition
     // from transfer destination to shader readonly
-    generateMipmaps(context, outTextureImage, format, width, height, depth, mipLevels);
+    generateMipmaps(context, outTextureImage, format, width, height, depth, mipLevels, textureLayout);
 }
 
 void VulkanUtils::createImage(VulkanContext &context, uint32 width, uint32 height,
@@ -300,7 +300,7 @@ VulkanUtils::createImageView(VulkanContext &context, VkImageView &outImageView, 
 }
 
 void VulkanUtils::generateMipmaps(VulkanContext &context, VkImage image, VkFormat format,
-                                  uint32 width, uint32 height, uint32 depth, uint32 mipLevels) {
+                                  uint32 width, uint32 height, uint32 depth, uint32 mipLevels, VkImageLayout newLayout) {
     VkFormatProperties formatProperties = getDeviceFormatProperties(context, format);
 
     if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
@@ -384,7 +384,7 @@ void VulkanUtils::generateMipmaps(VulkanContext &context, VkImage image, VkForma
 
     barrier.subresourceRange.baseMipLevel = mipLevels - 1;
     barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.newLayout = newLayout;
     barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 

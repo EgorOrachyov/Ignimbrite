@@ -66,6 +66,10 @@ public:
     virtual void destroyIndexBuffer(ID buffer) = 0;
 
     struct UniformTextureDesc {
+        /** Where this texture will be used */
+        ShaderStageFlags stageFlags;
+        /** Number of descriptors contained in the binding */
+        uint32 descriptorCount;
         /** Binding of the texture in the shader */
         uint32 binding = 0;
         /** Actual texture with data */
@@ -75,6 +79,10 @@ public:
     };
 
     struct UniformBufferDesc {
+        /** Where this buffer will be used */
+        ShaderStageFlags stageFlags;
+        /** Number of descriptors contained in the binding */
+        uint32 descriptorCount;
         /** Binding point in target shader */
         uint32 binding = 0;
         /** Offset from the buffer where data starts */

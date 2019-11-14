@@ -52,6 +52,11 @@ struct VulkanContext {
             void* pUserData
     );
 
+    VkDescriptorPool getDescriptorPool(const std::vector<VkDescriptorPoolSize> &poolSizes);
+    void destroyDescriptorPools();
+
+    static const uint32_t DESC_POOL_MAX_ALLOCATIONS = 32;
+
     void createSwapChain(VulkanSurface& surface);
     void destroySwapChain(VulkanSurface& surface);
 
@@ -79,6 +84,8 @@ struct VulkanContext {
     VkPhysicalDeviceMemoryProperties deviceMemoryProperties = {};
     // TODO: init command pool
     VkCommandPool commandPool = VK_NULL_HANDLE;
+
+    std::vector<VulkanDescriptorPool> descriptorPools;
 };
 
 

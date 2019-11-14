@@ -14,6 +14,14 @@ enum class ShaderType {
     Fragment
 };
 
+typedef uint32 ShaderStageFlags;
+
+/** Shader stage flag bits. Used for uniform  */
+enum class ShaderStageFlagBits {
+    VertexBit = BIT_SHIFT(0u),
+    FragmentBit = BIT_SHIFT(1u)
+};
+
 /** Source code languages */
 enum class ShaderLanguage {
     HLSL,
