@@ -14,7 +14,7 @@ class VulkanRenderDevice : public RenderDevice {
 public:
 
     VulkanRenderDevice(uint32 extensionsCount, const char* const* extensions);
-    ~VulkanRenderDevice() override = default;
+    ~VulkanRenderDevice() override;
 
     ID createVertexLayout(const std::vector<VertexBufferLayoutDesc> &vertexBuffersDesc) override;
     void destroyVertexLayout(ID layout) override;
@@ -41,6 +41,95 @@ public:
 
     ID getSurface(const std::string &surfaceName) override;
     void getSurfaceSize(ID surface, uint32 &width, uint32 &height) override;
+
+    ID createUniformLayout(const UniformLayoutDesc &layoutDesc) override {
+        return RenderDevice::ID();
+    }
+
+    void destroyUniformLayout(ID layout) override {
+
+    }
+
+    ID createUniformBuffer(BufferUsage usage, uint32 size, const void *data) override {
+        return RenderDevice::ID();
+    }
+
+    void updateUniformBuffer(ID buffer, uint32 size, uint32 offset, const void *data) override {
+
+    }
+
+    void destroyUniformBuffer(ID buffer) override {
+
+    }
+
+    ID createShaderProgram(const std::vector<ShaderDataDesc> &shaders) override {
+        return RenderDevice::ID();
+    }
+
+    void destroyShaderProgram(ID program) override {
+
+    }
+
+    ID createGraphicsPipeline(PrimitiveTopology topology, ID vertexLayout, ID framebufferFormat,
+                              const PipelineRasterizationDesc &rasterizationDesc,
+                              const PipelineBlendStateDesc &blendStateDesc,
+                              const PipelineDepthStencilStateDesc &depthStencilStateDesc) override {
+        return RenderDevice::ID();
+    }
+
+    void destroyGraphicsPipeline(ID pipeline) override {
+
+    }
+
+    ID drawListBegin(ID framebuffer, std::vector<Color> clearColors, const Region &drawArea) override {
+        return RenderDevice::ID();
+    }
+
+    ID drawListBegin(ID framebuffer, std::vector<Color> clearColors, float32 clearDepth, uint32 clearStencil,
+                     const Region &drawArea) override {
+        return RenderDevice::ID();
+    }
+
+    ID drawListBegin(ID surface, Color clearColor, const Region &drawArea) override {
+        return RenderDevice::ID();
+    }
+
+    ID drawListBegin(ID surface, Color clearColor, float32 clearDepth, uint32 clearStencil,
+                     const Region &drawArea) override {
+        return RenderDevice::ID();
+    }
+
+    void drawListBindPipeline(ID drawList, ID graphicsPipeline) override {
+
+    }
+
+    void drawListBindUniformLayout(ID drawList, ID uniformLayout) override {
+
+    }
+
+    void drawListBindVertexBuffer(ID drawList, ID vertexBuffer, uint32 binding, uint32 offset) override {
+
+    }
+
+    void drawListBindIndexBuffer(ID drawList, ID indexBuffer, IndicesType indicesType, uint32 offset) override {
+
+    }
+
+    void drawListDraw(ID drawList, uint32 verticesCount, uint32 instancesCount) override {
+
+    }
+
+    void drawListDrawIndexed(ID drawList, uint32 indicesCount, uint32 instancesCount) override {
+
+    }
+
+    void drawListEnd(ID drawList) override {
+
+    }
+
+    void swapBuffers() override {
+
+    }
 
 private:
 

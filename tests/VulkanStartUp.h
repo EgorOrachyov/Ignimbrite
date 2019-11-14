@@ -24,8 +24,38 @@ struct VulkanStartUp {
         context.destroyInstance();
     }
 
+    static void test2() {
+        ObjectID surface;
+        GLFWwindow* window;
+        uint32 width = 640, height = 480, widthFrameBuffer, heightFrameBuffer;
+        uint32 extensionsCount;
+        const char* const* extensions;
+
+        glfwInit();
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+        window = glfwCreateWindow(width, height, "Test", nullptr, nullptr);
+        glfwGetFramebufferSize(window, (int32*) &widthFrameBuffer, (int32*) &heightFrameBuffer);
+        extensions = glfwGetRequiredInstanceExtensions(&extensionsCount);
+
+        printf("%u\n", extensionsCount);
+
+        VulkanRenderDevice device(extensionsCount, extensions);
+        surface = VulkanExtensions::createSurfaceGLFW(device, window, width, height, widthFrameBuffer, heightFrameBuffer, std::string("Test"));
+
+        while (!glfwWindowShouldClose(window)) {
+            glfwPollEvents();
+            glfwSwapBuffers(window);
+        }
+
+        VulkanExtensions::destroySurface(device, surface);
+        glfwDestroyWindow(window);
+        glfwTerminate();
+    }
+
     static void run() {
-        test1();
+        // test1();
+        test2();
     }
 
 };

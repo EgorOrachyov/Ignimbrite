@@ -6,8 +6,9 @@
 #include <VulkanErrors.h>
 
 #ifdef WITH_GLFW
-void VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device, GLFWwindow *handle, uint32 width, uint32 height,
-                                         uint32 widthFramebuffer, uint32 heightFramebuffer, const std::string &name) {
+VulkanExtensions::ID
+VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device, GLFWwindow *handle, uint32 width, uint32 height,
+                                    uint32 widthFramebuffer, uint32 heightFramebuffer, const std::string &name) {
     VkSurfaceKHR surface;
     VkResult result;
     VulkanContext &context = device.context;
@@ -36,7 +37,7 @@ void VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device, GLFWwindow 
     context.findPresentsFamily(window);
     context.createSwapChain(window);
 
-    device.mSurfaces.move(window);
+    return device.mSurfaces.move(window);
 }
 #endif
 
@@ -47,4 +48,5 @@ void VulkanExtensions::destroySurface(VulkanRenderDevice &device, VulkanExtensio
     // todo: wait idle
     context.destroySwapChain(vulkanSurface);
     device.mSurfaces.remove(surface);
+    vkDestroySurfaceKHR(context.instance, vulkanSurface.surface, nullptr);
 }

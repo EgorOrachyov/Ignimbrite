@@ -18,6 +18,7 @@
  * needed for OS creating and managing windows, surfaces, etc.
  */
 class VulkanExtensions {
+public:
     typedef ObjectID ID;
 #ifdef WITH_GLFW
     /**
@@ -32,7 +33,7 @@ class VulkanExtensions {
      * @param heightFramebuffer
      * @param name Required param to reference created window
      */
-    static void createSurfaceGLFW(
+    static ID createSurfaceGLFW(
             VulkanRenderDevice &device,
             GLFWwindow *handle,
             uint32 width,

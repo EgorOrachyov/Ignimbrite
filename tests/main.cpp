@@ -6,7 +6,7 @@
 #include "VulkanStartUp.h"
 
 int main() {
-    TestObjectIDBuffer::run();
+    // TestObjectIDBuffer::run();
     VulkanStartUp::run();
     return 0;
 }

@@ -9,7 +9,17 @@
 #include "VulkanUtils.h"
 
 VulkanRenderDevice::VulkanRenderDevice(uint32 extensionsCount, const char *const *extensions) {
+    context.fillRequiredExt(extensionsCount, extensions);
+    context.createInstance();
+    context.setupDebugMessenger();
+    context.pickPhysicalDevice();
+    context.createLogicalDevice();
+}
 
+VulkanRenderDevice::~VulkanRenderDevice() {
+    context.destroyLogicalDevice();
+    context.destroyDebugMessenger();
+    context.destroyInstance();
 }
 
 RenderDevice::ID VulkanRenderDevice::createVertexLayout(const std::vector<VertexBufferLayoutDesc> &vertexBuffersDesc) {

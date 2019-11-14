@@ -1,7 +1,7 @@
 #################################################################
 # Overall project setup
 
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.1)
 project(RenderingLibrary)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -64,6 +64,4 @@ configure_file(
 
 add_subdirectory(renderer)
 add_subdirectory(device)
-
-enable_testing()
 add_subdirectory(tests)

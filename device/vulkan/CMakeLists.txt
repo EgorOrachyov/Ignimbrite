@@ -1,15 +1,12 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.1)
 project(VulkanDevice)
 
 add_library(VulkanDevice STATIC ..)
 message(STATUS "Build VulkanDevice library")
 
-set_property(TARGET Renderer PROPERTY CXX_STANDARD 11)
-set_property(TARGET Renderer PROPERTY CXX_STANDARD_REQUIRED ON)
-
 target_include_directories(VulkanDevice PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
 
-target_include_directories(VulkanDevice PRIVATE ${Renderer_SOURCE_DIRS}/include/)
+target_include_directories(VulkanDevice PRIVATE ${Renderer_SOURCE_DIRS}/include)
 target_link_libraries(VulkanDevice PRIVATE Renderer)
 
 target_sources(VulkanDevice
