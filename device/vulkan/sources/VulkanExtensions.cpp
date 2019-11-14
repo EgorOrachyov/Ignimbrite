@@ -33,6 +33,7 @@ void VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device, GLFWwindow 
     }
 
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(context.physicalDevice, surface, &window.surfaceCapabilities);
+    context.findPresentsFamily(window);
     context.createSwapChain(window);
 
     device.mSurfaces.move(window);

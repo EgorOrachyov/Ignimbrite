@@ -8,6 +8,7 @@
 #include <exception>
 #include <cstring>
 #include <set>
+#include <array>
 #include "VulkanUtils.h"
 
 void VulkanContext::createInstance() {
@@ -84,7 +85,7 @@ void VulkanContext::checkSupportedExtensions() {
 }
 
 bool VulkanContext::checkValidationLayers() {
-    uint32_t layerCount;
+    uint32 layerCount;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
     std::vector<VkLayerProperties> availableLayers(layerCount);
@@ -182,7 +183,7 @@ VkBool32 VulkanContext::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT mes
 }
 
 void VulkanContext::pickPhysicalDevice() {
-    uint32_t deviceCount = 0;
+    uint32 deviceCount = 0;
     vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
     if (deviceCount == 0) {
@@ -195,7 +196,7 @@ void VulkanContext::pickPhysicalDevice() {
     for (auto device: devices) {
         findQueueFamilies(device, familyIndices);
 
-        bool queueFamilySupport = familyIndices.isCompleteGT();
+        bool queueFamilySupport = familyIndices.isComplete();
         bool extensionsSupported = checkDeviceExtensionSupport(device);
         bool suitable = queueFamilySupport && extensionsSupported;
 
@@ -221,7 +222,7 @@ void VulkanContext::pickPhysicalDevice() {
 
 
 bool VulkanContext::checkDeviceExtensionSupport(VkPhysicalDevice device) {
-    uint32_t extensionCount;
+    uint32 extensionCount;
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
     std::vector<VkExtensionProperties> availableExtensions(extensionCount);
@@ -256,7 +257,7 @@ bool VulkanContext::checkDeviceExtensionSupport(VkPhysicalDevice device) {
 }
 
 void VulkanContext::findQueueFamilies(VkPhysicalDevice device, VulkanQueueFamilyIndices &indices) {
-    uint32_t queueFamilyCount = 0;
+    uint32 queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
 
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
@@ -275,8 +276,46 @@ void VulkanContext::findQueueFamilies(VkPhysicalDevice device, VulkanQueueFamily
             }
         }
 
-        if (indices.isCompleteGT()) {
+        if (indices.isComplete()) {
             return;
+        }
+    }
+}
+
+void VulkanContext::findPresentsFamily(VulkanSurface &surface) {
+    uint32 queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+
+    uint32 presentsFamily = 0xffffffff;
+    uint32 graphicsFamily = familyIndices.graphicsFamily.get();
+
+    VkBool32 supported = 0x0;
+    vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, graphicsFamily, surface.surface, &supported);
+
+    if (supported) {
+        presentsFamily = graphicsFamily;
+    } else {
+        for (uint32 i = 0; i < queueFamilyCount; i++) {
+            vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface.surface, &supported);
+            if (supported) {
+                presentsFamily = i;
+            }
+        }
+    }
+
+    if (presentsFamily == 0xffffffff) {
+        throw VulkanException("Surface does not support present queue mode");
+    }
+
+    if (presentsFamily == graphicsFamily) {
+        surface.presentsFamily = presentsFamily;
+        surface.presentQueue = graphicsQueue;
+    } else {
+        surface.presentsFamily = presentsFamily;
+        vkGetDeviceQueue(device, presentsFamily, 0, &surface.presentQueue);
+
+        if (surface.presentQueue == VK_NULL_HANDLE) {
+            throw VulkanException("Failed to get present queue");
         }
     }
 }
@@ -326,7 +365,7 @@ void VulkanContext::createLogicalDevice() {
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
     float queuePriority = 1.0f;
-    for (uint32_t queueFamily : uniqueQueueFamilies) {
+    for (uint32 queueFamily : uniqueQueueFamilies) {
         VkDeviceQueueCreateInfo queueCreateInfo = {};
         queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueCreateInfo.queueFamilyIndex = queueFamily;
@@ -365,17 +404,15 @@ void VulkanContext::destroyLogicalDevice() {
 
 void VulkanContext::createSwapChain(VulkanSurface& surface) {
     bool tripleBuffering = surface.tripleBuffering;
-    uint32_t width = surface.widthFramebuffer;
-    uint32_t height = surface.heightFramebuffer;
-    uint32_t swapChainMinImageCount = tripleBuffering ? 3 : 2;
+    uint32 width = surface.widthFramebuffer;
+    uint32 height = surface.heightFramebuffer;
+    uint32 swapChainMinImageCount = tripleBuffering ? 3 : 2;
     VkSurfaceKHR surfaceKHR = surface.surface;
     VkSurfaceCapabilitiesKHR& surfaceCapabilities = surface.surfaceCapabilities;
-
-    VkSwapchainKHR swapChain = surface.swapChain;
+    VkSwapchainKHR swapChain = VK_NULL_HANDLE;
 
     std::vector<VkSurfaceFormatKHR> surfaceFormats;
     std::vector<VkPresentModeKHR> presentModes;
-
     VulkanUtils::getSurfaceProperties(physicalDevice, surfaceKHR, surfaceFormats, presentModes);
 
     VkSurfaceFormatKHR chosenSurfaceFormat;
@@ -384,7 +421,6 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
     chosenSurfaceFormat.format = surfaceFormats[0].format;
     chosenSurfaceFormat.colorSpace = surfaceFormats[0].colorSpace;
 
-    // choose surface format
     for (auto& surfaceFormat : surfaceFormats) {
         if (surfaceFormat.format == PREFERRED_FORMAT && surfaceFormat.colorSpace == PREFERRED_COLOR_SPACE) {
             chosenSurfaceFormat.format = surfaceFormat.format;
@@ -414,13 +450,13 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
     swapChainCreateInfo.imageColorSpace = chosenSurfaceFormat.colorSpace;
     swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    std::vector<uint32_t> queueFamilyIndices = {
+    std::array<uint32, 2> queueFamilyIndices = {
             familyIndices.graphicsFamily.get(),
-            familyIndices.presentsFamily.get()
+            surface.presentsFamily
     };
 
     // check queues, if they are from same queue families
-    if (familyIndices.presentsFamily.get() == familyIndices.graphicsFamily.get()) {
+    if (surface.presentsFamily == familyIndices.graphicsFamily.get()) {
         swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         // this parameters will be ignored as not concurrent sharing mode
         swapChainCreateInfo.queueFamilyIndexCount = 0;
@@ -449,14 +485,12 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
     swapChainCreateInfo.minImageCount = swapChainMinImageCount;
     swapChainCreateInfo.imageArrayLayers = 1;
 
-    // create swap chain and images that associated with it
     VkResult r = vkCreateSwapchainKHR(device, &swapChainCreateInfo, nullptr, &swapChain);
     if (r != VK_SUCCESS) {
         throw VulkanException("Can't create swap chain");
     }
 
-    // get actual amount of images in swap chain
-    uint32_t swapChainImageCount;
+    uint32 swapChainImageCount;
     r = vkGetSwapchainImagesKHR(device, swapChain, &swapChainImageCount, nullptr);
 
     if (r != VK_SUCCESS) {
@@ -472,7 +506,7 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
         throw VulkanException("Can't get images from swap chain");
     }
 
-    for (uint32_t i = 0; i < swapChainImageCount; i++) {
+    for (uint32 i = 0; i < swapChainImageCount; i++) {
         VkImageViewCreateInfo viewInfo = {};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.pNext = NULL;
@@ -497,6 +531,11 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
             throw VulkanException("Can't create image view for swapchain");
         }
     }
+
+    surface.swapChain = swapChain;
+    surface.presentMode = chosenPresentMode;
+    surface.surfaceFormat = chosenSurfaceFormat;
+    surface.swapChainExtent = swapChainCreateInfo.imageExtent;
 }
 
 void VulkanContext::destroySwapChain(VulkanSurface& surface)

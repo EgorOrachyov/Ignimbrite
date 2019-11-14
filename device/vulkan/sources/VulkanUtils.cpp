@@ -15,9 +15,9 @@ VkFormatProperties VulkanUtils::getDeviceFormatProperties(VulkanContext &context
     return properties;
 }
 
-uint32_t VulkanUtils::getMemoryTypeIndex(VulkanContext &context, uint32_t memoryTypeBits, VkFlags requirementsMask) {
+uint32 VulkanUtils::getMemoryTypeIndex(VulkanContext &context, uint32 memoryTypeBits, VkFlags requirementsMask) {
     // for each memory type available for this device
-    for (uint32_t i = 0; i < context.deviceMemoryProperties.memoryTypeCount; i++) {
+    for (uint32 i = 0; i < context.deviceMemoryProperties.memoryTypeCount; i++) {
         // if type is available
         if ((memoryTypeBits & 1) == 1) {
             if ((context.deviceMemoryProperties.memoryTypes[i].propertyFlags & requirementsMask) ==
@@ -120,8 +120,8 @@ void VulkanUtils::updateBufferMemory(VulkanContext &context, VkDeviceMemory buff
 }
 
 void VulkanUtils::createTextureImage(VulkanContext &context, const void *imageData,
-                                     uint32_t width, uint32_t height,
-                                     uint32_t depth, uint32_t mipLevels,
+                                     uint32 width, uint32 height,
+                                     uint32 depth, uint32 mipLevels,
                                      VkImageType imageType, VkFormat format, VkImageTiling tiling,
                                      VkImage &outTextureImage, VkDeviceMemory &outTextureMemory,
                                      VkImageLayout textureLayout) {
@@ -162,8 +162,8 @@ void VulkanUtils::createTextureImage(VulkanContext &context, const void *imageDa
     generateMipmaps(context, outTextureImage, format, width, height, depth, mipLevels);
 }
 
-void VulkanUtils::createImage(VulkanContext &context, uint32_t width, uint32_t height,
-                              uint32_t depth, uint32_t mipLevels,
+void VulkanUtils::createImage(VulkanContext &context, uint32 width, uint32 height,
+                              uint32 depth, uint32 mipLevels,
                               VkImageType imageType, VkFormat format, VkImageTiling tiling,
                               VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
                               VkImage &outImage, VkDeviceMemory &outImageMemory) {
@@ -208,8 +208,8 @@ void VulkanUtils::createImage(VulkanContext &context, uint32_t width, uint32_t h
 }
 
 void
-VulkanUtils::copyBufferToImage(VulkanContext &context, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height,
-                               uint32_t depth) {
+VulkanUtils::copyBufferToImage(VulkanContext &context, VkBuffer buffer, VkImage image, uint32 width, uint32 height,
+                               uint32 depth) {
     // TODO: create _beginTempCommandBuffer and _endTempCommandBuffer
     VkCommandBuffer commandBuffer; // = _beginTempCommandBuffer(device, commandPool);
 
@@ -232,7 +232,7 @@ VulkanUtils::copyBufferToImage(VulkanContext &context, VkBuffer buffer, VkImage 
 }
 
 void VulkanUtils::transitionImageLayout(VulkanContext &context, VkImage image, VkImageLayout oldLayout,
-                                        VkImageLayout newLayout, uint32_t mipLevels) {
+                                        VkImageLayout newLayout, uint32 mipLevels) {
     // TODO: create _beginTempCommandBuffer and _endTempCommandBuffer
     VkCommandBuffer commandBuffer; // = _beginTempCommandBuffer(device, commandPool);
 
@@ -300,7 +300,7 @@ VulkanUtils::createImageView(VulkanContext &context, VkImageView &outImageView, 
 }
 
 void VulkanUtils::generateMipmaps(VulkanContext &context, VkImage image, VkFormat format,
-                                  uint32_t width, uint32_t height, uint32_t depth, uint32_t mipLevels) {
+                                  uint32 width, uint32 height, uint32 depth, uint32 mipLevels) {
     VkFormatProperties formatProperties = getDeviceFormatProperties(context, format);
 
     if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
@@ -324,7 +324,7 @@ void VulkanUtils::generateMipmaps(VulkanContext &context, VkImage image, VkForma
     int32_t mipHeight = height;
 
     // i=0 is oiginal image
-    for (uint32_t i = 1; i < mipLevels; i++) {
+    for (uint32 i = 1; i < mipLevels; i++) {
         barrier.subresourceRange.baseMipLevel = i - 1;
         barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
         barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
@@ -401,8 +401,8 @@ void VulkanUtils::generateMipmaps(VulkanContext &context, VkImage image, VkForma
 void VulkanUtils::getSurfaceProperties(VkPhysicalDevice physicalDevice, VkSurfaceKHR surfaceKHR,
                                        std::vector<VkSurfaceFormatKHR> &outSurfaceFormats,
                                        std::vector<VkPresentModeKHR> &outPresentModes) {
-    uint32_t surfFormatCount;
-    uint32_t presentModeCount;
+    uint32 surfFormatCount;
+    uint32 presentModeCount;
     VkResult r;
 
     r = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surfaceKHR, &surfFormatCount, nullptr);
@@ -439,7 +439,7 @@ void VulkanUtils::getSurfaceProperties(VkPhysicalDevice physicalDevice, VkSurfac
     }
 }
 
-VkExtent2D VulkanUtils::getSwapChainExtent(uint32_t preferredWidth, uint32_t preferredHeight,
+VkExtent2D VulkanUtils::getSwapChainExtent(uint32 preferredWidth, uint32 preferredHeight,
                                            const VkSurfaceCapabilitiesKHR &surfaceCapabilities) {
     if (surfaceCapabilities.currentExtent.width != UINT32_MAX) {
         // if current extent is defined, match swap chain size with it
@@ -477,7 +477,7 @@ VulkanUtils::getAvailableCompositeAlpha(const VkSurfaceCapabilitiesKHR &surfaceC
             VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR
     };
 
-    for (uint32_t i = 0; i < 4; i++) {
+    for (uint32 i = 0; i < 4; i++) {
         if (surfaceCapabilities.supportedCompositeAlpha & compositeAlphaPr[i]) {
             return compositeAlphaPr[i];
         }
@@ -486,7 +486,7 @@ VulkanUtils::getAvailableCompositeAlpha(const VkSurfaceCapabilitiesKHR &surfaceC
     throw VulkanException("Can't find available composite alpha");
 }
 
-void VulkanUtils::createDepthStencilBuffer(VulkanContext &context, uint32_t width, uint32_t height, uint32_t depth,
+void VulkanUtils::createDepthStencilBuffer(VulkanContext &context, uint32 width, uint32 height, uint32 depth,
                                            VkImageType imageType, VkFormat format, VkImageViewType viewType,
                                            VkImage &outImage, VkDeviceMemory &outImageMemory,
                                            VkImageView &outImageView) {
