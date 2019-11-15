@@ -447,11 +447,13 @@ RenderDevice::ID VulkanRenderDevice::createUniformLayout(const RenderDevice::Uni
     }
 
     for (uint32 i = 0; i < texturesCount; i++) {
-        bindings[i].binding = uniformTextures[i].binding;
-        bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        bindings[i].descriptorCount = uniformTextures[i].descriptorCount;
-        bindings[i].stageFlags = VulkanDefinitions::shaderStageFlags(uniformTextures[i].stageFlags);
-        bindings[i].pImmutableSamplers = nullptr;
+        uint32 wi = i + uniformCount;
+
+        bindings[wi].binding = uniformTextures[i].binding;
+        bindings[wi].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        bindings[wi].descriptorCount = uniformTextures[i].descriptorCount;
+        bindings[wi].stageFlags = VulkanDefinitions::shaderStageFlags(uniformTextures[i].stageFlags);
+        bindings[wi].pImmutableSamplers = nullptr;
     }
 
     // all bindings are in one array, create descriptor set layout
