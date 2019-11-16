@@ -1,6 +1,6 @@
 # VulkanRenderer
 
-[![](https://github.com/EgorOrachyov/VulkanRenderer/workflows/.github/workflows/projectcpp.yml/badge.svg)](https://github.com/EgorOrachyov/VulkanRenderer/actions)
+![MacOS build](https://github.com/EgorOrachyov/VulkanRenderer/workflows/MacOS/badge.svg)
 
 C/C++ library for visualization dynamic 3D scene with GPU hardware acceleration via Vulkan API
 
