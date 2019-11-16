@@ -1,27 +1,25 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.11)
 project(VulkanDevice)
 
-add_library(VulkanDevice STATIC ..)
-message(STATUS "Build VulkanDevice library")
-
-target_include_directories(VulkanDevice PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
-
-target_include_directories(VulkanDevice PRIVATE ${Renderer_SOURCE_DIRS}/include)
-target_link_libraries(VulkanDevice PRIVATE Renderer)
-
-target_sources(VulkanDevice
-    PUBLIC
-        ${CMAKE_CURRENT_LIST_DIR}/include/VulkanRenderDevice.h
-        ${CMAKE_CURRENT_LIST_DIR}/include/VulkanDefinitions.h
-        ${CMAKE_CURRENT_LIST_DIR}/include/VulkanContext.h
-        ${CMAKE_CURRENT_LIST_DIR}/include/VulkanErrors.h
-        ${CMAKE_CURRENT_LIST_DIR}/include/VulkanUtils.h
-        ${CMAKE_CURRENT_LIST_DIR}/include/VulkanExtensions.h
-        ${CMAKE_CURRENT_LIST_DIR}/include/VulkanObjects.h
-    PRIVATE
-        ${CMAKE_CURRENT_LIST_DIR}/sources/VulkanRenderDevice.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/sources/VulkanContext.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/sources/VulkanExtensions.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/sources/VulkanUtils.cpp
+set(VulkanDevice_HEADERS
+    include/VulkanRenderDevice.h
+    include/VulkanDefinitions.h
+    include/VulkanContext.h
+    include/VulkanErrors.h
+    include/VulkanUtils.h
+    include/VulkanExtensions.h
+    include/VulkanObjects.h
 )
 
+set(VulkanDevice_SOURCES
+    sources/VulkanRenderDevice.cpp
+    sources/VulkanContext.cpp
+    sources/VulkanExtensions.cpp
+    sources/VulkanUtils.cpp
+)
+
+message(STATUS "Config VulkanDevice library")
+add_library(VulkanDevice STATIC ${VulkanDevice_HEADERS} ${VulkanDevice_SOURCES})
+
+target_include_directories(VulkanDevice PUBLIC include)
+target_link_libraries(VulkanDevice PUBLIC Renderer)

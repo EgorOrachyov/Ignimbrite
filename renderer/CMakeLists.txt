@@ -1,24 +1,23 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.11)
 project(Renderer)
 
-add_library(Renderer STATIC "")
-message(STATUS "Build Renderer library")
-
-target_include_directories(Renderer PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include/)
-
-target_sources(Renderer
-    PUBLIC
-        ${CMAKE_CURRENT_LIST_DIR}/include/renderer/Compilation.h
-        ${CMAKE_CURRENT_LIST_DIR}/include/renderer/DeviceDefinitions.h
-        ${CMAKE_CURRENT_LIST_DIR}/include/renderer/RenderDevice.h
-        ${CMAKE_CURRENT_LIST_DIR}/include/renderer/FileUtils.h
-        ${CMAKE_CURRENT_LIST_DIR}/include/renderer/ObjectID.h
-        ${CMAKE_CURRENT_LIST_DIR}/include/renderer/ObjectIDBuffer.h
-        ${CMAKE_CURRENT_LIST_DIR}/include/renderer/Optional.h
-        ${CMAKE_CURRENT_LIST_DIR}/include/renderer/Platform.h
-        ${CMAKE_CURRENT_LIST_DIR}/include/renderer/Types.h
-    PRIVATE
-        ${CMAKE_CURRENT_LIST_DIR}/sources/RenderDevice.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/sources/FileUtils.cpp
+set(Renderer_HEADERS
+    include/renderer/Compilation.h
+    include/renderer/DeviceDefinitions.h
+    include/renderer/RenderDevice.h
+    include/renderer/FileUtils.h
+    include/renderer/ObjectID.h
+    include/renderer/ObjectIDBuffer.h
+    include/renderer/Optional.h
+    include/renderer/Platform.h
+    include/renderer/Types.h
 )
 
+set(Renderer_SOURCES
+    sources/RenderDevice.cpp
+    sources/FileUtils.cpp
+)
+
+message(STATUS "Config Renderer library")
+add_library(Renderer STATIC ${Renderer_HEADERS} ${Renderer_SOURCES})
+target_include_directories(Renderer PUBLIC include)

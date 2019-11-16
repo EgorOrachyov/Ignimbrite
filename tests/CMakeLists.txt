@@ -1,22 +1,20 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.11)
 project(Tests)
 
-add_executable(Tests "")
-message(STATUS "Build Tests executable")
+set(Tests_HEADERS
+    TestObjectID.h
+    VulkanStartUp.h
+)
 
-target_include_directories(Tests PRIVATE ${Renderer_SOURCE_DIR}/include)
-target_include_directories(Tests PRIVATE ${VulkanDevice_SOURCE_DIR}/include)
+set(Tests_SOURCES
+    main.cpp
+)
 
-target_link_libraries(Tests PRIVATE Renderer)
-target_link_libraries(Tests PRIVATE VulkanDevice)
+message(STATUS "Config Tests executable")
+add_executable(Tests ${Test_HEADERS} ${Tests_SOURCES})
+
+target_link_libraries(Tests PUBLIC Renderer)
+target_link_libraries(Tests PUBLIC VulkanDevice)
 
 variable_watch(THIRD_PARTY_LIBS)
-target_link_libraries(Tests PRIVATE ${THIRD_PARTY_LIBS})
-
-target_sources(Tests
-    PUBLIC
-        ${CMAKE_CURRENT_LIST_DIR}/TestObjectID.h
-        ${CMAKE_CURRENT_LIST_DIR}/VulkanStartUp.h
-    PRIVATE
-        ${CMAKE_CURRENT_LIST_DIR}/main.cpp
-)
+target_link_libraries(Tests PUBLIC ${THIRD_PARTY_LIBS})
