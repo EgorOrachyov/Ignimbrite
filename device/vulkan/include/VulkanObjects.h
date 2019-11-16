@@ -76,9 +76,10 @@ struct VulkanFrameBufferFormat {
 };
 
 struct VulkanUniformBuffer {
+    BufferUsage usage;
+    uint32 size;
     VkBuffer buffer;
     VkDeviceMemory memory;
-    VkMemoryAllocateFlags memoryProperties;
 };
 
 struct VulkanUniformLayout {
@@ -88,8 +89,8 @@ struct VulkanUniformLayout {
 
 struct VulkanDescriptorPool {
     VkDescriptorPool pool;
-    uint32_t remainingAllocations;
-    uint32_t descriptorAmounts[VK_DESCRIPTOR_TYPE_RANGE_SIZE];
+    uint32 remainingAllocations;
+    uint32 descriptorAmounts[VK_DESCRIPTOR_TYPE_RANGE_SIZE];
 };
 
 #endif //RENDERINGLIBRARY_VULKANOBJECTS_H

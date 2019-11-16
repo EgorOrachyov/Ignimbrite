@@ -14,13 +14,12 @@ enum class ShaderType {
     Fragment
 };
 
-typedef uint32 ShaderStageFlags;
-
 /** Shader stage flag bits. Used for uniform  */
 enum class ShaderStageFlagBits {
     VertexBit = BIT_SHIFT(0u),
     FragmentBit = BIT_SHIFT(1u)
 };
+typedef uint32 ShaderStageFlags;
 
 /** Source code languages */
 enum class ShaderLanguage {
@@ -38,6 +37,7 @@ enum class DataFormat {
     R32G32_SFLOAT,
     R32G32B32_SFLOAT,
     R32G32B32A32_SFLOAT,
+
     D24_UNORM_S8_UINT,
     D32_SFLOAT_S8_UINT,
 };
@@ -76,11 +76,11 @@ enum class TextureType {
 /** Texture usage for optimal target device representation */
 enum class TextureUsageBit {
     /** Could be used as framebuffer color attachment */
-    ColorAttachment = BIT_SHIFT(1u),
+    ColorAttachment = BIT_SHIFT(0u),
     /** Could be used as framebuffer depth-stencil attachment */
-    DepthStencilAttachment = BIT_SHIFT(2u),
+    DepthStencilAttachment = BIT_SHIFT(1u),
     /** Could be used sampled from shader program as uniform texture */
-    ShaderSampling = BIT_SHIFT(3u)
+    ShaderSampling = BIT_SHIFT(2u)
 };
 
 /** Num of samples **/

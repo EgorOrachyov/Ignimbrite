@@ -16,9 +16,9 @@ public:
             VkFormat format
     );
 
-    static uint32_t getMemoryTypeIndex(
+    static uint32 getMemoryTypeIndex(
             VulkanContext& context,
-            uint32_t memoryTypeBits,
+            uint32 memoryTypeBits,
             VkFlags requirementsMask
     );
 
@@ -54,8 +54,8 @@ public:
     static void createTextureImage(
             VulkanContext& context,
             const void *imageData,
-            uint32_t width, uint32_t height, 
-            uint32_t depth, uint32_t mipLevels,
+            uint32 width, uint32 height, 
+            uint32 depth, uint32 mipLevels,
             VkImageType imageType, VkFormat format, VkImageTiling tiling,
             VkImage &outTextureImage, VkDeviceMemory &outTextureMemory,
             VkImageLayout textureLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
@@ -63,8 +63,8 @@ public:
 
     static void createImage(
             VulkanContext& context,
-            uint32_t width, uint32_t height, 
-            uint32_t depth, uint32_t mipLevels,
+            uint32 width, uint32 height, 
+            uint32 depth, uint32 mipLevels,
             VkImageType imageType, VkFormat format,
             VkImageTiling tiling, VkImageUsageFlags usage,
             VkMemoryPropertyFlags properties,
@@ -75,7 +75,7 @@ public:
             VulkanContext& context,
             VkBuffer buffer,
             VkImage image,
-            uint32_t width, uint32_t height, uint32_t depth
+            uint32 width, uint32 height, uint32 depth
     );
 
     static void transitionImageLayout(
@@ -83,7 +83,7 @@ public:
             VkImage image,
             VkImageLayout oldLayout,
             VkImageLayout newLayout,
-            uint32_t mipLevels
+            uint32 mipLevels
     );
 
     static void createImageView(
@@ -98,12 +98,12 @@ public:
     static void generateMipmaps(
         VulkanContext& context,
         VkImage image, VkFormat format,
-        uint32_t width, uint32_t height, 
-        uint32_t depth, uint32_t mipLevels, VkImageLayout newLayout
+        uint32 width, uint32 height, 
+        uint32 depth, uint32 mipLevels, VkImageLayout newLayout
     );
 
     static void createDepthStencilBuffer(VulkanContext& context, 
-        uint32_t width, uint32_t height, uint32_t depth,
+        uint32 width, uint32 height, uint32 depth,
         VkImageType imageType, VkFormat format, VkImageViewType viewType,
         VkImage& outImage, VkDeviceMemory& outImageMemory, 
         VkImageView& outImageView
@@ -116,7 +116,7 @@ public:
     );
     
     static VkExtent2D getSwapChainExtent(
-            uint32_t preferredWidth, uint32_t preferredHeight,
+            uint32 preferredWidth, uint32 preferredHeight,
             const VkSurfaceCapabilitiesKHR &surfaceCapabilities
     );
     

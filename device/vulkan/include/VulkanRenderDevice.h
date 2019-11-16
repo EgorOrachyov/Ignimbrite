@@ -45,11 +45,6 @@ public:
     ID createUniformLayout(const UniformLayoutDesc &layoutDesc) override;
     void destroyUniformLayout(ID layout) override;
 
-    /**
-     * @param size size of data
-     * @param data pointer to data
-     * @note if usage is Dynamic, \a data must be null and \a size is a size of data that will be loaded
-     */
     ID createUniformBuffer(BufferUsage usage, uint32 size, const void *data) override;
     void updateUniformBuffer(ID buffer, uint32 size, uint32 offset, const void *data) override;
     void destroyUniformBuffer(ID buffer) override;

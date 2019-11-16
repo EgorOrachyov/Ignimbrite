@@ -114,8 +114,14 @@ void VulkanUtils::updateBufferMemory(VulkanContext &context, VkDeviceMemory buff
                                      VkDeviceSize size,
                                      const void *data) {
     void *mappedData;
-    vkMapMemory(context.device, bufferMemory, offset, size, 0, &mappedData);
-    memcpy(mappedData, data, (size_t) size);
+    VkResult result;
+    result = vkMapMemory(context.device, bufferMemory, offset, size, 0, &mappedData);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to map memory buffer");
+    }
+
+    std::memcpy(mappedData, data, (size_t) size);
     vkUnmapMemory(context.device, bufferMemory);
 }
 

@@ -55,7 +55,7 @@ struct VulkanContext {
     VkDescriptorPool getDescriptorPool(const std::vector<VkDescriptorPoolSize> &poolSizes);
     void destroyDescriptorPools();
 
-    static const uint32_t DESC_POOL_MAX_ALLOCATIONS = 32;
+    static const uint32 DESC_POOL_MAX_ALLOCATIONS = 32;
 
     void createSwapChain(VulkanSurface& surface);
     void destroySwapChain(VulkanSurface& surface);

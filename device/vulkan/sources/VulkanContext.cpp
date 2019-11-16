@@ -585,7 +585,7 @@ VkDescriptorPool VulkanContext::getDescriptorPool(const std::vector<VkDescriptor
     // multiply amount of each type by DESC_POOL_MAX_ALLOCATIONS
     std::vector<VkDescriptorPoolSize> newPoolSizes(poolSizes.size());
 
-    for (uint32_t i = 0; i < poolSizes.size(); i++) {
+    for (uint32 i = 0; i < poolSizes.size(); i++) {
         newPoolSizes[i].type = poolSizes[i].type;
         newPoolSizes[i].descriptorCount = poolSizes[i].descriptorCount * DESC_POOL_MAX_ALLOCATIONS;
 

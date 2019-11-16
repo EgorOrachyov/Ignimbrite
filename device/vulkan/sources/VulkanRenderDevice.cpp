@@ -564,21 +564,16 @@ void VulkanRenderDevice::destroyUniformLayout(RenderDevice::ID layoutId) {
 
 RenderDevice::ID VulkanRenderDevice::createUniformBuffer(BufferUsage usage, uint32 size, const void *data) {
     VulkanUniformBuffer uniformBuffer = {};
+    uniformBuffer.usage = usage;
+    uniformBuffer.size = size;
 
     if (usage == BufferUsage::Static) {
-        // if buffer is static, then data will not be changed,
-        // so allocate it locally on device
-        uniformBuffer.memoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
         VulkanUtils::createBufferLocal(context, data, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                        uniformBuffer.buffer, uniformBuffer.memory);
-
     } else if (usage == BufferUsage::Dynamic) {
-        // if buffer is dynamic, then data will change,
-        // so make it visible from host
-        uniformBuffer.memoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        VkMemoryPropertyFlags memoryPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         VulkanUtils::createBuffer(context, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                  uniformBuffer.memoryProperties, uniformBuffer.buffer, uniformBuffer.memory);
-
+                                  memoryPropertyFlags, uniformBuffer.buffer, uniformBuffer.memory);
     } else {
         throw VulkanException("Undefined uniform buffer usage");
     }
@@ -589,23 +584,15 @@ RenderDevice::ID VulkanRenderDevice::createUniformBuffer(BufferUsage usage, uint
 void VulkanRenderDevice::updateUniformBuffer(RenderDevice::ID buffer, uint32 size, uint32 offset, const void *data) {
     const VulkanUniformBuffer &uniformBuffer = mUniformBuffers.get(buffer);
 
-    if (uniformBuffer.memoryProperties & (uint32_t)VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
-        void* mapped;
-
-        // map memory
-        VkResult r = vkMapMemory(context.device, uniformBuffer.memory, offset, size, 0, &mapped);
-        if (r != VK_SUCCESS) {
-            throw VulkanException("Can't map uniform buffer memory");
-        }
-
-        // copy data to this memory
-        memcpy(mapped, data, size);
-
-    } else {
-        throw VulkanException("Uniform buffer is not dynamic");
+    if (uniformBuffer.usage != BufferUsage::Dynamic) {
+        throw VulkanException("Attempt to update static uniform buffer");
     }
 
-    vkUnmapMemory(context.device, uniformBuffer.memory);
+    if (offset + size > uniformBuffer.size) {
+        throw VulkanException("Attempt to update out-of-buffer memory region for uniform buffer");
+    }
+
+    VulkanUtils::updateBufferMemory(context, uniformBuffer.memory, offset, size, data);
 }
 
 void VulkanRenderDevice::destroyUniformBuffer(RenderDevice::ID bufferId) {
