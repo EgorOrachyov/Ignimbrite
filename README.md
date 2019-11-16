@@ -2,6 +2,7 @@
 
 ![MacOS build](https://github.com/EgorOrachyov/VulkanRenderer/workflows/MacOS/badge.svg)
 ![Linux build](https://github.com/EgorOrachyov/VulkanRenderer/workflows/Linux/badge.svg)
+![Windows build](https://github.com/EgorOrachyov/VulkanRenderer/workflows/Windows/badge.svg)
 
 C/C++ library for visualization dynamic 3D scene with GPU hardware acceleration via Vulkan API
 
