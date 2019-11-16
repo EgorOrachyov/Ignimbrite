@@ -92,7 +92,6 @@ struct VulkanUniformLayout {
     VkDescriptorSetLayout setLayout;
     uint32 texturesCount;
     uint32 buffersCount;
-    uint32 availableSetsInPools;
     std::vector<VulkanDescriptorPool> pools;
 };
 
