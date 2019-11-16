@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: MacOS Build
 
 on:
   pull_request:
@@ -14,10 +14,10 @@ jobs:
     runs-on: macos 
   
     steps:
-    - name: build 
-      run: |
-        ls
-        mkdir build
-        cd build
-        cmake ..
-        cmake --build . --target Renderer 
+      - uses: actions/checkout@v1
+      - name: build 
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build . --target Renderer 
