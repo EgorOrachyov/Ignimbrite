@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: [macOS-10.14,ubuntu-18.04]
+    runs-on: macos 
   
     steps:
     - name: build 
