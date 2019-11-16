@@ -1,0 +1,22 @@
+name: C/C++ CI
+
+on:
+  pull_request:
+    branches: 
+      - master
+  push:
+    branches: 
+      - master
+      - release  
+  
+jobs:
+  build:
+    runs-on: macos 
+  
+    steps:
+    - name: build 
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        cmake --build . --target Renderer 
