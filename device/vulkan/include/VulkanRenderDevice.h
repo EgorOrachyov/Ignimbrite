@@ -140,6 +140,7 @@ private:
     Buffer<VulkanTextureObject> mTextureObjects;
     Buffer<VulkanUniformBuffer> mUniformBuffers;
     Buffer<VulkanUniformLayout> mUniformLayouts;
+    Buffer<VulkanUniformSet> mUniformSets;
 
 };
 

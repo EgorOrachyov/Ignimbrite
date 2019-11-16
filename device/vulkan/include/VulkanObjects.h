@@ -95,4 +95,8 @@ struct VulkanUniformLayout {
     std::vector<VulkanDescriptorPool> pools;
 };
 
+struct VulkanUniformSet {
+    VkDescriptorSet descriptorSet;
+};
+
 #endif //RENDERINGLIBRARY_VULKANOBJECTS_H

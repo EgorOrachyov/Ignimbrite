@@ -422,91 +422,35 @@ void VulkanRenderDevice::destroyFramebuffer(RenderDevice::ID framebufferId) {
     mFrameBuffers.remove(framebufferId);
 }
 
-RenderDevice::ID VulkanRenderDevice::createUniformSet(const UniformSetDesc &setDesc, ID uniformLayout) {
-/*
-    VulkanUniformLayout uniformLayout = {};
-
-    VkDescriptorSetLayout &descriptorSetLayout = uniformLayout.descriptorSetLayout;
-    VkDescriptorSet &descriptorSet = uniformLayout.descriptorSet;
+RenderDevice::ID VulkanRenderDevice::createUniformSet(const UniformSetDesc &setDesc, ID uniformLayoutId) {
+    VulkanUniformLayout &uniformLayout = mUniformLayouts.get(uniformLayoutId);
+    VkDescriptorSetLayout setLayout = uniformLayout.setLayout;
+    VulkanDescriptorPool &pool = VulkanUtils::getAvailableDescriptorPool(context, uniformLayout);
 
     const std::vector<UniformBufferDesc> &uniformBuffers = setDesc.buffers;
     const std::vector<UniformTextureDesc> &uniformTextures = setDesc.textures;
-
-    // get all bindings
     uint32 uniformCount = uniformBuffers.size();
     uint32 texturesCount = uniformTextures.size();
-
-    uint32 bindingsCount = uniformCount + texturesCount;
-    std::vector<VkDescriptorSetLayoutBinding> bindings(bindingsCount);
-
-    for (uint32 i = 0; i < uniformCount; i++) {
-        bindings[i].binding = uniformBuffers[i].binding;
-        bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        bindings[i].descriptorCount = 1;
-        bindings[i].stageFlags = VulkanDefinitions::shaderStageFlags(uniformBuffers[i].stageFlags);
-        bindings[i].pImmutableSamplers = nullptr;
-    }
-
-    for (uint32 i = 0; i < texturesCount; i++) {
-        uint32 wi = i + uniformCount;
-
-        bindings[wi].binding = uniformTextures[i].binding;
-        bindings[wi].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        bindings[wi].descriptorCount = 1;
-        bindings[wi].stageFlags = VulkanDefinitions::shaderStageFlags(uniformTextures[i].stageFlags);
-        bindings[wi].pImmutableSamplers = nullptr;
-    }
-
-    // all bindings are in one array, create descriptor set layout
-    VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo = {};
-    descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptorLayoutInfo.pNext = nullptr;
-    descriptorLayoutInfo.bindingCount = bindings.size();
-    descriptorLayoutInfo.pBindings = bindings.data();
-
-    VkResult r = vkCreateDescriptorSetLayout(context.device,
-            &descriptorLayoutInfo, nullptr, &descriptorSetLayout);
-
-    if (r != VK_SUCCESS) {
-        throw VulkanException("Can't create descriptor set layout");
-    }
-
-    // get pool sizes
-    std::vector<VkDescriptorPoolSize> poolSizes = {};
-
-    if (uniformCount > 0) {
-        VkDescriptorPoolSize uniformsPoolSize;
-        uniformsPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        uniformsPoolSize.descriptorCount = uniformCount;
-
-        poolSizes.push_back(uniformsPoolSize);
-    }
-
-    if (texturesCount > 0) {
-        VkDescriptorPoolSize texturesPoolSize;
-        texturesPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        texturesPoolSize.descriptorCount = texturesCount;
-
-        poolSizes.push_back(texturesPoolSize);
-    }
-
-    VkDescriptorPool pool = context.getDescriptorPool(poolSizes);
 
     // allocate descriptor set from pool
     VkDescriptorSetAllocateInfo descSetAllocInfo = {};
     descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     descSetAllocInfo.pNext = nullptr;
-    descSetAllocInfo.descriptorPool = pool;
+    descSetAllocInfo.descriptorPool = pool.pool;
     descSetAllocInfo.descriptorSetCount = 1;
-    descSetAllocInfo.pSetLayouts = &descriptorSetLayout;
+    descSetAllocInfo.pSetLayouts = &setLayout;
 
-    r = vkAllocateDescriptorSets(context.device, &descSetAllocInfo, &descriptorSet);
+    VkDescriptorSet descriptorSet;
+    VkResult r = vkAllocateDescriptorSets(context.device, &descSetAllocInfo, &descriptorSet);
     if (r != VK_SUCCESS) {
-        throw VulkanException("Can't allocate descriptor sets from descriptor pool");
+        throw VulkanException("Can't allocate descriptor set from descriptor pool");
     }
 
+    // one more descriptor set is allocated
+    pool.allocatedSets++;
+
     // descriptor set is allocated, so modify it
-    std::vector<VkWriteDescriptorSet> writeDescSets(bindingsCount);
+    std::vector<VkWriteDescriptorSet> writeDescSets(uniformCount + texturesCount);
 
     for (uint32 i = 0; i < uniformCount; i++) {
         VkDescriptorBufferInfo bufferInfo;
@@ -523,7 +467,7 @@ RenderDevice::ID VulkanRenderDevice::createUniformSet(const UniformSetDesc &setD
 
         writeDescSets[i].dstBinding = uniformBuffers[i].binding;
         writeDescSets[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        writeDescSets[i].descriptorCount = uniformBuffers[i].descriptorCount;
+        writeDescSets[i].descriptorCount = 1; // uniformBuffers[i].descriptorCount;
         writeDescSets[i].pBufferInfo = &bufferInfo;
     }
 
@@ -545,19 +489,21 @@ RenderDevice::ID VulkanRenderDevice::createUniformSet(const UniformSetDesc &setD
 
         writeDescSets[wi].dstBinding = uniformTextures[i].binding;
         writeDescSets[wi].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        writeDescSets[wi].descriptorCount = uniformTextures[i].descriptorCount;
+        writeDescSets[wi].descriptorCount = 1; // uniformTextures[i].descriptorCount;
         writeDescSets[wi].pImageInfo = &imageInfo;
     }
 
     vkUpdateDescriptorSets(context.device,
             writeDescSets.size(), writeDescSets.data(), 0, nullptr);
 
-    return mUniformLayouts.move(uniformLayout);
-*/
+    VulkanUniformSet uniformSet = {};
+    uniformSet.descriptorSet = descriptorSet;
+
+    return mUniformSets.move(uniformSet);
 }
 
-void VulkanRenderDevice::destroyUniformSet(RenderDevice::ID layoutId) {
-
+void VulkanRenderDevice::destroyUniformSet(RenderDevice::ID setId) {
+    // all VkDescriptorSet will be deleted with pools
 }
 
 RenderDevice::ID VulkanRenderDevice::createUniformLayout(const RenderDevice::UniformLayoutDesc &layoutDesc) {
