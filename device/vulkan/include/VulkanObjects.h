@@ -92,10 +92,13 @@ struct VulkanUniformLayout {
     VkDescriptorSetLayout setLayout;
     uint32 texturesCount;
     uint32 buffersCount;
+    uint32 usedDescriptorSets;
     std::vector<VulkanDescriptorPool> pools;
+    std::vector<VkDescriptorSet> freeSets;
 };
 
 struct VulkanUniformSet {
+    RenderDevice::ID uniformLayout;
     VkDescriptorSet descriptorSet;
 };
 

@@ -565,7 +565,7 @@ void VulkanUtils::allocateDescriptorPool(VulkanContext &context, VulkanUniformLa
     layout.pools.push_back(vulkanDescriptorPool);
 }
 
-VulkanDescriptorPool& VulkanUtils::getAvailableDescriptorPool(VulkanContext &context, VulkanUniformLayout &layout) {
+VulkanDescriptorPool & VulkanUtils::getAvailableDescriptorPool(VulkanContext &context, VulkanUniformLayout &layout) {
     for (auto& pool: layout.pools) {
         if (pool.allocatedSets < pool.maxSets) {
             return pool;

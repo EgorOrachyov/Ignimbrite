@@ -129,9 +129,9 @@ public:
             VulkanUniformLayout& layout
     );
 
-    static VulkanDescriptorPool& getAvailableDescriptorPool(
-            VulkanContext& context,
-            VulkanUniformLayout& layout
+    static VulkanDescriptorPool & getAvailableDescriptorPool(
+            VulkanContext &context,
+            VulkanUniformLayout &layout
     );
 
 };
