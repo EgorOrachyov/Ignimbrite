@@ -18,6 +18,6 @@ jobs:
       - name: build
         run: |
           mkdir build
-          ckdir build
+          chdir build
           cmake ..
           cmake --build . --target Renderer
