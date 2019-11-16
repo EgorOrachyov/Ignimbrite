@@ -27,6 +27,7 @@ struct VulkanStartUp {
     static void test2() {
         ObjectID surface;
         GLFWwindow* window;
+        std::string name = "Test";
         uint32 width = 640, height = 480, widthFrameBuffer, heightFrameBuffer;
         uint32 extensionsCount;
         const char* const* extensions;
@@ -34,14 +35,12 @@ struct VulkanStartUp {
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-        window = glfwCreateWindow(width, height, "Test", nullptr, nullptr);
+        window = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
         glfwGetFramebufferSize(window, (int32*) &widthFrameBuffer, (int32*) &heightFrameBuffer);
         extensions = glfwGetRequiredInstanceExtensions(&extensionsCount);
 
         VulkanRenderDevice device(extensionsCount, extensions);
-        surface = VulkanExtensions::createSurfaceGLFW(device, window, width, height, widthFrameBuffer, heightFrameBuffer, std::string("Test"));
-
-        auto uniformBuffer = device.createUniformSet(RenderDevice::UniformSetDesc(), RenderDevice::ID());
+        surface = VulkanExtensions::createSurfaceGLFW(device, window, width, height, widthFrameBuffer, heightFrameBuffer, name);
 
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();

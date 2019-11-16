@@ -82,15 +82,18 @@ struct VulkanUniformBuffer {
     VkDeviceMemory memory;
 };
 
-struct VulkanUniformLayout {
-    VkDescriptorSetLayout descriptorSetLayout;
-    VkDescriptorSet descriptorSet;
-};
-
 struct VulkanDescriptorPool {
     VkDescriptorPool pool;
-    uint32 remainingAllocations;
-    uint32 descriptorAmounts[VK_DESCRIPTOR_TYPE_RANGE_SIZE];
+    uint32 allocatedSets;
+    uint32 maxSets;
+};
+
+struct VulkanUniformLayout {
+    VkDescriptorSetLayout setLayout;
+    uint32 texturesCount;
+    uint32 buffersCount;
+    uint32 availableSetsInPools;
+    std::vector<VulkanDescriptorPool> pools;
 };
 
 #endif //RENDERINGLIBRARY_VULKANOBJECTS_H

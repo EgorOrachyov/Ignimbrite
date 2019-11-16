@@ -123,6 +123,17 @@ public:
     static VkCompositeAlphaFlagBitsKHR getAvailableCompositeAlpha(
             const VkSurfaceCapabilitiesKHR &surfaceCapabilities
     );
+
+    static void allocateDescriptorPool(
+            VulkanContext& context,
+            VulkanUniformLayout& layout
+    );
+
+    static VulkanDescriptorPool& getAvailableDescriptorPool(
+            VulkanContext& context,
+            VulkanUniformLayout& layout
+    );
+
 };
 
 #endif //RENDERINGLIBRARY_VULKANUTILS_H

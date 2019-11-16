@@ -8,6 +8,7 @@
 #include <exception>
 #include <cstring>
 #include <set>
+#include <array>
 
 VkFormatProperties VulkanUtils::getDeviceFormatProperties(VulkanContext &context, VkFormat format) {
     VkFormatProperties properties;
@@ -532,4 +533,45 @@ void VulkanUtils::createDepthStencilBuffer(VulkanContext &context, uint32 width,
     subresourceRange.layerCount = 1;
 
     createImageView(context, outImageView, outImage, viewType, format, subresourceRange, components);
+}
+
+void VulkanUtils::allocateDescriptorPool(VulkanContext &context, VulkanUniformLayout &layout) {
+    VkResult result;
+    VkDescriptorPool pool;
+
+    std::array<VkDescriptorPoolSize, 2> poolSizes({});
+    poolSizes[0].descriptorCount = layout.buffersCount;
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSizes[1].descriptorCount = layout.texturesCount;
+    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+    VkDescriptorPoolCreateInfo poolCreateInfo = {};
+    poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolCreateInfo.poolSizeCount = (uint32) poolSizes.size();
+    poolCreateInfo.pPoolSizes = poolSizes.data();
+    poolCreateInfo.maxSets = VulkanContext::DESCRIPTOR_POOL_MAX_SET_COUNT;
+
+    result = vkCreateDescriptorPool(context.device, &poolCreateInfo, nullptr, &pool);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to create descriptor pool");
+    }
+
+    VulkanDescriptorPool vulkanDescriptorPool = {};
+    vulkanDescriptorPool.allocatedSets = 0;
+    vulkanDescriptorPool.maxSets = VulkanContext::DESCRIPTOR_POOL_MAX_SET_COUNT;
+    vulkanDescriptorPool.pool = pool;
+
+    layout.pools.push_back(vulkanDescriptorPool);
+}
+
+VulkanDescriptorPool& VulkanUtils::getAvailableDescriptorPool(VulkanContext &context, VulkanUniformLayout &layout) {
+    for (auto& pool: layout.pools) {
+        if (pool.allocatedSets < pool.maxSets) {
+            return pool;
+        }
+    }
+
+    allocateDescriptorPool(context, layout);
+    return layout.pools.back();
 }

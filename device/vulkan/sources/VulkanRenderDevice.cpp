@@ -560,6 +560,76 @@ void VulkanRenderDevice::destroyUniformSet(RenderDevice::ID layoutId) {
 
 }
 
+RenderDevice::ID VulkanRenderDevice::createUniformLayout(const RenderDevice::UniformLayoutDesc &layoutDesc) {
+    VkResult result;
+    VkDescriptorSetLayout descriptorSetLayout;
+
+    const auto& textures = layoutDesc.textures;
+    const auto& buffers = layoutDesc.buffers;
+    auto texturesCount = (uint32) layoutDesc.textures.size();
+    auto buffersCount = (uint32) layoutDesc.buffers.size();
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings(texturesCount + buffersCount);
+
+    for (const auto& texture: textures) {
+        VkDescriptorSetLayoutBinding binding = {};
+        binding.binding = texture.binding;
+        binding.descriptorCount = 1;
+        binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        binding.stageFlags = VulkanDefinitions::shaderStageFlags(texture.flags);
+        binding.pImmutableSamplers = nullptr;
+
+        bindings.push_back(binding);
+    }
+
+    for (const auto& buffer: buffers) {
+        VkDescriptorSetLayoutBinding binding = {};
+        binding.binding = buffer.binding;
+        binding.descriptorCount = 1;
+        binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        binding.stageFlags = VulkanDefinitions::shaderStageFlags(buffer.flags);
+        binding.pImmutableSamplers = nullptr;
+
+        bindings.push_back(binding);
+    }
+
+    VkDescriptorSetLayoutCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    createInfo.bindingCount = (uint32) bindings.size();
+    createInfo.pBindings = bindings.data();
+
+    result = vkCreateDescriptorSetLayout(context.device, &createInfo, nullptr, &descriptorSetLayout);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to create descriptor set layout");
+    }
+
+    VulkanUniformLayout uniformLayout;
+    uniformLayout.buffersCount = buffersCount;
+    uniformLayout.texturesCount = texturesCount;
+    uniformLayout.setLayout = descriptorSetLayout;
+
+    return mUniformLayouts.move(uniformLayout);
+}
+
+void VulkanRenderDevice::destroyUniformLayout(RenderDevice::ID layout) {
+    auto& uniformLayout = mUniformLayouts.get(layout);
+
+    // No uniform set must use this layout if we want to destroy it
+    for (auto& pool: uniformLayout.pools) {
+        if (pool.allocatedSets != 0) {
+            throw VulkanException("An attempt to destroy in-use uniform layout");
+        }
+    }
+
+    for (auto& pool: uniformLayout.pools) {
+        vkDestroyDescriptorPool(context.device, pool.pool, nullptr);
+    }
+
+    vkDestroyDescriptorSetLayout(context.device, uniformLayout.setLayout, nullptr);
+    mUniformLayouts.remove(layout);
+}
+
 RenderDevice::ID VulkanRenderDevice::createUniformBuffer(BufferUsage usage, uint32 size, const void *data) {
     VulkanUniformBuffer uniformBuffer = {};
     uniformBuffer.usage = usage;

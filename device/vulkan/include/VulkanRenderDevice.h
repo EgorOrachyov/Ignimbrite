@@ -45,13 +45,8 @@ public:
     ID createUniformSet(const UniformSetDesc &setDesc, ID uniformLayout) override;
     void destroyUniformSet(ID set) override;
 
-    ID createUniformLayout(const UniformLayoutDesc &layoutDesc) override {
-        return RenderDevice::ID();
-    }
-
-    void destroyUniformLayout(ID layout) override {
-
-    }
+    ID createUniformLayout(const UniformLayoutDesc &layoutDesc) override;
+    void destroyUniformLayout(ID layout) override;
 
     ID createUniformBuffer(BufferUsage usage, uint32 size, const void *data) override;
     void updateUniformBuffer(ID buffer, uint32 size, uint32 offset, const void *data) override;
