@@ -40,8 +40,8 @@ struct VulkanStartUp {
 
         VulkanRenderDevice device(extensionsCount, extensions);
         surface = VulkanExtensions::createSurfaceGLFW(device, window, width, height, widthFrameBuffer, heightFrameBuffer, std::string("Test"));
-        device.createUniformLayout(RenderDevice::UniformLayoutDesc());
 
+        auto uniformBuffer = device.createUniformSet(RenderDevice::UniformSetDesc(), RenderDevice::ID());
 
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();

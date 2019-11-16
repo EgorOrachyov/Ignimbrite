@@ -422,14 +422,15 @@ void VulkanRenderDevice::destroyFramebuffer(RenderDevice::ID framebufferId) {
     mFrameBuffers.remove(framebufferId);
 }
 
-RenderDevice::ID VulkanRenderDevice::createUniformLayout(const RenderDevice::UniformLayoutDesc &layoutDesc) {
+RenderDevice::ID VulkanRenderDevice::createUniformSet(const UniformSetDesc &setDesc, ID uniformLayout) {
+/*
     VulkanUniformLayout uniformLayout = {};
 
     VkDescriptorSetLayout &descriptorSetLayout = uniformLayout.descriptorSetLayout;
     VkDescriptorSet &descriptorSet = uniformLayout.descriptorSet;
 
-    const std::vector<UniformBufferDesc> &uniformBuffers = layoutDesc.buffers;
-    const std::vector<UniformTextureDesc> &uniformTextures = layoutDesc.textures;
+    const std::vector<UniformBufferDesc> &uniformBuffers = setDesc.buffers;
+    const std::vector<UniformTextureDesc> &uniformTextures = setDesc.textures;
 
     // get all bindings
     uint32 uniformCount = uniformBuffers.size();
@@ -441,7 +442,7 @@ RenderDevice::ID VulkanRenderDevice::createUniformLayout(const RenderDevice::Uni
     for (uint32 i = 0; i < uniformCount; i++) {
         bindings[i].binding = uniformBuffers[i].binding;
         bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        bindings[i].descriptorCount = uniformBuffers[i].descriptorCount;
+        bindings[i].descriptorCount = 1;
         bindings[i].stageFlags = VulkanDefinitions::shaderStageFlags(uniformBuffers[i].stageFlags);
         bindings[i].pImmutableSamplers = nullptr;
     }
@@ -451,7 +452,7 @@ RenderDevice::ID VulkanRenderDevice::createUniformLayout(const RenderDevice::Uni
 
         bindings[wi].binding = uniformTextures[i].binding;
         bindings[wi].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        bindings[wi].descriptorCount = uniformTextures[i].descriptorCount;
+        bindings[wi].descriptorCount = 1;
         bindings[wi].stageFlags = VulkanDefinitions::shaderStageFlags(uniformTextures[i].stageFlags);
         bindings[wi].pImmutableSamplers = nullptr;
     }
@@ -552,14 +553,11 @@ RenderDevice::ID VulkanRenderDevice::createUniformLayout(const RenderDevice::Uni
             writeDescSets.size(), writeDescSets.data(), 0, nullptr);
 
     return mUniformLayouts.move(uniformLayout);
+*/
 }
 
-void VulkanRenderDevice::destroyUniformLayout(RenderDevice::ID layoutId) {
-    const VulkanUniformLayout &uniformLayout = mUniformLayouts.get(layoutId);
+void VulkanRenderDevice::destroyUniformSet(RenderDevice::ID layoutId) {
 
-    vkDestroyDescriptorSetLayout(context.device, uniformLayout.descriptorSetLayout, nullptr);
-
-    mUniformLayouts.remove(layoutId);
 }
 
 RenderDevice::ID VulkanRenderDevice::createUniformBuffer(BufferUsage usage, uint32 size, const void *data) {
