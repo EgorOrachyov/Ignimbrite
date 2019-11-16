@@ -16,6 +16,7 @@ jobs:
     steps:
     - name: build 
       run: |
+        ls
         mkdir build
         cd build
         cmake ..
