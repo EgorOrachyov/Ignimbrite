@@ -8,6 +8,7 @@
 #include <exception>
 #include <cstring>
 #include <set>
+#include <array>
 
 VkFormatProperties VulkanUtils::getDeviceFormatProperties(VulkanContext &context, VkFormat format) {
     VkFormatProperties properties;
@@ -114,8 +115,14 @@ void VulkanUtils::updateBufferMemory(VulkanContext &context, VkDeviceMemory buff
                                      VkDeviceSize size,
                                      const void *data) {
     void *mappedData;
-    vkMapMemory(context.device, bufferMemory, offset, size, 0, &mappedData);
-    memcpy(mappedData, data, (size_t) size);
+    VkResult result;
+    result = vkMapMemory(context.device, bufferMemory, offset, size, 0, &mappedData);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to map memory buffer");
+    }
+
+    std::memcpy(mappedData, data, (size_t) size);
     vkUnmapMemory(context.device, bufferMemory);
 }
 
@@ -159,7 +166,7 @@ void VulkanUtils::createTextureImage(VulkanContext &context, const void *imageDa
 
     // generate mipmaps and layout transition
     // from transfer destination to shader readonly
-    generateMipmaps(context, outTextureImage, format, width, height, depth, mipLevels);
+    generateMipmaps(context, outTextureImage, format, width, height, depth, mipLevels, textureLayout);
 }
 
 void VulkanUtils::createImage(VulkanContext &context, uint32 width, uint32 height,
@@ -300,7 +307,7 @@ VulkanUtils::createImageView(VulkanContext &context, VkImageView &outImageView, 
 }
 
 void VulkanUtils::generateMipmaps(VulkanContext &context, VkImage image, VkFormat format,
-                                  uint32 width, uint32 height, uint32 depth, uint32 mipLevels) {
+                                  uint32 width, uint32 height, uint32 depth, uint32 mipLevels, VkImageLayout newLayout) {
     VkFormatProperties formatProperties = getDeviceFormatProperties(context, format);
 
     if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
@@ -384,7 +391,7 @@ void VulkanUtils::generateMipmaps(VulkanContext &context, VkImage image, VkForma
 
     barrier.subresourceRange.baseMipLevel = mipLevels - 1;
     barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.newLayout = newLayout;
     barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
@@ -526,4 +533,45 @@ void VulkanUtils::createDepthStencilBuffer(VulkanContext &context, uint32 width,
     subresourceRange.layerCount = 1;
 
     createImageView(context, outImageView, outImage, viewType, format, subresourceRange, components);
+}
+
+void VulkanUtils::allocateDescriptorPool(VulkanContext &context, VulkanUniformLayout &layout) {
+    VkResult result;
+    VkDescriptorPool pool;
+
+    std::array<VkDescriptorPoolSize, 2> poolSizes({});
+    poolSizes[0].descriptorCount = layout.buffersCount;
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSizes[1].descriptorCount = layout.texturesCount;
+    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+    VkDescriptorPoolCreateInfo poolCreateInfo = {};
+    poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolCreateInfo.poolSizeCount = (uint32) poolSizes.size();
+    poolCreateInfo.pPoolSizes = poolSizes.data();
+    poolCreateInfo.maxSets = VulkanContext::DESCRIPTOR_POOL_MAX_SET_COUNT;
+
+    result = vkCreateDescriptorPool(context.device, &poolCreateInfo, nullptr, &pool);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to create descriptor pool");
+    }
+
+    VulkanDescriptorPool vulkanDescriptorPool = {};
+    vulkanDescriptorPool.allocatedSets = 0;
+    vulkanDescriptorPool.maxSets = VulkanContext::DESCRIPTOR_POOL_MAX_SET_COUNT;
+    vulkanDescriptorPool.pool = pool;
+
+    layout.pools.push_back(vulkanDescriptorPool);
+}
+
+VulkanDescriptorPool & VulkanUtils::getAvailableDescriptorPool(VulkanContext &context, VulkanUniformLayout &layout) {
+    for (auto& pool: layout.pools) {
+        if (pool.allocatedSets < pool.maxSets) {
+            return pool;
+        }
+    }
+
+    allocateDescriptorPool(context, layout);
+    return layout.pools.back();
 }

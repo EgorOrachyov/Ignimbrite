@@ -4,9 +4,9 @@
 
 #include <VulkanRenderDevice.h>
 #include <VulkanDefinitions.h>
+#include <VulkanUtils.h>
 #include <vulkan/vulkan.h>
 #include <exception>
-#include "VulkanUtils.h"
 
 VulkanRenderDevice::VulkanRenderDevice(uint32 extensionsCount, const char *const *extensions) {
     context.fillRequiredExt(extensionsCount, extensions);
@@ -38,9 +38,7 @@ RenderDevice::ID VulkanRenderDevice::createVertexLayout(const std::vector<Vertex
 
         vertBindings.push_back(bindingDesc);
 
-        for (uint32 j = 0; j < desc.attributes.size(); j++) {
-            const VertexAttributeDesc &attr = desc.attributes[j];
-
+        for (auto &attr : desc.attributes) {
             VkVertexInputAttributeDescription attrDesc;
             attrDesc.binding = bindingDesc.binding;
             attrDesc.format = VulkanDefinitions::dataFormat(attr.format);
@@ -59,15 +57,16 @@ void VulkanRenderDevice::destroyVertexLayout(RenderDevice::ID layout) {
 }
 
 RenderDevice::ID VulkanRenderDevice::createVertexBuffer(BufferUsage type, uint32 size, const void *data) {
-    VulkanVertexBuffer vertexBuffer = { };
+    VulkanVertexBuffer vertexBuffer = {};
     vertexBuffer.size = size;
     vertexBuffer.usage = type;
 
     VkBufferUsageFlagBits usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 
     if (type == BufferUsage::Dynamic) {
-        VulkanUtils::createBuffer(context, size, usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     vertexBuffer.vkBuffer, vertexBuffer.vkDeviceMemory
+        VulkanUtils::createBuffer(context, size, usage,
+                                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                  vertexBuffer.vkBuffer, vertexBuffer.vkDeviceMemory
         );
         VulkanUtils::updateBufferMemory(context, vertexBuffer.vkDeviceMemory, 0, size, data);
     } else {
@@ -78,15 +77,16 @@ RenderDevice::ID VulkanRenderDevice::createVertexBuffer(BufferUsage type, uint32
 }
 
 RenderDevice::ID VulkanRenderDevice::createIndexBuffer(BufferUsage type, uint32 size, const void *data) {
-    VulkanIndexBuffer indexBuffer = { };
+    VulkanIndexBuffer indexBuffer = {};
     indexBuffer.size = size;
     indexBuffer.usage = type;
 
     VkBufferUsageFlagBits usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 
     if (type == BufferUsage::Dynamic) {
-        VulkanUtils::createBuffer(context, size, usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     indexBuffer.vkBuffer, indexBuffer.vkDeviceMemory
+        VulkanUtils::createBuffer(context, size, usage,
+                                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                  indexBuffer.vkBuffer, indexBuffer.vkDeviceMemory
         );
         VulkanUtils::updateBufferMemory(context, indexBuffer.vkDeviceMemory, 0, size, data);
     } else {
@@ -97,7 +97,7 @@ RenderDevice::ID VulkanRenderDevice::createIndexBuffer(BufferUsage type, uint32 
 }
 
 void VulkanRenderDevice::updateVertexBuffer(RenderDevice::ID bufferId, uint32 size, uint32 offset, const void *data) {
-    const VulkanVertexBuffer& buffer = mVertexBuffers.get(bufferId);
+    const VulkanVertexBuffer &buffer = mVertexBuffers.get(bufferId);
     const VkDeviceMemory &memory = buffer.vkDeviceMemory;
 
     if (buffer.usage != BufferUsage::Dynamic) {
@@ -112,7 +112,7 @@ void VulkanRenderDevice::updateVertexBuffer(RenderDevice::ID bufferId, uint32 si
 }
 
 void VulkanRenderDevice::updateIndexBuffer(RenderDevice::ID bufferId, uint32 size, uint32 offset, const void *data) {
-    const VulkanIndexBuffer& buffer = mIndexBuffers.get(bufferId);
+    const VulkanIndexBuffer &buffer = mIndexBuffers.get(bufferId);
     const VkDeviceMemory &memory = buffer.vkDeviceMemory;
 
     if (buffer.usage != BufferUsage::Dynamic) {
@@ -128,7 +128,7 @@ void VulkanRenderDevice::updateIndexBuffer(RenderDevice::ID bufferId, uint32 siz
 
 void VulkanRenderDevice::destroyVertexBuffer(RenderDevice::ID bufferId) {
     const VkDevice &device = context.device;
-    VulkanVertexBuffer& buffer = mVertexBuffers.get(bufferId);
+    VulkanVertexBuffer &buffer = mVertexBuffers.get(bufferId);
 
     vkDestroyBuffer(device, buffer.vkBuffer, nullptr);
     vkFreeMemory(device, buffer.vkDeviceMemory, nullptr);
@@ -138,7 +138,7 @@ void VulkanRenderDevice::destroyVertexBuffer(RenderDevice::ID bufferId) {
 
 void VulkanRenderDevice::destroyIndexBuffer(RenderDevice::ID bufferId) {
     const VkDevice &device = context.device;
-    VulkanIndexBuffer& buffer = mIndexBuffers.get(bufferId);
+    VulkanIndexBuffer &buffer = mIndexBuffers.get(bufferId);
 
     vkDestroyBuffer(device, buffer.vkBuffer, nullptr);
     vkFreeMemory(device, buffer.vkDeviceMemory, nullptr);
@@ -162,32 +162,34 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
     texture.depth = textureDesc.depth;
     texture.mipmaps = textureDesc.mipmaps;
 
-    if (usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_SAMPLED_BIT)
-    {
-        if (usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT &&
-            usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT == 0) {
+    if (usageFlags & (uint32) VkImageUsageFlagBits::VK_IMAGE_USAGE_SAMPLED_BIT) {
+        if (usageFlags & (uint32) VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT &&
+            (usageFlags & (uint32) VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
 
             // if texture can be sampled in shader and it's a color attachment
 
             // TODO
 
-        } else if (usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT == 0 &&
-            usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+        } else if ((usageFlags & (uint32) VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0 &&
+                   usageFlags & (uint32) VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
 
             // if texture can be sampled in shader and it's a depth stencil attachment
 
             // TODO
 
-        } else if (usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT == 0 &&
-            usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT == 0) {
+        } else if ((usageFlags & (uint32) VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0 &&
+                   (usageFlags & (uint32) VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
 
             // if texture can be sampled in shader and it's not an attachment
 
+            texture.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
             // create texture image with mipmaps and allocate memory
             VulkanUtils::createTextureImage(context, textureDesc.data,
-                textureDesc.width, textureDesc.height, textureDesc.depth, textureDesc.mipmaps,
-                imageType, format, VK_IMAGE_TILING_OPTIMAL,
-                texture.image, texture.imageMemory, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                            textureDesc.width, textureDesc.height, textureDesc.depth,
+                                            textureDesc.mipmaps,
+                                            imageType, format, VK_IMAGE_TILING_OPTIMAL,
+                                            texture.image, texture.imageMemory, texture.layout);
 
             // create image view
             VkImageSubresourceRange subresourceRange;
@@ -197,9 +199,9 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
             subresourceRange.baseArrayLayer = 0;
             subresourceRange.layerCount = 1;
 
-            VulkanUtils::createImageView(context, 
-                texture.imageView, texture.image, 
-                viewType, format, subresourceRange);
+            VulkanUtils::createImageView(context,
+                                         texture.imageView, texture.image,
+                                         viewType, format, subresourceRange);
 
             return mTextureObjects.move(texture);
 
@@ -208,18 +210,21 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
             VulkanException("VulkanRenderDevice::Texture can't be color and depth stencil attachment at the same time");
         }
 
-    } else if (usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT &&
-        usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT == 0) {
+    } else if (usageFlags & (uint32) VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT &&
+               (usageFlags & (uint32) VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0) {
 
         // if depth stencil attahment
 
         VulkanUtils::createDepthStencilBuffer(context, textureDesc.width, textureDesc.height, textureDesc.depth,
-            imageType, format, viewType, texture.image, texture.imageMemory, texture.imageView);
+                                              imageType, format, viewType, texture.image, texture.imageMemory,
+                                              texture.imageView);
+
+        texture.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
         return mTextureObjects.move(texture);
 
-    } else if (usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT &&
-        usageFlags & (uint32)VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT == 0) {
+    } else if (usageFlags & (uint32) VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT &&
+               (usageFlags & (uint32) VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
 
         // if color attachment
 
@@ -227,6 +232,7 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
         texture.image = VK_NULL_HANDLE;
         texture.imageMemory = VK_NULL_HANDLE;
         texture.imageView = VK_NULL_HANDLE;
+        texture.layout = VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         return mTextureObjects.move(texture);
     } else {
@@ -281,7 +287,7 @@ void VulkanRenderDevice::destroySampler(RenderDevice::ID samplerId) {
 
 RenderDevice::ID VulkanRenderDevice::getSurface(const std::string &surfaceName) {
     for (auto i = mSurfaces.begin(); i != mSurfaces.end(); ++i) {
-        auto& window = *i;
+        auto &window = *i;
         if (window.name == surfaceName) {
             return i.getID();
         }
@@ -290,13 +296,14 @@ RenderDevice::ID VulkanRenderDevice::getSurface(const std::string &surfaceName) 
 }
 
 void VulkanRenderDevice::getSurfaceSize(RenderDevice::ID surface, uint32 &width, uint32 &height) {
-    auto& window = mSurfaces.get(surface);
+    auto &window = mSurfaces.get(surface);
 
     width = window.width;
     height = window.height;
 }
 
-RenderDevice::ID VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::FramebufferAttachmentDesc> &attachments) {
+RenderDevice::ID
+VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::FramebufferAttachmentDesc> &attachments) {
     std::vector<VkAttachmentDescription> attachmentDescriptions(attachments.size());
     std::vector<VkAttachmentReference> attachmentReferences(attachments.size());
 
@@ -304,7 +311,7 @@ RenderDevice::ID VulkanRenderDevice::createFramebufferFormat(const std::vector<R
     VkAttachmentReference depthStencilAttachmentReference;
 
     for (uint32 i = 0; i < attachments.size(); i++) {
-        const RenderDevice::FramebufferAttachmentDesc& attachment = attachments[i];
+        const RenderDevice::FramebufferAttachmentDesc &attachment = attachments[i];
         VkImageLayout layout = VulkanDefinitions::imageLayout(attachment.type);
 
         VkAttachmentDescription description = {};
@@ -365,24 +372,21 @@ void VulkanRenderDevice::destroyFramebufferFormat(RenderDevice::ID framebufferFo
     mFrameBufferFormats.remove(framebufferFormat);
 }
 
-RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderDevice::ID>& attachmentIds,
-    RenderDevice::ID framebufferFormatId) {
+RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderDevice::ID> &attachmentIds,
+                                                       RenderDevice::ID framebufferFormatId) {
 
     // get framebuffer attachemnts info
     std::vector<VkImageView> framebufferAttchViews;
-    uint32 width, height;
+    uint32 width = 0, height = 0;
 
     for (size_t i = 0; i < attachmentIds.size(); i++) {
-        VulkanTextureObject& att = mTextureObjects.get(attachmentIds[i]);
+        VulkanTextureObject &att = mTextureObjects.get(attachmentIds[i]);
 
         // also, check widths and heights
-        if (i == 0)
-        {
+        if (i == 0) {
             width = att.width;
             height = att.height;
-        }
-        else if (width != att.width || height != att.height)
-        {
+        } else if (width != att.width || height != att.height) {
             throw VulkanException("Framebuffer attachments must be same size");
         }
 
@@ -391,7 +395,7 @@ RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderD
 
     VkFramebufferCreateInfo framebufferInfo;
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.pNext = NULL;
+    framebufferInfo.pNext = nullptr;
     framebufferInfo.flags = 0;
     framebufferInfo.width = width;
     framebufferInfo.height = height;
@@ -404,8 +408,7 @@ RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderD
     VkFramebuffer framebuffer;
     VkResult r = vkCreateFramebuffer(context.device, &framebufferInfo, nullptr, &framebuffer);
 
-    if (r != VK_SUCCESS)
-    {
+    if (r != VK_SUCCESS) {
         throw VulkanException("Can't create framebuffer");
     }
 
@@ -417,4 +420,225 @@ void VulkanRenderDevice::destroyFramebuffer(RenderDevice::ID framebufferId) {
     vkDestroyFramebuffer(context.device, framebuffer, nullptr);
 
     mFrameBuffers.remove(framebufferId);
+}
+
+RenderDevice::ID VulkanRenderDevice::createUniformSet(const UniformSetDesc &setDesc, ID uniformLayout) {
+    auto &layout = mUniformLayouts.get(uniformLayout);
+    auto setLayout = layout.setLayout;
+
+    const auto &uniformBuffers = setDesc.buffers;
+    const auto &uniformTextures = setDesc.textures;
+    uint32 buffersCount = uniformBuffers.size();
+    uint32 texturesCount = uniformTextures.size();
+
+    if (buffersCount != layout.buffersCount || texturesCount != layout.texturesCount) {
+        throw VulkanException("Incompatible uniform layout and uniform set descriptor");
+    }
+
+    VkResult result;
+    VkDescriptorSet descriptorSet;
+
+    if (layout.freeSets.empty()) {
+        auto &pool = VulkanUtils::getAvailableDescriptorPool(context, layout);
+
+        VkDescriptorSetAllocateInfo descSetAllocInfo = {};
+        descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        descSetAllocInfo.pNext = nullptr;
+        descSetAllocInfo.descriptorPool = pool.pool;
+        descSetAllocInfo.descriptorSetCount = 1;
+        descSetAllocInfo.pSetLayouts = &setLayout;
+
+        result = vkAllocateDescriptorSets(context.device, &descSetAllocInfo, &descriptorSet);
+
+        if (result != VK_SUCCESS) {
+            throw VulkanException("Can't allocate descriptor set from descriptor pool");
+        }
+
+        pool.allocatedSets += 1;
+        layout.usedDescriptorSets += 1;
+    } else {
+        descriptorSet = layout.freeSets.back();
+        layout.freeSets.pop_back();
+        layout.usedDescriptorSets += 1;
+    }
+
+    std::vector<VkWriteDescriptorSet> writeDescSets;
+    writeDescSets.reserve(buffersCount + texturesCount);
+
+    std::vector<VkDescriptorBufferInfo> buffersInfo;
+    buffersInfo.reserve(buffersCount);
+
+    std::vector<VkDescriptorImageInfo> imagesInfo;
+    imagesInfo.reserve(texturesCount);
+
+    for (auto &buffer: uniformBuffers) {
+        VkDescriptorBufferInfo bufferInfo;
+        bufferInfo.buffer = mUniformBuffers.get(buffer.buffer).buffer;
+        bufferInfo.offset = buffer.offset;
+        bufferInfo.range = buffer.range;
+
+        buffersInfo.push_back(bufferInfo);
+
+        VkWriteDescriptorSet writeDescriptor;
+        writeDescriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writeDescriptor.pNext = nullptr;
+        writeDescriptor.dstSet = descriptorSet;
+        writeDescriptor.dstArrayElement = 0;
+        writeDescriptor.dstBinding = buffer.binding;
+        writeDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        writeDescriptor.descriptorCount = 1;
+        writeDescriptor.pBufferInfo = &buffersInfo.back();
+
+        writeDescSets.push_back(writeDescriptor);
+    }
+
+    for (auto &texture: uniformTextures) {
+        const auto &textureObject = mTextureObjects.get(texture.texture);
+
+        VkDescriptorImageInfo imageInfo;
+        imageInfo.sampler = mSamplers.get(texture.sampler);
+        imageInfo.imageView = textureObject.imageView;
+        imageInfo.imageLayout = textureObject.layout;
+
+        imagesInfo.push_back(imageInfo);
+
+        VkWriteDescriptorSet writeDescriptor;
+        writeDescriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writeDescriptor.pNext = nullptr;
+        writeDescriptor.dstSet = descriptorSet;
+        writeDescriptor.dstArrayElement = 0;
+        writeDescriptor.dstBinding = texture.binding;
+        writeDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        writeDescriptor.descriptorCount = 1;
+        writeDescriptor.pImageInfo = &imagesInfo.back();
+    }
+
+    vkUpdateDescriptorSets(context.device, (uint32) writeDescSets.size(), writeDescSets.data(), 0, nullptr);
+
+    VulkanUniformSet uniformSet = {};
+    uniformSet.uniformLayout = uniformLayout;
+    uniformSet.descriptorSet = descriptorSet;
+
+    return mUniformSets.move(uniformSet);
+}
+
+void VulkanRenderDevice::destroyUniformSet(RenderDevice::ID setId) {
+    auto& uniformSet = mUniformSets.get(setId);
+    auto& layout = mUniformLayouts.get(uniformSet.uniformLayout);
+
+    layout.usedDescriptorSets -= 1;
+    mUniformSets.remove(setId);
+}
+
+RenderDevice::ID VulkanRenderDevice::createUniformLayout(const RenderDevice::UniformLayoutDesc &layoutDesc) {
+    VkResult result;
+    VkDescriptorSetLayout descriptorSetLayout;
+
+    const auto &textures = layoutDesc.textures;
+    const auto &buffers = layoutDesc.buffers;
+    auto texturesCount = (uint32) layoutDesc.textures.size();
+    auto buffersCount = (uint32) layoutDesc.buffers.size();
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings;
+    bindings.reserve(texturesCount + buffersCount);
+
+    for (const auto &texture: textures) {
+        VkDescriptorSetLayoutBinding binding = {};
+        binding.binding = texture.binding;
+        binding.descriptorCount = 1;
+        binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        binding.stageFlags = VulkanDefinitions::shaderStageFlags(texture.flags);
+        binding.pImmutableSamplers = nullptr;
+
+        bindings.push_back(binding);
+    }
+
+    for (const auto &buffer: buffers) {
+        VkDescriptorSetLayoutBinding binding = {};
+        binding.binding = buffer.binding;
+        binding.descriptorCount = 1;
+        binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        binding.stageFlags = VulkanDefinitions::shaderStageFlags(buffer.flags);
+        binding.pImmutableSamplers = nullptr;
+
+        bindings.push_back(binding);
+    }
+
+    VkDescriptorSetLayoutCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    createInfo.bindingCount = (uint32) bindings.size();
+    createInfo.pBindings = bindings.data();
+
+    result = vkCreateDescriptorSetLayout(context.device, &createInfo, nullptr, &descriptorSetLayout);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to create descriptor set layout");
+    }
+
+    VulkanUniformLayout uniformLayout;
+    uniformLayout.buffersCount = buffersCount;
+    uniformLayout.texturesCount = texturesCount;
+    uniformLayout.setLayout = descriptorSetLayout;
+    uniformLayout.usedDescriptorSets = 0;
+
+    return mUniformLayouts.move(uniformLayout);
+}
+
+void VulkanRenderDevice::destroyUniformLayout(RenderDevice::ID layout) {
+    auto &uniformLayout = mUniformLayouts.get(layout);
+
+    // No uniform set must use this layout if we want to destroy it
+    if (uniformLayout.usedDescriptorSets != 0) {
+        throw VulkanException("An attempt to destroy in-use uniform layout");
+    }
+
+    for (auto &pool: uniformLayout.pools) {
+        vkDestroyDescriptorPool(context.device, pool.pool, nullptr);
+    }
+
+    vkDestroyDescriptorSetLayout(context.device, uniformLayout.setLayout, nullptr);
+    mUniformLayouts.remove(layout);
+}
+
+RenderDevice::ID VulkanRenderDevice::createUniformBuffer(BufferUsage usage, uint32 size, const void *data) {
+    VulkanUniformBuffer uniformBuffer = {};
+    uniformBuffer.usage = usage;
+    uniformBuffer.size = size;
+
+    if (usage == BufferUsage::Static) {
+        VulkanUtils::createBufferLocal(context, data, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                       uniformBuffer.buffer, uniformBuffer.memory);
+    } else if (usage == BufferUsage::Dynamic) {
+        VkMemoryPropertyFlags memoryPropertyFlags =
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        VulkanUtils::createBuffer(context, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                  memoryPropertyFlags, uniformBuffer.buffer, uniformBuffer.memory);
+    } else {
+        throw VulkanException("Undefined uniform buffer usage");
+    }
+
+    return mUniformBuffers.move(uniformBuffer);
+}
+
+void VulkanRenderDevice::updateUniformBuffer(RenderDevice::ID buffer, uint32 size, uint32 offset, const void *data) {
+    const VulkanUniformBuffer &uniformBuffer = mUniformBuffers.get(buffer);
+
+    if (uniformBuffer.usage != BufferUsage::Dynamic) {
+        throw VulkanException("Attempt to update static uniform buffer");
+    }
+
+    if (offset + size > uniformBuffer.size) {
+        throw VulkanException("Attempt to update out-of-buffer memory region for uniform buffer");
+    }
+
+    VulkanUtils::updateBufferMemory(context, uniformBuffer.memory, offset, size, data);
+}
+
+void VulkanRenderDevice::destroyUniformBuffer(RenderDevice::ID bufferId) {
+    VulkanUniformBuffer &uniformBuffer = mUniformBuffers.get(bufferId);
+
+    vkDestroyBuffer(context.device, uniformBuffer.buffer, nullptr);
+    vkFreeMemory(context.device, uniformBuffer.memory, nullptr);
+
+    mUniformBuffers.remove(bufferId);
 }

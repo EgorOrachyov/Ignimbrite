@@ -43,6 +43,7 @@ struct VulkanTextureObject {
     VkDeviceMemory imageMemory;
     VkImageView imageView;
     VkImageType type;
+    VkImageLayout layout;
     VkFormat format;
     uint32 width;
     uint32 height;
@@ -72,6 +73,33 @@ struct VulkanSurface {
 
 struct VulkanFrameBufferFormat {
     VkRenderPass renderPass;
+};
+
+struct VulkanUniformBuffer {
+    BufferUsage usage;
+    uint32 size;
+    VkBuffer buffer;
+    VkDeviceMemory memory;
+};
+
+struct VulkanDescriptorPool {
+    VkDescriptorPool pool;
+    uint32 allocatedSets;
+    uint32 maxSets;
+};
+
+struct VulkanUniformLayout {
+    VkDescriptorSetLayout setLayout;
+    uint32 texturesCount;
+    uint32 buffersCount;
+    uint32 usedDescriptorSets;
+    std::vector<VulkanDescriptorPool> pools;
+    std::vector<VkDescriptorSet> freeSets;
+};
+
+struct VulkanUniformSet {
+    RenderDevice::ID uniformLayout;
+    VkDescriptorSet descriptorSet;
 };
 
 #endif //RENDERINGLIBRARY_VULKANOBJECTS_H

@@ -66,8 +66,10 @@ public:
     virtual void destroyIndexBuffer(ID buffer) = 0;
 
     struct UniformTextureDesc {
+        /** Where this texture will be used */
+        ShaderStageFlags stageFlags;
         /** Binding of the texture in the shader */
-        uint32 binding = 0;
+        uint32 binding = -1;
         /** Actual texture with data */
         ID texture = INVALID;
         /** Specific sampler for data access in the shader */
@@ -76,7 +78,7 @@ public:
 
     struct UniformBufferDesc {
         /** Binding point in target shader */
-        uint32 binding = 0;
+        uint32 binding = -1;
         /** Offset from the buffer where data starts */
         uint32 offset = 0;
         /** Actual data range to map into shader uniform buffer */
@@ -85,9 +87,32 @@ public:
         ID buffer = INVALID;
     };
 
-    struct UniformLayoutDesc {
+    struct UniformSetDesc {
         std::vector<UniformTextureDesc> textures;
         std::vector<UniformBufferDesc> buffers;
+    };
+
+
+    virtual ID createUniformSet(const UniformSetDesc &setDesc, ID uniformLayout) = 0;
+    virtual void destroyUniformSet(ID set) = 0;
+
+    struct UniformLayoutBufferDesc {
+        /** Shader stages, which uses this uniform buffer */
+        ShaderStageFlags flags = 0x0;
+        /** Binding point in target shader */
+        uint32 binding = -1;
+    };
+
+    struct UniformLayoutTextureDesc {
+        /** Shader stages, which uses this uniform buffer */
+        ShaderStageFlags flags = 0x0;
+        /** Binding point in target shader */
+        uint32 binding = -1;
+    };
+
+    struct UniformLayoutDesc {
+        std::vector<UniformLayoutTextureDesc> textures;
+        std::vector<UniformLayoutBufferDesc> buffers;
     };
 
     virtual ID createUniformLayout(const UniformLayoutDesc& layoutDesc) = 0;
@@ -214,12 +239,12 @@ public:
         StencilOpState back;
     };
 
-    virtual ID createGraphicsPipeline(PrimitiveTopology topology,
-                                      ID vertexLayout,
-                                      ID framebufferFormat,
-                                      const PipelineRasterizationDesc& rasterizationDesc,
-                                      const PipelineBlendStateDesc& blendStateDesc,
-                                      const PipelineDepthStencilStateDesc& depthStencilStateDesc) = 0;
+    virtual ID
+    createGraphicsPipeline(PrimitiveTopology topology,
+                           ID uniformLayout, ID vertexLayout, ID framebufferFormat,
+                           const PipelineRasterizationDesc &rasterizationDesc,
+                           const PipelineBlendStateDesc &blendStateDesc,
+                           const PipelineDepthStencilStateDesc &depthStencilStateDesc) = 0;
     virtual void destroyGraphicsPipeline(ID pipeline) = 0;
 
     struct Color {
@@ -255,7 +280,7 @@ public:
                              const Region& drawArea) = 0;
 
     virtual void drawListBindPipeline(ID drawList, ID graphicsPipeline) = 0;
-    virtual void drawListBindUniformLayout(ID drawList, ID uniformLayout) = 0;
+    virtual void drawListBindUniformSet(ID drawList, ID uniformLayout) = 0;
     virtual void drawListBindVertexBuffer(ID drawList, ID vertexBuffer, uint32 binding, uint32 offset) = 0;
     virtual void drawListBindIndexBuffer(ID drawList, ID indexBuffer, IndicesType indicesType, uint32 offset) = 0;
 
