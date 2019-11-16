@@ -527,6 +527,8 @@ void VulkanRenderDevice::destroyUniformSet(RenderDevice::ID setId) {
     auto& layout = mUniformLayouts.get(uniformSet.uniformLayout);
 
     layout.usedDescriptorSets -= 1;
+    layout.freeSets.push_back(uniformSet.descriptorSet);
+    
     mUniformSets.remove(setId);
 }
 
