@@ -59,13 +59,8 @@ public:
                               ID program, ID vertexLayout, ID uniformLayout, ID framebufferFormat,
                               const PipelineRasterizationDesc &rasterizationDesc,
                               const PipelineBlendStateDesc &blendStateDesc,
-                              const PipelineDepthStencilStateDesc &depthStencilStateDesc) override {
-        return RenderDevice::ID();
-    }
-
-    void destroyGraphicsPipeline(ID pipeline) override {
-
-    }
+                              const PipelineDepthStencilStateDesc &depthStencilStateDesc) override;
+    void destroyGraphicsPipeline(ID pipeline) override;
 
     ID drawListBegin(ID framebuffer, std::vector<Color> clearColors, const Region &drawArea) override {
         return RenderDevice::ID();
@@ -138,6 +133,7 @@ private:
     Buffer<VulkanUniformLayout> mUniformLayouts;
     Buffer<VulkanUniformSet> mUniformSets;
     Buffer<VulkanShaderProgram> mShaderPrograms;
+    Buffer<VulkanGraphicsPipeline> mGraphicsPipelines;
 
 };
 

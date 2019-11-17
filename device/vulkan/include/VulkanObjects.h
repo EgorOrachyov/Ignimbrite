@@ -53,11 +53,11 @@ struct VulkanTextureObject {
 };
 
 struct VulkanSurface {
+    std::string name;
     uint32 width;
     uint32 height;
     uint32 widthFramebuffer;
     uint32 heightFramebuffer;
-    std::string name;
     bool tripleBuffering = false;
     uint32 presentsFamily;
     VkQueue presentQueue;
@@ -68,7 +68,8 @@ struct VulkanSurface {
     VkSwapchainKHR swapChain;
     VkExtent2D swapChainExtent;
     std::vector<VkImage> swapChainImages;
-    std::vector<VkImageView > swapChainImageViews;
+    std::vector<VkImageView> swapChainImageViews;
+    std::vector<RenderDevice::ID> graphicsPipelines;
 };
 
 struct VulkanFrameBufferFormat {
@@ -111,6 +112,16 @@ struct VulkanShader {
 
 struct VulkanShaderProgram {
     std::vector<VulkanShader> shaders;
+};
+
+struct VulkanGraphicsPipeline {
+    bool withSurfaceOnly;
+    VkPipeline pipeline;
+    VkPipelineLayout pipelineLayout;
+    RenderDevice::ID program;
+    RenderDevice::ID uniformLayout;
+    RenderDevice::ID vertexLayout;
+    RenderDevice::ID framebufferFormat;
 };
 
 #endif //RENDERINGLIBRARY_VULKANOBJECTS_H

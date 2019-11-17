@@ -160,9 +160,55 @@ public:
     static VkShaderStageFlagBits shaderStageBit(ShaderType type) {
         switch (type) {
             case ShaderType::Vertex:
-                return VK_SHADER_STAGE_VERTEX_BIT;
+                return VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
             case ShaderType::Fragment:
-                return VK_SHADER_STAGE_FRAGMENT_BIT;
+                return VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
+            default:
+                throw InvalidEnum();
+        }
+    }
+
+    static VkPrimitiveTopology primitiveTopology(PrimitiveTopology topology) {
+        switch (topology) {
+            case PrimitiveTopology::TriangleList:
+                return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+            default:
+                throw InvalidEnum();
+        }
+    }
+
+    static VkPolygonMode polygonMode(PolygonMode mode) {
+        switch (mode) {
+            case PolygonMode::Fill:
+                return VkPolygonMode::VK_POLYGON_MODE_FILL;
+            case PolygonMode::Line:
+                return VkPolygonMode::VK_POLYGON_MODE_LINE;
+            case PolygonMode::Point:
+                return VkPolygonMode::VK_POLYGON_MODE_POINT;
+            default:
+                throw InvalidEnum();
+        }
+    }
+
+    static VkCullModeFlagBits cullModeFlagBits(PolygonCullMode mode) {
+        switch (mode) {
+            case PolygonCullMode::Front:
+                return VkCullModeFlagBits::VK_CULL_MODE_FRONT_BIT;
+            case PolygonCullMode::Back:
+                return VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT;
+            case PolygonCullMode::Disabled:
+                return VkCullModeFlagBits::VK_CULL_MODE_NONE;
+            default:
+                throw InvalidEnum();
+        }
+    }
+
+    static VkFrontFace frontFace(PolygonFrontFace face) {
+        switch (face) {
+            case PolygonFrontFace::FrontClockwise:
+                return VkFrontFace::VK_FRONT_FACE_CLOCKWISE;
+            case PolygonFrontFace::FrontCounterClockwise:
+                return VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE;
             default:
                 throw InvalidEnum();
         }

@@ -703,3 +703,125 @@ void VulkanRenderDevice::destroyShaderProgram(RenderDevice::ID program) {
 
     mShaderPrograms.remove(program);
 }
+
+RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(PrimitiveTopology topology, RenderDevice::ID program,
+                                                            RenderDevice::ID vertexLayout,
+                                                            RenderDevice::ID uniformLayout,
+                                                            RenderDevice::ID framebufferFormat,
+                                                            const RenderDevice::PipelineRasterizationDesc &rasterizationDesc,
+                                                            const RenderDevice::PipelineBlendStateDesc &blendStateDesc,
+                                                            const RenderDevice::PipelineDepthStencilStateDesc &depthStencilStateDesc) {
+    const auto& vkProgram = mShaderPrograms.get(program);
+    const auto& vkUniformLayout = mUniformLayouts.get(uniformLayout);
+    const auto& vkVertexLayout = mVertexLayouts.get(vertexLayout);
+    const auto& vkFramebufferFormat = mFrameBufferFormats.get(framebufferFormat);
+    auto primitiveTopology = VulkanDefinitions::primitiveTopology(topology);
+
+    VkResult result;
+    VkPipeline pipeline;
+
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+    shaderStages.reserve(vkProgram.shaders.size());
+
+    for (const auto& shader: vkProgram.shaders) {
+        VkPipelineShaderStageCreateInfo createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        createInfo.stage = shader.shaderStage;
+        createInfo.module = shader.module;
+        createInfo.pName = "main";
+        createInfo.pSpecializationInfo = nullptr;
+
+        shaderStages.push_back(createInfo);
+    }
+
+    const auto& bindings = vkVertexLayout.vkBindings;
+    const auto& attributes = vkVertexLayout.vkAttributes;
+
+    VkPipelineVertexInputStateCreateInfo vertexInput = {};
+    vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInput.vertexBindingDescriptionCount = (uint32) bindings.size();
+    vertexInput.pVertexBindingDescriptions = bindings.data();
+    vertexInput.vertexAttributeDescriptionCount = (uint32) attributes.size();
+    vertexInput.pVertexAttributeDescriptions = attributes.data();
+
+    VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
+    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssembly.topology = primitiveTopology;
+    inputAssembly.primitiveRestartEnable = VK_FALSE;
+
+    VkViewport viewport = {};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = 640;
+    viewport.height = 480;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    VkRect2D scissor = {};
+    scissor.offset = {0, 0};
+    scissor.extent = {640, 480};
+
+    VkPipelineViewportStateCreateInfo viewportState = {};
+    viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportState.viewportCount = 1;
+    viewportState.pViewports = &viewport;
+    viewportState.scissorCount = 1;
+    viewportState.pScissors = &scissor;
+
+    VkPipelineRasterizationStateCreateInfo rasterizer = {};
+    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizer.depthClampEnable = VK_FALSE;
+    rasterizer.rasterizerDiscardEnable = VK_FALSE;
+    rasterizer.polygonMode = VulkanDefinitions::polygonMode(rasterizationDesc.mode);
+    rasterizer.lineWidth = rasterizationDesc.lineWidth;
+    rasterizer.cullMode = VulkanDefinitions::cullModeFlagBits(rasterizationDesc.cullMode);
+    rasterizer.frontFace = VulkanDefinitions::frontFace(rasterizationDesc.frontFace);
+    rasterizer.depthBiasEnable = VK_FALSE;
+    rasterizer.depthBiasConstantFactor = 0.0f; // Optional
+    rasterizer.depthBiasClamp = 0.0f; // Optional
+    rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
+
+    VkDynamicState states[] = {
+            VkDynamicState::VK_DYNAMIC_STATE_VIEWPORT,
+            VkDynamicState::VK_DYNAMIC_STATE_SCISSOR,
+            VkDynamicState::VK_DYNAMIC_STATE_LINE_WIDTH
+    };
+
+    VkPipelineDynamicStateCreateInfo dynamicState = {};
+    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicState.pDynamicStates = states;
+    dynamicState.dynamicStateCount = sizeof(states) / sizeof(VkDynamicState);
+
+    VkGraphicsPipelineCreateInfo pipelineInfo = {};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipelineInfo.stageCount = (uint32) shaderStages.size();
+    pipelineInfo.pStages = shaderStages.data();
+    pipelineInfo.pVertexInputState = &vertexInput;
+    pipelineInfo.pInputAssemblyState = &inputAssembly;
+    pipelineInfo.pViewportState = &viewportState;
+    pipelineInfo.pRasterizationState = &rasterizer;
+    pipelineInfo.pDynamicState = &dynamicState;
+    pipelineInfo.layout = nullptr;
+    pipelineInfo.renderPass = vkFramebufferFormat.renderPass;
+    pipelineInfo.subpass = 0;
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
+    pipelineInfo.basePipelineIndex = -1; // Optional
+
+    result = vkCreateGraphicsPipelines(context.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to create graphics pipeline");
+    }
+
+    VulkanGraphicsPipeline graphicsPipeline;
+    graphicsPipeline.withSurfaceOnly = false;
+    graphicsPipeline.vertexLayout = vertexLayout;
+    graphicsPipeline.uniformLayout = uniformLayout;
+    graphicsPipeline.framebufferFormat = framebufferFormat;
+    graphicsPipeline.program = program;
+    graphicsPipeline.pipeline = pipeline;
+    graphicsPipeline.pipelineLayout = nullptr;
+
+    return mGraphicsPipelines.move(graphicsPipeline);
+}
+
