@@ -134,6 +134,15 @@ public:
             VulkanUniformLayout &layout
     );
 
+    static VkCommandPool createCommandPool(
+            VulkanContext &context, uint32_t queueFamilyIndex);
+
+    static VkCommandBuffer beginTempCommandBuffer(
+            VulkanContext &context, VkCommandPool commandPool);
+
+    static void endTempCommandBuffer(
+            VulkanContext &context, VkCommandBuffer commandBuffer,
+            VkQueue queue, VkCommandPool commandPool);
 };
 
 #endif //RENDERINGLIBRARY_VULKANUTILS_H
