@@ -665,6 +665,11 @@ RenderDevice::ID VulkanRenderDevice::createShaderProgram(const std::vector<Rende
     program.shaders.reserve(shaders.size());
 
     for (const auto& desc: shaders) {
+
+        if (desc.language != ShaderLanguage::SPIRV) {
+            throw VulkanException("Compiling shaders from not SPIR-V languages is not supported");
+        }
+
         VkResult result;
         VkShaderModule module;
 
