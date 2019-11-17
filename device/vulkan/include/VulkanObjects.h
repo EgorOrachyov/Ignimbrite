@@ -73,6 +73,8 @@ struct VulkanSurface {
 
 struct VulkanFrameBufferFormat {
     VkRenderPass renderPass;
+    uint32 numOfAttachments;
+    bool useDepthStencil;
 };
 
 struct VulkanUniformBuffer {

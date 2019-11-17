@@ -304,15 +304,17 @@ void VulkanRenderDevice::getSurfaceSize(RenderDevice::ID surface, uint32 &width,
 
 RenderDevice::ID
 VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::FramebufferAttachmentDesc> &attachments) {
-    std::vector<VkAttachmentDescription> attachmentDescriptions(attachments.size());
-    std::vector<VkAttachmentReference> attachmentReferences(attachments.size());
+    std::vector<VkAttachmentDescription> attachmentDescriptions;
+    attachmentDescriptions.reserve(attachments.size());
+    std::vector<VkAttachmentReference> attachmentReferences;
+    attachmentReferences.reserve(attachments.size());
 
     bool useDepthStencil = false;
     VkAttachmentReference depthStencilAttachmentReference;
 
     for (uint32 i = 0; i < attachments.size(); i++) {
-        const RenderDevice::FramebufferAttachmentDesc &attachment = attachments[i];
-        VkImageLayout layout = VulkanDefinitions::imageLayout(attachment.type);
+        const auto &attachment = attachments[i];
+        auto layout = VulkanDefinitions::imageLayout(attachment.type);
 
         VkAttachmentDescription description = {};
         description.format = VulkanDefinitions::dataFormat(attachment.format);
@@ -330,7 +332,7 @@ VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::Fram
 
         if (attachment.type == AttachmentType::DepthStencil) {
             if (useDepthStencil) {
-                throw VulkanException("An attempt to use more then 1 depth stencil attachment");
+                throw VulkanException("An attempt to use more than 1 depth stencil attachment");
             } else {
                 useDepthStencil = true;
                 depthStencilAttachmentReference = reference;
@@ -346,7 +348,7 @@ VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::Fram
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = (uint32) attachmentReferences.size();
     subpass.pColorAttachments = attachmentReferences.data();
-    if (useDepthStencil) subpass.pDepthStencilAttachment = &depthStencilAttachmentReference;
+    subpass.pDepthStencilAttachment = useDepthStencil ? &depthStencilAttachmentReference : nullptr;
 
     VkRenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -355,42 +357,56 @@ VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::Fram
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
 
+    VkResult result;
     VkRenderPass renderPass;
 
-    if (vkCreateRenderPass(context.device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+    result = vkCreateRenderPass(context.device, &renderPassInfo, nullptr, &renderPass);
+
+    if (result != VK_SUCCESS) {
         throw VulkanException("Failed to create render pass");
     }
 
     VulkanFrameBufferFormat format = {};
     format.renderPass = renderPass;
+    format.useDepthStencil = useDepthStencil;
+    format.numOfAttachments = (uint32) attachmentDescriptions.size();
 
     return mFrameBufferFormats.move(format);
 }
 
 void VulkanRenderDevice::destroyFramebufferFormat(RenderDevice::ID framebufferFormat) {
-    vkDestroyRenderPass(context.device, mFrameBufferFormats.get(framebufferFormat).renderPass, nullptr);
+    auto& format = mFrameBufferFormats.get(framebufferFormat);
+    vkDestroyRenderPass(context.device, format.renderPass, nullptr);
+
     mFrameBufferFormats.remove(framebufferFormat);
 }
 
 RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderDevice::ID> &attachmentIds,
                                                        RenderDevice::ID framebufferFormatId) {
+    if (attachmentIds.empty()) {
+        throw VulkanException("An attempt to create empty frame buffer");
+    }
 
-    // get framebuffer attachments info
-    std::vector<VkImageView> framebufferAttchViews;
-    uint32 width = 0, height = 0;
+    auto& format = mFrameBufferFormats.get(framebufferFormatId);
 
-    for (size_t i = 0; i < attachmentIds.size(); i++) {
-        VulkanTextureObject &att = mTextureObjects.get(attachmentIds[i]);
+    if (attachmentIds.size() != format.numOfAttachments) {
+        throw VulkanException("Attachments count is incompatible with framebuffer format");
+    }
 
-        // also, check widths and heights
-        if (i == 0) {
-            width = att.width;
-            height = att.height;
-        } else if (width != att.width || height != att.height) {
-            throw VulkanException("Framebuffer attachments must be same size");
+    std::vector<VkImageView> attachments;
+    attachments.reserve(attachmentIds.size());
+
+    auto& texture = mTextureObjects.get(attachmentIds[0]);
+    uint32 width = texture.width, height = texture.height;
+
+    for (auto& id: attachmentIds) {
+        auto &texture = mTextureObjects.get(id);
+
+        if (texture.width != width || texture.height != height) {
+            throw VulkanException("Framebuffer attachments must be of the same size");
         }
 
-        framebufferAttchViews.push_back(att.imageView);
+        attachments.push_back(texture.imageView);
     }
 
     VkFramebufferCreateInfo framebufferInfo;
@@ -400,10 +416,9 @@ RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderD
     framebufferInfo.width = width;
     framebufferInfo.height = height;
     framebufferInfo.layers = 1;
-    framebufferInfo.attachmentCount = framebufferAttchViews.size();
-    framebufferInfo.pAttachments = framebufferAttchViews.data();
-    // get render pass from framebuffer format
-    framebufferInfo.renderPass = mFrameBufferFormats.get(framebufferFormatId).renderPass;
+    framebufferInfo.attachmentCount = (uint32) attachments.size();
+    framebufferInfo.pAttachments = attachments.data();
+    framebufferInfo.renderPass = format.renderPass;
 
     VkFramebuffer framebuffer;
     VkResult r = vkCreateFramebuffer(context.device, &framebufferInfo, nullptr, &framebuffer);
@@ -412,7 +427,7 @@ RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderD
         throw VulkanException("Can't create framebuffer");
     }
 
-    return mFrameBuffers.add(framebuffer);
+    return mFrameBuffers.move(framebuffer);
 }
 
 void VulkanRenderDevice::destroyFramebuffer(RenderDevice::ID framebufferId) {
