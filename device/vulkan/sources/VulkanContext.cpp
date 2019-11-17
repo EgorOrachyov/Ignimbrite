@@ -680,3 +680,13 @@ void VulkanContext::recreateSwapChain(VulkanSurface &surface) {
 void VulkanContext::deviceWaitIdle() {
     vkDeviceWaitIdle(device);
 }
+
+void VulkanContext::createCommandPools() {
+    graphicsCommandPool = VulkanUtils::createCommandPool(*this, familyIndices.graphicsFamily.get());
+    transferCommandPool = VulkanUtils::createCommandPool(*this, familyIndices.transferFamily.get());
+}
+
+void VulkanContext::destroyCommandPools() {
+    vkDestroyCommandPool(device, graphicsCommandPool, nullptr);
+    vkDestroyCommandPool(device, transferCommandPool, nullptr);
+}

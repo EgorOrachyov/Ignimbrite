@@ -60,6 +60,9 @@ struct VulkanContext {
     void destroyFramebuffers(VulkanSurface& surface);
     void recreateSwapChain(VulkanSurface& surface);
 
+    void createCommandPools();
+    void destroyCommandPools();
+
     void deviceWaitIdle();
 
     static const uint32 DESCRIPTOR_POOL_MAX_SET_COUNT = 8;
@@ -85,8 +88,9 @@ struct VulkanContext {
     VkPhysicalDeviceProperties deviceProperties = {};
     VkPhysicalDeviceFeatures deviceFeatures = {};
     VkPhysicalDeviceMemoryProperties deviceMemoryProperties = {};
-    // TODO: init command pool
-    VkCommandPool commandPool = VK_NULL_HANDLE;
+
+    VkCommandPool graphicsCommandPool = VK_NULL_HANDLE;
+    VkCommandPool transferCommandPool = VK_NULL_HANDLE;
 
     std::vector<VulkanDescriptorPool> descriptorPools;
 };
