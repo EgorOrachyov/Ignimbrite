@@ -547,3 +547,7 @@ void VulkanContext::destroySwapChain(VulkanSurface& surface)
 
     vkDestroySwapchainKHR(device, surface.swapChain, nullptr);
 }
+
+void VulkanContext::deviceWaitIdle() {
+    vkDeviceWaitIdle(device);
+}

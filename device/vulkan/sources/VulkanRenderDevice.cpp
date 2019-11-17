@@ -396,8 +396,8 @@ RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderD
     std::vector<VkImageView> attachments;
     attachments.reserve(attachmentIds.size());
 
-    auto& texture = mTextureObjects.get(attachmentIds[0]);
-    uint32 width = texture.width, height = texture.height;
+    auto& base = mTextureObjects.get(attachmentIds[0]);
+    uint32 width = base.width, height = base.height;
 
     for (auto& id: attachmentIds) {
         auto &texture = mTextureObjects.get(id);

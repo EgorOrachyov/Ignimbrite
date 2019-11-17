@@ -55,6 +55,8 @@ struct VulkanContext {
     void createSwapChain(VulkanSurface& surface);
     void destroySwapChain(VulkanSurface& surface);
 
+    void deviceWaitIdle();
+
     static const uint32 DESCRIPTOR_POOL_MAX_SET_COUNT = 8;
     static const VkFormat PREFERRED_FORMAT = VkFormat::VK_FORMAT_B8G8R8A8_UNORM;
     static const VkColorSpaceKHR PREFERRED_COLOR_SPACE = VkColorSpaceKHR::VK_COLORSPACE_SRGB_NONLINEAR_KHR;

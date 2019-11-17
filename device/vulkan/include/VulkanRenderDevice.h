@@ -113,7 +113,7 @@ public:
 
     }
 
-    void swapBuffers() override {
+    void swapBuffers(ID surface) override {
 
     }
 

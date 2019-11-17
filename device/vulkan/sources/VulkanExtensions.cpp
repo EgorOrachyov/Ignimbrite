@@ -6,11 +6,10 @@
 #include <VulkanErrors.h>
 
 #ifdef WITH_GLFW
-VulkanExtensions::ID
-VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device, GLFWwindow *handle, uint32 width, uint32 height,
+VulkanExtensions::ID VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device, GLFWwindow *handle, uint32 width, uint32 height,
                                     uint32 widthFramebuffer, uint32 heightFramebuffer, const std::string &name) {
-    VkSurfaceKHR surface;
     VkResult result;
+    VkSurfaceKHR surface;
     VulkanContext &context = device.context;
 
     result = glfwCreateWindowSurface(context.instance, handle, nullptr, &surface);
@@ -33,7 +32,6 @@ VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device, GLFWwindow *hand
         throw VulkanException("Failed to get surface capabilities");
     }
 
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(context.physicalDevice, surface, &window.surfaceCapabilities);
     context.findPresentsFamily(window);
     context.createSwapChain(window);
 
@@ -45,7 +43,7 @@ void VulkanExtensions::destroySurface(VulkanRenderDevice &device, VulkanExtensio
     VulkanSurface &vulkanSurface = device.mSurfaces.get(surface);
     VulkanContext &context = device.context;
 
-    // todo: wait idle
+    context.deviceWaitIdle();
     context.destroySwapChain(vulkanSurface);
     device.mSurfaces.remove(surface);
     vkDestroySurfaceKHR(context.instance, vulkanSurface.surface, nullptr);

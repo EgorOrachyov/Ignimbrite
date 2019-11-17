@@ -302,14 +302,14 @@ public:
     virtual void getSurfaceSize(ID surface, uint32 &width, uint32 &height) = 0;
 
     /**
-     * @brief Swap buffers to present images for all windows
+     * @brief Swap buffers to present images for specified surface
      *
      * Render API primary uses double-buffering present mode.
      * This function allows to submit all the currently filled
-     * command buffers for rendering and wait, until
+     * command buffers for rendering in specified surface and wait, until
      * previous submit session is completed.
      */
-    virtual void swapBuffers() = 0;
+    virtual void swapBuffers(ID surface) = 0;
 
     /** @return Readable hardware API name */
     virtual const std::string& getDeviceName() const;
