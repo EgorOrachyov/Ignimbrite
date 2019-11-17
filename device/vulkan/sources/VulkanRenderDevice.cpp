@@ -375,7 +375,7 @@ void VulkanRenderDevice::destroyFramebufferFormat(RenderDevice::ID framebufferFo
 RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderDevice::ID> &attachmentIds,
                                                        RenderDevice::ID framebufferFormatId) {
 
-    // get framebuffer attachemnts info
+    // get framebuffer attachments info
     std::vector<VkImageView> framebufferAttchViews;
     uint32 width = 0, height = 0;
 
@@ -528,7 +528,7 @@ void VulkanRenderDevice::destroyUniformSet(RenderDevice::ID setId) {
 
     layout.usedDescriptorSets -= 1;
     layout.freeSets.push_back(uniformSet.descriptorSet);
-    
+
     mUniformSets.remove(setId);
 }
 
@@ -643,4 +643,43 @@ void VulkanRenderDevice::destroyUniformBuffer(RenderDevice::ID bufferId) {
     vkFreeMemory(context.device, uniformBuffer.memory, nullptr);
 
     mUniformBuffers.remove(bufferId);
+}
+
+RenderDevice::ID VulkanRenderDevice::createShaderProgram(const std::vector<RenderDevice::ShaderDataDesc> &shaders) {
+    VulkanShaderProgram program = {};
+    program.shaders.reserve(shaders.size());
+
+    for (const auto& desc: shaders) {
+        VkResult result;
+        VkShaderModule module;
+
+        VkShaderModuleCreateInfo createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        createInfo.pCode = (const uint32*) desc.source.data();
+        createInfo.codeSize = (uint32) desc.source.size();
+
+        result = vkCreateShaderModule(context.device, &createInfo, nullptr, &module);
+
+        if (result != VK_SUCCESS) {
+            throw VulkanException("Failed to create shader module");
+        }
+
+        VulkanShader shader= {};
+        shader.module = module;
+        shader.shaderStage = VulkanDefinitions::shaderStageBit(desc.type);
+
+        program.shaders.push_back(shader);
+    }
+
+    return mShaderPrograms.move(program);
+}
+
+void VulkanRenderDevice::destroyShaderProgram(RenderDevice::ID program) {
+    auto& vulkanProgram = mShaderPrograms.get(program);
+
+    for (auto& shader: vulkanProgram.shaders) {
+        vkDestroyShaderModule(context.device, shader.module, nullptr);
+    }
+
+    mShaderPrograms.remove(program);
 }

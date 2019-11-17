@@ -102,4 +102,13 @@ struct VulkanUniformSet {
     VkDescriptorSet descriptorSet;
 };
 
+struct VulkanShader {
+    VkShaderModule module;
+    VkShaderStageFlagBits shaderStage;
+};
+
+struct VulkanShaderProgram {
+    std::vector<VulkanShader> shaders;
+};
+
 #endif //RENDERINGLIBRARY_VULKANOBJECTS_H

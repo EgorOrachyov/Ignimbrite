@@ -52,15 +52,11 @@ public:
     void updateUniformBuffer(ID buffer, uint32 size, uint32 offset, const void *data) override;
     void destroyUniformBuffer(ID buffer) override;
 
-    ID createShaderProgram(const std::vector<ShaderDataDesc> &shaders) override {
-        return RenderDevice::ID();
-    }
+    ID createShaderProgram(const std::vector<ShaderDataDesc> &shaders) override;
+    void destroyShaderProgram(ID program) override;
 
-    void destroyShaderProgram(ID program) override {
-
-    }
-
-    ID createGraphicsPipeline(PrimitiveTopology topology, ID uniformLayout, ID vertexLayout, ID framebufferFormat,
+    ID createGraphicsPipeline(PrimitiveTopology topology,
+                              ID program, ID vertexLayout, ID uniformLayout, ID framebufferFormat,
                               const PipelineRasterizationDesc &rasterizationDesc,
                               const PipelineBlendStateDesc &blendStateDesc,
                               const PipelineDepthStencilStateDesc &depthStencilStateDesc) override {
@@ -141,6 +137,7 @@ private:
     Buffer<VulkanUniformBuffer> mUniformBuffers;
     Buffer<VulkanUniformLayout> mUniformLayouts;
     Buffer<VulkanUniformSet> mUniformSets;
+    Buffer<VulkanShaderProgram> mShaderPrograms;
 
 };
 

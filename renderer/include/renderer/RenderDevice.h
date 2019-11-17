@@ -239,12 +239,11 @@ public:
         StencilOpState back;
     };
 
-    virtual ID
-    createGraphicsPipeline(PrimitiveTopology topology,
-                           ID uniformLayout, ID vertexLayout, ID framebufferFormat,
-                           const PipelineRasterizationDesc &rasterizationDesc,
-                           const PipelineBlendStateDesc &blendStateDesc,
-                           const PipelineDepthStencilStateDesc &depthStencilStateDesc) = 0;
+    virtual ID createGraphicsPipeline(PrimitiveTopology topology,
+                                      ID program, ID vertexLayout, ID uniformLayout, ID framebufferFormat,
+                                      const PipelineRasterizationDesc &rasterizationDesc,
+                                      const PipelineBlendStateDesc &blendStateDesc,
+                                      const PipelineDepthStencilStateDesc &depthStencilStateDesc) = 0;
     virtual void destroyGraphicsPipeline(ID pipeline) = 0;
 
     struct Color {

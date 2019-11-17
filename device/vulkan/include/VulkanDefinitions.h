@@ -156,6 +156,18 @@ public:
 
         return result;
     }
+
+    static VkShaderStageFlagBits shaderStageBit(ShaderType type) {
+        switch (type) {
+            case ShaderType::Vertex:
+                return VK_SHADER_STAGE_VERTEX_BIT;
+            case ShaderType::Fragment:
+                return VK_SHADER_STAGE_FRAGMENT_BIT;
+            default:
+                throw InvalidEnum();
+        }
+    }
+
 };
 
 #endif //RENDERINGLIBRARY_VULKANDEFINITIONS_H
