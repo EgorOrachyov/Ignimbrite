@@ -547,6 +547,8 @@ RenderDevice::ID VulkanRenderDevice::createUniformSet(const UniformSetDesc &setD
         writeDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         writeDescriptor.descriptorCount = 1;
         writeDescriptor.pImageInfo = &imagesInfo.back();
+
+        writeDescSets.push_back(writeDescriptor);
     }
 
     vkUpdateDescriptorSets(context.device, (uint32) writeDescSets.size(), writeDescSets.data(), 0, nullptr);
