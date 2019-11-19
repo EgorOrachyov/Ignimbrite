@@ -88,7 +88,7 @@ VulkanUtils::createBufferLocal(VulkanContext &context, const void *data, VkDevic
                  outBuffer,
                  outBufferMemory);
 
-    copyBuffer(context, context.transferCommandPool, context.transferQueue, stagingBuffer, outBuffer, size);
+    copyBuffer(context, context.transferTempCommandPool, context.transferQueue, stagingBuffer, outBuffer, size);
 
     vkDestroyBuffer(context.device, stagingBuffer, nullptr);
     vkFreeMemory(context.device, stagingBufferMemory, nullptr);
@@ -215,7 +215,7 @@ void VulkanUtils::createImage(VulkanContext &context, uint32 width, uint32 heigh
 void
 VulkanUtils::copyBufferToImage(VulkanContext &context, VkBuffer buffer, VkImage image, uint32 width, uint32 height,
                                uint32 depth) {
-    VkCommandBuffer commandBuffer = beginTempCommandBuffer(context, context.transferCommandPool);
+    VkCommandBuffer commandBuffer = beginTempCommandBuffer(context, context.transferTempCommandPool);
 
     VkBufferImageCopy region = {};
     region.bufferOffset = 0;
@@ -231,12 +231,12 @@ VulkanUtils::copyBufferToImage(VulkanContext &context, VkBuffer buffer, VkImage 
 
     vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-    endTempCommandBuffer(context, commandBuffer, context.transferQueue, context.transferCommandPool);
+    endTempCommandBuffer(context, commandBuffer, context.transferQueue, context.transferTempCommandPool);
 }
 
 void VulkanUtils::transitionImageLayout(VulkanContext &context, VkImage image, VkImageLayout oldLayout,
                                         VkImageLayout newLayout, uint32 mipLevels) {
-    VkCommandBuffer commandBuffer = beginTempCommandBuffer(context, context.transferCommandPool);
+    VkCommandBuffer commandBuffer = beginTempCommandBuffer(context, context.transferTempCommandPool);
 
     VkImageMemoryBarrier barrier = {};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -279,7 +279,7 @@ void VulkanUtils::transitionImageLayout(VulkanContext &context, VkImage image, V
             commandBuffer, sourceStage, destinationStage,
             0, 0, nullptr, 0, nullptr, 1, &barrier);
 
-    endTempCommandBuffer(context, commandBuffer, context.transferQueue, context.transferCommandPool);
+    endTempCommandBuffer(context, commandBuffer, context.transferQueue, context.transferTempCommandPool);
 }
 
 void
@@ -308,7 +308,7 @@ void VulkanUtils::generateMipmaps(VulkanContext &context, VkImage image, VkForma
         throw VulkanException("Can't generate mipmaps as specified format doesn't support linear blitting");
     }
 
-    VkCommandBuffer commandBuffer = beginTempCommandBuffer(context, context.transferCommandPool);
+    VkCommandBuffer commandBuffer = beginTempCommandBuffer(context, context.transferTempCommandPool);
 
     VkImageMemoryBarrier barrier = {};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -394,7 +394,7 @@ void VulkanUtils::generateMipmaps(VulkanContext &context, VkImage image, VkForma
                          0, nullptr,
                          1, &barrier);
 
-    endTempCommandBuffer(context, commandBuffer, context.transferQueue, context.transferCommandPool);
+    endTempCommandBuffer(context, commandBuffer, context.transferQueue, context.transferTempCommandPool);
 }
 
 void VulkanUtils::getSurfaceProperties(VkPhysicalDevice physicalDevice, VkSurfaceKHR surfaceKHR,
@@ -488,7 +488,7 @@ VulkanUtils::getAvailableCompositeAlpha(const VkSurfaceCapabilitiesKHR &surfaceC
 void VulkanUtils::createDepthStencilBuffer(VulkanContext &context, uint32 width, uint32 height, uint32 depth,
                                            VkImageType imageType, VkFormat format, VkImageViewType viewType,
                                            VkImage &outImage, VkDeviceMemory &outImageMemory,
-                                           VkImageView &outImageView) {
+                                           VkImageView &outImageView, VkImageUsageFlags usageFlags) {
 
     // get properties of depth stencil format
     const VkFormatProperties &properties = getDeviceFormatProperties(context, format);
@@ -504,7 +504,7 @@ void VulkanUtils::createDepthStencilBuffer(VulkanContext &context, uint32 width,
     }
 
     createImage(context, width, height, depth, 1,
-                imageType, format, tiling, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                imageType, format, tiling, usageFlags,
             // depth stencil buffer is device local
             // TODO: make visible from cpu
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -710,8 +710,7 @@ VkCommandPool VulkanUtils::createCommandPool(VulkanContext &context, uint32_t qu
     info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     info.pNext = nullptr;
     info.queueFamilyIndex = queueFamilyIndex;
-    // assume, that all command pools will not be TRANSIENT
-    info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    info.flags = flags;
 
     VkCommandPool commandPool;
     VkResult r = vkCreateCommandPool(context.device, &info, nullptr, &commandPool);

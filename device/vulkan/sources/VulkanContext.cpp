@@ -682,11 +682,20 @@ void VulkanContext::deviceWaitIdle() {
 }
 
 void VulkanContext::createCommandPools() {
-    graphicsCommandPool = VulkanUtils::createCommandPool(*this, familyIndices.graphicsFamily.get());
-    transferCommandPool = VulkanUtils::createCommandPool(*this, familyIndices.transferFamily.get());
+    graphicsCommandPool = VulkanUtils::createCommandPool(*this,
+            VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, familyIndices.graphicsFamily.get());
+    transferCommandPool = VulkanUtils::createCommandPool(*this,
+            VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, familyIndices.transferFamily.get());
+
+    graphicsTempCommandPool = VulkanUtils::createCommandPool(*this,
+            VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, familyIndices.graphicsFamily.get());
+    transferTempCommandPool = VulkanUtils::createCommandPool(*this,
+            VK_COMMAND_POOL_CREATE_TRANSIENT_BIT, familyIndices.transferFamily.get());
 }
 
 void VulkanContext::destroyCommandPools() {
     vkDestroyCommandPool(device, graphicsCommandPool, nullptr);
     vkDestroyCommandPool(device, transferCommandPool, nullptr);
+    vkDestroyCommandPool(device, graphicsTempCommandPool, nullptr);
+    vkDestroyCommandPool(device, transferTempCommandPool, nullptr);
 }

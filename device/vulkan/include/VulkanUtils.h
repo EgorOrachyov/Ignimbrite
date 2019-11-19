@@ -106,7 +106,7 @@ public:
         uint32 width, uint32 height, uint32 depth,
         VkImageType imageType, VkFormat format, VkImageViewType viewType,
         VkImage& outImage, VkDeviceMemory& outImageMemory, 
-        VkImageView& outImageView
+        VkImageView& outImageView, VkImageUsageFlags usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
     );
 
     static void getSurfaceProperties(
@@ -187,7 +187,8 @@ public:
     );
 
     static VkCommandPool createCommandPool(
-            VulkanContext &context, uint32_t queueFamilyIndex);
+            VulkanContext &context,
+            VkCommandPoolCreateFlags flags, uint32_t queueFamilyIndex);
 
     static VkCommandBuffer beginTempCommandBuffer(
             VulkanContext &context, VkCommandPool commandPool);
