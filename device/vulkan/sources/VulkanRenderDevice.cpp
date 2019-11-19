@@ -303,8 +303,7 @@ void VulkanRenderDevice::getSurfaceSize(RenderDevice::ID surface, uint32 &width,
     height = window.height;
 }
 
-RenderDevice::ID
-VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::FramebufferAttachmentDesc> &attachments) {
+RenderDevice::ID VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::FramebufferAttachmentDesc> &attachments) {
     std::vector<VkAttachmentDescription> attachmentDescriptions;
     attachmentDescriptions.reserve(attachments.size());
 
@@ -431,7 +430,7 @@ RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderD
         attachments.push_back(texture.imageView);
     }
 
-    VkFramebufferCreateInfo framebufferInfo;
+    VkFramebufferCreateInfo framebufferInfo = {};
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     framebufferInfo.pNext = nullptr;
     framebufferInfo.flags = 0;
@@ -446,7 +445,7 @@ RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderD
     VkResult r = vkCreateFramebuffer(context.device, &framebufferInfo, nullptr, &framebuffer);
 
     if (r != VK_SUCCESS) {
-        throw VulkanException("Can't create framebuffer");
+        throw VulkanException("Filed to create framebuffer");
     }
 
     return mFrameBuffers.move(framebuffer);

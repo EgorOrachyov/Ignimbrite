@@ -52,6 +52,12 @@ struct VulkanTextureObject {
     VkImageUsageFlags usageFlags;
 };
 
+struct VulkanFrameBufferFormat {
+    VkRenderPass renderPass;
+    uint32 numOfAttachments;
+    bool useDepthStencil;
+};
+
 struct VulkanSurface {
     std::string name;
     uint32 width;
@@ -67,15 +73,11 @@ struct VulkanSurface {
     VkSurfaceFormatKHR surfaceFormat;
     VkSwapchainKHR swapChain;
     VkExtent2D swapChainExtent;
+    VulkanFrameBufferFormat framebufferFormat;
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
+    std::vector<VkFramebuffer> swapChainFramebuffers;
     std::vector<RenderDevice::ID> graphicsPipelines;
-};
-
-struct VulkanFrameBufferFormat {
-    VkRenderPass renderPass;
-    uint32 numOfAttachments;
-    bool useDepthStencil;
 };
 
 struct VulkanUniformBuffer {

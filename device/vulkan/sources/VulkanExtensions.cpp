@@ -34,6 +34,8 @@ VulkanExtensions::ID VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &dev
 
     context.findPresentsFamily(window);
     context.createSwapChain(window);
+    context.createFramebufferFormat(window);
+    context.createFramebuffers(window);
 
     return device.mSurfaces.move(window);
 }
@@ -44,7 +46,11 @@ void VulkanExtensions::destroySurface(VulkanRenderDevice &device, VulkanExtensio
     VulkanContext &context = device.context;
 
     context.deviceWaitIdle();
+    context.destroyFramebuffers(vulkanSurface);
+    context.destroyFramebufferFormat(vulkanSurface);
     context.destroySwapChain(vulkanSurface);
-    device.mSurfaces.remove(surface);
+
     vkDestroySurfaceKHR(context.instance, vulkanSurface.surface, nullptr);
+
+    device.mSurfaces.remove(surface);
 }

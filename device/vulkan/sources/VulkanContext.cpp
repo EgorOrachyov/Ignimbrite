@@ -540,12 +540,105 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
 
 void VulkanContext::destroySwapChain(VulkanSurface& surface)
 {
-    // destroy only image views, images will be destroyed with swapchain
+    // destroy only image views, images will be destroyed with swap chain
     for (auto view: surface.swapChainImageViews) {
         vkDestroyImageView(device, view, nullptr);
     }
 
     vkDestroySwapchainKHR(device, surface.swapChain, nullptr);
+}
+
+void VulkanContext::createFramebufferFormat(VulkanSurface &surface) {
+    VkAttachmentDescription description = {};
+    description.format = surface.surfaceFormat.format;
+    description.samples = VK_SAMPLE_COUNT_1_BIT;
+    description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    VkAttachmentReference reference = {};
+    reference.attachment = 0;
+    reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &reference;
+    subpass.pDepthStencilAttachment = nullptr;
+
+    VkRenderPassCreateInfo renderPassInfo = {};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &description;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
+
+    VkResult result;
+    VkRenderPass renderPass;
+
+    result = vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to create render pass for surface");
+    }
+
+    auto& format = surface.framebufferFormat;
+    format.renderPass = renderPass;
+    format.useDepthStencil = false;
+    format.numOfAttachments = 1;
+}
+
+void VulkanContext::destroyFramebufferFormat(VulkanSurface &surface) {
+    vkDestroyRenderPass(device, surface.framebufferFormat.renderPass, nullptr);
+}
+
+void VulkanContext::createFramebuffers(VulkanSurface &surface) {
+    VkResult result;
+    VkFramebuffer framebuffer;
+
+    auto& imageViews = surface.swapChainImageViews;
+    auto& framebuffers = surface.swapChainFramebuffers;
+    framebuffers.resize(imageViews.size());
+
+    for (uint32 i = 0; i < framebuffers.size(); i++) {
+        VkFramebufferCreateInfo framebufferInfo = {};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.pNext = nullptr;
+        framebufferInfo.flags = 0;
+        framebufferInfo.width = surface.swapChainExtent.width;
+        framebufferInfo.height = surface.swapChainExtent.height;
+        framebufferInfo.layers = 1;
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.pAttachments = &imageViews[i];
+        framebufferInfo.renderPass = surface.framebufferFormat.renderPass;
+
+        result = vkCreateFramebuffer(device, &framebufferInfo, nullptr, &framebuffer);
+
+        if (result != VK_SUCCESS) {
+            throw VulkanException("Filed to create framebuffer for surface");
+        }
+
+        framebuffers[i] = framebuffer;
+    }
+}
+
+void VulkanContext::destroyFramebuffers(VulkanSurface &surface) {
+    for (auto& framebuffer: surface.swapChainFramebuffers) {
+        vkDestroyFramebuffer(device, framebuffer, nullptr);
+    }
 }
 
 void VulkanContext::deviceWaitIdle() {
