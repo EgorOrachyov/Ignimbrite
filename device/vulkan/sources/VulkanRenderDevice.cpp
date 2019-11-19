@@ -7,6 +7,7 @@
 #include <VulkanUtils.h>
 #include <vulkan/vulkan.h>
 #include <exception>
+#include <array>
 
 VulkanRenderDevice::VulkanRenderDevice(uint32 extensionsCount, const char *const *extensions) {
     context.fillRequiredExt(extensionsCount, extensions);
@@ -306,6 +307,7 @@ RenderDevice::ID
 VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::FramebufferAttachmentDesc> &attachments) {
     std::vector<VkAttachmentDescription> attachmentDescriptions;
     attachmentDescriptions.reserve(attachments.size());
+
     std::vector<VkAttachmentReference> attachmentReferences;
     attachmentReferences.reserve(attachments.size());
 
@@ -324,7 +326,7 @@ VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::Fram
         description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        description.finalLayout = layout;
+        description.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // it is default layout for any texture (except present image)
 
         VkAttachmentReference reference = {};
         reference.attachment = i;
@@ -344,6 +346,24 @@ VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::Fram
         attachmentDescriptions.push_back(description);
     }
 
+    std::array<VkSubpassDependency, 2> dependencies({});
+
+    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[0].dstSubpass = 0;
+    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    dependencies[1].srcSubpass = 0;
+    dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = (uint32) attachmentReferences.size();
@@ -356,6 +376,8 @@ VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::Fram
     renderPassInfo.pAttachments = attachmentDescriptions.data();
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.dependencyCount = (uint32) dependencies.size();
+    renderPassInfo.pDependencies = dependencies.data();
 
     VkResult result;
     VkRenderPass renderPass;
