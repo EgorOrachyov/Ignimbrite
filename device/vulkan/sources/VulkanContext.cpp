@@ -263,16 +263,27 @@ void VulkanContext::findQueueFamilies(VkPhysicalDevice device, VulkanQueueFamily
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
+#ifdef MODE_DEBUG
+    printf("Available queue families: %u\n", queueFamilyCount);
+#endif
+
     for (uint32 i = 0; i < queueFamilies.size(); i++) {
+
         VkQueueFamilyProperties& p = queueFamilies[i];
 
         if (p.queueCount > 0 && (p.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
             indices.graphicsFamily.setValue(i);
+#ifdef MODE_DEBUG
+            printf("Found queue family [graphics: %u]\n", i);
+#endif
         }
 
         if (p.queueCount > 0 && (p.queueFlags & VK_QUEUE_TRANSFER_BIT)) {
             if (i != indices.graphicsFamily.get() || !indices.transferFamily.hasValue()) {
                 indices.transferFamily.setValue(i);
+#ifdef MODE_DEBUG
+                printf("Found queue family [transfer: %u]\n", i);
+#endif
             }
         }
 
@@ -318,6 +329,10 @@ void VulkanContext::findPresentsFamily(VulkanSurface &surface) {
             throw VulkanException("Failed to get present queue");
         }
     }
+
+#ifdef MODE_DEBUG
+    printf("Found queue family [present: %u]\n", presentsFamily);
+#endif
 }
 
 void VulkanContext::outDeviceInfoVerbose() {
@@ -450,15 +465,24 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
     swapChainCreateInfo.imageColorSpace = chosenSurfaceFormat.colorSpace;
     swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    std::array<uint32, 2> queueFamilyIndices = {
+    std::array<uint32, 3> queueFamilyIndices = {
             familyIndices.graphicsFamily.get(),
+            familyIndices.transferFamily.get(),
             surface.presentsFamily
     };
 
     // check queues, if they are from same queue families
-    if (surface.presentsFamily == familyIndices.graphicsFamily.get()) {
+    auto equals = true;
+    auto base = queueFamilyIndices[0];
+    for (auto i: queueFamilyIndices) {
+        if (i != base) {
+            equals = false;
+            break;
+        }
+    }
+
+    if (equals) {
         swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        // this parameters will be ignored as not concurrent sharing mode
         swapChainCreateInfo.queueFamilyIndexCount = 0;
         swapChainCreateInfo.pQueueFamilyIndices = NULL;
     } else {
@@ -639,6 +663,18 @@ void VulkanContext::destroyFramebuffers(VulkanSurface &surface) {
     for (auto& framebuffer: surface.swapChainFramebuffers) {
         vkDestroyFramebuffer(device, framebuffer, nullptr);
     }
+}
+
+void VulkanContext::recreateSwapChain(VulkanSurface &surface) {
+    deviceWaitIdle();
+
+    destroyFramebuffers(surface);
+    destroyFramebufferFormat(surface);
+    destroySwapChain(surface);
+
+    createSwapChain(surface);
+    createFramebufferFormat(surface);
+    createFramebuffers(surface);
 }
 
 void VulkanContext::deviceWaitIdle() {

@@ -67,17 +67,18 @@ struct VulkanSurface {
     bool tripleBuffering = false;
     uint32 presentsFamily;
     VkQueue presentQueue;
+    /// Surface created vie extension for specific WSI
     VkSurfaceKHR surface;
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
     VkPresentModeKHR presentMode;
     VkSurfaceFormatKHR surfaceFormat;
+    /// Associated with chain data also needed for screen rendering (managed automatically)
     VkSwapchainKHR swapChain;
     VkExtent2D swapChainExtent;
     VulkanFrameBufferFormat framebufferFormat;
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
     std::vector<VkFramebuffer> swapChainFramebuffers;
-    std::vector<RenderDevice::ID> graphicsPipelines;
 };
 
 struct VulkanUniformBuffer {

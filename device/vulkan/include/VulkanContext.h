@@ -58,6 +58,7 @@ struct VulkanContext {
     void destroyFramebufferFormat(VulkanSurface& surface);
     void createFramebuffers(VulkanSurface& surface);
     void destroyFramebuffers(VulkanSurface& surface);
+    void recreateSwapChain(VulkanSurface& surface);
 
     void deviceWaitIdle();
 
