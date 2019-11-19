@@ -200,9 +200,9 @@ enum class BlendOperation {
 enum class PrimitiveTopology {
     PointList,
     LineList,
-    LineStrips,
-    TriangleStrips,
-    TriangleFans,
+    LineStrip,
+    TriangleStrip,
+    TriangleFan,
     TriangleList
 };
 

@@ -736,10 +736,22 @@ RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(PrimitiveTopology to
     const auto& vkUniformLayout = mUniformLayouts.get(uniformLayout);
     const auto& vkVertexLayout = mVertexLayouts.get(vertexLayout);
     const auto& vkFramebufferFormat = mFrameBufferFormats.get(framebufferFormat);
-    auto primitiveTopology = VulkanDefinitions::primitiveTopology(topology);
+
+    auto framebufferColorAttachmentsCount = vkFramebufferFormat.useDepthStencil ? vkFramebufferFormat.numOfAttachments - 1 : vkFramebufferFormat.numOfAttachments;
+
+    if (blendStateDesc.attachments.size() != framebufferColorAttachmentsCount) {
+        throw VulkanException("Incompatible number of color and blend attachments for specified framebuffer format and blend state");
+    }
+
+    if (depthStencilStateDesc.depthTestEnable && !vkFramebufferFormat.useDepthStencil) {
+        throw VulkanException("Specified framebuffer format does not support depth/stencil buffer usage");
+    }
 
     VkResult result;
     VkPipeline pipeline;
+    VkPipelineLayout pipelineLayout;
+
+    VulkanUtils::createPipelineLayout(context, vkUniformLayout, pipelineLayout);
 
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
     shaderStages.reserve(vkProgram.shaders.size());
@@ -755,52 +767,19 @@ RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(PrimitiveTopology to
         shaderStages.push_back(createInfo);
     }
 
-    const auto& bindings = vkVertexLayout.vkBindings;
-    const auto& attributes = vkVertexLayout.vkAttributes;
-
     VkPipelineVertexInputStateCreateInfo vertexInput = {};
-    vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInput.vertexBindingDescriptionCount = (uint32) bindings.size();
-    vertexInput.pVertexBindingDescriptions = bindings.data();
-    vertexInput.vertexAttributeDescriptionCount = (uint32) attributes.size();
-    vertexInput.pVertexAttributeDescriptions = attributes.data();
+    VulkanUtils::createVertexInputState(vkVertexLayout, vertexInput);
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
-    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    inputAssembly.topology = primitiveTopology;
-    inputAssembly.primitiveRestartEnable = VK_FALSE;
+    VulkanUtils::createInputAssembly(topology, inputAssembly);
 
     VkViewport viewport = {};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = 640;
-    viewport.height = 480;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-
     VkRect2D scissor = {};
-    scissor.offset = {0, 0};
-    scissor.extent = {640, 480};
-
     VkPipelineViewportStateCreateInfo viewportState = {};
-    viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    viewportState.viewportCount = 1;
-    viewportState.pViewports = &viewport;
-    viewportState.scissorCount = 1;
-    viewportState.pScissors = &scissor;
+    VulkanUtils::createViewportState(viewport, scissor, viewportState);
 
     VkPipelineRasterizationStateCreateInfo rasterizer = {};
-    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rasterizer.depthClampEnable = VK_FALSE;
-    rasterizer.rasterizerDiscardEnable = VK_FALSE;
-    rasterizer.polygonMode = VulkanDefinitions::polygonMode(rasterizationDesc.mode);
-    rasterizer.lineWidth = rasterizationDesc.lineWidth;
-    rasterizer.cullMode = VulkanDefinitions::cullModeFlagBits(rasterizationDesc.cullMode);
-    rasterizer.frontFace = VulkanDefinitions::frontFace(rasterizationDesc.frontFace);
-    rasterizer.depthBiasEnable = VK_FALSE;
-    rasterizer.depthBiasConstantFactor = 0.0f; // Optional
-    rasterizer.depthBiasClamp = 0.0f; // Optional
-    rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
+    VulkanUtils::createRasterizationState(rasterizationDesc, rasterizer);
 
     VkDynamicState states[] = {
             VkDynamicState::VK_DYNAMIC_STATE_VIEWPORT,
@@ -813,6 +792,20 @@ RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(PrimitiveTopology to
     dynamicState.pDynamicStates = states;
     dynamicState.dynamicStateCount = sizeof(states) / sizeof(VkDynamicState);
 
+    VkPipelineMultisampleStateCreateInfo multisampleState = {};
+    VulkanUtils::createMultisampleState(multisampleState);
+
+    std::vector<VkPipelineColorBlendAttachmentState> attachments(blendStateDesc.attachments.size());
+    for (uint32 i = 0; i < attachments.size(); i++) {
+        VulkanUtils::createColorBlendAttachmentState(blendStateDesc.attachments[i], attachments[i]);
+    }
+
+    VkPipelineColorBlendStateCreateInfo colorBlending = {};
+    VulkanUtils::createColorBlendState(blendStateDesc, (uint32) attachments.size(), attachments.data(), colorBlending);
+
+    VkPipelineDepthStencilStateCreateInfo depthStencilState = {};
+    if (depthStencilStateDesc.depthTestEnable) VulkanUtils::createDepthStencilState(depthStencilStateDesc, depthStencilState);
+
     VkGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = (uint32) shaderStages.size();
@@ -821,8 +814,11 @@ RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(PrimitiveTopology to
     pipelineInfo.pInputAssemblyState = &inputAssembly;
     pipelineInfo.pViewportState = &viewportState;
     pipelineInfo.pRasterizationState = &rasterizer;
+    pipelineInfo.pMultisampleState = &multisampleState;
+    pipelineInfo.pColorBlendState = &colorBlending;
+    pipelineInfo.pDepthStencilState = depthStencilStateDesc.depthTestEnable ? &depthStencilState : nullptr;
     pipelineInfo.pDynamicState = &dynamicState;
-    pipelineInfo.layout = nullptr;
+    pipelineInfo.layout = pipelineLayout;
     pipelineInfo.renderPass = vkFramebufferFormat.renderPass;
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
@@ -841,8 +837,20 @@ RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(PrimitiveTopology to
     graphicsPipeline.framebufferFormat = framebufferFormat;
     graphicsPipeline.program = program;
     graphicsPipeline.pipeline = pipeline;
-    graphicsPipeline.pipelineLayout = nullptr;
+    graphicsPipeline.pipelineLayout = pipelineLayout;
 
     return mGraphicsPipelines.move(graphicsPipeline);
+}
+
+RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(RenderDevice::ID surface, PrimitiveTopology topology,
+                                                            RenderDevice::ID program, RenderDevice::ID vertexLayout,
+                                                            RenderDevice::ID uniformLayout,
+                                                            const RenderDevice::PipelineRasterizationDesc &rasterizationDesc,
+                                                            const RenderDevice::PipelineSurfaceBlendStateDesc &blendStateDesc) {
+    return RenderDevice::ID();
+}
+
+void VulkanRenderDevice::destroyGraphicsPipeline(RenderDevice::ID pipeline) {
+
 }
 

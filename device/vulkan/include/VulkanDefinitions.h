@@ -116,15 +116,6 @@ public:
         }
     }
 
-    static VkSampleCountFlagBits sampleCount(TextureSamples samples) {
-        switch (samples) {
-            case TextureSamples::Samples1:
-                return VkSampleCountFlagBits::VK_SAMPLE_COUNT_1_BIT;
-            default:
-                throw InvalidEnum();
-        }
-    }
-
     static VkImageUsageFlags imageUsageFlags(uint32 flags) {
         VkImageUsageFlags result = 0;
 
@@ -172,6 +163,16 @@ public:
         switch (topology) {
             case PrimitiveTopology::TriangleList:
                 return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+            case PrimitiveTopology::TriangleStrip:
+                return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+            case PrimitiveTopology::TriangleFan:
+                return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
+            case PrimitiveTopology::PointList:
+                return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+            case PrimitiveTopology::LineList:
+                return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+            case PrimitiveTopology::LineStrip:
+                return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
             default:
                 throw InvalidEnum();
         }
@@ -209,6 +210,130 @@ public:
                 return VkFrontFace::VK_FRONT_FACE_CLOCKWISE;
             case PolygonFrontFace::FrontCounterClockwise:
                 return VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE;
+            default:
+                throw InvalidEnum();
+        }
+    }
+
+    static VkColorComponentFlags colorComponentFlags(bool r, bool g, bool b, bool a) {
+        VkColorComponentFlags result = 0x0;
+
+        if (r) result |= VK_COLOR_COMPONENT_R_BIT;
+        if (g) result |= VK_COLOR_COMPONENT_G_BIT;
+        if (b) result |= VK_COLOR_COMPONENT_B_BIT;
+        if (a) result |= VK_COLOR_COMPONENT_A_BIT;
+
+        return result;
+    }
+
+    static VkBlendFactor blendFactor(BlendFactor factor) {
+        switch (factor) {
+            case BlendFactor::Zero:
+                return VkBlendFactor::VK_BLEND_FACTOR_ZERO;
+            case BlendFactor::One:
+                return VkBlendFactor::VK_BLEND_FACTOR_ONE;
+            default:
+                throw InvalidEnum();
+        }
+    }
+
+    static VkBlendOp blendOperation(BlendOperation operation) {
+        switch (operation) {
+            case BlendOperation::Add:
+                return VkBlendOp::VK_BLEND_OP_ADD;
+            case BlendOperation::Subtract:
+                return VkBlendOp::VK_BLEND_OP_SUBTRACT;
+            case BlendOperation::ReverseSubtract:
+                return VkBlendOp::VK_BLEND_OP_REVERSE_SUBTRACT;
+            case BlendOperation::Min:
+                return VkBlendOp::VK_BLEND_OP_MIN;
+            case BlendOperation::Max:
+                return VkBlendOp::VK_BLEND_OP_MAX;
+            default:
+                throw InvalidEnum();
+        }
+    }
+
+    static VkLogicOp logicOperation(LogicOperation operation) {
+        switch (operation) {
+            case LogicOperation::Clear:
+                return VkLogicOp::VK_LOGIC_OP_CLEAR;
+            case LogicOperation::And:
+                return VkLogicOp::VK_LOGIC_OP_AND;
+            case LogicOperation::AndReverse:
+                return VkLogicOp::VK_LOGIC_OP_AND_REVERSE;
+            case LogicOperation::Copy:
+                return VkLogicOp::VK_LOGIC_OP_COPY;
+            case LogicOperation::AndInverted:
+                return VkLogicOp::VK_LOGIC_OP_AND_INVERTED;
+            case LogicOperation::NoOp:
+                return VkLogicOp::VK_LOGIC_OP_NO_OP;
+            case LogicOperation::Xor:
+                return VkLogicOp::VK_LOGIC_OP_XOR;
+            case LogicOperation::Or:
+                return VkLogicOp::VK_LOGIC_OP_OR;
+            case LogicOperation::Nor:
+                return VkLogicOp::VK_LOGIC_OP_NOR;
+            case LogicOperation::Equivalent:
+                return VkLogicOp::VK_LOGIC_OP_EQUIVALENT;
+            case LogicOperation::Invert:
+                return VkLogicOp::VK_LOGIC_OP_AND_INVERTED;
+            case LogicOperation::OrReverse:
+                return VkLogicOp::VK_LOGIC_OP_OR_REVERSE;
+            case LogicOperation::CopyInverted:
+                return VkLogicOp::VK_LOGIC_OP_COPY_INVERTED;
+            case LogicOperation::OrInverted:
+                return VkLogicOp::VK_LOGIC_OP_OR_INVERTED;
+            case LogicOperation::Nand:
+                return VkLogicOp::VK_LOGIC_OP_NAND;
+            case LogicOperation::Set:
+                return VkLogicOp::VK_LOGIC_OP_SET;
+            default:
+                throw InvalidEnum();
+        }
+    }
+
+    static VkCompareOp compareOperation(CompareOperation operation) {
+        switch (operation) {
+            case CompareOperation::Never:
+                return VkCompareOp::VK_COMPARE_OP_NEVER;
+            case CompareOperation::Less:
+                return VkCompareOp::VK_COMPARE_OP_LESS;
+            case CompareOperation::Equal:
+                return VkCompareOp::VK_COMPARE_OP_EQUAL;
+            case CompareOperation::LessOrEqual:
+                return VkCompareOp::VK_COMPARE_OP_LESS_OR_EQUAL;
+            case CompareOperation::Greater:
+                return VkCompareOp::VK_COMPARE_OP_GREATER;
+            case CompareOperation::NotEqual:
+                return VkCompareOp::VK_COMPARE_OP_NOT_EQUAL;
+            case CompareOperation::GreaterOrEqual:
+                return VkCompareOp::VK_COMPARE_OP_GREATER_OR_EQUAL;
+            case CompareOperation::Always:
+                return VkCompareOp::VK_COMPARE_OP_ALWAYS;
+            default:
+                throw InvalidEnum();
+        }
+    }
+
+    static VkStencilOp stencilOperation(StencilOperation operation) {
+        switch (operation) {
+            case StencilOperation::Keep:
+                return VkStencilOp::VK_STENCIL_OP_KEEP;
+            case StencilOperation::Zero:
+                return VkStencilOp::VK_STENCIL_OP_ZERO;
+            case StencilOperation::Replace:
+                return VkStencilOp::VK_STENCIL_OP_REPLACE;
+            case StencilOperation::IncrementAndClamp:
+                return VkStencilOp::VK_STENCIL_OP_INCREMENT_AND_CLAMP;
+            case StencilOperation::DecrementAndClamp:
+                return VkStencilOp::VK_STENCIL_OP_DECREMENT_AND_CLAMP;
+            case StencilOperation::Invert:
+                return VkStencilOp::VK_STENCIL_OP_INVERT;
+            case StencilOperation::IncrementAndWrap:
+                return VkStencilOp::VK_STENCIL_OP_INCREMENT_AND_WRAP;
+            case StencilOperation::DecrementAndWrap:
+                return VkStencilOp::VK_STENCIL_OP_DECREMENT_AND_WRAP;
             default:
                 throw InvalidEnum();
         }

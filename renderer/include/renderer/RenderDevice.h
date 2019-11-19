@@ -11,17 +11,18 @@
 #include <vector>
 
 /**
- * @brief Rendering device interface.
- * Wrapper for third-party drawing API, such as Vulkan, OpenGL etc.
+ * @brief Rendering device interface
+ *
+ * Wrapper for third-party drawing API, such as Vulkan, OpenGL, DirecX.
  *
  * All the objects, created via this interface must be referenced via ID.
- * After usage you have to explicitly destroy each object.
+ * After usage you have to explicitly destroy each object in the correct (reverse) order.
  *
  * Some objects requires additional meta-data to be created. This structures
  * called <Some Name>Desc. Suffix 'Desc' used to mark that class of meta-structures.
  *
  * If you add your own object and meta-structures, please,
- * follow the above mentioned techniques.
+ * follow the above mentioned notation.
  */
 class RenderDevice {
 public:
@@ -219,11 +220,18 @@ public:
         std::vector<BlendAttachmentDesc> attachments;
     };
 
-    struct StencilOpState {
+    struct PipelineSurfaceBlendStateDesc {
+        bool logicOpEnable = false;
+        LogicOperation logicOp = LogicOperation::Copy;
+        float blendConstants[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        BlendAttachmentDesc attachment;
+    };
+
+    struct StencilOpStateDesc {
         StencilOperation failOp;
         StencilOperation passOp;
         StencilOperation depthFailOp;
-        StencilOperation compareOp;
+        CompareOperation compareOp;
         uint32 compareMask;
         uint32 writeMask;
         uint32 reference;
@@ -231,12 +239,13 @@ public:
 
     struct PipelineDepthStencilStateDesc {
         bool depthTestEnable;
+        bool depthWriteEnable;
         CompareOperation depthCompareOp;
         bool stencilTestEnable;
         /** processing rasterized fragments from points, lines and front-facing polygons */
-        StencilOpState front;
+        StencilOpStateDesc front;
         /** processing rasterized fragments from back-facing polygons */
-        StencilOpState back;
+        StencilOpStateDesc back;
     };
 
     virtual ID createGraphicsPipeline(PrimitiveTopology topology,
@@ -244,6 +253,40 @@ public:
                                       const PipelineRasterizationDesc &rasterizationDesc,
                                       const PipelineBlendStateDesc &blendStateDesc,
                                       const PipelineDepthStencilStateDesc &depthStencilStateDesc) = 0;
+
+    /**
+     * @brief Creates graphics pipeline
+     *
+     * Creates graphics pipeline for specified surface with
+     * predefined internal frame buffer format.
+     *
+     * Supports only single color attachment, therefore fragment shader must write result
+     * color value only to single out variable with location 0.
+     *
+     * Supports no depth or stencil buffering. If you need rendering with possible depth
+     * or stencil test, use offscreen rendering instead, and then present final image in the surface.
+     *
+     * @param surface ID of the target surface for rendering via this pipeline
+     * @param topology Rendered primitives topology
+     * @param program ID of shader program to be executed in this pipeline
+     * @param vertexLayout ID of vertex layout, which describes how vertices data will be passed into shader
+     * @param uniformLayout ID of uniform layout, which describes CPU -> shader communication format
+     * @param rasterizationDesc Primitives rasterization state descriptor
+     * @param blendStateDesc Blending descriptor for single surface color attachment
+     *
+     * @return ID of the created graphics pipeline
+     */
+    virtual ID createGraphicsPipeline(ID surface,
+                                      PrimitiveTopology topology,
+                                      ID program, ID vertexLayout, ID uniformLayout,
+                                      const PipelineRasterizationDesc &rasterizationDesc,
+                                      const PipelineSurfaceBlendStateDesc &blendStateDesc) = 0;
+
+    /**
+     * @brief Destroys graphics pipeline
+     * @error Does not allows to destroy object, if other objects depend on that or have some references to that
+     * @param pipeline ID of the pipeline to be destroyed
+     */
     virtual void destroyGraphicsPipeline(ID pipeline) = 0;
 
     struct Color {
@@ -289,9 +332,9 @@ public:
     virtual void drawListEnd(ID drawList) = 0;
 
     /**
-     * @brief Return ID of surface with specified name
+     * @brief Get surface id
      *
-     * Allows to get surface ID for specific window rendering.
+     * Allows to get surface ID via name for specific window rendering.
      * All the application windows are created by target window
      * manager (GLFW, QT)
      *
@@ -302,12 +345,15 @@ public:
     virtual void getSurfaceSize(ID surface, uint32 &width, uint32 &height) = 0;
 
     /**
-     * @brief Swap buffers to present images for specified surface
+     * @brief Swap buffers
      *
-     * Render API primary uses double-buffering present mode.
-     * This function allows to submit all the currently filled
-     * command buffers for rendering in specified surface and wait, until
-     * previous submit session is completed.
+     * Swap buffers for specified surface to present final image on the screen.
+     *
+     * Render API primary uses double-buffering present mode. This function allows to submit
+     * all the currently filled command buffers for rendering in specified surface
+     * and wait, until previous submit session is completed.
+     *
+     * @param surface ID of the surface to swap buffers to present final image
      */
     virtual void swapBuffers(ID surface) = 0;
 

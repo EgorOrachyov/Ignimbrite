@@ -60,9 +60,14 @@ public:
                               const PipelineRasterizationDesc &rasterizationDesc,
                               const PipelineBlendStateDesc &blendStateDesc,
                               const PipelineDepthStencilStateDesc &depthStencilStateDesc) override;
-    void destroyGraphicsPipeline(ID pipeline) override {
 
-    }
+    ID createGraphicsPipeline(ID surface,
+                              PrimitiveTopology topology,
+                              ID program, ID vertexLayout, ID uniformLayout,
+                              const PipelineRasterizationDesc &rasterizationDesc,
+                              const PipelineSurfaceBlendStateDesc &blendStateDesc) override;
+
+    void destroyGraphicsPipeline(ID pipeline) override;
 
     ID drawListBegin(ID framebuffer, std::vector<Color> clearColors, const Region &drawArea) override {
         return RenderDevice::ID();

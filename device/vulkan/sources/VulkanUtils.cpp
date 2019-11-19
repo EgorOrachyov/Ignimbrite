@@ -575,3 +575,140 @@ VulkanDescriptorPool & VulkanUtils::getAvailableDescriptorPool(VulkanContext &co
     allocateDescriptorPool(context, layout);
     return layout.pools.back();
 }
+
+void VulkanUtils::createVertexInputState(const VulkanVertexLayout &layout, VkPipelineVertexInputStateCreateInfo &state) {
+    const auto& bindings = layout.vkBindings;
+    const auto& attributes = layout.vkAttributes;
+
+    state.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    state.vertexBindingDescriptionCount = (uint32) bindings.size();
+    state.pVertexBindingDescriptions = bindings.data();
+    state.vertexAttributeDescriptionCount = (uint32) attributes.size();
+    state.pVertexAttributeDescriptions = attributes.data();
+}
+
+void VulkanUtils::createInputAssembly(PrimitiveTopology topology,
+                                      VkPipelineInputAssemblyStateCreateInfo &inputAssembly) {
+    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssembly.topology = VulkanDefinitions::primitiveTopology(topology);
+    inputAssembly.primitiveRestartEnable = VK_FALSE;
+}
+
+void VulkanUtils::createViewportState(VkViewport &viewport, VkRect2D &scissor,
+                                      VkPipelineViewportStateCreateInfo &state) {
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = 640;
+    viewport.height = 480;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    scissor.offset = {0, 0};
+    scissor.extent = {640, 480};
+
+    state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    state.viewportCount = 1;
+    state.pViewports = &viewport;
+    state.scissorCount = 1;
+    state.pScissors = &scissor;
+}
+
+void VulkanUtils::createRasterizationState(const RenderDevice::PipelineRasterizationDesc &rasterizationDesc,
+                                           VkPipelineRasterizationStateCreateInfo &rasterizer) {
+    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizer.depthClampEnable = VK_FALSE;
+    rasterizer.rasterizerDiscardEnable = VK_FALSE;
+    rasterizer.polygonMode = VulkanDefinitions::polygonMode(rasterizationDesc.mode);
+    rasterizer.lineWidth = rasterizationDesc.lineWidth;
+    rasterizer.cullMode = VulkanDefinitions::cullModeFlagBits(rasterizationDesc.cullMode);
+    rasterizer.frontFace = VulkanDefinitions::frontFace(rasterizationDesc.frontFace);
+    rasterizer.depthBiasEnable = VK_FALSE;
+    rasterizer.depthBiasConstantFactor = 0.0f; // Optional
+    rasterizer.depthBiasClamp = 0.0f; // Optional
+    rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
+}
+
+void VulkanUtils::createPipelineLayout(VulkanContext &context, const VulkanUniformLayout &uniformLayout,
+                                       VkPipelineLayout &pipelineLayout) {
+    VkResult result;
+
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &uniformLayout.setLayout;
+    pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
+    pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+
+    result = vkCreatePipelineLayout(context.device, &pipelineLayoutInfo, nullptr, &pipelineLayout);
+
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create pipeline layout");
+    }
+}
+
+void VulkanUtils::createMultisampleState(VkPipelineMultisampleStateCreateInfo &state) {
+    state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    state.sampleShadingEnable = VK_FALSE;
+    state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    state.minSampleShading = 1.0f; // Optional
+    state.pSampleMask = nullptr; // Optional
+    state.alphaToCoverageEnable = VK_FALSE; // Optional
+    state.alphaToOneEnable = VK_FALSE; // Optional
+}
+
+void VulkanUtils::createColorBlendAttachmentState(const RenderDevice::BlendAttachmentDesc &attachmentDesc,
+                                                  VkPipelineColorBlendAttachmentState &state) {
+    state.colorWriteMask = VulkanDefinitions::colorComponentFlags(
+            attachmentDesc.writeR,
+            attachmentDesc.writeG,
+            attachmentDesc.writeB,
+            attachmentDesc.writeA
+    );
+    state.blendEnable = attachmentDesc.blendEnable;
+    state.srcColorBlendFactor = VulkanDefinitions::blendFactor(attachmentDesc.srcColorBlendFactor);
+    state.dstColorBlendFactor = VulkanDefinitions::blendFactor(attachmentDesc.dstColorBlendFactor);
+    state.colorBlendOp = VulkanDefinitions::blendOperation(attachmentDesc.colorBlendOp);
+    state.srcAlphaBlendFactor = VulkanDefinitions::blendFactor(attachmentDesc.srcAlphaBlendFactor);
+    state.dstAlphaBlendFactor = VulkanDefinitions::blendFactor(attachmentDesc.dstAlphaBlendFactor);
+    state.alphaBlendOp = VulkanDefinitions::blendOperation(attachmentDesc.alphaBlendOp);
+}
+
+void VulkanUtils::createColorBlendState(const RenderDevice::PipelineBlendStateDesc &stateDesc, uint32 attachmentsCount,
+                                        const VkPipelineColorBlendAttachmentState *attachments,
+                                        VkPipelineColorBlendStateCreateInfo &stateCreateInfo) {
+    stateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    stateCreateInfo.logicOpEnable = stateDesc.logicOpEnable;
+    stateCreateInfo.logicOp = VulkanDefinitions::logicOperation(stateDesc.logicOp);
+    stateCreateInfo.attachmentCount = attachmentsCount;
+    stateCreateInfo.pAttachments = attachments;
+    stateCreateInfo.blendConstants[0] = stateDesc.blendConstants[0];
+    stateCreateInfo.blendConstants[1] = stateDesc.blendConstants[1];
+    stateCreateInfo.blendConstants[2] = stateDesc.blendConstants[2];
+    stateCreateInfo.blendConstants[3] = stateDesc.blendConstants[3];
+}
+
+void VulkanUtils::createDepthStencilState(const RenderDevice::PipelineDepthStencilStateDesc &desc,
+                                          VkPipelineDepthStencilStateCreateInfo &stateCreateInfo) {
+    stateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    stateCreateInfo.pNext = nullptr;
+    stateCreateInfo.depthTestEnable = desc.depthTestEnable;
+    stateCreateInfo.depthWriteEnable = desc.depthWriteEnable;
+    stateCreateInfo.minDepthBounds = 0.0f;
+    stateCreateInfo.maxDepthBounds = 0.1f;
+    stateCreateInfo.depthBoundsTestEnable = false;
+    stateCreateInfo.depthCompareOp = VulkanDefinitions::compareOperation(desc.depthCompareOp);
+    stateCreateInfo.stencilTestEnable = desc.stencilTestEnable;
+    stateCreateInfo.front = createStencilOperationState(desc.front);
+    stateCreateInfo.back = createStencilOperationState(desc.back);
+}
+
+VkStencilOpState VulkanUtils::createStencilOperationState(const RenderDevice::StencilOpStateDesc &desc) {
+    VkStencilOpState state = {};
+    state.compareMask = desc.compareMask;
+    state.reference = desc.reference;
+    state.writeMask = desc.writeMask;
+    state.compareOp = VulkanDefinitions::compareOperation(desc.compareOp);
+    state.failOp = VulkanDefinitions::stencilOperation(desc.failOp);
+    state.depthFailOp = VulkanDefinitions::stencilOperation(desc.depthFailOp);
+    state.passOp = VulkanDefinitions::stencilOperation(desc.passOp);
+}
