@@ -14,8 +14,22 @@ public:
 
     static VkFormat dataFormat(DataFormat format) {
         switch (format) {
+            case DataFormat::R8G8B8_UNORM:
+                return VkFormat::VK_FORMAT_R8G8B8_UNORM;
+            case DataFormat::R8G8B8A8_UNORM:
+                return VkFormat::VK_FORMAT_R8G8B8A8_UNORM;
+            case DataFormat::R32_SFLOAT:
+                return VkFormat::VK_FORMAT_R32_SFLOAT;
+            case DataFormat::R32G32_SFLOAT:
+                return VkFormat::VK_FORMAT_R32G32_SFLOAT;
+            case DataFormat::R32G32B32_SFLOAT:
+                return VkFormat::VK_FORMAT_R32G32B32_SFLOAT;
+            case DataFormat::R32G32B32A32_SFLOAT:
+                return VkFormat::VK_FORMAT_R32G32B32A32_SFLOAT;
             case DataFormat::D24_UNORM_S8_UINT:
                 return VkFormat::VK_FORMAT_D24_UNORM_S8_UINT;
+            case DataFormat::D32_SFLOAT_S8_UINT:
+                return VkFormat::VK_FORMAT_D32_SFLOAT_S8_UINT;
             default:
                 throw InvalidEnum();
         }

@@ -689,6 +689,7 @@ VkStencilOpState VulkanUtils::createStencilOperationState(const RenderDevice::St
     state.failOp = VulkanDefinitions::stencilOperation(desc.failOp);
     state.depthFailOp = VulkanDefinitions::stencilOperation(desc.depthFailOp);
     state.passOp = VulkanDefinitions::stencilOperation(desc.passOp);
+    return state;
 }
 
 VkCommandPool VulkanUtils::createCommandPool(VulkanContext& context, VkCommandPoolCreateFlags flags, uint32_t queueFamilyIndex) {

@@ -4,9 +4,11 @@
 
 #include "TestObjectID.h"
 #include "VulkanStartUp.h"
+#include "VulkanApplicationTest.h"
 
 int main() {
-    TestObjectIDBuffer::run();
-    VulkanStartUp::run();
+    //TestObjectIDBuffer::run();
+    //VulkanStartUp::run();
+    VulkanApplication::run();
     return 0;
 }

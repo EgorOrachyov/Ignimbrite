@@ -4,6 +4,7 @@ project(Tests)
 set(Tests_HEADERS
     TestObjectID.h
     VulkanStartUp.h
+    VulkanApplicationTest.h
 )
 
 set(Tests_SOURCES
@@ -11,7 +12,7 @@ set(Tests_SOURCES
 )
 
 message(STATUS "Config Tests executable")
-add_executable(Tests ${Test_HEADERS} ${Tests_SOURCES})
+add_executable(Tests ${Tests_HEADERS} ${Tests_SOURCES})
 
 target_link_libraries(Tests PUBLIC Renderer)
 target_link_libraries(Tests PUBLIC VulkanDevice)

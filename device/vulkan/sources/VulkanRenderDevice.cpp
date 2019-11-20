@@ -15,9 +15,11 @@ VulkanRenderDevice::VulkanRenderDevice(uint32 extensionsCount, const char *const
     context.setupDebugMessenger();
     context.pickPhysicalDevice();
     context.createLogicalDevice();
+    context.createCommandPools();
 }
 
 VulkanRenderDevice::~VulkanRenderDevice() {
+    context.destroyCommandPools();
     context.destroyLogicalDevice();
     context.destroyDebugMessenger();
     context.destroyInstance();
