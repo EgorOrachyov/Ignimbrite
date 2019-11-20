@@ -710,8 +710,7 @@ VkCommandPool VulkanUtils::createCommandPool(VulkanContext& context, VkCommandPo
     info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     info.pNext = nullptr;
     info.queueFamilyIndex = queueFamilyIndex;
-    // assume, that all command pools will not be TRANSIENT
-    info.flags = flags;;
+    info.flags = flags;
 
     VkCommandPool commandPool;
     VkResult r = vkCreateCommandPool(context.device, &info, nullptr, &commandPool);
