@@ -509,23 +509,8 @@ void VulkanUtils::createDepthStencilBuffer(VulkanContext &context, uint32 width,
             // depth stencil buffer is device local
             // TODO: make visible from cpu
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                outImage, outImageMemory);
-
-    VkComponentMapping components;
-    components.r = VK_COMPONENT_SWIZZLE_R;
-    components.g = VK_COMPONENT_SWIZZLE_G;
-    components.b = VK_COMPONENT_SWIZZLE_B;
-    components.a = VK_COMPONENT_SWIZZLE_A;
-
-    VkImageSubresourceRange subresourceRange;
-    subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    // depth stencil doesn't have mipmaps
-    subresourceRange.baseMipLevel = 0;
-    subresourceRange.levelCount = 1;
-    subresourceRange.baseArrayLayer = 0;
-    subresourceRange.layerCount = 1;
-
-    createImageView(context, outImageView, outImage, viewType, format, subresourceRange, components);
+                outImage, outImageMemory
+    );
 }
 
 void VulkanUtils::allocateDescriptorPool(VulkanContext &context, VulkanUniformLayout &layout) {
