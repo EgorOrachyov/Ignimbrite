@@ -106,7 +106,7 @@ public:
         uint32 width, uint32 height, uint32 depth,
         VkImageType imageType, VkFormat format, VkImageViewType viewType,
         VkImage& outImage, VkDeviceMemory& outImageMemory, 
-        VkImageView& outImageView
+        VkImageView& outImageView, VkImageUsageFlags usageFlags
     );
 
     static void getSurfaceProperties(
@@ -186,6 +186,16 @@ public:
             const RenderDevice::StencilOpStateDesc& desc
     );
 
+    static VkCommandPool createCommandPool(
+        VulkanContext& context, 
+        VkCommandPoolCreateFlags flags, uint32_t queueFamilyIndex);
+
+    static VkCommandBuffer beginTempCommandBuffer(
+        VulkanContext& context, VkCommandPool commandPool);
+
+    static void endTempCommandBuffer(
+        VulkanContext& context, VkCommandBuffer commandBuffer,
+        VkQueue queue, VkCommandPool commandPool);
 };
 
 #endif //RENDERINGLIBRARY_VULKANUTILS_H

@@ -42,8 +42,8 @@ void VulkanUtils::createBuffer(VulkanContext &context, VkDeviceSize size, VkBuff
     bufferInfo.usage = usage;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VkResult r = vkCreateBuffer(context.device, &bufferInfo, nullptr, &outBuffer);
-    if (r != VK_SUCCESS) {
+    VkResult result = vkCreateBuffer(context.device, &bufferInfo, nullptr, &outBuffer);
+    if (result != VK_SUCCESS) {
         throw VulkanException("Can't create buffer for vertex data");
     }
 
@@ -55,13 +55,13 @@ void VulkanUtils::createBuffer(VulkanContext &context, VkDeviceSize size, VkBuff
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = getMemoryTypeIndex(context, memRequirements.memoryTypeBits, properties);
 
-    r = vkAllocateMemory(context.device, &allocInfo, nullptr, &outBufferMemory);
-    if (r != VK_SUCCESS) {
+    result = vkAllocateMemory(context.device, &allocInfo, nullptr, &outBufferMemory);
+    if (result != VK_SUCCESS) {
         throw VulkanException("Can't allocate memory for vertex buffer");
     }
 
-    r = vkBindBufferMemory(context.device, outBuffer, outBufferMemory, 0);
-    if (r != VK_SUCCESS) {
+    result = vkBindBufferMemory(context.device, outBuffer, outBufferMemory, 0);
+    if (result != VK_SUCCESS) {
         throw VulkanException("Can't bind buffer memory for vertex buffer");
     }
 }
@@ -88,7 +88,7 @@ VulkanUtils::createBufferLocal(VulkanContext &context, const void *data, VkDevic
                  outBuffer,
                  outBufferMemory);
 
-    copyBuffer(context, context.commandPool, context.transferQueue, stagingBuffer, outBuffer, size);
+    copyBuffer(context, context.transferTempCommandPool, context.transferQueue, stagingBuffer, outBuffer, size);
 
     vkDestroyBuffer(context.device, stagingBuffer, nullptr);
     vkFreeMemory(context.device, stagingBufferMemory, nullptr);
@@ -97,8 +97,7 @@ VulkanUtils::createBufferLocal(VulkanContext &context, const void *data, VkDevic
 void VulkanUtils::copyBuffer(VulkanContext &context, VkCommandPool commandPool, VkQueue queue, VkBuffer srcBuffer,
                              VkBuffer dstBuffer,
                              VkDeviceSize size) {
-    // TODO: create _beginTempCommandBuffer and _endTempCommandBuffer
-    VkCommandBuffer commandBuffer; // = _beginTempCommandBuffer(device, commandPool);
+    VkCommandBuffer commandBuffer = beginTempCommandBuffer(context, context.transferTempCommandPool);
 
     VkBufferCopy copyRegion = {};
     copyRegion.size = size;
@@ -107,8 +106,7 @@ void VulkanUtils::copyBuffer(VulkanContext &context, VkCommandPool commandPool, 
 
     vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-    // TODO
-    // _endTempCommandBuffer(device, transitionQueue or graphicsQueue, commandPool, commandBuffer);
+    endTempCommandBuffer(context, commandBuffer, context.transferQueue, context.transferTempCommandPool);
 }
 
 void VulkanUtils::updateBufferMemory(VulkanContext &context, VkDeviceMemory bufferMemory, VkDeviceSize offset,
@@ -155,8 +153,7 @@ void VulkanUtils::createTextureImage(VulkanContext &context, const void *imageDa
 
     // layout transition from undefined
     // to transfer destination to prepare image for copying
-    transitionImageLayout(context, outTextureImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                          mipLevels);
+    transitionImageLayout(context, outTextureImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
 
     // copy without mipmaps
     copyBufferToImage(context, stagingBuffer, outTextureImage, width, height, depth);
@@ -190,9 +187,10 @@ void VulkanUtils::createImage(VulkanContext &context, uint32 width, uint32 heigh
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VkResult r = vkCreateImage(context.device, &imageInfo, nullptr, &outImage);
-    if (r != VK_SUCCESS) {
-        throw VulkanException("Can't create image");
+    VkResult result = vkCreateImage(context.device, &imageInfo, nullptr, &outImage);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to create image");
     }
 
     VkMemoryRequirements memRequirements;
@@ -203,29 +201,29 @@ void VulkanUtils::createImage(VulkanContext &context, uint32 width, uint32 heigh
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = getMemoryTypeIndex(context, memRequirements.memoryTypeBits, properties);
 
-    r = vkAllocateMemory(context.device, &allocInfo, nullptr, &outImageMemory);
-    if (r != VK_SUCCESS) {
-        throw VulkanException("Can't allocate memory for image");
+    result = vkAllocateMemory(context.device, &allocInfo, nullptr, &outImageMemory);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to allocate memory for image");
     }
 
-    r = vkBindImageMemory(context.device, outImage, outImageMemory, 0);
-    if (r != VK_SUCCESS) {
-        throw VulkanException("Can't bind image memory");
+    result = vkBindImageMemory(context.device, outImage, outImageMemory, 0);
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to bind image memory");
     }
 }
 
 void
 VulkanUtils::copyBufferToImage(VulkanContext &context, VkBuffer buffer, VkImage image, uint32 width, uint32 height,
                                uint32 depth) {
-    // TODO: create _beginTempCommandBuffer and _endTempCommandBuffer
-    VkCommandBuffer commandBuffer; // = _beginTempCommandBuffer(device, commandPool);
+    VkCommandBuffer commandBuffer = beginTempCommandBuffer(context, context.transferTempCommandPool);
 
     VkBufferImageCopy region = {};
     region.bufferOffset = 0;
     region.bufferRowLength = 0;
     region.bufferImageHeight = 0;
     region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    // TODO: mipmaps
+    // this function copies without mipmaps
     region.imageSubresource.mipLevel = 0;
     region.imageSubresource.baseArrayLayer = 0;
     region.imageSubresource.layerCount = 1;
@@ -234,14 +232,12 @@ VulkanUtils::copyBufferToImage(VulkanContext &context, VkBuffer buffer, VkImage 
 
     vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-    // TODO
-    // _endTempCommandBuffer(device, transitionQueue or graphicsQueue, commandPool, commandBuffer);
+    endTempCommandBuffer(context, commandBuffer, context.transferQueue, context.transferTempCommandPool);
 }
 
 void VulkanUtils::transitionImageLayout(VulkanContext &context, VkImage image, VkImageLayout oldLayout,
                                         VkImageLayout newLayout, uint32 mipLevels) {
-    // TODO: create _beginTempCommandBuffer and _endTempCommandBuffer
-    VkCommandBuffer commandBuffer; // = _beginTempCommandBuffer(device, commandPool);
+    VkCommandBuffer commandBuffer = beginTempCommandBuffer(context, context.transferTempCommandPool);
 
     VkImageMemoryBarrier barrier = {};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -284,14 +280,12 @@ void VulkanUtils::transitionImageLayout(VulkanContext &context, VkImage image, V
             commandBuffer, sourceStage, destinationStage,
             0, 0, nullptr, 0, nullptr, 1, &barrier);
 
-    // TODO
-    // _endTempCommandBuffer(device, transitionQueue or graphicsQueue, commandPool, commandBuffer);
+    endTempCommandBuffer(context, commandBuffer, context.transferQueue, context.transferTempCommandPool);
 }
 
-void
-VulkanUtils::createImageView(VulkanContext &context, VkImageView &outImageView, VkImage image, VkImageViewType viewType,
-                             VkFormat format, const VkImageSubresourceRange &subResourceRange,
-                             VkComponentMapping components) {
+void VulkanUtils::createImageView(VulkanContext &context, VkImageView &outImageView, VkImage image, VkImageViewType viewType,
+                                  VkFormat format, const VkImageSubresourceRange &subResourceRange,
+                                  VkComponentMapping components) {
     VkImageViewCreateInfo imageViewInfo = {};
     imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     imageViewInfo.image = image;
@@ -300,9 +294,10 @@ VulkanUtils::createImageView(VulkanContext &context, VkImageView &outImageView, 
     imageViewInfo.components = components;
     imageViewInfo.subresourceRange = subResourceRange;
 
-    VkResult r = vkCreateImageView(context.device, &imageViewInfo, nullptr, &outImageView);
-    if (r != VK_SUCCESS) {
-        throw VulkanException("Can't create image view");
+    VkResult result = vkCreateImageView(context.device, &imageViewInfo, nullptr, &outImageView);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to create image view");
     }
 }
 
@@ -311,11 +306,10 @@ void VulkanUtils::generateMipmaps(VulkanContext &context, VkImage image, VkForma
     VkFormatProperties formatProperties = getDeviceFormatProperties(context, format);
 
     if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
-        throw VulkanException("Can't generate mipmaps as specified format doesn't support linear blitting");
+        throw VulkanException("Failed to generate mipmaps as specified format doesn't support linear blitting");
     }
 
-    // TODO: create _beginTempCommandBuffer and _endTempCommandBuffer
-    VkCommandBuffer commandBuffer; // = _beginTempCommandBuffer(device, commandPool);
+    VkCommandBuffer commandBuffer = beginTempCommandBuffer(context, context.transferTempCommandPool);
 
     VkImageMemoryBarrier barrier = {};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -401,8 +395,7 @@ void VulkanUtils::generateMipmaps(VulkanContext &context, VkImage image, VkForma
                          0, nullptr,
                          1, &barrier);
 
-    // TODO
-    // _endTempCommandBuffer(device, transitionQueue or graphicsQueue, commandPool, commandBuffer);
+    endTempCommandBuffer(context, commandBuffer, context.transferQueue, context.transferTempCommandPool);
 }
 
 void VulkanUtils::getSurfaceProperties(VkPhysicalDevice physicalDevice, VkSurfaceKHR surfaceKHR,
@@ -410,11 +403,11 @@ void VulkanUtils::getSurfaceProperties(VkPhysicalDevice physicalDevice, VkSurfac
                                        std::vector<VkPresentModeKHR> &outPresentModes) {
     uint32 surfFormatCount;
     uint32 presentModeCount;
-    VkResult r;
+    VkResult result;
 
-    r = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surfaceKHR, &surfFormatCount, nullptr);
-    if (r != VK_SUCCESS) {
-        throw VulkanException("Can't get VkSurfaceKHR formats");
+    result = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surfaceKHR, &surfFormatCount, nullptr);
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to get VkSurfaceKHR formats");
     }
 
     if (surfFormatCount == 0) {
@@ -423,14 +416,14 @@ void VulkanUtils::getSurfaceProperties(VkPhysicalDevice physicalDevice, VkSurfac
 
     outSurfaceFormats.resize(surfFormatCount);
 
-    r = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surfaceKHR, &surfFormatCount, outSurfaceFormats.data());
-    if (r != VK_SUCCESS) {
-        throw VulkanException("Can't get VkSurfaceKHR formats");
+    result = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surfaceKHR, &surfFormatCount, outSurfaceFormats.data());
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to get VkSurfaceKHR formats");
     }
 
-    r = vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surfaceKHR, &presentModeCount, nullptr);
-    if (r != VK_SUCCESS) {
-        throw VulkanException("Can't get VkSurfaceKHR present modes");
+    result = vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surfaceKHR, &presentModeCount, nullptr);
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to get VkSurfaceKHR present modes");
     }
 
     if (presentModeCount == 0) {
@@ -439,10 +432,10 @@ void VulkanUtils::getSurfaceProperties(VkPhysicalDevice physicalDevice, VkSurfac
 
     outPresentModes.resize(presentModeCount);
 
-    r = vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surfaceKHR, &presentModeCount,
+    result = vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surfaceKHR, &presentModeCount,
                                                   outPresentModes.data());
-    if (r != VK_SUCCESS) {
-        throw VulkanException("Can't get VkSurfaceKHR present modes");
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to get VkSurfaceKHR present modes");
     }
 }
 
@@ -490,13 +483,13 @@ VulkanUtils::getAvailableCompositeAlpha(const VkSurfaceCapabilitiesKHR &surfaceC
         }
     }
 
-    throw VulkanException("Can't find available composite alpha");
+    throw VulkanException("Failed to find available composite alpha");
 }
 
 void VulkanUtils::createDepthStencilBuffer(VulkanContext &context, uint32 width, uint32 height, uint32 depth,
                                            VkImageType imageType, VkFormat format, VkImageViewType viewType,
                                            VkImage &outImage, VkDeviceMemory &outImageMemory,
-                                           VkImageView &outImageView) {
+                                           VkImageView &outImageView, VkImageUsageFlags usageFlags) {
 
     // get properties of depth stencil format
     const VkFormatProperties &properties = getDeviceFormatProperties(context, format);
@@ -512,27 +505,12 @@ void VulkanUtils::createDepthStencilBuffer(VulkanContext &context, uint32 width,
     }
 
     createImage(context, width, height, depth, 1,
-                imageType, format, tiling, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                imageType, format, tiling, usageFlags,
             // depth stencil buffer is device local
             // TODO: make visible from cpu
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                outImage, outImageMemory);
-
-    VkComponentMapping components;
-    components.r = VK_COMPONENT_SWIZZLE_R;
-    components.g = VK_COMPONENT_SWIZZLE_G;
-    components.b = VK_COMPONENT_SWIZZLE_B;
-    components.a = VK_COMPONENT_SWIZZLE_A;
-
-    VkImageSubresourceRange subresourceRange;
-    subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    // depth stencil doesn't have mipmaps
-    subresourceRange.baseMipLevel = 0;
-    subresourceRange.levelCount = 1;
-    subresourceRange.baseArrayLayer = 0;
-    subresourceRange.layerCount = 1;
-
-    createImageView(context, outImageView, outImage, viewType, format, subresourceRange, components);
+                outImage, outImageMemory
+    );
 }
 
 void VulkanUtils::allocateDescriptorPool(VulkanContext &context, VulkanUniformLayout &layout) {
@@ -711,4 +689,77 @@ VkStencilOpState VulkanUtils::createStencilOperationState(const RenderDevice::St
     state.failOp = VulkanDefinitions::stencilOperation(desc.failOp);
     state.depthFailOp = VulkanDefinitions::stencilOperation(desc.depthFailOp);
     state.passOp = VulkanDefinitions::stencilOperation(desc.passOp);
+}
+
+VkCommandPool VulkanUtils::createCommandPool(VulkanContext& context, VkCommandPoolCreateFlags flags, uint32_t queueFamilyIndex) {
+    VkCommandPoolCreateInfo info = {};
+    info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    info.pNext = nullptr;
+    info.queueFamilyIndex = queueFamilyIndex;
+    info.flags = flags;
+
+    VkCommandPool commandPool;
+    VkResult result = vkCreateCommandPool(context.device, &info, nullptr, &commandPool);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to create command pool");
+    }
+
+    return commandPool;
+}
+
+VkCommandBuffer VulkanUtils::beginTempCommandBuffer(VulkanContext& context, VkCommandPool commandPool) {
+    VkCommandBufferAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = commandPool;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer;
+    VkResult result = vkAllocateCommandBuffers(context.device, &allocInfo, &commandBuffer);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to allocate command buffer");
+    }
+
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to begin command buffer");
+    }
+
+    return commandBuffer;
+}
+
+void VulkanUtils::endTempCommandBuffer(VulkanContext& context, VkCommandBuffer commandBuffer,
+    VkQueue queue, VkCommandPool commandPool) {
+
+    VkResult result = vkEndCommandBuffer(commandBuffer);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to end command buffer");
+    }
+
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+
+    result = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to submit queue");
+    }
+
+    result = vkQueueWaitIdle(queue);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Error on vkQueueWaitIdle");
+    }
+
+    vkFreeCommandBuffers(context.device, commandPool, 1, &commandBuffer);
 }

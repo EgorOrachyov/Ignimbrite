@@ -62,6 +62,9 @@ struct VulkanContext {
 
     void deviceWaitIdle();
 
+    void createCommandPools();
+    void destroyCommandPools();
+
     static const uint32 DESCRIPTOR_POOL_MAX_SET_COUNT = 8;
     static const VkFormat PREFERRED_FORMAT = VkFormat::VK_FORMAT_B8G8R8A8_UNORM;
     static const VkColorSpaceKHR PREFERRED_COLOR_SPACE = VkColorSpaceKHR::VK_COLORSPACE_SRGB_NONLINEAR_KHR;
@@ -85,10 +88,11 @@ struct VulkanContext {
     VkPhysicalDeviceProperties deviceProperties = {};
     VkPhysicalDeviceFeatures deviceFeatures = {};
     VkPhysicalDeviceMemoryProperties deviceMemoryProperties = {};
-    // TODO: init command pool
-    VkCommandPool commandPool = VK_NULL_HANDLE;
-
-    std::vector<VulkanDescriptorPool> descriptorPools;
+    
+    VkCommandPool graphicsCommandPool = VK_NULL_HANDLE;
+    VkCommandPool transferCommandPool = VK_NULL_HANDLE;
+    VkCommandPool graphicsTempCommandPool = VK_NULL_HANDLE;
+    VkCommandPool transferTempCommandPool = VK_NULL_HANDLE;
 };
 
 
