@@ -93,8 +93,6 @@ struct VulkanContext {
     VkCommandPool transferCommandPool = VK_NULL_HANDLE;
     VkCommandPool graphicsTempCommandPool = VK_NULL_HANDLE;
     VkCommandPool transferTempCommandPool = VK_NULL_HANDLE;
-
-    std::vector<VulkanDescriptorPool> descriptorPools;
 };
 
 
