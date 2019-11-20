@@ -63,6 +63,9 @@ struct VulkanContext {
     void createCommandPools();
     void destroyCommandPools();
 
+    void createCommandPools();
+    void destroyCommandPools();
+
     void deviceWaitIdle();
 
     static const uint32 DESCRIPTOR_POOL_MAX_SET_COUNT = 8;

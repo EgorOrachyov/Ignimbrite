@@ -134,58 +134,6 @@ public:
             VulkanUniformLayout &layout
     );
 
-    static void createVertexInputState(
-            const VulkanVertexLayout& layout,
-            VkPipelineVertexInputStateCreateInfo &state
-    );
-
-    static void createInputAssembly(
-            PrimitiveTopology topology,
-            VkPipelineInputAssemblyStateCreateInfo &inputAssembly
-    );
-
-    static void createViewportState(
-            VkViewport& viewport,
-            VkRect2D& scissor,
-            VkPipelineViewportStateCreateInfo& state
-    );
-
-    static void createRasterizationState(
-            const RenderDevice::PipelineRasterizationDesc &rasterizationDesc,
-            VkPipelineRasterizationStateCreateInfo& rasterizer
-    );
-
-    static void createPipelineLayout(
-            VulkanContext &context,
-            const VulkanUniformLayout &uniformLayout,
-            VkPipelineLayout &pipelineLayout
-    );
-
-    static void createMultisampleState(
-            VkPipelineMultisampleStateCreateInfo& state
-    );
-
-    static void createColorBlendAttachmentState(
-            const RenderDevice::BlendAttachmentDesc& attachmentDesc,
-            VkPipelineColorBlendAttachmentState& state
-    );
-
-    static void createColorBlendState(
-            const RenderDevice::PipelineBlendStateDesc& stateDesc,
-            uint32 attachmentsCount,
-            const VkPipelineColorBlendAttachmentState* attachments,
-            VkPipelineColorBlendStateCreateInfo& stateCreateInfo
-    );
-
-    static void createDepthStencilState(
-            const RenderDevice::PipelineDepthStencilStateDesc& desc,
-            VkPipelineDepthStencilStateCreateInfo& stateCreateInfo
-    );
-
-    static VkStencilOpState createStencilOperationState(
-            const RenderDevice::StencilOpStateDesc& desc
-    );
-
     static VkCommandPool createCommandPool(
             VulkanContext &context,
             VkCommandPoolCreateFlags flags, uint32_t queueFamilyIndex);
