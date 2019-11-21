@@ -24,18 +24,15 @@ public:
 
         surface = VulkanExtensions::createSurfaceGLFW(device, window, width, height, widthFrameBuffer, heightFrameBuffer, name);
 
+        RenderDevice::VertexAttributeDesc vertexAttributeDesc = {};
+        vertexAttributeDesc.format = DataFormat::R32G32B32_SFLOAT;
+        vertexAttributeDesc.location = 0;
+        vertexAttributeDesc.offset = 0;
 
-        RenderDevice::VertexAttributeDesc vertexAttributeDesc = {
-                .format = DataFormat::R32G32B32_SFLOAT,
-                .location = 0,
-                .offset = 0
-        };
-
-        RenderDevice::VertexBufferLayoutDesc vertexBufferLayoutDesc = {
-                .attributes = { vertexAttributeDesc },
-                .stride = sizeof(float32) * 3,
-                .usage = VertexUsage::PerVertex
-        };
+        RenderDevice::VertexBufferLayoutDesc vertexBufferLayoutDesc = {};
+        vertexBufferLayoutDesc.attributes.push_back(vertexAttributeDesc);
+        vertexBufferLayoutDesc.stride = sizeof(float32) * 3;
+        vertexBufferLayoutDesc.usage = VertexUsage::PerVertex;
 
         vertexLayout = device.createVertexLayout({ vertexBufferLayoutDesc });
 
@@ -44,6 +41,26 @@ public:
         indexBuffer = device.createIndexBuffer(BufferUsage::Static, sizeof(indices), indices);
 
         uniformBuffer = device.createUniformBuffer(BufferUsage::Dynamic, sizeof(Transform), &transform);
+
+        RenderDevice::UniformLayoutBufferDesc uniformLayoutBufferDesc = {};
+        uniformLayoutBufferDesc.binding = 0;
+        uniformLayoutBufferDesc.flags = (uint32) ShaderStageFlagBits::VertexBit;
+
+        RenderDevice::UniformLayoutDesc uniformLayoutDesc = {};
+        uniformLayoutDesc.buffers.push_back(uniformLayoutBufferDesc);
+
+        uniformLayout = device.createUniformLayout(uniformLayoutDesc);
+
+        RenderDevice::UniformBufferDesc uniformBufferDesc = {};
+        uniformBufferDesc.binding = 0;
+        uniformBufferDesc.offset = 0;
+        uniformBufferDesc.range = sizeof(Transform);
+        uniformBufferDesc.buffer = uniformBuffer;
+
+        RenderDevice::UniformSetDesc uniformSetDesc = {};
+        uniformSetDesc.buffers.push_back(uniformBufferDesc);
+
+        uniformSet = device.createUniformSet(uniformSetDesc, uniformLayout);
 
     }
 
@@ -85,6 +102,9 @@ private:
     ID vertexBuffer;
     ID indexBuffer;
     ID uniformBuffer;
+    ID uniformLayout;
+    ID uniformSet;
+    ID shaderProgram;
 
     struct Transform {
         float32 values[16] = {
