@@ -885,7 +885,102 @@ RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(RenderDevice::ID sur
                                                             RenderDevice::ID uniformLayout,
                                                             const RenderDevice::PipelineRasterizationDesc &rasterizationDesc,
                                                             const RenderDevice::PipelineSurfaceBlendStateDesc &blendStateDesc) {
-    return RenderDevice::ID();
+
+    const auto& vkProgram = mShaderPrograms.get(program);
+    const auto& vkUniformLayout = mUniformLayouts.get(uniformLayout);
+    const auto& vkVertexLayout = mVertexLayouts.get(vertexLayout);
+    auto& vkSurface = mSurfaces.get(surface);
+    auto& vkFramebufferFormat = vkSurface.framebufferFormat;
+
+    VkResult result;
+    VkPipeline pipeline;
+    VkPipelineLayout pipelineLayout;
+
+    VulkanUtils::createPipelineLayout(context, vkUniformLayout, pipelineLayout);
+
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+    shaderStages.reserve(vkProgram.shaders.size());
+
+    for (const auto& shader: vkProgram.shaders) {
+        VkPipelineShaderStageCreateInfo createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        createInfo.stage = shader.shaderStage;
+        createInfo.module = shader.module;
+        createInfo.pName = "main";
+        createInfo.pSpecializationInfo = nullptr;
+
+        shaderStages.push_back(createInfo);
+    }
+
+    VkPipelineVertexInputStateCreateInfo vertexInput = {};
+    VulkanUtils::createVertexInputState(vkVertexLayout, vertexInput);
+
+    VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
+    VulkanUtils::createInputAssembly(topology, inputAssembly);
+
+    VkViewport viewport = {};
+    VkRect2D scissor = {};
+    VkPipelineViewportStateCreateInfo viewportState = {};
+    VulkanUtils::createViewportState(viewport, scissor, viewportState);
+
+    VkPipelineRasterizationStateCreateInfo rasterizer = {};
+    VulkanUtils::createRasterizationState(rasterizationDesc, rasterizer);
+
+    VkDynamicState states[] = {
+            VkDynamicState::VK_DYNAMIC_STATE_VIEWPORT,
+            VkDynamicState::VK_DYNAMIC_STATE_SCISSOR,
+            VkDynamicState::VK_DYNAMIC_STATE_LINE_WIDTH
+    };
+
+    VkPipelineDynamicStateCreateInfo dynamicState = {};
+    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicState.pDynamicStates = states;
+    dynamicState.dynamicStateCount = sizeof(states) / sizeof(VkDynamicState);
+
+    VkPipelineMultisampleStateCreateInfo multisampleState = {};
+    VulkanUtils::createMultisampleState(multisampleState);
+
+    VkPipelineColorBlendAttachmentState attachment;
+    VulkanUtils::createColorBlendAttachmentState(blendStateDesc.attachment, attachment);
+
+    VkPipelineColorBlendStateCreateInfo colorBlending = {};
+    VulkanUtils::createSurfaceColorBlendState(blendStateDesc, &attachment, colorBlending);
+
+    VkGraphicsPipelineCreateInfo pipelineInfo = {};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipelineInfo.stageCount = (uint32) shaderStages.size();
+    pipelineInfo.pStages = shaderStages.data();
+    pipelineInfo.pVertexInputState = &vertexInput;
+    pipelineInfo.pInputAssemblyState = &inputAssembly;
+    pipelineInfo.pViewportState = &viewportState;
+    pipelineInfo.pRasterizationState = &rasterizer;
+    pipelineInfo.pMultisampleState = &multisampleState;
+    pipelineInfo.pColorBlendState = &colorBlending;
+    pipelineInfo.pDepthStencilState = nullptr;
+    pipelineInfo.pDynamicState = &dynamicState;
+    pipelineInfo.layout = pipelineLayout;
+    pipelineInfo.renderPass = vkFramebufferFormat.renderPass;
+    pipelineInfo.subpass = 0;
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
+    pipelineInfo.basePipelineIndex = -1; // Optional
+
+    result = vkCreateGraphicsPipelines(context.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Failed to create graphics pipeline");
+    }
+
+    VulkanGraphicsPipeline graphicsPipeline;
+    graphicsPipeline.withSurfaceOnly = false;
+    graphicsPipeline.vertexLayout = vertexLayout;
+    graphicsPipeline.uniformLayout = uniformLayout;
+    graphicsPipeline.program = program;
+    graphicsPipeline.pipeline = pipeline;
+    graphicsPipeline.pipelineLayout = pipelineLayout;
+    graphicsPipeline.withSurfaceOnly = true;
+    graphicsPipeline.surface = surface;
+
+    return mGraphicsPipelines.move(graphicsPipeline);
 }
 
 void VulkanRenderDevice::destroyGraphicsPipeline(RenderDevice::ID pipeline) {

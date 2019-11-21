@@ -177,6 +177,12 @@ public:
             VkPipelineColorBlendStateCreateInfo& stateCreateInfo
     );
 
+    static void createSurfaceColorBlendState(
+            const RenderDevice::PipelineSurfaceBlendStateDesc &stateDesc,
+            const VkPipelineColorBlendAttachmentState *attachment,
+            VkPipelineColorBlendStateCreateInfo &stateCreateInfo
+    );
+
     static void createDepthStencilState(
             const RenderDevice::PipelineDepthStencilStateDesc& desc,
             VkPipelineDepthStencilStateCreateInfo& stateCreateInfo

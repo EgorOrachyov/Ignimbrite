@@ -118,6 +118,7 @@ struct VulkanShaderProgram {
 };
 
 struct VulkanGraphicsPipeline {
+    RenderDevice::ID surface;
     bool withSurfaceOnly;
     VkPipeline pipeline;
     VkPipelineLayout pipelineLayout;

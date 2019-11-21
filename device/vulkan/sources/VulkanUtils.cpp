@@ -665,6 +665,20 @@ void VulkanUtils::createColorBlendState(const RenderDevice::PipelineBlendStateDe
     stateCreateInfo.blendConstants[3] = stateDesc.blendConstants[3];
 }
 
+void VulkanUtils::createSurfaceColorBlendState(const RenderDevice::PipelineSurfaceBlendStateDesc &stateDesc,
+                                               const VkPipelineColorBlendAttachmentState *attachment,
+                                               VkPipelineColorBlendStateCreateInfo &stateCreateInfo) {
+    stateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    stateCreateInfo.logicOpEnable = stateDesc.logicOpEnable;
+    stateCreateInfo.logicOp = VulkanDefinitions::logicOperation(stateDesc.logicOp);
+    stateCreateInfo.attachmentCount = 1;
+    stateCreateInfo.pAttachments = attachment;
+    stateCreateInfo.blendConstants[0] = stateDesc.blendConstants[0];
+    stateCreateInfo.blendConstants[1] = stateDesc.blendConstants[1];
+    stateCreateInfo.blendConstants[2] = stateDesc.blendConstants[2];
+    stateCreateInfo.blendConstants[3] = stateDesc.blendConstants[3];
+}
+
 void VulkanUtils::createDepthStencilState(const RenderDevice::PipelineDepthStencilStateDesc &desc,
                                           VkPipelineDepthStencilStateCreateInfo &stateCreateInfo) {
     stateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;

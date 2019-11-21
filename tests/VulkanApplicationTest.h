@@ -62,6 +62,27 @@ public:
 
         uniformSet = device.createUniformSet(uniformSetDesc, uniformLayout);
 
+        RenderDevice::PipelineRasterizationDesc rasterizationDesc = {};
+        rasterizationDesc.cullMode = PolygonCullMode::Back;
+        rasterizationDesc.frontFace = PolygonFrontFace::FrontCounterClockwise;
+        rasterizationDesc.lineWidth = 1.0f;
+        rasterizationDesc.mode = PolygonMode::Fill;
+
+        PrimitiveTopology topology = PrimitiveTopology::TriangleList;
+
+        RenderDevice::BlendAttachmentDesc blendAttachmentDesc = {};
+        blendAttachmentDesc.blendEnable = false;
+
+        RenderDevice::PipelineSurfaceBlendStateDesc blendStateDesc = {};
+        blendStateDesc.attachment = blendAttachmentDesc;
+        blendStateDesc.logicOpEnable = false;
+        blendStateDesc.logicOp = LogicOperation::NoOp;
+
+        graphicsPipeline = device.createGraphicsPipeline(
+                surface,
+                topology,
+                shaderProgram, vertexLayout, uniformLayout, rasterizationDesc, blendStateDesc
+        );
     }
 
     void loop() {
@@ -105,6 +126,7 @@ private:
     ID uniformLayout;
     ID uniformSet;
     ID shaderProgram;
+    ID graphicsPipeline;
 
     struct Transform {
         float32 values[16] = {
