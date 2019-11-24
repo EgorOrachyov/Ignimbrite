@@ -46,6 +46,7 @@ void VulkanExtensions::destroySurface(VulkanRenderDevice &device, VulkanExtensio
     VulkanContext &context = device.context;
 
     context.deviceWaitIdle();
+    context.destroyCmdBuffers(vulkanSurface);
     context.destroyFramebuffers(vulkanSurface);
     context.destroyFramebufferFormat(vulkanSurface);
     context.destroySwapChain(vulkanSurface);

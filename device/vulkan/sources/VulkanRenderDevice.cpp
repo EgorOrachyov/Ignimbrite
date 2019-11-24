@@ -440,6 +440,8 @@ void VulkanRenderDevice::destroyFramebufferFormat(RenderDevice::ID framebufferFo
 
 RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderDevice::ID> &attachmentIds,
                                                        RenderDevice::ID framebufferFormatId) {
+    VulkanFrameBuffer fbo = {};
+
     if (attachmentIds.empty()) {
         throw VulkanException("An attempt to create empty frame buffer");
     }
@@ -484,12 +486,17 @@ RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderD
         throw VulkanException("Filed to create framebuffer");
     }
 
-    return mFrameBuffers.move(framebuffer);
+    fbo.framebuffer = framebuffer;
+    fbo.renderPass = format.renderPass;
+    fbo.width = width;
+    fbo.height = height;
+
+    return mFrameBuffers.move(fbo);
 }
 
 void VulkanRenderDevice::destroyFramebuffer(RenderDevice::ID framebufferId) {
-    VkFramebuffer framebuffer = mFrameBuffers.get(framebufferId);
-    vkDestroyFramebuffer(context.device, framebuffer, nullptr);
+    VulkanFrameBuffer fbo = mFrameBuffers.get(framebufferId);
+    vkDestroyFramebuffer(context.device, fbo.framebuffer, nullptr);
 
     mFrameBuffers.remove(framebufferId);
 }
@@ -985,5 +992,175 @@ RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(RenderDevice::ID sur
 
 void VulkanRenderDevice::destroyGraphicsPipeline(RenderDevice::ID pipeline) {
 
+}
+
+void VulkanRenderDevice::drawListBindIndexBuffer(RenderDevice::ID drawListId, RenderDevice::ID indexBufferId,
+                                                 IndicesType indicesType, uint32 offset) {
+    VulkanDrawList &drawList = mDrawLists.get(drawListId);
+    auto &indexBuffer = mIndexBuffers.get(indexBufferId);
+
+    vkCmdBindIndexBuffer(drawList.cmd, indexBuffer.vkBuffer, offset, VulkanDefinitions::indexType(indicesType));
+}
+
+void VulkanRenderDevice::drawListBindVertexBuffer(RenderDevice::ID drawListId, RenderDevice::ID vertexBufferId,
+                                                  uint32 binding, uint32 offset) {
+    VulkanDrawList &drawList = mDrawLists.get(drawListId);
+    auto &vertexBuffer = mVertexBuffers.get(vertexBufferId);
+
+    VkDeviceSize offsets[1] = { offset };
+    vkCmdBindVertexBuffers(drawList.cmd, binding, 1, &vertexBuffer.vkBuffer, offsets);
+}
+
+void VulkanRenderDevice::drawListBindPipeline(RenderDevice::ID drawListId, RenderDevice::ID graphicsPipelineId) {
+    VulkanDrawList &drawList = mDrawLists.get(drawListId);
+    VulkanGraphicsPipeline &graphicsPipeline = mGraphicsPipelines.get(graphicsPipelineId);
+
+    drawList.pipeline = graphicsPipeline.pipeline;
+    drawList.pipelineLayout = graphicsPipeline.pipelineLayout;
+
+    vkCmdBindPipeline(drawList.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.pipeline);
+}
+
+void VulkanRenderDevice::drawListDrawIndexed(RenderDevice::ID drawListId, uint32 indicesCount, uint32 instancesCount) {
+    VulkanDrawList &drawList = mDrawLists.get(drawListId);
+    vkCmdDrawIndexed(drawList.cmd, indicesCount, instancesCount, 0, 0, 0);
+}
+
+void VulkanRenderDevice::drawListDraw(RenderDevice::ID drawListId, uint32 verticesCount, uint32 instancesCount) {
+    VulkanDrawList &drawList = mDrawLists.get(drawListId);
+    vkCmdDraw(drawList.cmd, verticesCount, instancesCount, 0, 0);
+}
+
+RenderDevice::ID
+VulkanRenderDevice::drawListBegin(RenderDevice::ID framebufferId, std::vector<Color> clearColors, float32 clearDepth,
+                                  uint32 clearStencil, const RenderDevice::Region &drawArea) {
+    VulkanFrameBuffer fbo = mFrameBuffers.get(framebufferId);
+
+    uint32_t viewportOffsetX = drawArea.xOffset;
+    uint32_t viewportOffsetY = drawArea.yOffset;
+    uint32_t viewportWidth = drawArea.extent.x;
+    uint32_t viewportHeight = drawArea.extent.y;
+
+    std::vector<VkClearValue> clearValues(clearColors.size() + 1);
+
+    for (size_t i = 0; i < clearColors.size(); i++) {
+        clearValues[i].color = {{clearColors[i].components[0],
+                                        clearColors[i].components[1],
+                                        clearColors[i].components[2],
+                                        clearColors[i].components[3]} };
+    }
+
+    clearValues[clearColors.size()].depthStencil = { clearDepth, clearStencil };
+
+    VkRenderPassBeginInfo renderPassBeginInfo {};
+    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassBeginInfo.renderPass = fbo.renderPass;
+    renderPassBeginInfo.renderArea.offset.x = 0;
+    renderPassBeginInfo.renderArea.offset.y = 0;
+
+    renderPassBeginInfo.renderArea.extent.width = fbo.width;
+    renderPassBeginInfo.renderArea.extent.height = fbo.height;
+    renderPassBeginInfo.clearValueCount = clearValues.size();
+    renderPassBeginInfo.pClearValues = clearValues.data();
+    renderPassBeginInfo.framebuffer = fbo.framebuffer;
+
+    VkCommandBuffer cmd = VulkanUtils::beginTempCommandBuffer(context, context.graphicsTempCommandPool);
+    vkCmdBeginRenderPass(cmd, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    VkViewport viewport {};
+    viewport.x = viewportOffsetX;
+    viewport.y = viewportOffsetY;
+    viewport.width = viewportWidth;
+    viewport.height = viewportHeight;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(cmd, 0, 1, &viewport);
+
+    VkRect2D scissor {};
+    scissor.extent.width = viewportWidth;
+    scissor.extent.height = viewportHeight;
+    scissor.offset.x = viewportOffsetX;
+    scissor.offset.y = viewportOffsetY;
+    vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+    VulkanDrawList drawList = {};
+    drawList.cmd = cmd;
+    // pipeline and pipelineLayout are set in drawListBindPipeline
+
+    return mDrawLists.move(drawList);
+}
+
+RenderDevice::ID VulkanRenderDevice::drawListBegin(RenderDevice::ID framebufferId, std::vector<Color> clearColors,
+                                                   const RenderDevice::Region &drawArea) {
+    return drawListBegin(framebufferId, clearColors, 1.0f, 0, drawArea);
+}
+
+RenderDevice::ID
+VulkanRenderDevice::drawListBegin(RenderDevice::ID surfaceId, RenderDevice::Color clearColor, float32 clearDepth,
+                                  uint32 clearStencil, const RenderDevice::Region &drawArea) {
+    VulkanSurface &surface = mSurfaces.get(surfaceId);
+
+    uint32_t viewportOffsetX = drawArea.xOffset;
+    uint32_t viewportOffsetY = drawArea.yOffset;
+    uint32_t viewportWidth = drawArea.extent.x;
+    uint32_t viewportHeight = drawArea.extent.y;
+
+    VkClearValue clearValues[2];
+    clearValues[0].color = { {clearColor.components[0],
+                                     clearColor.components[1],
+                                     clearColor.components[2],
+                                     clearColor.components[3]} };
+    clearValues[1].depthStencil.depth = clearDepth;
+    clearValues[1].depthStencil.stencil = clearStencil;
+
+    VkRenderPassBeginInfo renderPassBeginInfo {};
+    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassBeginInfo.renderPass = surface.framebufferFormat.renderPass;
+    renderPassBeginInfo.renderArea.offset.x = 0;
+    renderPassBeginInfo.renderArea.offset.y = 0;
+
+    renderPassBeginInfo.renderArea.extent.width = surface.width;
+    renderPassBeginInfo.renderArea.extent.height = surface.height;
+    renderPassBeginInfo.clearValueCount = 2;
+    renderPassBeginInfo.pClearValues = clearValues;
+    // TODO: init framebuffers for each swap buffer in a (?)surface
+    renderPassBeginInfo.framebuffer = surface.swapChainFramebuffers[];
+
+    VkCommandBuffer cmd = surface.drawCmdBuffers[];
+    vkCmdBeginRenderPass(cmd, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    VkViewport viewport {};
+    viewport.x = viewportOffsetX;
+    viewport.y = viewportOffsetY;
+    viewport.width = viewportWidth;
+    viewport.height = viewportHeight;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(cmd, 0, 1, &viewport);
+
+    VkRect2D scissor {};
+    scissor.extent.width = viewportWidth;
+    scissor.extent.height = viewportHeight;
+    scissor.offset.x = viewportOffsetX;
+    scissor.offset.y = viewportOffsetY;
+    vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+    VulkanDrawList drawList = {};
+    drawList.cmd = cmd;
+    // pipeline and pipelineLayout are set in drawListBindPipeline
+
+    return mDrawLists.move(drawList);
+}
+
+RenderDevice::ID VulkanRenderDevice::drawListBegin(RenderDevice::ID surfaceId, RenderDevice::Color clearColor,
+                                                   const RenderDevice::Region &drawArea) {
+    return drawListBegin(surfaceId, clearColor, 1.0f, 0, drawArea);
+}
+
+void VulkanRenderDevice::drawListBindUniformSet(RenderDevice::ID drawListId, RenderDevice::ID uniformSetId) {
+    VulkanDrawList &drawList = mDrawLists.get(drawListId);
+    VulkanUniformSet &uniformSet = mUniformSets.get(uniformSetId);
+
+    vkCmdBindDescriptorSets(drawList.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, drawList.pipelineLayout, 0, 1, &uniformSet.descriptorSet, 0, NULL);
 }
 

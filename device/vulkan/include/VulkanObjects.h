@@ -58,6 +58,19 @@ struct VulkanFrameBufferFormat {
     bool useDepthStencil;
 };
 
+struct VulkanFrameBuffer {
+    VkFramebuffer framebuffer;
+    VkRenderPass renderPass;
+    uint32 width;
+    uint32 height;
+};
+
+struct VulkanDrawList {
+    VkCommandBuffer cmd;
+    VkPipelineLayout pipelineLayout;
+    VkPipeline pipeline;
+};
+
 struct VulkanSurface {
     std::string name;
     uint32 width;
@@ -79,6 +92,7 @@ struct VulkanSurface {
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
     std::vector<VkFramebuffer> swapChainFramebuffers;
+    std::vector<VkCommandBuffer> drawCmdBuffers;
 };
 
 struct VulkanUniformBuffer {

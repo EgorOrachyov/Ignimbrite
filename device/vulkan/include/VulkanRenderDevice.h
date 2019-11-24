@@ -8,6 +8,8 @@
 #include <renderer/ObjectIDBuffer.h>
 #include <VulkanObjects.h>
 #include <VulkanContext.h>
+#include <vulkan/vulkan.h>
+#include "VulkanUtils.h"
 
 /** Vulkan implementation for Render Device interface */
 class VulkanRenderDevice : public RenderDevice {
@@ -69,53 +71,29 @@ public:
 
     void destroyGraphicsPipeline(ID pipeline) override;
 
-    ID drawListBegin(ID framebuffer, std::vector<Color> clearColors, const Region &drawArea) override {
-        return RenderDevice::ID();
-    }
+    ID drawListBegin(ID framebufferId, std::vector<Color> clearColors, const Region &drawArea) override;
+    ID drawListBegin(ID framebufferId, std::vector<Color> clearColors, float32 clearDepth, uint32 clearStencil,
+                     const Region &drawArea) override;
 
-    ID drawListBegin(ID framebuffer, std::vector<Color> clearColors, float32 clearDepth, uint32 clearStencil,
-                     const Region &drawArea) override {
-        return RenderDevice::ID();
-    }
+    ID drawListBegin(ID surfaceId, Color clearColor, const Region &drawArea) override;
+    ID drawListBegin(ID surfaceId, Color clearColor, float32 clearDepth, uint32 clearStencil,
+                     const Region &drawArea) override;
 
-    ID drawListBegin(ID surface, Color clearColor, const Region &drawArea) override {
-        return RenderDevice::ID();
-    }
+    void drawListBindPipeline(ID drawListId, ID graphicsPipelineId) override;
 
-    ID drawListBegin(ID surface, Color clearColor, float32 clearDepth, uint32 clearStencil,
-                     const Region &drawArea) override {
-        return RenderDevice::ID();
-    }
+    void drawListBindUniformSet(ID drawListId, ID uniformSetId) override;
 
-    void drawListBindPipeline(ID drawList, ID graphicsPipeline) override {
+    void drawListBindVertexBuffer(ID drawListId, ID vertexBufferId, uint32 binding, uint32 offset) override;
+    void drawListBindIndexBuffer(ID drawListId, ID indexBufferId, IndicesType indicesType, uint32 offset) override;
 
-    }
+    void drawListDraw(ID drawListId, uint32 verticesCount, uint32 instancesCount) override;
+    void drawListDrawIndexed(ID drawListId, uint32 indicesCount, uint32 instancesCount) override;
 
-    void drawListBindUniformSet(ID drawList, ID uniformLayout) override {
+    void drawListEnd(ID drawListId) override {
 
     }
 
-    void drawListBindVertexBuffer(ID drawList, ID vertexBuffer, uint32 binding, uint32 offset) override {
-
-    }
-
-    void drawListBindIndexBuffer(ID drawList, ID indexBuffer, IndicesType indicesType, uint32 offset) override {
-
-    }
-
-    void drawListDraw(ID drawList, uint32 verticesCount, uint32 instancesCount) override {
-
-    }
-
-    void drawListDrawIndexed(ID drawList, uint32 indicesCount, uint32 instancesCount) override {
-
-    }
-
-    void drawListEnd(ID drawList) override {
-
-    }
-
-    void swapBuffers(ID surface) override {
+    void swapBuffers(ID surfaceId) override {
 
     }
 
@@ -133,7 +111,7 @@ private:
     Buffer<VulkanVertexBuffer> mVertexBuffers;
     Buffer<VulkanIndexBuffer> mIndexBuffers;
     Buffer<VulkanFrameBufferFormat> mFrameBufferFormats;
-    Buffer<VkFramebuffer> mFrameBuffers;
+    Buffer<VulkanFrameBuffer> mFrameBuffers;
     Buffer<VkSampler> mSamplers;
     Buffer<VulkanTextureObject> mTextureObjects;
     Buffer<VulkanUniformBuffer> mUniformBuffers;
@@ -141,7 +119,7 @@ private:
     Buffer<VulkanUniformSet> mUniformSets;
     Buffer<VulkanShaderProgram> mShaderPrograms;
     Buffer<VulkanGraphicsPipeline> mGraphicsPipelines;
-
+    Buffer<VulkanDrawList> mDrawLists;
 };
 
 #endif //VULKANRENDERER_VULKANRENDERDEVICE_H

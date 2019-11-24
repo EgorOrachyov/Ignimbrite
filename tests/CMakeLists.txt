@@ -19,3 +19,7 @@ target_link_libraries(Tests PUBLIC VulkanDevice)
 
 variable_watch(THIRD_PARTY_LIBS)
 target_link_libraries(Tests PUBLIC ${THIRD_PARTY_LIBS})
+
+if (UNIX)
+    target_link_libraries(Tests PUBLIC glfw)
+endif()

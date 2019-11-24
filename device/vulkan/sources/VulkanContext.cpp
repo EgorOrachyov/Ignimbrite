@@ -501,9 +501,22 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
         swapChainCreateInfo.preTransform = surfaceCapabilities.currentTransform;
     }
 
-    if (!(surfaceCapabilities.minImageCount <= swapChainMinImageCount
-        && swapChainMinImageCount <= surfaceCapabilities.maxImageCount)) {
+    if (!(swapChainMinImageCount <= surfaceCapabilities.maxImageCount || surfaceCapabilities.maxImageCount == 0)) {
         throw VulkanException("Given swap chain min image count is not available on this surface and device");
+    }
+
+    if (surfaceCapabilities.minImageCount > swapChainMinImageCount) {
+        swapChainMinImageCount = surfaceCapabilities.minImageCount;
+    }
+
+    if (swapChainMinImageCount == 3) {
+        surface.tripleBuffering = true;
+    }
+    else if (swapChainMinImageCount == 2) {
+        surface.tripleBuffering = false;
+    }
+    else {
+        throw VulkanException("Swap chain min image count is not 2 or 3");
     }
 
     swapChainCreateInfo.minImageCount = swapChainMinImageCount;
@@ -668,6 +681,7 @@ void VulkanContext::destroyFramebuffers(VulkanSurface &surface) {
 void VulkanContext::recreateSwapChain(VulkanSurface &surface) {
     deviceWaitIdle();
 
+    destroyCmdBuffers(surface);
     destroyFramebuffers(surface);
     destroyFramebufferFormat(surface);
     destroySwapChain(surface);
@@ -675,6 +689,7 @@ void VulkanContext::recreateSwapChain(VulkanSurface &surface) {
     createSwapChain(surface);
     createFramebufferFormat(surface);
     createFramebuffers(surface);
+    createCmdBuffers(surface);
 }
 
 void VulkanContext::deviceWaitIdle() {
@@ -698,4 +713,26 @@ void VulkanContext::destroyCommandPools() {
     vkDestroyCommandPool(device, transferCommandPool, nullptr);
     vkDestroyCommandPool(device, graphicsTempCommandPool, nullptr);
     vkDestroyCommandPool(device, transferTempCommandPool, nullptr);
+}
+
+void VulkanContext::createCmdBuffers(VulkanSurface &surface) {
+    // create command buffers for each swapchain image
+    std::vector<VkCommandBuffer> &cmdBuffers = surface.drawCmdBuffers;
+    cmdBuffers.resize(surface.tripleBuffering ? 3 : 2);
+
+    VkCommandBufferAllocateInfo cmdBufferInfo {};
+    cmdBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cmdBufferInfo.commandPool = this->graphicsCommandPool;
+    cmdBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    cmdBufferInfo.commandBufferCount = cmdBuffers.size();
+
+    VkResult r = vkAllocateCommandBuffers(device, &cmdBufferInfo, cmdBuffers.data());
+
+    if (r != VK_SUCCESS) {
+        throw VulkanException("Can't allocate command buffers for swapchain");
+    }
+}
+
+void VulkanContext::destroyCmdBuffers(VulkanSurface &surface) {
+    vkFreeCommandBuffers(device, this->graphicsCommandPool, surface.drawCmdBuffers.size(), surface.drawCmdBuffers.data());
 }
