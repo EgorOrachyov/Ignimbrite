@@ -83,6 +83,7 @@ public:
                 topology,
                 shaderProgram, vertexLayout, uniformLayout, rasterizationDesc, blendStateDesc
         );
+
     }
 
     void loop() {

@@ -984,6 +984,11 @@ RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(RenderDevice::ID sur
 }
 
 void VulkanRenderDevice::destroyGraphicsPipeline(RenderDevice::ID pipeline) {
+    auto& vkPipeline = mGraphicsPipelines.get(pipeline);
 
+    vkDestroyPipelineLayout(context.device, vkPipeline.pipelineLayout, nullptr);
+    vkDestroyPipeline(context.device, vkPipeline.pipeline, nullptr);
+
+    mGraphicsPipelines.remove(pipeline);
 }
 

@@ -18,7 +18,7 @@ VulkanExtensions::ID VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &dev
         throw VulkanException("Failed to create window surface");
     }
 
-    VulkanSurface window = { };
+    VulkanSurface window = {};
     window.name = name;
     window.width = width;
     window.widthFramebuffer = widthFramebuffer;
