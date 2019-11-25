@@ -69,6 +69,7 @@ struct VulkanDrawList {
     VkCommandBuffer cmd;
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
+    bool useFramebuffer = false;
 };
 
 struct VulkanSurface {
@@ -80,6 +81,7 @@ struct VulkanSurface {
     bool tripleBuffering = false;
     uint32 presentsFamily;
     VkQueue presentQueue;
+    VkQueue graphicsQueue;
     /// Surface created vie extension for specific WSI
     VkSurfaceKHR surface;
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
@@ -93,6 +95,12 @@ struct VulkanSurface {
     std::vector<VkImageView> swapChainImageViews;
     std::vector<VkFramebuffer> swapChainFramebuffers;
     std::vector<VkCommandBuffer> drawCmdBuffers;
+    uint32 currentImageIndex = 0;
+    // For swapchain image presentation
+    std::vector<VkSemaphore> presentSemaphores;
+    // For submitting and executing cmd buffer
+    std::vector<VkSemaphore> renderSemaphores;
+    std::vector<VkFence> waitFences;
 };
 
 struct VulkanUniformBuffer {

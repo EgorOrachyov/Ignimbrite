@@ -330,6 +330,8 @@ void VulkanContext::findPresentsFamily(VulkanSurface &surface) {
         }
     }
 
+    surface.graphicsQueue = graphicsQueue;
+
 #ifdef MODE_DEBUG
     printf("Found queue family [present: %u]\n", presentsFamily);
 #endif
@@ -423,7 +425,7 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
     uint32 height = surface.heightFramebuffer;
     uint32 swapChainMinImageCount = tripleBuffering ? 3 : 2;
     VkSurfaceKHR surfaceKHR = surface.surface;
-    VkSurfaceCapabilitiesKHR& surfaceCapabilities = surface.surfaceCapabilities;
+    VkSurfaceCapabilitiesKHR &surfaceCapabilities = surface.surfaceCapabilities;
     VkSwapchainKHR swapChain = VK_NULL_HANDLE;
 
     std::vector<VkSurfaceFormatKHR> surfaceFormats;
@@ -436,7 +438,7 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
     chosenSurfaceFormat.format = surfaceFormats[0].format;
     chosenSurfaceFormat.colorSpace = surfaceFormats[0].colorSpace;
 
-    for (auto& surfaceFormat : surfaceFormats) {
+    for (auto &surfaceFormat : surfaceFormats) {
         if (surfaceFormat.format == PREFERRED_FORMAT && surfaceFormat.colorSpace == PREFERRED_COLOR_SPACE) {
             chosenSurfaceFormat.format = surfaceFormat.format;
             chosenSurfaceFormat.colorSpace = surfaceFormat.colorSpace;
@@ -446,7 +448,7 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
 
     chosenPresentMode = presentModes[0];
 
-    for (auto& presentMode : presentModes) {
+    for (auto &presentMode : presentModes) {
         if (presentMode == PREFERRED_PRESENT_MODE) {
             chosenPresentMode = PREFERRED_PRESENT_MODE;
             break;
@@ -496,8 +498,7 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
 
     if (surfaceCapabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
         swapChainCreateInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-    }
-    else {
+    } else {
         swapChainCreateInfo.preTransform = surfaceCapabilities.currentTransform;
     }
 
@@ -511,11 +512,9 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
 
     if (swapChainMinImageCount == 3) {
         surface.tripleBuffering = true;
-    }
-    else if (swapChainMinImageCount == 2) {
+    } else if (swapChainMinImageCount == 2) {
         surface.tripleBuffering = false;
-    }
-    else {
+    } else {
         throw VulkanException("Swap chain min image count is not 2 or 3");
     }
 
@@ -569,6 +568,35 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
         }
     }
 
+    // create semaphores for each image
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkFenceCreateInfo fenceCreateInfo {};
+    fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    surface.presentSemaphores.resize(swapChainImageCount);
+    surface.renderSemaphores.resize(swapChainImageCount);
+    surface.waitFences.resize(swapChainImageCount);
+
+    for (uint32 i = 0; i < swapChainImageCount; i++) {
+        r = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &surface.presentSemaphores[i]);
+        if (r != VK_SUCCESS) {
+            throw VulkanException("Can't create present semaphore");
+        }
+
+        r = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &surface.renderSemaphores[i]);
+        if (r != VK_SUCCESS) {
+            throw VulkanException("Can't create render semaphore");
+        }
+
+        r = vkCreateFence(device, &fenceCreateInfo, nullptr, &surface.waitFences[i]);
+        if (r != VK_SUCCESS) {
+            throw VulkanException("Can't create fence");
+        }
+    }
+
     surface.swapChain = swapChain;
     surface.presentMode = chosenPresentMode;
     surface.surfaceFormat = chosenSurfaceFormat;
@@ -577,6 +605,18 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
 
 void VulkanContext::destroySwapChain(VulkanSurface& surface)
 {
+    for (VkSemaphore &semaphore : surface.presentSemaphores) {
+        vkDestroySemaphore(device, semaphore, nullptr);
+    }
+
+    for (VkSemaphore &semaphore : surface.presentSemaphores) {
+        vkDestroySemaphore(device, semaphore, nullptr);
+    }
+
+    for (VkFence &fence : surface.waitFences) {
+        vkDestroyFence(device, fence, nullptr);
+    }
+
     // destroy only image views, images will be destroyed with swap chain
     for (auto view: surface.swapChainImageViews) {
         vkDestroyImageView(device, view, nullptr);
@@ -650,7 +690,7 @@ void VulkanContext::createFramebuffers(VulkanSurface &surface) {
     auto& framebuffers = surface.swapChainFramebuffers;
     framebuffers.resize(imageViews.size());
 
-    for (uint32 i = 0; i < framebuffers.size(); i++) {
+    for (size_t i = 0; i < framebuffers.size(); i++) {
         VkFramebufferCreateInfo framebufferInfo = {};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.pNext = nullptr;
@@ -662,13 +702,11 @@ void VulkanContext::createFramebuffers(VulkanSurface &surface) {
         framebufferInfo.pAttachments = &imageViews[i];
         framebufferInfo.renderPass = surface.framebufferFormat.renderPass;
 
-        result = vkCreateFramebuffer(device, &framebufferInfo, nullptr, &framebuffer);
+        result = vkCreateFramebuffer(device, &framebufferInfo, nullptr, &framebuffers[i]);
 
         if (result != VK_SUCCESS) {
             throw VulkanException("Filed to create framebuffer for surface");
         }
-
-        framebuffers[i] = framebuffer;
     }
 }
 

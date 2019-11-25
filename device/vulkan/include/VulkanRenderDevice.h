@@ -89,13 +89,9 @@ public:
     void drawListDraw(ID drawListId, uint32 verticesCount, uint32 instancesCount) override;
     void drawListDrawIndexed(ID drawListId, uint32 indicesCount, uint32 instancesCount) override;
 
-    void drawListEnd(ID drawListId) override {
+    void drawListEnd(ID drawListId) override;
 
-    }
-
-    void swapBuffers(ID surfaceId) override {
-
-    }
+    void swapBuffers(ID surfaceId) override;
 
 private:
 
