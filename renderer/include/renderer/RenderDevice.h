@@ -304,32 +304,32 @@ public:
         Extent extent;
     };
 
-    virtual ID drawListBegin(ID framebuffer,
-                             std::vector<Color> clearColors,
-                             const Region& drawArea) = 0;
-    virtual ID drawListBegin(ID framebuffer,
-                             std::vector<Color> clearColors,
-                             float32 clearDepth,
-                             uint32 clearStencil,
-                             const Region& drawArea) = 0;
-    virtual ID drawListBegin(ID surface,
-                             Color clearColor,
-                             const Region& drawArea) = 0;
-    virtual ID drawListBegin(ID surface,
-                             Color clearColor,
-                             float32 clearDepth,
-                             uint32 clearStencil,
-                             const Region& drawArea) = 0;
+    /**
+     * @brief Begin draw list
+     *
+     * Single time submit draw list.
+     */
+    virtual void drawListBegin() = 0;
 
-    virtual void drawListBindPipeline(ID drawList, ID graphicsPipeline) = 0;
-    virtual void drawListBindUniformSet(ID drawList, ID uniformLayout) = 0;
-    virtual void drawListBindVertexBuffer(ID drawList, ID vertexBuffer, uint32 binding, uint32 offset) = 0;
-    virtual void drawListBindIndexBuffer(ID drawList, ID indexBuffer, IndicesType indicesType, uint32 offset) = 0;
+    /**
+     * @brief End draw list
+     *
+     * Finish draw list commands setup. Submits
+     * draw list on GPU for rendering and waits, until
+     * draw list executed.
+     */
+    virtual void drawListEnd() = 0;
 
-    virtual void drawListDraw(ID drawList, uint32 verticesCount, uint32 instancesCount) = 0;
-    virtual void drawListDrawIndexed(ID drawList, uint32 indicesCount, uint32 instancesCount) = 0;
+    virtual void drawListBindSurface(ID surface, const Color &color, const Region& area) = 0;
+    virtual void drawListBindFramebuffer(ID framebuffer, const std::vector<Color> &colors, const Region& area) = 0;
+    virtual void drawListBindFramebuffer(ID framebuffer, const std::vector<Color> &colors, float32 depth, uint32 stencil, const Region& area) = 0;
+    virtual void drawListBindPipeline(ID graphicsPipeline) = 0;
+    virtual void drawListBindUniformSet(ID uniformLayout) = 0;
+    virtual void drawListBindVertexBuffer(ID vertexBuffer, uint32 binding, uint32 offset) = 0;
+    virtual void drawListBindIndexBuffer(ID indexBuffer, IndicesType indicesType, uint32 offset) = 0;
 
-    virtual void drawListEnd(ID drawList) = 0;
+    virtual void drawListDraw(uint32 verticesCount, uint32 instancesCount) = 0;
+    virtual void drawListDrawIndexed(uint32 indicesCount, uint32 instancesCount) = 0;
 
     /**
      * @brief Get surface id

@@ -62,34 +62,24 @@ public:
                               const PipelineRasterizationDesc &rasterizationDesc,
                               const PipelineBlendStateDesc &blendStateDesc,
                               const PipelineDepthStencilStateDesc &depthStencilStateDesc) override;
-
     ID createGraphicsPipeline(ID surface,
                               PrimitiveTopology topology,
                               ID program, ID vertexLayout, ID uniformLayout,
                               const PipelineRasterizationDesc &rasterizationDesc,
                               const PipelineSurfaceBlendStateDesc &blendStateDesc) override;
-
     void destroyGraphicsPipeline(ID pipeline) override;
 
-    ID drawListBegin(ID framebufferId, std::vector<Color> clearColors, const Region &drawArea) override;
-    ID drawListBegin(ID framebufferId, std::vector<Color> clearColors, float32 clearDepth, uint32 clearStencil,
-                     const Region &drawArea) override;
-
-    ID drawListBegin(ID surfaceId, Color clearColor, const Region &drawArea) override;
-    ID drawListBegin(ID surfaceId, Color clearColor, float32 clearDepth, uint32 clearStencil,
-                     const Region &drawArea) override;
-
-    void drawListBindPipeline(ID drawListId, ID graphicsPipelineId) override;
-
-    void drawListBindUniformSet(ID drawListId, ID uniformSetId) override;
-
-    void drawListBindVertexBuffer(ID drawListId, ID vertexBufferId, uint32 binding, uint32 offset) override;
-    void drawListBindIndexBuffer(ID drawListId, ID indexBufferId, IndicesType indicesType, uint32 offset) override;
-
-    void drawListDraw(ID drawListId, uint32 verticesCount, uint32 instancesCount) override;
-    void drawListDrawIndexed(ID drawListId, uint32 indicesCount, uint32 instancesCount) override;
-
-    void drawListEnd(ID drawListId) override;
+    void drawListBegin() override;
+    void drawListEnd() override;
+    void drawListBindSurface(ID surface, const Color &color, const Region &area) override { }
+    void drawListBindFramebuffer(ID framebuffer, const std::vector<Color> &colors, const Region &area) override { }
+    void drawListBindFramebuffer(ID framebuffer, const std::vector<Color> &colors, float32 depth, uint32 stencil, const Region &area) override { }
+    void drawListBindPipeline(ID graphicsPipeline) override;
+    void drawListBindUniformSet(ID uniformLayout) override;
+    void drawListBindVertexBuffer(ID vertexBuffer, uint32 binding, uint32 offset) override;
+    void drawListBindIndexBuffer(ID indexBuffer, IndicesType indicesType, uint32 offset) override;
+    void drawListDraw(uint32 verticesCount, uint32 instancesCount) override;
+    void drawListDrawIndexed(uint32 indicesCount, uint32 instancesCount) override;
 
     void swapBuffers(ID surfaceId) override;
 
@@ -101,6 +91,7 @@ private:
     using Buffer = ObjectIDBuffer<T>;
 
     VulkanContext context;
+    VulkanDrawList drawList;
 
     Buffer<VulkanSurface> mSurfaces;
     Buffer<VulkanVertexLayout> mVertexLayouts;
@@ -115,7 +106,8 @@ private:
     Buffer<VulkanUniformSet> mUniformSets;
     Buffer<VulkanShaderProgram> mShaderPrograms;
     Buffer<VulkanGraphicsPipeline> mGraphicsPipelines;
-    Buffer<VulkanDrawList> mDrawLists;
+
+
 };
 
 #endif //VULKANRENDERER_VULKANRENDERDEVICE_H

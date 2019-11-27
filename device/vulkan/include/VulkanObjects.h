@@ -66,10 +66,14 @@ struct VulkanFrameBuffer {
 };
 
 struct VulkanDrawList {
-    VkCommandBuffer cmd;
-    VkPipelineLayout pipelineLayout;
-    VkPipeline pipeline;
-    bool useFramebuffer = false;
+    VkCommandBuffer buffer = VK_NULL_HANDLE;
+    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+    bool frameBufferAttached = false;
+    bool pipelineAttached = false;
+    bool uniformSetAttached = false;
+    bool vertexBufferAttached = false;
+    bool indexBufferAttached = false;
+    bool drawCalled = false;
 };
 
 struct VulkanSurface {
