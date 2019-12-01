@@ -71,9 +71,10 @@ public:
 
     void drawListBegin() override;
     void drawListEnd() override;
-    void drawListBindSurface(ID surface, const Color &color, const Region &area) override { }
-    void drawListBindFramebuffer(ID framebuffer, const std::vector<Color> &colors, const Region &area) override { }
-    void drawListBindFramebuffer(ID framebuffer, const std::vector<Color> &colors, float32 depth, uint32 stencil, const Region &area) override { }
+    void drawListBindSurface(ID surface, const Color &color, const Region &area) override;
+    void drawListBindFramebuffer(ID framebuffer, const std::vector<Color> &clearColors, const Region &area) override;
+    void drawListBindFramebuffer(ID framebuffer, const std::vector<Color> &clearColors,
+            float32 clearDepth, uint32 clearStencil, const Region &area) override;
     void drawListBindPipeline(ID graphicsPipeline) override;
     void drawListBindUniformSet(ID uniformLayout) override;
     void drawListBindVertexBuffer(ID vertexBuffer, uint32 binding, uint32 offset) override;

@@ -60,7 +60,7 @@ struct VulkanFrameBufferFormat {
 
 struct VulkanFrameBuffer {
     VkFramebuffer framebuffer;
-    VkRenderPass renderPass;
+    ObjectID framebufferFormatId;
     uint32 width;
     uint32 height;
 };
@@ -68,6 +68,7 @@ struct VulkanFrameBuffer {
 struct VulkanDrawList {
     VkCommandBuffer buffer = VK_NULL_HANDLE;
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+    ObjectID surfaceId;
     bool frameBufferAttached = false;
     bool pipelineAttached = false;
     bool uniformSetAttached = false;
@@ -98,13 +99,14 @@ struct VulkanSurface {
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
     std::vector<VkFramebuffer> swapChainFramebuffers;
-    std::vector<VkCommandBuffer> drawCmdBuffers;
     uint32 currentImageIndex = 0;
-    // For swapchain image presentation
-    std::vector<VkSemaphore> presentSemaphores;
-    // For submitting and executing cmd buffer
-    std::vector<VkSemaphore> renderSemaphores;
-    std::vector<VkFence> waitFences;
+
+    uint32 currentFrameIndex = 0;
+    uint32 maxFramesInFlight = 3;
+    std::vector<VkSemaphore> imageAvailableSemaphores;
+    std::vector<VkSemaphore> renderFinishedSemaphores;
+    std::vector<VkFence> inFlightFences;
+    std::vector<VkFence> imagesInFlight;
 };
 
 struct VulkanUniformBuffer {

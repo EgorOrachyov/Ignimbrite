@@ -95,6 +95,9 @@ struct VulkanContext {
     VkCommandPool transferCommandPool = VK_NULL_HANDLE;
     VkCommandPool graphicsTempCommandPool = VK_NULL_HANDLE;
     VkCommandPool transferTempCommandPool = VK_NULL_HANDLE;
+
+    // NOTE: do not use this vector with multithreading
+    std::vector<VkClearValue> tempClearValues = {};
 };
 
 

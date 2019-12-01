@@ -487,7 +487,7 @@ RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderD
     }
 
     fbo.framebuffer = framebuffer;
-    fbo.renderPass = format.renderPass;
+    fbo.framebufferFormatId = framebufferFormatId;
     fbo.width = width;
     fbo.height = height;
 
@@ -996,26 +996,95 @@ void VulkanRenderDevice::destroyGraphicsPipeline(RenderDevice::ID pipeline) {
 
 void VulkanRenderDevice::drawListBegin() {
     // get free command buffer and reset drawList
+
+    // TODO: get available cmd buffer
+//    VkCommandBuffer cmd = ?;
+//
+//    // clear command buffer
+//    vkResetCommandBuffer(cmd, 0);
+//
+//    // and start recording
+//    VkCommandBufferBeginInfo beginInfo = {};
+//    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+//    vkBeginCommandBuffer(cmd, &beginInfo);
+
+    // for now, just create temp cmd buffer
+    VkCommandBuffer cmd = VulkanUtils::beginTempCommandBuffer(context, context.graphicsTempCommandPool);
+
+    // clear draw list
+    drawList = {};
+    drawList.buffer = cmd;
 }
 
 void VulkanRenderDevice::drawListEnd() {
     // submit for rendering and wait
+
+    VulkanSurface &surface = mSurfaces.get(drawList.surfaceId);
+    uint32 imageIndex = surface.currentImageIndex;
+    uint32 frameIndex = surface.currentFrameIndex;
+    VkCommandBuffer cmd = drawList.buffer;
+
+    // end renderpass associated with surface
+    vkCmdEndRenderPass(cmd);
+;
+    if (surface.imagesInFlight[imageIndex] != VK_NULL_HANDLE) {
+        vkWaitForFences(context.device, 1, &surface.imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+    }
+
+    surface.imagesInFlight[imageIndex] = surface.inFlightFences[frameIndex];
+
+    // when final colors are output of pipeline
+    VkPipelineStageFlags pipelineStageFlags[1] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+    VkSubmitInfo submitInfo;
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.pNext = nullptr;
+    submitInfo.pWaitDstStageMask = pipelineStageFlags;
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = &surface.imageAvailableSemaphores[frameIndex];
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = &surface.renderFinishedSemaphores[frameIndex];
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &cmd;
+
+    // reset fence to unsignaled state before submitting
+    VkResult result = vkResetFences(context.device, 1, &surface.inFlightFences[frameIndex]);
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Can't reset fence");
+    }
+
+    // submit command buffer to queue
+    result = vkQueueSubmit(surface.graphicsQueue, 1, &submitInfo, surface.inFlightFences[frameIndex]);
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Can't submit queue");
+    }
+
+    // TODO: remove after 'getAvailableCmdBuffer' implemetation
+    // as temp cmd buffer is used now, so delete it
+    vkEndCommandBuffer(cmd);
+    vkFreeCommandBuffers(context.device, context.graphicsTempCommandPool, 1, &cmd);
 }
 
 void VulkanRenderDevice::drawListBindPipeline(RenderDevice::ID graphicsPipelineId) {
     const auto &graphicsPipeline = mGraphicsPipelines.get(graphicsPipelineId);
     vkCmdBindPipeline(drawList.buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.pipeline);
+
+    drawList.pipelineAttached = true;
 }
 
 void VulkanRenderDevice::drawListBindUniformSet(RenderDevice::ID uniformSetId) {
     const auto &uniformSet = mUniformSets.get(uniformSetId);
     vkCmdBindDescriptorSets(drawList.buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, drawList.pipelineLayout, 0, 1, &uniformSet.descriptorSet, 0, nullptr);
+
+    drawList.uniformSetAttached = true;
 }
 
 void VulkanRenderDevice::drawListBindIndexBuffer(RenderDevice::ID indexBufferId,
                                                  IndicesType indicesType, uint32 offset) {
     const auto &indexBuffer = mIndexBuffers.get(indexBufferId);
     vkCmdBindIndexBuffer(drawList.buffer, indexBuffer.vkBuffer, offset, VulkanDefinitions::indexType(indicesType));
+
+    drawList.indexBufferAttached = true;
 }
 
 void VulkanRenderDevice::drawListBindVertexBuffer(RenderDevice::ID vertexBufferId,
@@ -1023,182 +1092,25 @@ void VulkanRenderDevice::drawListBindVertexBuffer(RenderDevice::ID vertexBufferI
     const auto &vertexBuffer = mVertexBuffers.get(vertexBufferId);
     VkDeviceSize offsets[1] = { offset };
     vkCmdBindVertexBuffers(drawList.buffer, binding, 1, &vertexBuffer.vkBuffer, offsets);
+
+    drawList.vertexBufferAttached = true;
 }
 
 void VulkanRenderDevice::drawListDrawIndexed(uint32 indicesCount, uint32 instancesCount) {
     vkCmdDrawIndexed(drawList.buffer, indicesCount, instancesCount, 0, 0, 0);
+    drawList.drawCalled = true;
 }
 
 void VulkanRenderDevice::drawListDraw(uint32 verticesCount, uint32 instancesCount) {
     vkCmdDraw(drawList.buffer, verticesCount, instancesCount, 0, 0);
+    drawList.drawCalled = true;
 }
-
-//RenderDevice::ID
-//VulkanRenderDevice::drawListBegin(RenderDevice::ID framebufferId, std::vector<Color> clearColors, float32 clearDepth,
-//                                  uint32 clearStencil, const RenderDevice::Region &drawArea) {
-//    VulkanFrameBuffer fbo = mFrameBuffers.get(framebufferId);
-//
-//    // TODO: what command buffer to use?
-//    // use temp command buffer for custom framebuffers
-//    VkCommandBuffer cmd = VulkanUtils::beginTempCommandBuffer(context, context.graphicsTempCommandPool);
-//
-//    uint32_t viewportOffsetX = drawArea.xOffset;
-//    uint32_t viewportOffsetY = drawArea.yOffset;
-//    uint32_t viewportWidth = drawArea.extent.x;
-//    uint32_t viewportHeight = drawArea.extent.y;
-//
-//    std::vector<VkClearValue> clearValues(clearColors.size() + 1);
-//
-//    for (size_t i = 0; i < clearColors.size(); i++) {
-//        clearValues[i].color = {{clearColors[i].components[0],
-//                                        clearColors[i].components[1],
-//                                        clearColors[i].components[2],
-//                                        clearColors[i].components[3]} };
-//    }
-//
-//    clearValues[clearColors.size()].depthStencil = { clearDepth, clearStencil };
-//
-//    VkRenderPassBeginInfo renderPassBeginInfo {};
-//    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-//    renderPassBeginInfo.renderPass = fbo.renderPass;
-//    renderPassBeginInfo.renderArea.offset.x = 0;
-//    renderPassBeginInfo.renderArea.offset.y = 0;
-//
-//    renderPassBeginInfo.renderArea.extent.width = fbo.width;
-//    renderPassBeginInfo.renderArea.extent.height = fbo.height;
-//    renderPassBeginInfo.clearValueCount = clearValues.size();
-//    renderPassBeginInfo.pClearValues = clearValues.data();
-//    renderPassBeginInfo.framebuffer = fbo.framebuffer;
-//
-//    vkCmdBeginRenderPass(cmd, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-//
-//    VkViewport viewport;
-//    viewport.x = viewportOffsetX;
-//    viewport.y = viewportOffsetY;
-//    viewport.width = viewportWidth;
-//    viewport.height = viewportHeight;
-//    viewport.minDepth = 0.0f;
-//    viewport.maxDepth = 1.0f;
-//    vkCmdSetViewport(cmd, 0, 1, &viewport);
-//
-//    VkRect2D scissor;
-//    scissor.extent.width = viewportWidth;
-//    scissor.extent.height = viewportHeight;
-//    scissor.offset.x = viewportOffsetX;
-//    scissor.offset.y = viewportOffsetY;
-//    vkCmdSetScissor(cmd, 0, 1, &scissor);
-//
-//    VulkanDrawList drawList = {};
-//    drawList.buffer = cmd;
-//    drawList.useFramebuffer = true;
-//    // pipeline and pipelineLayout are set in drawListBindPipeline
-//
-//    return mDrawLists.move(drawList);
-//}
-//
-//
-//
-//RenderDevice::ID VulkanRenderDevice::drawListBegin(RenderDevice::ID framebufferId, std::vector<Color> clearColors,
-//                                                   const RenderDevice::Region &drawArea) {
-//    return drawListBegin(framebufferId, clearColors, 1.0f, 0, drawArea);
-//}
-//
-//RenderDevice::ID
-//VulkanRenderDevice::drawListBegin(RenderDevice::ID surfaceId, RenderDevice::Color clearColor, float32 clearDepth,
-//                                  uint32 clearStencil, const RenderDevice::Region &drawArea) {
-//    VulkanSurface &surface = mSurfaces.get(surfaceId);
-//
-//    // use special command buffers
-//    VkCommandBuffer cmd = surface.drawCmdBuffers[surface.currentImageIndex];
-//    // clear command buffer
-//    vkResetCommandBuffer(cmd, 0);
-//
-//    uint32_t viewportOffsetX = drawArea.xOffset;
-//    uint32_t viewportOffsetY = drawArea.yOffset;
-//    uint32_t viewportWidth = drawArea.extent.x;
-//    uint32_t viewportHeight = drawArea.extent.y;
-//
-//    VkClearValue clearValues[2];
-//    clearValues[0].color = { {clearColor.components[0],
-//                                     clearColor.components[1],
-//                                     clearColor.components[2],
-//                                     clearColor.components[3]} };
-//    clearValues[1].depthStencil.depth = clearDepth;
-//    clearValues[1].depthStencil.stencil = clearStencil;
-//
-//    VkRenderPassBeginInfo renderPassBeginInfo {};
-//    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-//    renderPassBeginInfo.renderPass = surface.framebufferFormat.renderPass;
-//    renderPassBeginInfo.renderArea.offset.x = 0;
-//    renderPassBeginInfo.renderArea.offset.y = 0;
-//
-//    renderPassBeginInfo.renderArea.extent.width = surface.width;
-//    renderPassBeginInfo.renderArea.extent.height = surface.height;
-//    renderPassBeginInfo.clearValueCount = 2;
-//    renderPassBeginInfo.pClearValues = clearValues;
-//    renderPassBeginInfo.framebuffer = surface.swapChainFramebuffers[surface.currentImageIndex];
-//
-//    vkCmdBeginRenderPass(cmd, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-//
-//    VkViewport viewport;
-//    viewport.x = viewportOffsetX;
-//    viewport.y = viewportOffsetY;
-//    viewport.width = viewportWidth;
-//    viewport.height = viewportHeight;
-//    viewport.minDepth = 0.0f;
-//    viewport.maxDepth = 1.0f;
-//    vkCmdSetViewport(cmd, 0, 1, &viewport);
-//
-//    VkRect2D scissor;
-//    scissor.extent.width = viewportWidth;
-//    scissor.extent.height = viewportHeight;
-//    scissor.offset.x = viewportOffsetX;
-//    scissor.offset.y = viewportOffsetY;
-//    vkCmdSetScissor(cmd, 0, 1, &scissor);
-//
-//    VulkanDrawList drawList = {};
-//    drawList.buffer = cmd;
-//    drawList.useFramebuffer = false;
-//    // pipeline and pipelineLayout are set in drawListBindPipeline
-//
-//    return mDrawLists.move(drawList);
-//}
 
 void VulkanRenderDevice::swapBuffers(RenderDevice::ID surfaceId) {
     VulkanSurface &surface = mSurfaces.get(surfaceId);
-    uint32 currentImageIndex = surface.currentImageIndex;
-    VkCommandBuffer currentCmd = surface.drawCmdBuffers[currentImageIndex];
+    uint32 imageIndex = surface.currentImageIndex;
+    uint32 frameIndex = surface.currentFrameIndex;
     VkResult result;
-
-    // TODO: only this flag?
-    // when final colors are output of pipeline
-    VkPipelineStageFlags pipelineStageFlags[1] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-
-    VkSubmitInfo submitInfo;
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.pNext = nullptr;
-    submitInfo.pWaitDstStageMask = pipelineStageFlags;
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = &surface.renderSemaphores[currentImageIndex];
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = &surface.presentSemaphores[currentImageIndex];
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &currentCmd;
-
-    // to be sure that fence in signaled state
-    vkWaitForFences(context.device, 1, &surface.waitFences[currentImageIndex], VK_TRUE, UINT64_MAX);
-
-    // reset fence to unsignaled state before submitting
-    result = vkResetFences(context.device, 1, &surface.waitFences[currentImageIndex]);
-    if (result != VK_SUCCESS) {
-        throw VulkanException("Can't reset fence");
-    }
-
-    // submit command buffer to queue
-    result = vkQueueSubmit(surface.graphicsQueue, 1, &submitInfo, surface.waitFences[currentImageIndex]);
-    if (result != VK_SUCCESS) {
-        throw VulkanException("Can't submit queue");
-    }
 
     // queue image presentation
     VkPresentInfoKHR presentInfo = {};
@@ -1206,9 +1118,10 @@ void VulkanRenderDevice::swapBuffers(RenderDevice::ID surfaceId) {
     presentInfo.pNext = nullptr;
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &surface.swapChain;
-    presentInfo.pImageIndices = &currentImageIndex;
-    presentInfo.pWaitSemaphores = &surface.renderSemaphores[currentImageIndex];
+    presentInfo.pImageIndices = &imageIndex;
+    // wait until render will be finished
     presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = &surface.renderFinishedSemaphores[frameIndex];
     presentInfo.pResults = nullptr;
 
     result = vkQueuePresentKHR(surface.presentQueue, &presentInfo);
@@ -1218,15 +1131,17 @@ void VulkanRenderDevice::swapBuffers(RenderDevice::ID surfaceId) {
         throw VulkanException("Can't queue and image for presentation");
     }
 
+    uint32 nextFrameIndex = (frameIndex + 1) % surface.maxFramesInFlight;
+
     // NOTE: this block can be in the beginning of frame draw
     {
-        // wait when queue will be done, i.e. fence will be in signaled state
-        vkWaitForFences(context.device, 1, &surface.waitFences[currentImageIndex], VK_TRUE, UINT64_MAX);
+        // wait when next will be done, i.e. fence will be in signaled state
+        vkWaitForFences(context.device, 1, &surface.inFlightFences[nextFrameIndex], VK_TRUE, UINT64_MAX);
 
         // acquire next image
         uint32 nextImageIndex;
         result = vkAcquireNextImageKHR(context.device, surface.swapChain, UINT64_MAX,
-                                  surface.presentSemaphores[currentImageIndex], VK_NULL_HANDLE, &nextImageIndex);
+                                  surface.imageAvailableSemaphores[nextFrameIndex], VK_NULL_HANDLE, &nextImageIndex);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
             // TODO: process resize
@@ -1234,10 +1149,136 @@ void VulkanRenderDevice::swapBuffers(RenderDevice::ID surfaceId) {
             throw VulkanException("Can't acquire next image in swapchain");
         }
 
-        // reassign current image index
+        surface.currentFrameIndex = nextFrameIndex;
         surface.currentImageIndex = nextImageIndex;
     }
 }
 
+void VulkanRenderDevice::drawListBindSurface(RenderDevice::ID surfaceId, const RenderDevice::Color &color,
+                                             const RenderDevice::Region &area) {
+    // end previous render pass, if exists
+    if (drawList.frameBufferAttached) {
+        vkCmdEndRenderPass(drawList.buffer);
+    }
 
+    VulkanSurface &surface = mSurfaces.get(surfaceId);
+    const float clearDepth = 1.0f;
+    const uint32 clearStencil = 0;
 
+    VkCommandBuffer cmd = drawList.buffer;
+    VkFramebuffer surfFramebuffer = surface.swapChainFramebuffers[surface.currentImageIndex];
+
+    uint32_t viewportOffsetX = area.xOffset;
+    uint32_t viewportOffsetY = area.yOffset;
+    uint32_t viewportWidth = area.extent.x;
+    uint32_t viewportHeight = area.extent.y;
+
+    VkClearValue clearValues[2];
+    clearValues[0].color = { {color.components[0],
+                              color.components[1],
+                              color.components[2],
+                              color.components[3]} };
+    clearValues[1].depthStencil.depth = clearDepth;
+    clearValues[1].depthStencil.stencil = clearStencil;
+
+    VkRenderPassBeginInfo renderPassBeginInfo {};
+    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassBeginInfo.renderPass = surface.framebufferFormat.renderPass;
+    renderPassBeginInfo.renderArea.offset.x = 0;
+    renderPassBeginInfo.renderArea.offset.y = 0;
+
+    renderPassBeginInfo.renderArea.extent.width = surface.width;
+    renderPassBeginInfo.renderArea.extent.height = surface.height;
+    renderPassBeginInfo.clearValueCount = 2;
+    renderPassBeginInfo.pClearValues = clearValues;
+    renderPassBeginInfo.framebuffer = surfFramebuffer;
+
+    vkCmdBeginRenderPass(cmd, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    VkViewport viewport;
+    viewport.x = viewportOffsetX;
+    viewport.y = viewportOffsetY;
+    viewport.width = viewportWidth;
+    viewport.height = viewportHeight;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(cmd, 0, 1, &viewport);
+
+    VkRect2D scissor;
+    scissor.extent.width = viewportWidth;
+    scissor.extent.height = viewportHeight;
+    scissor.offset.x = viewportOffsetX;
+    scissor.offset.y = viewportOffsetY;
+    vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+    drawList.surfaceId = surfaceId;
+}
+
+void VulkanRenderDevice::drawListBindFramebuffer(RenderDevice::ID framebufferId, const std::vector<Color> &colors,
+                                                 float32 clearDepth, uint32 clearStencil, const RenderDevice::Region &area) {
+    // end previous render pass, if exists
+    if (drawList.frameBufferAttached) {
+        vkCmdEndRenderPass(drawList.buffer);
+    }
+
+    VulkanFrameBuffer &fbo = mFrameBuffers.get(framebufferId);
+    VulkanFrameBufferFormat &fboFormat = mFrameBufferFormats.get(fbo.framebufferFormatId);
+    VkCommandBuffer cmd = drawList.buffer;
+
+    uint32_t viewportOffsetX = area.xOffset;
+    uint32_t viewportOffsetY = area.yOffset;
+    uint32_t viewportWidth = area.extent.x;
+    uint32_t viewportHeight = area.extent.y;
+
+    // to prevent allocation std::vector on each call of this function
+    std::vector<VkClearValue> &clearValues = context.tempClearValues;
+    if (clearValues.size() < colors.size() + 1) {
+        clearValues.resize(colors.size() + 1);
+    }
+
+    for (size_t i = 0; i < colors.size(); i++) {
+        clearValues[i].color = {{colors[i].components[0],
+                                 colors[i].components[1],
+                                 colors[i].components[2],
+                                 colors[i].components[3]} };
+    }
+
+    clearValues[colors.size()].depthStencil = { clearDepth, clearStencil };
+
+    VkRenderPassBeginInfo renderPassBeginInfo {};
+    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassBeginInfo.renderPass = fboFormat.renderPass;
+    renderPassBeginInfo.renderArea.offset.x = 0;
+    renderPassBeginInfo.renderArea.offset.y = 0;
+
+    renderPassBeginInfo.renderArea.extent.width = fbo.width;
+    renderPassBeginInfo.renderArea.extent.height = fbo.height;
+    renderPassBeginInfo.clearValueCount = colors.size() + 1;
+    renderPassBeginInfo.pClearValues = clearValues.data();
+    renderPassBeginInfo.framebuffer = fbo.framebuffer;
+
+    vkCmdBeginRenderPass(cmd, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    VkViewport viewport;
+    viewport.x = viewportOffsetX;
+    viewport.y = viewportOffsetY;
+    viewport.width = viewportWidth;
+    viewport.height = viewportHeight;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(cmd, 0, 1, &viewport);
+
+    VkRect2D scissor;
+    scissor.extent.width = viewportWidth;
+    scissor.extent.height = viewportHeight;
+    scissor.offset.x = viewportOffsetX;
+    scissor.offset.y = viewportOffsetY;
+    vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+    drawList.frameBufferAttached = true;
+}
+
+void VulkanRenderDevice::drawListBindFramebuffer(RenderDevice::ID framebufferId, const std::vector<Color> &colors,
+                                                 const RenderDevice::Region &area) {
+    drawListBindFramebuffer(framebufferId, colors, 1.0f, 0, area);
+}

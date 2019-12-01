@@ -576,25 +576,30 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
     fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    surface.presentSemaphores.resize(swapChainImageCount);
-    surface.renderSemaphores.resize(swapChainImageCount);
-    surface.waitFences.resize(swapChainImageCount);
+    surface.imageAvailableSemaphores.resize(surface.maxFramesInFlight);
+    surface.renderFinishedSemaphores.resize(surface.maxFramesInFlight);
+    surface.inFlightFences.resize(surface.maxFramesInFlight);
+    surface.imagesInFlight.resize(swapChainImageCount);
 
-    for (uint32 i = 0; i < swapChainImageCount; i++) {
-        r = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &surface.presentSemaphores[i]);
+    for (uint32 i = 0; i < surface.maxFramesInFlight; i++) {
+        r = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &surface.imageAvailableSemaphores[i]);
         if (r != VK_SUCCESS) {
-            throw VulkanException("Can't create present semaphore");
+            throw VulkanException("Can't create semaphore");
         }
 
-        r = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &surface.renderSemaphores[i]);
+        r = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &surface.renderFinishedSemaphores[i]);
         if (r != VK_SUCCESS) {
-            throw VulkanException("Can't create render semaphore");
+            throw VulkanException("Can't create semaphore");
         }
 
-        r = vkCreateFence(device, &fenceCreateInfo, nullptr, &surface.waitFences[i]);
+        r = vkCreateFence(device, &fenceCreateInfo, nullptr, &surface.inFlightFences[i]);
         if (r != VK_SUCCESS) {
             throw VulkanException("Can't create fence");
         }
+    }
+
+    for (uint32 i = 0; i < swapChainImageCount; i++) {
+        surface.imagesInFlight[i] = VK_NULL_HANDLE;
     }
 
     surface.swapChain = swapChain;
@@ -605,15 +610,15 @@ void VulkanContext::createSwapChain(VulkanSurface& surface) {
 
 void VulkanContext::destroySwapChain(VulkanSurface& surface)
 {
-    for (VkSemaphore &semaphore : surface.presentSemaphores) {
+    for (VkSemaphore &semaphore : surface.renderFinishedSemaphores) {
         vkDestroySemaphore(device, semaphore, nullptr);
     }
 
-    for (VkSemaphore &semaphore : surface.presentSemaphores) {
+    for (VkSemaphore &semaphore : surface.imageAvailableSemaphores) {
         vkDestroySemaphore(device, semaphore, nullptr);
     }
 
-    for (VkFence &fence : surface.waitFences) {
+    for (VkFence &fence : surface.inFlightFences) {
         vkDestroyFence(device, fence, nullptr);
     }
 
@@ -754,23 +759,23 @@ void VulkanContext::destroyCommandPools() {
 }
 
 void VulkanContext::createCmdBuffers(VulkanSurface &surface) {
-    // create command buffers for each swapchain image
-    std::vector<VkCommandBuffer> &cmdBuffers = surface.drawCmdBuffers;
-    cmdBuffers.resize(surface.tripleBuffering ? 3 : 2);
-
-    VkCommandBufferAllocateInfo cmdBufferInfo {};
-    cmdBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    cmdBufferInfo.commandPool = this->graphicsCommandPool;
-    cmdBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    cmdBufferInfo.commandBufferCount = cmdBuffers.size();
-
-    VkResult r = vkAllocateCommandBuffers(device, &cmdBufferInfo, cmdBuffers.data());
-
-    if (r != VK_SUCCESS) {
-        throw VulkanException("Can't allocate command buffers for swapchain");
-    }
+//    // create command buffers for each swapchain image
+//    std::vector<VkCommandBuffer> &cmdBuffers = surface.drawCmdBuffers;
+//    cmdBuffers.resize(surface.tripleBuffering ? 3 : 2);
+//
+//    VkCommandBufferAllocateInfo cmdBufferInfo {};
+//    cmdBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+//    cmdBufferInfo.commandPool = this->graphicsCommandPool;
+//    cmdBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+//    cmdBufferInfo.commandBufferCount = cmdBuffers.size();
+//
+//    VkResult r = vkAllocateCommandBuffers(device, &cmdBufferInfo, cmdBuffers.data());
+//
+//    if (r != VK_SUCCESS) {
+//        throw VulkanException("Can't allocate command buffers for swapchain");
+//    }
 }
 
 void VulkanContext::destroyCmdBuffers(VulkanSurface &surface) {
-    vkFreeCommandBuffers(device, this->graphicsCommandPool, surface.drawCmdBuffers.size(), surface.drawCmdBuffers.data());
+//    vkFreeCommandBuffers(device, this->graphicsCommandPool, surface.drawCmdBuffers.size(), surface.drawCmdBuffers.data());
 }
