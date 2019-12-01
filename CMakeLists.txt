@@ -61,6 +61,17 @@ if (WITH_GLM)
     include_directories(${GLM_INCLUDE})
 endif()
 
+option(WITH_SPIRV_CROSS "SPIR-V Cross" YES)
+if (WITH_SPIRV_CROSS)
+    message(STATUS "Using SPIR-V Cross")
+
+    set(SPIRV_CROSS_CLI OFF CACHE BOOL "" FORCE)
+    set(SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+    set(SPIRV_CROSS_INCLUDE "${PROJECT_SOURCE_DIR}/thirdparty/SPIRV-Cross")
+    include_directories(${SPIRV_CROSS_INCLUDE})
+    add_subdirectory("${PROJECT_SOURCE_DIR}/thirdparty/SPIRV-Cross")
+endif()
+
 ##################################################################
 ## Configure project options
 
