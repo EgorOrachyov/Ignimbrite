@@ -11,7 +11,7 @@ set(Renderer_HEADERS
     include/renderer/Optional.h
     include/renderer/Platform.h
     include/renderer/Types.h
-)
+        include/renderer/ShaderReflection.h)
 
 set(Renderer_SOURCES
     sources/RenderDevice.cpp

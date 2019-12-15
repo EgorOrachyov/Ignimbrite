@@ -1026,6 +1026,10 @@ void VulkanRenderDevice::drawListEnd() {
 
     // end renderpass associated with surface
     vkCmdEndRenderPass(cmd);
+
+    // TODO: remove after 'getAvailableCmdBuffer' implemetation
+    // as temp cmd buffer is used now, so delete it
+    vkEndCommandBuffer(cmd);
 ;
     if (surface.imagesInFlight[imageIndex] != VK_NULL_HANDLE) {
         vkWaitForFences(context.device, 1, &surface.imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
@@ -1059,16 +1063,15 @@ void VulkanRenderDevice::drawListEnd() {
         throw VulkanException("Can't submit queue");
     }
 
-    // TODO: remove after 'getAvailableCmdBuffer' implemetation
-    // as temp cmd buffer is used now, so delete it
-    vkEndCommandBuffer(cmd);
+    // TODO: remove wait idle
+    vkQueueWaitIdle(surface.graphicsQueue);
     vkFreeCommandBuffers(context.device, context.graphicsTempCommandPool, 1, &cmd);
 }
 
 void VulkanRenderDevice::drawListBindPipeline(RenderDevice::ID graphicsPipelineId) {
     const auto &graphicsPipeline = mGraphicsPipelines.get(graphicsPipelineId);
     vkCmdBindPipeline(drawList.buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.pipeline);
-
+    drawList.pipelineLayout = graphicsPipeline.pipelineLayout;
     drawList.pipelineAttached = true;
 }
 
@@ -1106,11 +1109,16 @@ void VulkanRenderDevice::drawListDraw(uint32 verticesCount, uint32 instancesCoun
     drawList.drawCalled = true;
 }
 
+// TODO: DELETE THIS
+static bool firstTime = true;
+
 void VulkanRenderDevice::swapBuffers(RenderDevice::ID surfaceId) {
     VulkanSurface &surface = mSurfaces.get(surfaceId);
-    uint32 imageIndex = surface.currentImageIndex;
-    uint32 frameIndex = surface.currentFrameIndex;
+    const uint32 imageIndex = surface.currentImageIndex;
+    const uint32 frameIndex = surface.currentFrameIndex;
     VkResult result;
+
+    if (!firstTime) {
 
     // queue image presentation
     VkPresentInfoKHR presentInfo = {};
@@ -1130,7 +1138,8 @@ void VulkanRenderDevice::swapBuffers(RenderDevice::ID surfaceId) {
     } else if (result != VK_SUCCESS) {
         throw VulkanException("Can't queue and image for presentation");
     }
-
+    }
+    firstTime = false;
     uint32 nextFrameIndex = (frameIndex + 1) % surface.maxFramesInFlight;
 
     // NOTE: this block can be in the beginning of frame draw

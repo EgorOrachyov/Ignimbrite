@@ -518,14 +518,33 @@ void VulkanUtils::allocateDescriptorPool(VulkanContext &context, VulkanUniformLa
     VkDescriptorPool pool;
 
     std::array<VkDescriptorPoolSize, 2> poolSizes({});
-    poolSizes[0].descriptorCount = layout.buffersCount;
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[1].descriptorCount = layout.texturesCount;
-    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    uint32 poolSizesAmount;
+
+    if (layout.buffersCount > 0 && layout.texturesCount > 0) {
+        poolSizes[0].descriptorCount = layout.buffersCount;
+        poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSizes[1].descriptorCount = layout.texturesCount;
+        poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        poolSizesAmount = 2;
+
+    } else if (layout.buffersCount > 0) {
+        poolSizes[0].descriptorCount = layout.buffersCount;
+        poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSizesAmount = 1;
+
+    } else if (layout.texturesCount > 0) {
+        poolSizes[0].descriptorCount = layout.texturesCount;
+        poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        poolSizesAmount = 1;
+
+    } else {
+        // TODO: if there are no any textures or uniforms
+        throw VulkanException("Unimplemented allocateDescriptorPool");
+    }
 
     VkDescriptorPoolCreateInfo poolCreateInfo = {};
     poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolCreateInfo.poolSizeCount = (uint32) poolSizes.size();
+    poolCreateInfo.poolSizeCount = poolSizesAmount;
     poolCreateInfo.pPoolSizes = poolSizes.data();
     poolCreateInfo.maxSets = VulkanContext::DESCRIPTOR_POOL_MAX_SET_COUNT;
 

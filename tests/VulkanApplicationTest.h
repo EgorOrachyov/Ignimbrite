@@ -7,6 +7,10 @@
 
 #include <VulkanRenderDevice.h>
 #include <VulkanExtensions.h>
+#include <cassert>
+#include <fstream>
+#include <iterator>
+#include <utility>
 
 class VulkanApplication {
 public:
@@ -42,6 +46,8 @@ public:
 
         uniformBuffer = device.createUniformBuffer(BufferUsage::Dynamic, sizeof(Transform), &transform);
 
+        loadTestShader(device);
+
         RenderDevice::UniformLayoutBufferDesc uniformLayoutBufferDesc = {};
         uniformLayoutBufferDesc.binding = 0;
         uniformLayoutBufferDesc.flags = (uint32) ShaderStageFlagBits::VertexBit;
@@ -76,19 +82,68 @@ public:
         RenderDevice::PipelineSurfaceBlendStateDesc blendStateDesc = {};
         blendStateDesc.attachment = blendAttachmentDesc;
         blendStateDesc.logicOpEnable = false;
-        blendStateDesc.logicOp = LogicOperation::NoOp;
+        blendStateDesc.logicOp = LogicOperation::Copy;
 
         graphicsPipeline = device.createGraphicsPipeline(
                 surface,
                 topology,
                 shaderProgram, vertexLayout, uniformLayout, rasterizationDesc, blendStateDesc
         );
+
+
+    }
+
+    void loadTestShader(VulkanRenderDevice &device) {
+        std::vector<RenderDevice::ShaderDataDesc> shaderDescs(2);
+
+        shaderDescs[0].language = ShaderLanguage::SPIRV;
+        shaderDescs[1].language = ShaderLanguage::SPIRV;
+        shaderDescs[0].type = ShaderType::Vertex;
+        shaderDescs[1].type = ShaderType::Fragment;
+
+        std::ifstream vertFile("shaders/vert.spv", std::ios::binary);
+        std::ifstream fragFile("shaders/frag.spv", std::ios::binary);
+
+        std::vector<uint8> vertSpv(std::istreambuf_iterator<char>(vertFile), {});
+        std::vector<uint8> fragSpv(std::istreambuf_iterator<char>(fragFile), {});
+
+        shaderDescs[0].source = std::move(vertSpv);
+        shaderDescs[1].source = std::move(fragSpv);
+
+        shaderProgram = device.createShaderProgram(shaderDescs);
     }
 
     void loop() {
+        auto& device = *pDevice;
+
+        RenderDevice::Color clearColor = {};
+        clearColor.components[0] = clearColor.components[1] = clearColor.components[2] = 0.5f;
+
+        RenderDevice::Region area = {};
+        area.extent.x = widthFrameBuffer;
+        area.extent.y = heightFrameBuffer;
+
+        // TODO: DELETE THIS
+        device.swapBuffers(surface);
+
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
-            glfwSwapBuffers(window);
+
+            device.drawListBegin();
+            // TODO: default render area, which is same as surface size
+            device.drawListBindSurface(surface, clearColor, area);
+
+            device.drawListBindPipeline(graphicsPipeline);
+
+            device.drawListBindUniformSet(uniformSet);
+            device.drawListBindVertexBuffer(vertexBuffer, 0, 0);
+            device.drawListBindIndexBuffer(indexBuffer, IndicesType::Uint16, 0);
+            device.drawListDrawIndexed(sizeof(indices) / sizeof(uint16), 1);
+
+            device.drawListEnd();
+
+            device.swapBuffers(surface);
+            //glfwSwapBuffers(window);
         }
     }
 
@@ -138,13 +193,13 @@ private:
     } transform;
 
     float32 vertices[9] = {
-            0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f
+            -0.5f, -0.5f, 0.0f,
+            0.5f, -0.5f, 0.0f,
+            0.5f, 0.5f, 0.0f
     };
 
     uint16 indices[3] = {
-        0, 1, 2
+        2, 1, 0
     };
 
 };
