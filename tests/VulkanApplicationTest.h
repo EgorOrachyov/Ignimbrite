@@ -98,6 +98,7 @@ public:
         auto &device = *pDevice;
 
         device.destroyGraphicsPipeline(graphicsPipeline);
+        device.destroyShaderProgram(shaderProgram);
         device.destroyUniformSet(uniformSet);
         device.destroyUniformLayout(uniformLayout);
         device.destroyUniformBuffer(uniformBuffer);
