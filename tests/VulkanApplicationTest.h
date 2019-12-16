@@ -20,13 +20,14 @@ public:
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         window = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
-        glfwGetFramebufferSize(window, (int32*) &widthFrameBuffer, (int32*) &heightFrameBuffer);
+        glfwGetFramebufferSize(window, (int32 *) &widthFrameBuffer, (int32 *) &heightFrameBuffer);
         extensions = glfwGetRequiredInstanceExtensions(&extensionsCount);
 
         pDevice = new VulkanRenderDevice(extensionsCount, extensions);
-        auto& device = *pDevice;
+        auto &device = *pDevice;
 
-        surface = VulkanExtensions::createSurfaceGLFW(device, window, width, height, widthFrameBuffer, heightFrameBuffer, name);
+        surface = VulkanExtensions::createSurfaceGLFW(device, window, width, height, widthFrameBuffer,
+                                                      heightFrameBuffer, name);
 
         RenderDevice::VertexAttributeDesc vertexAttributeDesc = {};
         vertexAttributeDesc.format = DataFormat::R32G32B32_SFLOAT;
@@ -38,7 +39,7 @@ public:
         vertexBufferLayoutDesc.stride = sizeof(float32) * 3;
         vertexBufferLayoutDesc.usage = VertexUsage::PerVertex;
 
-        vertexLayout = device.createVertexLayout({ vertexBufferLayoutDesc });
+        vertexLayout = device.createVertexLayout({vertexBufferLayoutDesc});
 
         vertexBuffer = device.createVertexBuffer(BufferUsage::Dynamic, sizeof(vertices), vertices);
 
@@ -87,10 +88,12 @@ public:
         graphicsPipeline = device.createGraphicsPipeline(
                 surface,
                 topology,
-                shaderProgram, vertexLayout, uniformLayout, rasterizationDesc, blendStateDesc
+                shaderProgram,
+                vertexLayout,
+                uniformLayout,
+                rasterizationDesc,
+                blendStateDesc
         );
-
-
     }
 
 
@@ -138,10 +141,11 @@ public:
     }
 
     void loop() {
-        auto& device = *pDevice;
+        auto &device = *pDevice;
 
-        RenderDevice::Color clearColor = {};
-        clearColor.components[0] = clearColor.components[1] = clearColor.components[2] = 0.5f;
+        RenderDevice::Color clearColor = {
+                {0.1f, 0.4f, 0.7f, 0.0f}
+        };
 
         RenderDevice::Region area = {};
         area.extent.x = widthFrameBuffer;
@@ -180,15 +184,18 @@ private:
 
     typedef ObjectID ID;
 
-    ID surface;
-    GLFWwindow* window;
     std::string name = "Test";
-    uint32 width = 640, height = 480;
-    uint32 widthFrameBuffer, heightFrameBuffer;
-    uint32 extensionsCount;
-    const char* const* extensions;
 
-    VulkanRenderDevice* pDevice;
+    ID surface;
+    GLFWwindow *window = nullptr;
+    uint32 width = 640;
+    uint32 height = 480;
+    uint32 widthFrameBuffer = 0;
+    uint32 heightFrameBuffer = 0;
+    uint32 extensionsCount = 0;
+    const char *const *extensions = nullptr;
+
+    VulkanRenderDevice *pDevice;
 
     ID vertexLayout;
     ID vertexBuffer;
@@ -215,7 +222,7 @@ private:
     };
 
     uint16 indices[3] = {
-        2, 1, 0
+            2, 1, 0
     };
 
 };
