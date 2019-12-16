@@ -1196,8 +1196,8 @@ void VulkanRenderDevice::drawListBindSurface(RenderDevice::ID surfaceId, const R
     renderPassBeginInfo.renderArea.offset.x = 0;
     renderPassBeginInfo.renderArea.offset.y = 0;
 
-    renderPassBeginInfo.renderArea.extent.width = surface.width;
-    renderPassBeginInfo.renderArea.extent.height = surface.height;
+    renderPassBeginInfo.renderArea.extent.width = surface.widthFramebuffer;
+    renderPassBeginInfo.renderArea.extent.height = surface.heightFramebuffer;
     renderPassBeginInfo.clearValueCount = 2;
     renderPassBeginInfo.pClearValues = clearValues;
     renderPassBeginInfo.framebuffer = surfFramebuffer;

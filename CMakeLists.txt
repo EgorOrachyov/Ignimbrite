@@ -14,7 +14,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -g")
 set(THIRD_PARTY_LIBS)
 set(THIRD_PARTY_LIBS_PATH)
 
-find_package(Vulkan REQUIRED)
+# find_package(Vulkan REQUIRED) ???
 
 if(APPLE)
     message(STATUS "Apple")

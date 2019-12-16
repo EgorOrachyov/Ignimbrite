@@ -104,6 +104,10 @@ public:
         std::ifstream vertFile("shaders/vert.spv", std::ios::binary);
         std::ifstream fragFile("shaders/frag.spv", std::ios::binary);
 
+        if (!vertFile.is_open() || !fragFile.is_open()) {
+            throw std::runtime_error("Failed to open spir-v files");
+        }
+
         std::vector<uint8> vertSpv(std::istreambuf_iterator<char>(vertFile), {});
         std::vector<uint8> fragSpv(std::istreambuf_iterator<char>(fragFile), {});
 
