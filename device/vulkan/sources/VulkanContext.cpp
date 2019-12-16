@@ -689,7 +689,6 @@ void VulkanContext::destroyFramebufferFormat(VulkanSurface &surface) {
 
 void VulkanContext::createFramebuffers(VulkanSurface &surface) {
     VkResult result;
-    VkFramebuffer framebuffer;
 
     auto& imageViews = surface.swapChainImageViews;
     auto& framebuffers = surface.swapChainFramebuffers;

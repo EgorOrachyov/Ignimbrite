@@ -93,6 +93,25 @@ public:
 
     }
 
+
+    ~VulkanApplication() {
+        auto &device = *pDevice;
+
+        device.destroyGraphicsPipeline(graphicsPipeline);
+        device.destroyUniformSet(uniformSet);
+        device.destroyUniformLayout(uniformLayout);
+        device.destroyUniformBuffer(uniformBuffer);
+        device.destroyVertexBuffer(vertexBuffer);
+        device.destroyIndexBuffer(indexBuffer);
+        device.destroyVertexLayout(vertexLayout);
+
+        VulkanExtensions::destroySurface(*pDevice, surface);
+        glfwDestroyWindow(window);
+        glfwTerminate();
+
+        delete pDevice;
+    }
+
     void loadTestShader(VulkanRenderDevice &device) {
         std::vector<RenderDevice::ShaderDataDesc> shaderDescs(2);
 
@@ -149,14 +168,6 @@ public:
             device.swapBuffers(surface);
             //glfwSwapBuffers(window);
         }
-    }
-
-    ~VulkanApplication() {
-        VulkanExtensions::destroySurface(*pDevice, surface);
-        glfwDestroyWindow(window);
-        glfwTerminate();
-
-        delete pDevice;
     }
 
     static void run() {
