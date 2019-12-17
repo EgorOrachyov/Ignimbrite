@@ -2,11 +2,15 @@
 ## Overall project setup
 
 cmake_minimum_required(VERSION 3.11)
-project(IgnimbriteLibrary)
+project(IgnimbriteLibrary VERSION 1.0)
 
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall")
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall -Wextra -Wshadow")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -g")
+
+set(CMAKE_CXX_COMPILER_ID )
 
 ##################################################################
 ## Platform specific setup
@@ -14,75 +18,39 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -g")
 set(THIRD_PARTY_LIBS)
 set(THIRD_PARTY_LIBS_PATH)
 
-# find_package(Vulkan REQUIRED) ???
-
-if(APPLE)
-    list(APPEND THIRD_PARTY_LIBS vulkan glfw)
-    set(THIRD_PARTY_LIBS_PATH ${PROJECT_SOURCE_DIR}/thirdparty/lib/apple)
-elseif(WIN32)
-    list(APPEND THIRD_PARTY_LIBS glfw)
-    set(APPEND THIRD_PARTY_LIBS_PATH ${PROJECT_SOURCE_DIR}/thirdparty/lib/win32)
-elseif(UNIX)
-    list(APPEND THIRD_PARTY_LIBS vulkan glfw)
-    set(APPEND THIRD_PARTY_LIBS_PATH ${PROJECT_SOURCE_DIR}/thirdparty/lib/unix)
-endif()
-
-link_directories(${THIRD_PARTY_LIBS_PATH})
-
 ##################################################################
 ## Third-party setup
 
 option(WITH_GLFW "GLFW Window system" NO)
 if (WITH_GLFW)
-    if (APPLE)
-        set(GLFW_INCLUDE "${PROJECT_SOURCE_DIR}/thirdparty/include")
-        include_directories(${GLFW_INCLUDE})
-    else()
-        set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-        set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-        set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-
-        set(GLFW_INCLUDE "${PROJECT_SOURCE_DIR}/thirdparty/lib/unix/glfw/include")
-        include_directories(${GLFW_INCLUDE})
-        add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/lib/unix/glfw)
-    endif()
+    message(STATUS "Using GLFW as window system API")
+    set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+    set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+    add_subdirectory(thirdparty/glfw)
 endif()
 
 option(WITH_VULKAN "Vulkan rendering API" NO)
 if (WITH_VULKAN)
     message(STATUS "Using Vulkan as rendering API")
-    set(VULKAN_INCLUDE "${PROJECT_SOURCE_DIR}/thirdparty/include")
-    include_directories(${VULKAN_INCLUDE})
+    add_subdirectory(thirdparty/vulkan)
+    add_subdirectory(device/vulkan)
 endif()
 
 option(WITH_GLM "GLM math header library" NO)
-if (WITH_GLM)
-    message(STATUS "Using Vulkan API")
-    set(GLM_INCLUDE "${PROJECT_SOURCE_DIR}/thirdparty/include")
-    include_directories(${GLM_INCLUDE})
-endif()
-
-option(WITH_SPIRV_CROSS "SPIR-V Cross" NO)
-if (WITH_SPIRV_CROSS)
-    message(STATUS "Using SPIR-V Cross")
-    set(SPIRV_CROSS_CLI OFF CACHE BOOL "" FORCE)
-    set(SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
-    set(SPIRV_CROSS_INCLUDE "${PROJECT_SOURCE_DIR}/thirdparty/SPIRV-Cross")
-    include_directories(${SPIRV_CROSS_INCLUDE})
-    add_subdirectory("${PROJECT_SOURCE_DIR}/thirdparty/SPIRV-Cross")
-endif()
+option(WITH_SPIRVCROSS "SPIR-V Cross" NO)
 
 ##################################################################
 ## Configure project options
 
 configure_file(
-        ${PROJECT_SOURCE_DIR}/ignimbrite/include/ignimbrite/Options.h.in
-        ${PROJECT_SOURCE_DIR}/ignimbrite/include/ignimbrite/Options.h
+    ${PROJECT_SOURCE_DIR}/ignimbrite/include/ignimbrite/Options.h.in
+    ${PROJECT_SOURCE_DIR}/ignimbrite/include/ignimbrite/Options.h
 )
 
 ##################################################################
 ## Include actual sub directories
 
 add_subdirectory(ignimbrite)
-add_subdirectory(device)
 add_subdirectory(tests)

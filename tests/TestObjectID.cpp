@@ -2,8 +2,8 @@
 // Created by Egor Orachyov on 2019-10-26.
 //
 
-#ifndef IGNIMBRITELIBRARY_TESTOBJECTID_H
-#define IGNIMBRITELIBRARY_TESTOBJECTID_H
+#ifndef IGNIMBRITELIBRARY_TESTOBJECTID_CPP
+#define IGNIMBRITELIBRARY_TESTOBJECTID_CPP
 
 #include <ignimbrite/ObjectIDBuffer.h>
 #include <ignimbrite/FileUtils.h>
@@ -102,13 +102,13 @@ struct TestObjectIDBuffer {
         }
     }
 
-    static void run() {
-        test1();
-        test2();
-        test3();
-        test4();
-    }
-
 };
 
-#endif //IGNIMBRITELIBRARY_TESTOBJECTID_H
+int32 main(int32 argc, char** argv) {
+    TestObjectIDBuffer::test1();
+    TestObjectIDBuffer::test2();
+    TestObjectIDBuffer::test3();
+    TestObjectIDBuffer::test4();
+}
+
+#endif //IGNIMBRITELIBRARY_TESTOBJECTID_CPP
