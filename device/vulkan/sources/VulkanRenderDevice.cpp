@@ -308,9 +308,9 @@ RenderDevice::ID VulkanRenderDevice::createSampler(const RenderDevice::SamplerDe
     samplerInfo.maxLod = samplerDesc.maxLod;
 
     VkSampler sampler;
-    VkResult r = vkCreateSampler(context.device, &samplerInfo, nullptr, &sampler);
+    VkResult result = vkCreateSampler(context.device, &samplerInfo, nullptr, &sampler);
 
-    if (r != VK_SUCCESS) {
+    if (result != VK_SUCCESS) {
         throw VulkanException("Failed to create sampler object");
     }
 
@@ -481,9 +481,9 @@ RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderD
     framebufferInfo.renderPass = format.renderPass;
 
     VkFramebuffer framebuffer;
-    VkResult r = vkCreateFramebuffer(context.device, &framebufferInfo, nullptr, &framebuffer);
+    VkResult result = vkCreateFramebuffer(context.device, &framebufferInfo, nullptr, &framebuffer);
 
-    if (r != VK_SUCCESS) {
+    if (result != VK_SUCCESS) {
         throw VulkanException("Filed to create framebuffer");
     }
 
@@ -697,6 +697,7 @@ RenderDevice::ID VulkanRenderDevice::createUniformBuffer(BufferUsage usage, uint
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         VulkanUtils::createBuffer(context, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                   memoryPropertyFlags, uniformBuffer.buffer, uniformBuffer.memory);
+        VulkanUtils::updateBufferMemory(context, uniformBuffer.memory, 0, size, data);
     } else {
         throw VulkanException("Undefined uniform buffer usage");
     }
