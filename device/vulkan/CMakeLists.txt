@@ -22,4 +22,4 @@ message(STATUS "Config VulkanDevice library")
 add_library(VulkanDevice STATIC ${VulkanDevice_HEADERS} ${VulkanDevice_SOURCES})
 
 target_include_directories(VulkanDevice PUBLIC include)
-target_link_libraries(VulkanDevice PUBLIC Renderer)
+target_link_libraries(VulkanDevice PUBLIC Ignimbrite)

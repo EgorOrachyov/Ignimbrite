@@ -2,8 +2,8 @@
 // Created by Egor Orachyov on 2019-10-26.
 //
 
-#ifndef RENDERINGLIBRARY_VULKANAPPLICATIONTEST_H
-#define RENDERINGLIBRARY_VULKANAPPLICATIONTEST_H
+#ifndef IGNIMBRITE_VULKANAPPLICATIONTEST_H
+#define IGNIMBRITE_VULKANAPPLICATIONTEST_H
 
 #include <VulkanRenderDevice.h>
 #include <VulkanExtensions.h>
@@ -11,6 +11,8 @@
 #include <fstream>
 #include <iterator>
 #include <utility>
+
+using namespace ignimbrite;
 
 class VulkanApplication {
 public:
@@ -228,4 +230,4 @@ private:
 
 };
 
-#endif //RENDERINGLIBRARY_VULKANAPPLICATIONTEST_H
+#endif //IGNIMBRITE_VULKANAPPLICATIONTEST_H

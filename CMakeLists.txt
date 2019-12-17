@@ -2,7 +2,7 @@
 ## Overall project setup
 
 cmake_minimum_required(VERSION 3.11)
-project(RenderingLibrary)
+project(IgnimbriteLibrary)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall")
@@ -76,13 +76,13 @@ endif()
 ## Configure project options
 
 configure_file(
-    ${PROJECT_SOURCE_DIR}/renderer/include/renderer/Options.h.in
-    ${PROJECT_SOURCE_DIR}/renderer/include/renderer/Options.h
+        ${PROJECT_SOURCE_DIR}/ignimbrite/include/ignimbrite/Options.h.in
+        ${PROJECT_SOURCE_DIR}/ignimbrite/include/ignimbrite/Options.h
 )
 
 ##################################################################
 ## Include actual sub directories
 
-add_subdirectory(renderer)
+add_subdirectory(ignimbrite)
 add_subdirectory(device)
 add_subdirectory(tests)
