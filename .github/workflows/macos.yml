@@ -3,10 +3,11 @@ name: MacOS
 on:
   pull_request:
     branches: 
+      - '*'
       - master
-      - '(26)VkRenderDevice'
   push:
     branches: 
+      - '*'
       - master
       - release  
   
