@@ -17,7 +17,6 @@ set(THIRD_PARTY_LIBS_PATH)
 # find_package(Vulkan REQUIRED) ???
 
 if(APPLE)
-    message(STATUS "Apple")
     list(APPEND THIRD_PARTY_LIBS vulkan glfw)
     set(THIRD_PARTY_LIBS_PATH ${PROJECT_SOURCE_DIR}/thirdparty/lib/apple)
 elseif(WIN32)
@@ -63,10 +62,9 @@ if (WITH_GLM)
     include_directories(${GLM_INCLUDE})
 endif()
 
-option(WITH_SPIRV_CROSS "SPIR-V Cross" YES)
+option(WITH_SPIRV_CROSS "SPIR-V Cross" NO)
 if (WITH_SPIRV_CROSS)
     message(STATUS "Using SPIR-V Cross")
-
     set(SPIRV_CROSS_CLI OFF CACHE BOOL "" FORCE)
     set(SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
     set(SPIRV_CROSS_INCLUDE "${PROJECT_SOURCE_DIR}/thirdparty/SPIRV-Cross")
