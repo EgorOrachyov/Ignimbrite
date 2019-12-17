@@ -2,12 +2,14 @@
 // Created by Egor Orachyov on 2019-10-26.
 //
 
-#ifndef VULKANRENDERER_TESTOBJECTID_H
-#define VULKANRENDERER_TESTOBJECTID_H
+#ifndef IGNIMBRITELIBRARY_TESTOBJECTID_H
+#define IGNIMBRITELIBRARY_TESTOBJECTID_H
 
-#include "renderer/ObjectIDBuffer.h"
-#include "renderer/FileUtils.h"
+#include <ignimbrite/ObjectIDBuffer.h>
+#include <ignimbrite/FileUtils.h>
 #include <string>
+
+using namespace ignimbrite;
 
 struct TestObjectIDBuffer {
 
@@ -109,4 +111,4 @@ struct TestObjectIDBuffer {
 
 };
 
-#endif //VULKANRENDERER_TESTOBJECTID_H
+#endif //IGNIMBRITELIBRARY_TESTOBJECTID_H

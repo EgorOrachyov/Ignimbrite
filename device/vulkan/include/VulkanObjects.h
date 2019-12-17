@@ -2,158 +2,162 @@
 // Created by Egor Orachyov on 2019-11-11.
 //
 
-#ifndef RENDERINGLIBRARY_VULKANOBJECTS_H
-#define RENDERINGLIBRARY_VULKANOBJECTS_H
+#ifndef IGNIMBRITELIBRARY_VULKANOBJECTS_H
+#define IGNIMBRITELIBRARY_VULKANOBJECTS_H
 
 #include <vulkan/vulkan.h>
-#include <renderer/RenderDevice.h>
-#include <renderer/Optional.h>
+#include <ignimbrite/RenderDevice.h>
+#include <ignimbrite/Optional.h>
 
-struct VulkanQueueFamilyIndices {
-    Optional<uint32> graphicsFamily;
-    Optional<uint32> transferFamily;
+namespace ignimbrite {
 
-    bool isComplete() {
-        return graphicsFamily.hasValue() &&
-               transferFamily.hasValue();
-    }
-};
+    struct VulkanQueueFamilyIndices {
+        Optional<uint32> graphicsFamily;
+        Optional<uint32> transferFamily;
 
-struct VulkanVertexLayout {
-    std::vector<VkVertexInputBindingDescription> vkBindings;
-    std::vector<VkVertexInputAttributeDescription> vkAttributes;
-};
+        bool isComplete() {
+            return graphicsFamily.hasValue() &&
+                   transferFamily.hasValue();
+        }
+    };
 
-struct VulkanVertexBuffer {
-    BufferUsage usage;
-    uint32 size;
-    VkBuffer vkBuffer;
-    VkDeviceMemory vkDeviceMemory;
-};
+    struct VulkanVertexLayout {
+        std::vector<VkVertexInputBindingDescription> vkBindings;
+        std::vector<VkVertexInputAttributeDescription> vkAttributes;
+    };
 
-struct VulkanIndexBuffer {
-    BufferUsage usage;
-    uint32 size;
-    VkBuffer vkBuffer;
-    VkDeviceMemory vkDeviceMemory;
-};
+    struct VulkanVertexBuffer {
+        BufferUsage usage;
+        uint32 size;
+        VkBuffer vkBuffer;
+        VkDeviceMemory vkDeviceMemory;
+    };
 
-struct VulkanTextureObject {
-    VkImage image;
-    VkDeviceMemory imageMemory;
-    VkImageView imageView;
-    VkImageType type;
-    VkImageLayout layout;
-    VkFormat format;
-    uint32 width;
-    uint32 height;
-    uint32 depth;
-    uint32 mipmaps;
-    VkImageUsageFlags usageFlags;
-};
+    struct VulkanIndexBuffer {
+        BufferUsage usage;
+        uint32 size;
+        VkBuffer vkBuffer;
+        VkDeviceMemory vkDeviceMemory;
+    };
 
-struct VulkanFrameBufferFormat {
-    VkRenderPass renderPass;
-    uint32 numOfAttachments;
-    bool useDepthStencil;
-};
+    struct VulkanTextureObject {
+        VkImage image;
+        VkDeviceMemory imageMemory;
+        VkImageView imageView;
+        VkImageType type;
+        VkImageLayout layout;
+        VkFormat format;
+        uint32 width;
+        uint32 height;
+        uint32 depth;
+        uint32 mipmaps;
+        VkImageUsageFlags usageFlags;
+    };
 
-struct VulkanFrameBuffer {
-    VkFramebuffer framebuffer;
-    ObjectID framebufferFormatId;
-    uint32 width;
-    uint32 height;
-};
+    struct VulkanFrameBufferFormat {
+        VkRenderPass renderPass;
+        uint32 numOfAttachments;
+        bool useDepthStencil;
+    };
 
-struct VulkanDrawList {
-    VkCommandBuffer buffer = VK_NULL_HANDLE;
-    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
-    ObjectID surfaceId;
-    bool frameBufferAttached = false;
-    bool pipelineAttached = false;
-    bool uniformSetAttached = false;
-    bool vertexBufferAttached = false;
-    bool indexBufferAttached = false;
-    bool drawCalled = false;
-};
+    struct VulkanFrameBuffer {
+        VkFramebuffer framebuffer;
+        ObjectID framebufferFormatId;
+        uint32 width;
+        uint32 height;
+    };
 
-struct VulkanSurface {
-    std::string name;
-    uint32 width;
-    uint32 height;
-    uint32 widthFramebuffer;
-    uint32 heightFramebuffer;
-    bool tripleBuffering = false;
-    uint32 presentsFamily;
-    VkQueue presentQueue;
-    VkQueue graphicsQueue;
-    /// Surface created vie extension for specific WSI
-    VkSurfaceKHR surface;
-    VkSurfaceCapabilitiesKHR surfaceCapabilities;
-    VkPresentModeKHR presentMode;
-    VkSurfaceFormatKHR surfaceFormat;
-    /// Associated with chain data also needed for screen rendering (managed automatically)
-    VkSwapchainKHR swapChain;
-    VkExtent2D swapChainExtent;
-    VulkanFrameBufferFormat framebufferFormat;
-    std::vector<VkImage> swapChainImages;
-    std::vector<VkImageView> swapChainImageViews;
-    std::vector<VkFramebuffer> swapChainFramebuffers;
-    uint32 currentImageIndex = 0;
+    struct VulkanDrawList {
+        VkCommandBuffer buffer = VK_NULL_HANDLE;
+        VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+        ObjectID surfaceId;
+        bool frameBufferAttached = false;
+        bool pipelineAttached = false;
+        bool uniformSetAttached = false;
+        bool vertexBufferAttached = false;
+        bool indexBufferAttached = false;
+        bool drawCalled = false;
+    };
 
-    uint32 currentFrameIndex = 0;
-    uint32 maxFramesInFlight = 3;
-    std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
-    std::vector<VkFence> inFlightFences;
-    std::vector<VkFence> imagesInFlight;
-};
+    struct VulkanSurface {
+        std::string name;
+        uint32 width;
+        uint32 height;
+        uint32 widthFramebuffer;
+        uint32 heightFramebuffer;
+        bool tripleBuffering = false;
+        uint32 presentsFamily;
+        VkQueue presentQueue;
+        VkQueue graphicsQueue;
+        /// Surface created vie extension for specific WSI
+        VkSurfaceKHR surface;
+        VkSurfaceCapabilitiesKHR surfaceCapabilities;
+        VkPresentModeKHR presentMode;
+        VkSurfaceFormatKHR surfaceFormat;
+        /// Associated with chain data also needed for screen rendering (managed automatically)
+        VkSwapchainKHR swapChain;
+        VkExtent2D swapChainExtent;
+        VulkanFrameBufferFormat framebufferFormat;
+        std::vector<VkImage> swapChainImages;
+        std::vector<VkImageView> swapChainImageViews;
+        std::vector<VkFramebuffer> swapChainFramebuffers;
+        uint32 currentImageIndex = 0;
 
-struct VulkanUniformBuffer {
-    BufferUsage usage;
-    uint32 size;
-    VkBuffer buffer;
-    VkDeviceMemory memory;
-};
+        uint32 currentFrameIndex = 0;
+        uint32 maxFramesInFlight = 3;
+        std::vector<VkSemaphore> imageAvailableSemaphores;
+        std::vector<VkSemaphore> renderFinishedSemaphores;
+        std::vector<VkFence> inFlightFences;
+        std::vector<VkFence> imagesInFlight;
+    };
 
-struct VulkanDescriptorPool {
-    VkDescriptorPool pool;
-    uint32 allocatedSets;
-    uint32 maxSets;
-};
+    struct VulkanUniformBuffer {
+        BufferUsage usage;
+        uint32 size;
+        VkBuffer buffer;
+        VkDeviceMemory memory;
+    };
 
-struct VulkanUniformLayout {
-    VkDescriptorSetLayout setLayout;
-    uint32 texturesCount;
-    uint32 buffersCount;
-    uint32 usedDescriptorSets;
-    std::vector<VulkanDescriptorPool> pools;
-    std::vector<VkDescriptorSet> freeSets;
-};
+    struct VulkanDescriptorPool {
+        VkDescriptorPool pool;
+        uint32 allocatedSets;
+        uint32 maxSets;
+    };
 
-struct VulkanUniformSet {
-    RenderDevice::ID uniformLayout;
-    VkDescriptorSet descriptorSet;
-};
+    struct VulkanUniformLayout {
+        VkDescriptorSetLayout setLayout;
+        uint32 texturesCount;
+        uint32 buffersCount;
+        uint32 usedDescriptorSets;
+        std::vector<VulkanDescriptorPool> pools;
+        std::vector<VkDescriptorSet> freeSets;
+    };
 
-struct VulkanShader {
-    VkShaderModule module;
-    VkShaderStageFlagBits shaderStage;
-};
+    struct VulkanUniformSet {
+        RenderDevice::ID uniformLayout;
+        VkDescriptorSet descriptorSet;
+    };
 
-struct VulkanShaderProgram {
-    std::vector<VulkanShader> shaders;
-};
+    struct VulkanShader {
+        VkShaderModule module;
+        VkShaderStageFlagBits shaderStage;
+    };
 
-struct VulkanGraphicsPipeline {
-    RenderDevice::ID surface;
-    bool withSurfaceOnly;
-    VkPipeline pipeline;
-    VkPipelineLayout pipelineLayout;
-    RenderDevice::ID program;
-    RenderDevice::ID uniformLayout;
-    RenderDevice::ID vertexLayout;
-    RenderDevice::ID framebufferFormat;
-};
+    struct VulkanShaderProgram {
+        std::vector<VulkanShader> shaders;
+    };
 
-#endif //RENDERINGLIBRARY_VULKANOBJECTS_H
+    struct VulkanGraphicsPipeline {
+        RenderDevice::ID surface;
+        bool withSurfaceOnly;
+        VkPipeline pipeline;
+        VkPipelineLayout pipelineLayout;
+        RenderDevice::ID program;
+        RenderDevice::ID uniformLayout;
+        RenderDevice::ID vertexLayout;
+        RenderDevice::ID framebufferFormat;
+    };
+
+} // namespace ignimbrite
+
+#endif //IGNIMBRITELIBRARY_VULKANOBJECTS_H

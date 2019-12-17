@@ -14,7 +14,7 @@ set(Tests_SOURCES
 message(STATUS "Config Tests executable")
 add_executable(Tests ${Tests_HEADERS} ${Tests_SOURCES})
 
-target_link_libraries(Tests PUBLIC Renderer)
+target_link_libraries(Tests PUBLIC Ignimbrite)
 target_link_libraries(Tests PUBLIC VulkanDevice)
 
 # target_compile_definitions(Tests PUBLIC VK_USE_PLATFORM_WIN32_KHR) ?

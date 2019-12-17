@@ -2,12 +2,14 @@
 // Created by Egor Orachyov on 2019-11-09.
 //
 
-#ifndef RENDERINGLIBRARY_VULKANSTARTUP_H
-#define RENDERINGLIBRARY_VULKANSTARTUP_H
+#ifndef IGNIMBRITELIBRARY_VULKANSTARTUP_H
+#define IGNIMBRITELIBRARY_VULKANSTARTUP_H
 
-#include "VulkanContext.h"
-#include "VulkanRenderDevice.h"
-#include "VulkanExtensions.h"
+#include <VulkanContext.h>
+#include <VulkanRenderDevice.h>
+#include <VulkanExtensions.h>
+
+using namespace ignimbrite;
 
 struct VulkanStartUp {
 
@@ -59,4 +61,4 @@ struct VulkanStartUp {
 
 };
 
-#endif //RENDERINGLIBRARY_VULKANSTARTUP_H
+#endif //IGNIMBRITELIBRARY_VULKANSTARTUP_H
