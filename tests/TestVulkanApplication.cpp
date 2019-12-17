@@ -178,11 +178,6 @@ public:
         }
     }
 
-    static void run() {
-        VulkanApplication application;
-        application.loop();
-    }
-
 private:
 
     typedef ObjectID ID;
@@ -229,5 +224,10 @@ private:
     };
 
 };
+
+int32 main(int32 argc, char** argv) {
+    VulkanApplication application;
+    application.loop();
+}
 
 #endif //IGNIMBRITELIBRARY_VULKANAPPLICATIONTEST_H

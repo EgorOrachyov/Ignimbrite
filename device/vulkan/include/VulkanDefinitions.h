@@ -5,9 +5,9 @@
 #ifndef IGNIMBRITELIBRARY_VULKANDEFINITIONS_H
 #define IGNIMBRITELIBRARY_VULKANDEFINITIONS_H
 
-#include "vulkan/vulkan.h"
-#include "ignimbrite/DeviceDefinitions.h"
-#include "VulkanErrors.h"
+#include <vulkan/vulkan.h>
+#include <ignimbrite/DeviceDefinitions.h>
+#include <VulkanErrors.h>
 
 namespace ignimbrite {
 

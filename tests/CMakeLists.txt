@@ -7,3 +7,8 @@ target_link_libraries(TestObjectID PRIVATE Ignimbrite)
 add_executable(TestGlfwWindow TestGlfwWindow.cpp)
 target_link_libraries(TestGlfwWindow PRIVATE Ignimbrite)
 target_link_libraries(TestGlfwWindow PRIVATE glfw)
+
+add_executable(TestVulkanApplication TestVulkanApplication.cpp)
+target_link_libraries(TestVulkanApplication PRIVATE Ignimbrite)
+target_link_libraries(TestVulkanApplication PRIVATE VulkanDevice)
+target_link_libraries(TestVulkanApplication PRIVATE glfw)

@@ -1,0 +1,18 @@
+cmake_minimum_required(VERSION 3.11)
+project(Vulkan VERSION 1.0)
+
+add_library(Vulkan INTERFACE)
+target_include_directories(Vulkan INTERFACE include)
+
+if (APPLE)
+    target_link_directories(Vulkan INTERFACE lib/apple)
+    target_link_libraries(Vulkan INTERFACE vulkan)
+elseif (WIN32)
+    target_link_directories(Vulkan INTERFACE lib/win)
+    target_link_libraries(Vulkan INTERFACE vulkan)
+elseif (UNIX)
+    target_link_directories(Vulkan INTERFACE lib/unix)
+    target_link_libraries(Vulkan INTERFACE vulkan)
+else ()
+    message(SEND_ERROR "Unsopported platform for Vulkan SDK")
+endif()
