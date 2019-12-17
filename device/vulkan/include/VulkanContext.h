@@ -2,8 +2,8 @@
 // Created by Egor Orachyov on 2019-11-03.
 //
 
-#ifndef RENDERINGLIBRARY_VULKANCONTEXT_H
-#define RENDERINGLIBRARY_VULKANCONTEXT_H
+#ifndef IGNIMBRITELIBRARY_VULKANCONTEXT_H
+#define IGNIMBRITELIBRARY_VULKANCONTEXT_H
 
 #include <VulkanDefinitions.h>
 #include <VulkanObjects.h>
@@ -112,4 +112,4 @@ namespace ignimbrite {
 
 } // namespace ignimbrite
 
-#endif //RENDERINGLIBRARY_VULKANCONTEXT_H
+#endif //IGNIMBRITELIBRARY_VULKANCONTEXT_H

@@ -2,8 +2,8 @@
 // Created by Egor Orachyov on 2019-10-14.
 //
 
-#ifndef VULKANRENDERER_RENDERDEVICE_H
-#define VULKANRENDERER_RENDERDEVICE_H
+#ifndef IGNIMBRITELIBRARY_RENDERDEVICE_H
+#define IGNIMBRITELIBRARY_RENDERDEVICE_H
 
 #include <ignimbrite/ObjectID.h>
 #include <ignimbrite/DeviceDefinitions.h>
@@ -392,4 +392,4 @@ namespace ignimbrite {
 
 } // namespace ignimbrite
 
-#endif //VULKANRENDERER_RENDERDEVICE_H
+#endif //IGNIMBRITELIBRARY_RENDERDEVICE_H

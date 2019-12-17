@@ -2,8 +2,8 @@
 // Created by Egor Orachyov on 2019-10-15.
 //
 
-#ifndef VULKANRENDERER_OPTIONAL_H
-#define VULKANRENDERER_OPTIONAL_H
+#ifndef IGNIMBRITELIBRARY_OPTIONAL_H
+#define IGNIMBRITELIBRARY_OPTIONAL_H
 
 #include <ignimbrite/Types.h>
 #include <new>
@@ -67,4 +67,4 @@ namespace ignimbrite {
 
 } // namespace ignimbrite
 
-#endif //VULKANRENDERER_OPTIONAL_H
+#endif //IGNIMBRITELIBRARY_OPTIONAL_H

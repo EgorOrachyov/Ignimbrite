@@ -2,8 +2,8 @@
 // Created by Egor Orachyov on 2019-11-11.
 //
 
-#ifndef RENDERINGLIBRARY_VULKANOBJECTS_H
-#define RENDERINGLIBRARY_VULKANOBJECTS_H
+#ifndef IGNIMBRITELIBRARY_VULKANOBJECTS_H
+#define IGNIMBRITELIBRARY_VULKANOBJECTS_H
 
 #include <vulkan/vulkan.h>
 #include <ignimbrite/RenderDevice.h>
@@ -160,4 +160,4 @@ namespace ignimbrite {
 
 } // namespace ignimbrite
 
-#endif //RENDERINGLIBRARY_VULKANOBJECTS_H
+#endif //IGNIMBRITELIBRARY_VULKANOBJECTS_H

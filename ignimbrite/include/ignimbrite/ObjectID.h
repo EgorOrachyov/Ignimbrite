@@ -2,8 +2,8 @@
 // Created by Egor Orachyov on 2019-10-26.
 //
 
-#ifndef VULKANRENDERER_OBJECTID_H
-#define VULKANRENDERER_OBJECTID_H
+#ifndef IGNIMBRITELIBRARY_OBJECTID_H
+#define IGNIMBRITELIBRARY_OBJECTID_H
 
 #include <ignimbrite/Types.h>
 
@@ -47,4 +47,4 @@ namespace ignimbrite {
 
 } // namespace ignimbrite
 
-#endif //VULKANRENDERER_OBJECTID_H
+#endif //IGNIMBRITELIBRARY_OBJECTID_H

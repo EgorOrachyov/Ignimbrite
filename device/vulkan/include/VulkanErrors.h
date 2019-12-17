@@ -2,8 +2,8 @@
 // Created by Egor Orachyov on 2019-11-07.
 //
 
-#ifndef RENDERINGLIBRARY_VULKANERRORS_H
-#define RENDERINGLIBRARY_VULKANERRORS_H
+#ifndef IGNIMBRITELIBRARY_VULKANERRORS_H
+#define IGNIMBRITELIBRARY_VULKANERRORS_H
 
 #include <exception>
 #include <string>
@@ -40,4 +40,4 @@ namespace ignimbrite {
 
 } // namespace ignimbrite
 
-#endif //RENDERINGLIBRARY_VULKANERRORS_H
+#endif //IGNIMBRITELIBRARY_VULKANERRORS_H

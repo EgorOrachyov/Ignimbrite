@@ -2,8 +2,8 @@
 // Created by Egor Orachyov on 2019-11-02.
 //
 
-#ifndef VULKANRENDERER_VULKANRENDERDEVICE_H
-#define VULKANRENDERER_VULKANRENDERDEVICE_H
+#ifndef IGNIMBRITELIBRARY_VULKANRENDERDEVICE_H
+#define IGNIMBRITELIBRARY_VULKANRENDERDEVICE_H
 
 #include <ignimbrite/ObjectIDBuffer.h>
 #include <VulkanObjects.h>
@@ -115,4 +115,4 @@ namespace ignimbrite {
 
 } // namespace ignimbrite
 
-#endif //VULKANRENDERER_VULKANRENDERDEVICE_H
+#endif //IGNIMBRITELIBRARY_VULKANRENDERDEVICE_H

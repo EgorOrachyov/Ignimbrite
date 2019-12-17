@@ -2,8 +2,8 @@
 // Created by Egor Orachyov on 2019-10-26.
 //
 
-#ifndef VULKANRENDERER_OBJECTIDBUFFER_H
-#define VULKANRENDERER_OBJECTIDBUFFER_H
+#ifndef IGNIMBRITELIBRARY_OBJECTIDBUFFER_H
+#define IGNIMBRITELIBRARY_OBJECTIDBUFFER_H
 
 #include <ignimbrite/ObjectID.h>
 #include <ignimbrite/Compilation.h>
@@ -301,4 +301,4 @@ namespace ignimbrite {
 
 } // namespace ignimbrite
 
-#endif //VULKANRENDERER_OBJECTIDBUFFER_H
+#endif //IGNIMBRITELIBRARY_OBJECTIDBUFFER_H

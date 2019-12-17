@@ -1,7 +1,7 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef IGNIMBRITELIBRARY_OPTIONS_H
+#define IGNIMBRITELIBRARY_OPTIONS_H
 
 #define WITH_GLFW
 /* #undef WITH_GLM */
 
-#endif // CONFIG_H
+#endif // IGNIMBRITELIBRARY_OPTIONS_H

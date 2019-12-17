@@ -2,8 +2,8 @@
 // Created by Egor Orachyov on 2019-11-09.
 //
 
-#ifndef IGNIMBRITE_VULKANSTARTUP_H
-#define IGNIMBRITE_VULKANSTARTUP_H
+#ifndef IGNIMBRITELIBRARY_VULKANSTARTUP_H
+#define IGNIMBRITELIBRARY_VULKANSTARTUP_H
 
 #include <VulkanContext.h>
 #include <VulkanRenderDevice.h>
@@ -61,4 +61,4 @@ struct VulkanStartUp {
 
 };
 
-#endif //IGNIMBRITE_VULKANSTARTUP_H
+#endif //IGNIMBRITELIBRARY_VULKANSTARTUP_H

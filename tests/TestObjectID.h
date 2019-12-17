@@ -2,8 +2,8 @@
 // Created by Egor Orachyov on 2019-10-26.
 //
 
-#ifndef IGNIMBRITE_TESTOBJECTID_H
-#define IGNIMBRITE_TESTOBJECTID_H
+#ifndef IGNIMBRITELIBRARY_TESTOBJECTID_H
+#define IGNIMBRITELIBRARY_TESTOBJECTID_H
 
 #include <ignimbrite/ObjectIDBuffer.h>
 #include <ignimbrite/FileUtils.h>
@@ -111,4 +111,4 @@ struct TestObjectIDBuffer {
 
 };
 
-#endif //IGNIMBRITE_TESTOBJECTID_H
+#endif //IGNIMBRITELIBRARY_TESTOBJECTID_H

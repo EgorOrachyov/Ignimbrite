@@ -2,8 +2,8 @@
 // Created by Egor Orachyov on 2019-10-15.
 //
 
-#ifndef VULKANRENDERER_TYPES_H
-#define VULKANRENDERER_TYPES_H
+#ifndef IGNIMBRITELIBRARY_TYPES_H
+#define IGNIMBRITELIBRARY_TYPES_H
 
 #include <inttypes.h>
 
@@ -45,4 +45,4 @@ namespace ignimbrite {
 
 } // namespace ignimbrite
 
-#endif //VULKANRENDERER_TYPES_H
+#endif //IGNIMBRITELIBRARY_TYPES_H

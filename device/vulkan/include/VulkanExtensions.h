@@ -2,8 +2,8 @@
 // Created by Egor Orachyov on 2019-11-11.
 //
 
-#ifndef RENDERINGLIBRARY_VULKANEXTENSIONS_H
-#define RENDERINGLIBRARY_VULKANEXTENSIONS_H
+#ifndef IGNIMBRITELIBRARY_VULKANEXTENSIONS_H
+#define IGNIMBRITELIBRARY_VULKANEXTENSIONS_H
 
 #include <ignimbrite/Options.h>
 #include <ignimbrite/Types.h>
@@ -58,4 +58,4 @@ namespace ignimbrite {
 
 } // namespace ignimbrite
 
-#endif //RENDERINGLIBRARY_VULKANEXTENSIONS_H
+#endif //IGNIMBRITELIBRARY_VULKANEXTENSIONS_H
