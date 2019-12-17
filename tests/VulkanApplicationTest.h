@@ -7,6 +7,10 @@
 
 #include <VulkanRenderDevice.h>
 #include <VulkanExtensions.h>
+#include <cassert>
+#include <fstream>
+#include <iterator>
+#include <utility>
 
 class VulkanApplication {
 public:
@@ -16,13 +20,14 @@ public:
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         window = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
-        glfwGetFramebufferSize(window, (int32*) &widthFrameBuffer, (int32*) &heightFrameBuffer);
+        glfwGetFramebufferSize(window, (int32 *) &widthFrameBuffer, (int32 *) &heightFrameBuffer);
         extensions = glfwGetRequiredInstanceExtensions(&extensionsCount);
 
         pDevice = new VulkanRenderDevice(extensionsCount, extensions);
-        auto& device = *pDevice;
+        auto &device = *pDevice;
 
-        surface = VulkanExtensions::createSurfaceGLFW(device, window, width, height, widthFrameBuffer, heightFrameBuffer, name);
+        surface = VulkanExtensions::createSurfaceGLFW(device, window, width, height, widthFrameBuffer,
+                                                      heightFrameBuffer, name);
 
         RenderDevice::VertexAttributeDesc vertexAttributeDesc = {};
         vertexAttributeDesc.format = DataFormat::R32G32B32_SFLOAT;
@@ -34,13 +39,15 @@ public:
         vertexBufferLayoutDesc.stride = sizeof(float32) * 3;
         vertexBufferLayoutDesc.usage = VertexUsage::PerVertex;
 
-        vertexLayout = device.createVertexLayout({ vertexBufferLayoutDesc });
+        vertexLayout = device.createVertexLayout({vertexBufferLayoutDesc});
 
         vertexBuffer = device.createVertexBuffer(BufferUsage::Dynamic, sizeof(vertices), vertices);
 
         indexBuffer = device.createIndexBuffer(BufferUsage::Static, sizeof(indices), indices);
 
         uniformBuffer = device.createUniformBuffer(BufferUsage::Dynamic, sizeof(Transform), &transform);
+
+        loadTestShader(device);
 
         RenderDevice::UniformLayoutBufferDesc uniformLayoutBufferDesc = {};
         uniformLayoutBufferDesc.binding = 0;
@@ -76,29 +83,97 @@ public:
         RenderDevice::PipelineSurfaceBlendStateDesc blendStateDesc = {};
         blendStateDesc.attachment = blendAttachmentDesc;
         blendStateDesc.logicOpEnable = false;
-        blendStateDesc.logicOp = LogicOperation::NoOp;
+        blendStateDesc.logicOp = LogicOperation::Copy;
 
         graphicsPipeline = device.createGraphicsPipeline(
                 surface,
                 topology,
-                shaderProgram, vertexLayout, uniformLayout, rasterizationDesc, blendStateDesc
+                shaderProgram,
+                vertexLayout,
+                uniformLayout,
+                rasterizationDesc,
+                blendStateDesc
         );
 
     }
 
-    void loop() {
-        while (!glfwWindowShouldClose(window)) {
-            glfwPollEvents();
-            glfwSwapBuffers(window);
-        }
-    }
 
     ~VulkanApplication() {
+        auto &device = *pDevice;
+
+        device.destroyGraphicsPipeline(graphicsPipeline);
+        device.destroyShaderProgram(shaderProgram);
+        device.destroyUniformSet(uniformSet);
+        device.destroyUniformLayout(uniformLayout);
+        device.destroyUniformBuffer(uniformBuffer);
+        device.destroyVertexBuffer(vertexBuffer);
+        device.destroyIndexBuffer(indexBuffer);
+        device.destroyVertexLayout(vertexLayout);
+
         VulkanExtensions::destroySurface(*pDevice, surface);
         glfwDestroyWindow(window);
         glfwTerminate();
 
         delete pDevice;
+    }
+
+    void loadTestShader(VulkanRenderDevice &device) {
+        std::vector<RenderDevice::ShaderDataDesc> shaderDescs(2);
+
+        shaderDescs[0].language = ShaderLanguage::SPIRV;
+        shaderDescs[1].language = ShaderLanguage::SPIRV;
+        shaderDescs[0].type = ShaderType::Vertex;
+        shaderDescs[1].type = ShaderType::Fragment;
+
+        std::ifstream vertFile("shaders/vert.spv", std::ios::binary);
+        std::ifstream fragFile("shaders/frag.spv", std::ios::binary);
+
+        if (!vertFile.is_open() || !fragFile.is_open()) {
+            throw std::runtime_error("Failed to open spir-v files");
+        }
+
+        std::vector<uint8> vertSpv(std::istreambuf_iterator<char>(vertFile), {});
+        std::vector<uint8> fragSpv(std::istreambuf_iterator<char>(fragFile), {});
+
+        shaderDescs[0].source = std::move(vertSpv);
+        shaderDescs[1].source = std::move(fragSpv);
+
+        shaderProgram = device.createShaderProgram(shaderDescs);
+    }
+
+    void loop() {
+        auto &device = *pDevice;
+
+        RenderDevice::Color clearColor = {
+                {0.1f, 0.4f, 0.7f, 0.0f}
+        };
+
+        RenderDevice::Region area = {};
+        area.extent.x = widthFrameBuffer;
+        area.extent.y = heightFrameBuffer;
+
+        // TODO: DELETE THIS
+        device.swapBuffers(surface);
+
+        while (!glfwWindowShouldClose(window)) {
+            glfwPollEvents();
+
+            device.drawListBegin();
+            // TODO: default render area, which is same as surface size
+            device.drawListBindSurface(surface, clearColor, area);
+
+            device.drawListBindPipeline(graphicsPipeline);
+
+            device.drawListBindUniformSet(uniformSet);
+            device.drawListBindVertexBuffer(vertexBuffer, 0, 0);
+            device.drawListBindIndexBuffer(indexBuffer, IndicesType::Uint16, 0);
+            device.drawListDrawIndexed(sizeof(indices) / sizeof(uint16), 1);
+
+            device.drawListEnd();
+
+            device.swapBuffers(surface);
+            //glfwSwapBuffers(window);
+        }
     }
 
     static void run() {
@@ -110,15 +185,18 @@ private:
 
     typedef ObjectID ID;
 
-    ID surface;
-    GLFWwindow* window;
     std::string name = "Test";
-    uint32 width = 640, height = 480;
-    uint32 widthFrameBuffer, heightFrameBuffer;
-    uint32 extensionsCount;
-    const char* const* extensions;
 
-    VulkanRenderDevice* pDevice;
+    ID surface;
+    GLFWwindow *window = nullptr;
+    uint32 width = 640;
+    uint32 height = 480;
+    uint32 widthFrameBuffer = 0;
+    uint32 heightFrameBuffer = 0;
+    uint32 extensionsCount = 0;
+    const char *const *extensions = nullptr;
+
+    VulkanRenderDevice *pDevice;
 
     ID vertexLayout;
     ID vertexBuffer;
@@ -139,13 +217,13 @@ private:
     } transform;
 
     float32 vertices[9] = {
-            0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f
+            -0.5f, -0.5f, 0.0f,
+            0.5f, -0.5f, 0.0f,
+            0.5f, 0.5f, 0.0f
     };
 
     uint16 indices[3] = {
-        0, 1, 2
+            2, 1, 0
     };
 
 };

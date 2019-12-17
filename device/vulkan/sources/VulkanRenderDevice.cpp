@@ -146,7 +146,7 @@ void VulkanRenderDevice::destroyIndexBuffer(RenderDevice::ID bufferId) {
     vkDestroyBuffer(device, buffer.vkBuffer, nullptr);
     vkFreeMemory(device, buffer.vkDeviceMemory, nullptr);
 
-    mVertexBuffers.remove(bufferId);
+    mIndexBuffers.remove(bufferId);
 }
 
 RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDesc &textureDesc) {
@@ -199,10 +199,10 @@ RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDe
         subresourceRange.layerCount = 1;
 
         VkComponentMapping components = {
-            VK_COMPONENT_SWIZZLE_IDENTITY,
-            VK_COMPONENT_SWIZZLE_IDENTITY,
-            VK_COMPONENT_SWIZZLE_IDENTITY,
-            VK_COMPONENT_SWIZZLE_IDENTITY
+                VK_COMPONENT_SWIZZLE_IDENTITY,
+                VK_COMPONENT_SWIZZLE_IDENTITY,
+                VK_COMPONENT_SWIZZLE_IDENTITY,
+                VK_COMPONENT_SWIZZLE_IDENTITY
         };
 
         VulkanUtils::createImageView(
@@ -308,9 +308,9 @@ RenderDevice::ID VulkanRenderDevice::createSampler(const RenderDevice::SamplerDe
     samplerInfo.maxLod = samplerDesc.maxLod;
 
     VkSampler sampler;
-    VkResult r = vkCreateSampler(context.device, &samplerInfo, nullptr, &sampler);
+    VkResult result = vkCreateSampler(context.device, &samplerInfo, nullptr, &sampler);
 
-    if (r != VK_SUCCESS) {
+    if (result != VK_SUCCESS) {
         throw VulkanException("Failed to create sampler object");
     }
 
@@ -339,7 +339,8 @@ void VulkanRenderDevice::getSurfaceSize(RenderDevice::ID surface, uint32 &width,
     height = window.height;
 }
 
-RenderDevice::ID VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::FramebufferAttachmentDesc> &attachments) {
+RenderDevice::ID
+VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::FramebufferAttachmentDesc> &attachments) {
     std::vector<VkAttachmentDescription> attachmentDescriptions;
     attachmentDescriptions.reserve(attachments.size());
 
@@ -432,7 +433,7 @@ RenderDevice::ID VulkanRenderDevice::createFramebufferFormat(const std::vector<R
 }
 
 void VulkanRenderDevice::destroyFramebufferFormat(RenderDevice::ID framebufferFormat) {
-    auto& format = mFrameBufferFormats.get(framebufferFormat);
+    auto &format = mFrameBufferFormats.get(framebufferFormat);
     vkDestroyRenderPass(context.device, format.renderPass, nullptr);
 
     mFrameBufferFormats.remove(framebufferFormat);
@@ -440,11 +441,13 @@ void VulkanRenderDevice::destroyFramebufferFormat(RenderDevice::ID framebufferFo
 
 RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderDevice::ID> &attachmentIds,
                                                        RenderDevice::ID framebufferFormatId) {
+    VulkanFrameBuffer fbo = {};
+
     if (attachmentIds.empty()) {
         throw VulkanException("An attempt to create empty frame buffer");
     }
 
-    auto& format = mFrameBufferFormats.get(framebufferFormatId);
+    auto &format = mFrameBufferFormats.get(framebufferFormatId);
 
     if (attachmentIds.size() != format.numOfAttachments) {
         throw VulkanException("Attachments count is incompatible with framebuffer format");
@@ -453,10 +456,10 @@ RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderD
     std::vector<VkImageView> attachments;
     attachments.reserve(attachmentIds.size());
 
-    auto& base = mTextureObjects.get(attachmentIds[0]);
+    auto &base = mTextureObjects.get(attachmentIds[0]);
     uint32 width = base.width, height = base.height;
 
-    for (auto& id: attachmentIds) {
+    for (auto &id: attachmentIds) {
         auto &texture = mTextureObjects.get(id);
 
         if (texture.width != width || texture.height != height) {
@@ -478,18 +481,23 @@ RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderD
     framebufferInfo.renderPass = format.renderPass;
 
     VkFramebuffer framebuffer;
-    VkResult r = vkCreateFramebuffer(context.device, &framebufferInfo, nullptr, &framebuffer);
+    VkResult result = vkCreateFramebuffer(context.device, &framebufferInfo, nullptr, &framebuffer);
 
-    if (r != VK_SUCCESS) {
+    if (result != VK_SUCCESS) {
         throw VulkanException("Filed to create framebuffer");
     }
 
-    return mFrameBuffers.move(framebuffer);
+    fbo.framebuffer = framebuffer;
+    fbo.framebufferFormatId = framebufferFormatId;
+    fbo.width = width;
+    fbo.height = height;
+
+    return mFrameBuffers.move(fbo);
 }
 
 void VulkanRenderDevice::destroyFramebuffer(RenderDevice::ID framebufferId) {
-    VkFramebuffer framebuffer = mFrameBuffers.get(framebufferId);
-    vkDestroyFramebuffer(context.device, framebuffer, nullptr);
+    VulkanFrameBuffer fbo = mFrameBuffers.get(framebufferId);
+    vkDestroyFramebuffer(context.device, fbo.framebuffer, nullptr);
 
     mFrameBuffers.remove(framebufferId);
 }
@@ -505,6 +513,10 @@ RenderDevice::ID VulkanRenderDevice::createUniformSet(const UniformSetDesc &setD
 
     if (buffersCount != layout.buffersCount || texturesCount != layout.texturesCount) {
         throw VulkanException("Incompatible uniform layout and uniform set descriptor");
+    }
+
+    if (layout.buffersCount == 0 && layout.texturesCount == 0) {
+        throw VulkanException("Uniform layout has not textures and buffers to be bounded");
     }
 
     VkResult result;
@@ -597,8 +609,8 @@ RenderDevice::ID VulkanRenderDevice::createUniformSet(const UniformSetDesc &setD
 }
 
 void VulkanRenderDevice::destroyUniformSet(RenderDevice::ID setId) {
-    auto& uniformSet = mUniformSets.get(setId);
-    auto& layout = mUniformLayouts.get(uniformSet.uniformLayout);
+    auto &uniformSet = mUniformSets.get(setId);
+    auto &layout = mUniformLayouts.get(uniformSet.uniformLayout);
 
     layout.usedDescriptorSets -= 1;
     layout.freeSets.push_back(uniformSet.descriptorSet);
@@ -689,6 +701,7 @@ RenderDevice::ID VulkanRenderDevice::createUniformBuffer(BufferUsage usage, uint
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         VulkanUtils::createBuffer(context, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                   memoryPropertyFlags, uniformBuffer.buffer, uniformBuffer.memory);
+        VulkanUtils::updateBufferMemory(context, uniformBuffer.memory, 0, size, data);
     } else {
         throw VulkanException("Undefined uniform buffer usage");
     }
@@ -723,7 +736,7 @@ RenderDevice::ID VulkanRenderDevice::createShaderProgram(const std::vector<Rende
     VulkanShaderProgram program = {};
     program.shaders.reserve(shaders.size());
 
-    for (const auto& desc: shaders) {
+    for (const auto &desc: shaders) {
 
         if (desc.language != ShaderLanguage::SPIRV) {
             throw VulkanException("Compiling shaders from not SPIR-V languages is not supported");
@@ -734,7 +747,7 @@ RenderDevice::ID VulkanRenderDevice::createShaderProgram(const std::vector<Rende
 
         VkShaderModuleCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        createInfo.pCode = (const uint32*) desc.source.data();
+        createInfo.pCode = (const uint32 *) desc.source.data();
         createInfo.codeSize = (uint32) desc.source.size();
 
         result = vkCreateShaderModule(context.device, &createInfo, nullptr, &module);
@@ -743,7 +756,7 @@ RenderDevice::ID VulkanRenderDevice::createShaderProgram(const std::vector<Rende
             throw VulkanException("Failed to create shader module");
         }
 
-        VulkanShader shader= {};
+        VulkanShader shader = {};
         shader.module = module;
         shader.shaderStage = VulkanDefinitions::shaderStageBit(desc.type);
 
@@ -754,9 +767,9 @@ RenderDevice::ID VulkanRenderDevice::createShaderProgram(const std::vector<Rende
 }
 
 void VulkanRenderDevice::destroyShaderProgram(RenderDevice::ID program) {
-    auto& vulkanProgram = mShaderPrograms.get(program);
+    auto &vulkanProgram = mShaderPrograms.get(program);
 
-    for (auto& shader: vulkanProgram.shaders) {
+    for (auto &shader: vulkanProgram.shaders) {
         vkDestroyShaderModule(context.device, shader.module, nullptr);
     }
 
@@ -770,15 +783,18 @@ RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(PrimitiveTopology to
                                                             const RenderDevice::PipelineRasterizationDesc &rasterizationDesc,
                                                             const RenderDevice::PipelineBlendStateDesc &blendStateDesc,
                                                             const RenderDevice::PipelineDepthStencilStateDesc &depthStencilStateDesc) {
-    const auto& vkProgram = mShaderPrograms.get(program);
-    const auto& vkUniformLayout = mUniformLayouts.get(uniformLayout);
-    const auto& vkVertexLayout = mVertexLayouts.get(vertexLayout);
-    const auto& vkFramebufferFormat = mFrameBufferFormats.get(framebufferFormat);
+    const auto &vkProgram = mShaderPrograms.get(program);
+    const auto &vkUniformLayout = mUniformLayouts.get(uniformLayout);
+    const auto &vkVertexLayout = mVertexLayouts.get(vertexLayout);
+    const auto &vkFramebufferFormat = mFrameBufferFormats.get(framebufferFormat);
 
-    auto framebufferColorAttachmentsCount = vkFramebufferFormat.useDepthStencil ? vkFramebufferFormat.numOfAttachments - 1 : vkFramebufferFormat.numOfAttachments;
+    auto framebufferColorAttachmentsCount = vkFramebufferFormat.useDepthStencil ? vkFramebufferFormat.numOfAttachments -
+                                                                                  1
+                                                                                : vkFramebufferFormat.numOfAttachments;
 
     if (blendStateDesc.attachments.size() != framebufferColorAttachmentsCount) {
-        throw VulkanException("Incompatible number of color and blend attachments for specified framebuffer format and blend state");
+        throw VulkanException(
+                "Incompatible number of color and blend attachments for specified framebuffer format and blend state");
     }
 
     if (depthStencilStateDesc.depthTestEnable && !vkFramebufferFormat.useDepthStencil) {
@@ -794,7 +810,7 @@ RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(PrimitiveTopology to
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
     shaderStages.reserve(vkProgram.shaders.size());
 
-    for (const auto& shader: vkProgram.shaders) {
+    for (const auto &shader: vkProgram.shaders) {
         VkPipelineShaderStageCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         createInfo.stage = shader.shaderStage;
@@ -842,7 +858,9 @@ RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(PrimitiveTopology to
     VulkanUtils::createColorBlendState(blendStateDesc, (uint32) attachments.size(), attachments.data(), colorBlending);
 
     VkPipelineDepthStencilStateCreateInfo depthStencilState = {};
-    if (depthStencilStateDesc.depthTestEnable) VulkanUtils::createDepthStencilState(depthStencilStateDesc, depthStencilState);
+    if (depthStencilStateDesc.depthTestEnable) {
+        VulkanUtils::createDepthStencilState(depthStencilStateDesc, depthStencilState);
+    }
 
     VkGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -886,11 +904,11 @@ RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(RenderDevice::ID sur
                                                             const RenderDevice::PipelineRasterizationDesc &rasterizationDesc,
                                                             const RenderDevice::PipelineSurfaceBlendStateDesc &blendStateDesc) {
 
-    const auto& vkProgram = mShaderPrograms.get(program);
-    const auto& vkUniformLayout = mUniformLayouts.get(uniformLayout);
-    const auto& vkVertexLayout = mVertexLayouts.get(vertexLayout);
-    auto& vkSurface = mSurfaces.get(surface);
-    auto& vkFramebufferFormat = vkSurface.framebufferFormat;
+    const auto &vkProgram = mShaderPrograms.get(program);
+    const auto &vkUniformLayout = mUniformLayouts.get(uniformLayout);
+    const auto &vkVertexLayout = mVertexLayouts.get(vertexLayout);
+    auto &vkSurface = mSurfaces.get(surface);
+    auto &vkFramebufferFormat = vkSurface.framebufferFormat;
 
     VkResult result;
     VkPipeline pipeline;
@@ -901,7 +919,7 @@ RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(RenderDevice::ID sur
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
     shaderStages.reserve(vkProgram.shaders.size());
 
-    for (const auto& shader: vkProgram.shaders) {
+    for (const auto &shader: vkProgram.shaders) {
         VkPipelineShaderStageCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         createInfo.stage = shader.shaderStage;
@@ -984,11 +1002,309 @@ RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(RenderDevice::ID sur
 }
 
 void VulkanRenderDevice::destroyGraphicsPipeline(RenderDevice::ID pipeline) {
-    auto& vkPipeline = mGraphicsPipelines.get(pipeline);
+    auto &vulkanPipeline = mGraphicsPipelines.get(pipeline);
 
-    vkDestroyPipelineLayout(context.device, vkPipeline.pipelineLayout, nullptr);
-    vkDestroyPipeline(context.device, vkPipeline.pipeline, nullptr);
+    vkDestroyPipeline(context.device, vulkanPipeline.pipeline, nullptr);
+    vkDestroyPipelineLayout(context.device, vulkanPipeline.pipelineLayout, nullptr);
 
     mGraphicsPipelines.remove(pipeline);
 }
 
+void VulkanRenderDevice::drawListBegin() {
+    // get free command buffer and reset drawList
+
+    // TODO: get available cmd buffer
+//    VkCommandBuffer cmd = ?;
+//
+//    // clear command buffer
+//    vkResetCommandBuffer(cmd, 0);
+//
+//    // and start recording
+//    VkCommandBufferBeginInfo beginInfo = {};
+//    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+//    vkBeginCommandBuffer(cmd, &beginInfo);
+
+    // for now, just create temp cmd buffer
+    VkCommandBuffer cmd = VulkanUtils::beginTempCommandBuffer(context, context.graphicsTempCommandPool);
+
+    // clear draw list
+    drawList = {};
+    drawList.buffer = cmd;
+}
+
+void VulkanRenderDevice::drawListEnd() {
+    // submit for rendering and wait
+
+    VulkanSurface &surface = mSurfaces.get(drawList.surfaceId);
+    uint32 imageIndex = surface.currentImageIndex;
+    uint32 frameIndex = surface.currentFrameIndex;
+    VkCommandBuffer cmd = drawList.buffer;
+
+    // end renderpass associated with surface
+    vkCmdEndRenderPass(cmd);
+
+    // TODO: remove after 'getAvailableCmdBuffer' implemetation
+    // as temp cmd buffer is used now, so delete it
+    vkEndCommandBuffer(cmd);;
+    if (surface.imagesInFlight[imageIndex] != VK_NULL_HANDLE) {
+        vkWaitForFences(context.device, 1, &surface.imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+    }
+
+    surface.imagesInFlight[imageIndex] = surface.inFlightFences[frameIndex];
+
+    // when final colors are output of pipeline
+    VkPipelineStageFlags pipelineStageFlags[1] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+
+    VkSubmitInfo submitInfo;
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.pNext = nullptr;
+    submitInfo.pWaitDstStageMask = pipelineStageFlags;
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = &surface.imageAvailableSemaphores[frameIndex];
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = &surface.renderFinishedSemaphores[frameIndex];
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &cmd;
+
+    // reset fence to unsignaled state before submitting
+    VkResult result = vkResetFences(context.device, 1, &surface.inFlightFences[frameIndex]);
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Can't reset fence");
+    }
+
+    // submit command buffer to queue
+    result = vkQueueSubmit(surface.graphicsQueue, 1, &submitInfo, surface.inFlightFences[frameIndex]);
+    if (result != VK_SUCCESS) {
+        throw VulkanException("Can't submit queue");
+    }
+
+    // TODO: remove wait idle
+    vkQueueWaitIdle(surface.graphicsQueue);
+    vkFreeCommandBuffers(context.device, context.graphicsTempCommandPool, 1, &cmd);
+}
+
+void VulkanRenderDevice::drawListBindPipeline(RenderDevice::ID graphicsPipelineId) {
+    const auto &graphicsPipeline = mGraphicsPipelines.get(graphicsPipelineId);
+    vkCmdBindPipeline(drawList.buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.pipeline);
+    drawList.pipelineLayout = graphicsPipeline.pipelineLayout;
+    drawList.pipelineAttached = true;
+}
+
+void VulkanRenderDevice::drawListBindUniformSet(RenderDevice::ID uniformSetId) {
+    const auto &uniformSet = mUniformSets.get(uniformSetId);
+    vkCmdBindDescriptorSets(drawList.buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, drawList.pipelineLayout, 0, 1,
+                            &uniformSet.descriptorSet, 0, nullptr);
+
+    drawList.uniformSetAttached = true;
+}
+
+void VulkanRenderDevice::drawListBindIndexBuffer(RenderDevice::ID indexBufferId,
+                                                 IndicesType indicesType, uint32 offset) {
+    const auto &indexBuffer = mIndexBuffers.get(indexBufferId);
+    vkCmdBindIndexBuffer(drawList.buffer, indexBuffer.vkBuffer, offset, VulkanDefinitions::indexType(indicesType));
+
+    drawList.indexBufferAttached = true;
+}
+
+void VulkanRenderDevice::drawListBindVertexBuffer(RenderDevice::ID vertexBufferId,
+                                                  uint32 binding, uint32 offset) {
+    const auto &vertexBuffer = mVertexBuffers.get(vertexBufferId);
+    VkDeviceSize offsets[1] = {offset};
+    vkCmdBindVertexBuffers(drawList.buffer, binding, 1, &vertexBuffer.vkBuffer, offsets);
+
+    drawList.vertexBufferAttached = true;
+}
+
+void VulkanRenderDevice::drawListDrawIndexed(uint32 indicesCount, uint32 instancesCount) {
+    vkCmdDrawIndexed(drawList.buffer, indicesCount, instancesCount, 0, 0, 0);
+    drawList.drawCalled = true;
+}
+
+void VulkanRenderDevice::drawListDraw(uint32 verticesCount, uint32 instancesCount) {
+    vkCmdDraw(drawList.buffer, verticesCount, instancesCount, 0, 0);
+    drawList.drawCalled = true;
+}
+
+// TODO: DELETE THIS
+static bool firstTime = true;
+
+void VulkanRenderDevice::swapBuffers(RenderDevice::ID surfaceId) {
+    VulkanSurface &surface = mSurfaces.get(surfaceId);
+    const uint32 imageIndex = surface.currentImageIndex;
+    const uint32 frameIndex = surface.currentFrameIndex;
+    VkResult result;
+
+    if (!firstTime) {
+        // queue image presentation
+        VkPresentInfoKHR presentInfo = {};
+        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        presentInfo.pNext = nullptr;
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = &surface.swapChain;
+        presentInfo.pImageIndices = &imageIndex;
+        // wait until render will be finished
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = &surface.renderFinishedSemaphores[frameIndex];
+        presentInfo.pResults = nullptr;
+
+        result = vkQueuePresentKHR(surface.presentQueue, &presentInfo);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+            // TODO: resize
+        } else if (result != VK_SUCCESS) {
+            throw VulkanException("Can't queue and image for presentation");
+        }
+    }
+    firstTime = false;
+    uint32 nextFrameIndex = (frameIndex + 1) % surface.maxFramesInFlight;
+
+    // NOTE: this block can be in the beginning of frame draw
+    {
+        // wait when next will be done, i.e. fence will be in signaled state
+        vkWaitForFences(context.device, 1, &surface.inFlightFences[nextFrameIndex], VK_TRUE, UINT64_MAX);
+
+        // acquire next image
+        uint32 nextImageIndex;
+        result = vkAcquireNextImageKHR(context.device, surface.swapChain, UINT64_MAX,
+                                       surface.imageAvailableSemaphores[nextFrameIndex], VK_NULL_HANDLE,
+                                       &nextImageIndex);
+
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+            // TODO: process resize
+        } else if (result != VK_SUCCESS) {
+            throw VulkanException("Can't acquire next image in swapchain");
+        }
+
+        surface.currentFrameIndex = nextFrameIndex;
+        surface.currentImageIndex = nextImageIndex;
+    }
+}
+
+void VulkanRenderDevice::drawListBindSurface(RenderDevice::ID surfaceId, const RenderDevice::Color &color,
+                                             const RenderDevice::Region &area) {
+    // end previous render pass, if exists
+    if (drawList.frameBufferAttached) {
+        vkCmdEndRenderPass(drawList.buffer);
+    }
+
+    VulkanSurface &surface = mSurfaces.get(surfaceId);
+    const float clearDepth = 1.0f;
+    const uint32 clearStencil = 0;
+
+    VkCommandBuffer cmd = drawList.buffer;
+    VkFramebuffer surfFramebuffer = surface.swapChainFramebuffers[surface.currentImageIndex];
+
+    uint32_t viewportOffsetX = area.xOffset;
+    uint32_t viewportOffsetY = area.yOffset;
+    uint32_t viewportWidth = area.extent.x;
+    uint32_t viewportHeight = area.extent.y;
+
+    VkClearValue clearValues[2];
+    clearValues[0].color = {{color.components[0],
+                                    color.components[1],
+                                    color.components[2],
+                                    color.components[3]}};
+    clearValues[1].depthStencil.depth = clearDepth;
+    clearValues[1].depthStencil.stencil = clearStencil;
+
+    VkRenderPassBeginInfo renderPassBeginInfo{};
+    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassBeginInfo.renderPass = surface.framebufferFormat.renderPass;
+    renderPassBeginInfo.renderArea.offset.x = 0;
+    renderPassBeginInfo.renderArea.offset.y = 0;
+
+    renderPassBeginInfo.renderArea.extent.width = surface.widthFramebuffer;
+    renderPassBeginInfo.renderArea.extent.height = surface.heightFramebuffer;
+    renderPassBeginInfo.clearValueCount = 2;
+    renderPassBeginInfo.pClearValues = clearValues;
+    renderPassBeginInfo.framebuffer = surfFramebuffer;
+
+    vkCmdBeginRenderPass(cmd, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    VkViewport viewport;
+    viewport.x = viewportOffsetX;
+    viewport.y = viewportOffsetY;
+    viewport.width = viewportWidth;
+    viewport.height = viewportHeight;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(cmd, 0, 1, &viewport);
+
+    VkRect2D scissor;
+    scissor.extent.width = viewportWidth;
+    scissor.extent.height = viewportHeight;
+    scissor.offset.x = viewportOffsetX;
+    scissor.offset.y = viewportOffsetY;
+    vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+    drawList.surfaceId = surfaceId;
+}
+
+void VulkanRenderDevice::drawListBindFramebuffer(RenderDevice::ID framebufferId, const std::vector<Color> &colors,
+                                                 float32 clearDepth, uint32 clearStencil,
+                                                 const RenderDevice::Region &area) {
+    // end previous render pass, if exists
+    if (drawList.frameBufferAttached) {
+        vkCmdEndRenderPass(drawList.buffer);
+    }
+
+    VulkanFrameBuffer &fbo = mFrameBuffers.get(framebufferId);
+    VulkanFrameBufferFormat &fboFormat = mFrameBufferFormats.get(fbo.framebufferFormatId);
+    VkCommandBuffer cmd = drawList.buffer;
+
+    uint32 viewportOffsetX = area.xOffset;
+    uint32 viewportOffsetY = area.yOffset;
+    uint32 viewportWidth = area.extent.x;
+    uint32 viewportHeight = area.extent.y;
+
+    // to prevent allocation std::vector on each call of this function ??
+    std::vector<VkClearValue> &clearValues = context.tempClearValues;
+    if (clearValues.size() < colors.size() + 1) {
+        clearValues.resize(colors.size() + 1);
+    }
+
+    for (size_t i = 0; i < colors.size(); i++) {
+        clearValues[i].color = {{colors[i].components[0],
+                                        colors[i].components[1],
+                                        colors[i].components[2],
+                                        colors[i].components[3]}};
+    }
+
+    clearValues.push_back( {.depthStencil = {clearDepth, clearStencil}} );
+
+    VkRenderPassBeginInfo renderPassBeginInfo{};
+    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassBeginInfo.renderPass = fboFormat.renderPass;
+    renderPassBeginInfo.renderArea.offset.x = 0;
+    renderPassBeginInfo.renderArea.offset.y = 0;
+
+    renderPassBeginInfo.renderArea.extent.width = fbo.width;
+    renderPassBeginInfo.renderArea.extent.height = fbo.height;
+    renderPassBeginInfo.clearValueCount = (uint32) clearValues.size();
+    renderPassBeginInfo.pClearValues = clearValues.data();
+    renderPassBeginInfo.framebuffer = fbo.framebuffer;
+
+    vkCmdBeginRenderPass(cmd, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    VkViewport viewport;
+    viewport.x = viewportOffsetX;
+    viewport.y = viewportOffsetY;
+    viewport.width = viewportWidth;
+    viewport.height = viewportHeight;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(cmd, 0, 1, &viewport);
+
+    VkRect2D scissor;
+    scissor.extent.width = viewportWidth;
+    scissor.extent.height = viewportHeight;
+    scissor.offset.x = viewportOffsetX;
+    scissor.offset.y = viewportOffsetY;
+    vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+    drawList.frameBufferAttached = true;
+}
+
+void VulkanRenderDevice::drawListBindFramebuffer(RenderDevice::ID framebufferId, const std::vector<Color> &colors,
+                                                 const RenderDevice::Region &area) {
+    drawListBindFramebuffer(framebufferId, colors, 1.0f, 0, area);
+}

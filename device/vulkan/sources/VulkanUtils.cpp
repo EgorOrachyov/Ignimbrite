@@ -517,16 +517,25 @@ void VulkanUtils::allocateDescriptorPool(VulkanContext &context, VulkanUniformLa
     VkResult result;
     VkDescriptorPool pool;
 
-    std::array<VkDescriptorPoolSize, 2> poolSizes({});
-    poolSizes[0].descriptorCount = layout.buffersCount;
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[1].descriptorCount = layout.texturesCount;
-    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    VkDescriptorPoolSize poolSizes[2];
+    uint32 poolSizesCount = 0;
+
+    if (layout.buffersCount > 0) {
+        poolSizes[poolSizesCount].descriptorCount = layout.buffersCount;
+        poolSizes[poolSizesCount].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSizesCount += 1;
+    }
+
+    if (layout.texturesCount > 0) {
+        poolSizes[poolSizesCount].descriptorCount = layout.texturesCount;
+        poolSizes[poolSizesCount].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        poolSizesCount += 1;
+    }
 
     VkDescriptorPoolCreateInfo poolCreateInfo = {};
     poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolCreateInfo.poolSizeCount = (uint32) poolSizes.size();
-    poolCreateInfo.pPoolSizes = poolSizes.data();
+    poolCreateInfo.poolSizeCount = poolSizesCount;
+    poolCreateInfo.pPoolSizes = poolSizes;
     poolCreateInfo.maxSets = VulkanContext::DESCRIPTOR_POOL_MAX_SET_COUNT;
 
     result = vkCreateDescriptorPool(context.device, &poolCreateInfo, nullptr, &pool);
@@ -543,7 +552,7 @@ void VulkanUtils::allocateDescriptorPool(VulkanContext &context, VulkanUniformLa
     layout.pools.push_back(vulkanDescriptorPool);
 }
 
-VulkanDescriptorPool & VulkanUtils::getAvailableDescriptorPool(VulkanContext &context, VulkanUniformLayout &layout) {
+VulkanDescriptorPool& VulkanUtils::getAvailableDescriptorPool(VulkanContext &context, VulkanUniformLayout &layout) {
     for (auto& pool: layout.pools) {
         if (pool.allocatedSets < pool.maxSets) {
             return pool;

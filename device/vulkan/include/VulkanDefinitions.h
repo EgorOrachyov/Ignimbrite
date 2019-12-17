@@ -353,6 +353,16 @@ public:
         }
     }
 
+    static VkIndexType indexType(IndicesType type) {
+        switch (type) {
+            case IndicesType::Uint16:
+                return VkIndexType::VK_INDEX_TYPE_UINT16;
+            case IndicesType::Uint32:
+                return VkIndexType::VK_INDEX_TYPE_UINT32;
+            default:
+                throw InvalidEnum();
+        }
+    }
 };
 
 #endif //RENDERINGLIBRARY_VULKANDEFINITIONS_H

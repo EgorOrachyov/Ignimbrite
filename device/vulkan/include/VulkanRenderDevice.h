@@ -8,6 +8,8 @@
 #include <renderer/ObjectIDBuffer.h>
 #include <VulkanObjects.h>
 #include <VulkanContext.h>
+#include <vulkan/vulkan.h>
+#include "VulkanUtils.h"
 
 /** Vulkan implementation for Render Device interface */
 class VulkanRenderDevice : public RenderDevice {
@@ -60,64 +62,27 @@ public:
                               const PipelineRasterizationDesc &rasterizationDesc,
                               const PipelineBlendStateDesc &blendStateDesc,
                               const PipelineDepthStencilStateDesc &depthStencilStateDesc) override;
-
     ID createGraphicsPipeline(ID surface,
                               PrimitiveTopology topology,
                               ID program, ID vertexLayout, ID uniformLayout,
                               const PipelineRasterizationDesc &rasterizationDesc,
                               const PipelineSurfaceBlendStateDesc &blendStateDesc) override;
-
     void destroyGraphicsPipeline(ID pipeline) override;
 
-    ID drawListBegin(ID framebuffer, std::vector<Color> clearColors, const Region &drawArea) override {
-        return RenderDevice::ID();
-    }
+    void drawListBegin() override;
+    void drawListEnd() override;
+    void drawListBindSurface(ID surface, const Color &color, const Region &area) override;
+    void drawListBindFramebuffer(ID framebuffer, const std::vector<Color> &clearColors, const Region &area) override;
+    void drawListBindFramebuffer(ID framebuffer, const std::vector<Color> &clearColors,
+            float32 clearDepth, uint32 clearStencil, const Region &area) override;
+    void drawListBindPipeline(ID graphicsPipeline) override;
+    void drawListBindUniformSet(ID uniformLayout) override;
+    void drawListBindVertexBuffer(ID vertexBuffer, uint32 binding, uint32 offset) override;
+    void drawListBindIndexBuffer(ID indexBuffer, IndicesType indicesType, uint32 offset) override;
+    void drawListDraw(uint32 verticesCount, uint32 instancesCount) override;
+    void drawListDrawIndexed(uint32 indicesCount, uint32 instancesCount) override;
 
-    ID drawListBegin(ID framebuffer, std::vector<Color> clearColors, float32 clearDepth, uint32 clearStencil,
-                     const Region &drawArea) override {
-        return RenderDevice::ID();
-    }
-
-    ID drawListBegin(ID surface, Color clearColor, const Region &drawArea) override {
-        return RenderDevice::ID();
-    }
-
-    ID drawListBegin(ID surface, Color clearColor, float32 clearDepth, uint32 clearStencil,
-                     const Region &drawArea) override {
-        return RenderDevice::ID();
-    }
-
-    void drawListBindPipeline(ID drawList, ID graphicsPipeline) override {
-
-    }
-
-    void drawListBindUniformSet(ID drawList, ID uniformLayout) override {
-
-    }
-
-    void drawListBindVertexBuffer(ID drawList, ID vertexBuffer, uint32 binding, uint32 offset) override {
-
-    }
-
-    void drawListBindIndexBuffer(ID drawList, ID indexBuffer, IndicesType indicesType, uint32 offset) override {
-
-    }
-
-    void drawListDraw(ID drawList, uint32 verticesCount, uint32 instancesCount) override {
-
-    }
-
-    void drawListDrawIndexed(ID drawList, uint32 indicesCount, uint32 instancesCount) override {
-
-    }
-
-    void drawListEnd(ID drawList) override {
-
-    }
-
-    void swapBuffers(ID surface) override {
-
-    }
+    void swapBuffers(ID surfaceId) override;
 
 private:
 
@@ -127,13 +92,14 @@ private:
     using Buffer = ObjectIDBuffer<T>;
 
     VulkanContext context;
+    VulkanDrawList drawList;
 
     Buffer<VulkanSurface> mSurfaces;
     Buffer<VulkanVertexLayout> mVertexLayouts;
     Buffer<VulkanVertexBuffer> mVertexBuffers;
     Buffer<VulkanIndexBuffer> mIndexBuffers;
     Buffer<VulkanFrameBufferFormat> mFrameBufferFormats;
-    Buffer<VkFramebuffer> mFrameBuffers;
+    Buffer<VulkanFrameBuffer> mFrameBuffers;
     Buffer<VkSampler> mSamplers;
     Buffer<VulkanTextureObject> mTextureObjects;
     Buffer<VulkanUniformBuffer> mUniformBuffers;
@@ -141,6 +107,7 @@ private:
     Buffer<VulkanUniformSet> mUniformSets;
     Buffer<VulkanShaderProgram> mShaderPrograms;
     Buffer<VulkanGraphicsPipeline> mGraphicsPipelines;
+
 
 };
 

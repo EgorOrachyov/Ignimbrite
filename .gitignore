@@ -26,7 +26,8 @@
 /out
 
 # Ignore third-party (must be setup explicitly)
-/thirdparty/*
+/thirdparty/include/*
+/thirdparty/lib/*
 
 # MacOS finder files
 /**/.DS_Store

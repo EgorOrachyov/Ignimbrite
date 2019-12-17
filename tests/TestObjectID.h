@@ -30,7 +30,7 @@ struct TestObjectIDBuffer {
         try {
             ObjectIDBuffer<std::string> strings;
             auto id = strings.add("some string");
-            std::string &s = strings.get(id);
+            strings.get(id);
             strings.remove(id);
             strings.remove(id);
         } catch (std::runtime_error& error) {
@@ -87,7 +87,7 @@ struct TestObjectIDBuffer {
             buffer.remove(ids[toRemove]);
         }
 
-        for (auto object: buffer) {
+        for (auto& object: buffer) {
             printf("Object: %lli\n", object);
         }
 

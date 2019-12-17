@@ -58,6 +58,25 @@ struct VulkanFrameBufferFormat {
     bool useDepthStencil;
 };
 
+struct VulkanFrameBuffer {
+    VkFramebuffer framebuffer;
+    ObjectID framebufferFormatId;
+    uint32 width;
+    uint32 height;
+};
+
+struct VulkanDrawList {
+    VkCommandBuffer buffer = VK_NULL_HANDLE;
+    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+    ObjectID surfaceId;
+    bool frameBufferAttached = false;
+    bool pipelineAttached = false;
+    bool uniformSetAttached = false;
+    bool vertexBufferAttached = false;
+    bool indexBufferAttached = false;
+    bool drawCalled = false;
+};
+
 struct VulkanSurface {
     std::string name;
     uint32 width;
@@ -67,6 +86,7 @@ struct VulkanSurface {
     bool tripleBuffering = false;
     uint32 presentsFamily;
     VkQueue presentQueue;
+    VkQueue graphicsQueue;
     /// Surface created vie extension for specific WSI
     VkSurfaceKHR surface;
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
@@ -79,6 +99,14 @@ struct VulkanSurface {
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
     std::vector<VkFramebuffer> swapChainFramebuffers;
+    uint32 currentImageIndex = 0;
+
+    uint32 currentFrameIndex = 0;
+    uint32 maxFramesInFlight = 3;
+    std::vector<VkSemaphore> imageAvailableSemaphores;
+    std::vector<VkSemaphore> renderFinishedSemaphores;
+    std::vector<VkFence> inFlightFences;
+    std::vector<VkFence> imagesInFlight;
 };
 
 struct VulkanUniformBuffer {

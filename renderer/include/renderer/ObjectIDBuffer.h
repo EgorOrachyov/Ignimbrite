@@ -259,7 +259,7 @@ template <typename T>
 void ObjectIDBuffer<T>::Iterator::operator++() {
     found = false;
 
-    for (current; current < gens.size(); current++) {
+    for ( ; current < gens.size(); current++) {
         bool isValid = true;
         for (auto notUsed: freeGensIndices) {
             if (notUsed == current) {
