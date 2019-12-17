@@ -517,35 +517,25 @@ void VulkanUtils::allocateDescriptorPool(VulkanContext &context, VulkanUniformLa
     VkResult result;
     VkDescriptorPool pool;
 
-    std::array<VkDescriptorPoolSize, 2> poolSizes({});
-    uint32 poolSizesAmount;
+    VkDescriptorPoolSize poolSizes[2];
+    uint32 poolSizesCount = 0;
 
-    if (layout.buffersCount > 0 && layout.texturesCount > 0) {
-        poolSizes[0].descriptorCount = layout.buffersCount;
-        poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[1].descriptorCount = layout.texturesCount;
-        poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizesAmount = 2;
+    if (layout.buffersCount > 0) {
+        poolSizes[poolSizesCount].descriptorCount = layout.buffersCount;
+        poolSizes[poolSizesCount].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSizesCount += 1;
+    }
 
-    } else if (layout.buffersCount > 0) {
-        poolSizes[0].descriptorCount = layout.buffersCount;
-        poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizesAmount = 1;
-
-    } else if (layout.texturesCount > 0) {
-        poolSizes[0].descriptorCount = layout.texturesCount;
-        poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizesAmount = 1;
-
-    } else {
-        // TODO: if there are no any textures or uniforms
-        throw VulkanException("Unimplemented allocateDescriptorPool");
+    if (layout.texturesCount > 0) {
+        poolSizes[poolSizesCount].descriptorCount = layout.texturesCount;
+        poolSizes[poolSizesCount].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        poolSizesCount += 1;
     }
 
     VkDescriptorPoolCreateInfo poolCreateInfo = {};
     poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolCreateInfo.poolSizeCount = poolSizesAmount;
-    poolCreateInfo.pPoolSizes = poolSizes.data();
+    poolCreateInfo.poolSizeCount = poolSizesCount;
+    poolCreateInfo.pPoolSizes = poolSizes;
     poolCreateInfo.maxSets = VulkanContext::DESCRIPTOR_POOL_MAX_SET_COUNT;
 
     result = vkCreateDescriptorPool(context.device, &poolCreateInfo, nullptr, &pool);
@@ -562,7 +552,7 @@ void VulkanUtils::allocateDescriptorPool(VulkanContext &context, VulkanUniformLa
     layout.pools.push_back(vulkanDescriptorPool);
 }
 
-VulkanDescriptorPool & VulkanUtils::getAvailableDescriptorPool(VulkanContext &context, VulkanUniformLayout &layout) {
+VulkanDescriptorPool& VulkanUtils::getAvailableDescriptorPool(VulkanContext &context, VulkanUniformLayout &layout) {
     for (auto& pool: layout.pools) {
         if (pool.allocatedSets < pool.maxSets) {
             return pool;

@@ -515,6 +515,10 @@ RenderDevice::ID VulkanRenderDevice::createUniformSet(const UniformSetDesc &setD
         throw VulkanException("Incompatible uniform layout and uniform set descriptor");
     }
 
+    if (layout.buffersCount == 0 && layout.texturesCount == 0) {
+        throw VulkanException("Uniform layout has not textures and buffers to be bounded");
+    }
+
     VkResult result;
     VkDescriptorSet descriptorSet;
 
