@@ -32,7 +32,7 @@ link_directories(${THIRD_PARTY_LIBS_PATH})
 ##################################################################
 ## Third-party setup
 
-option(WITH_GLFW "GLFW Window system" YES)
+option(WITH_GLFW "GLFW Window system" NO)
 if (WITH_GLFW)
     if (APPLE)
         set(GLFW_INCLUDE "${PROJECT_SOURCE_DIR}/thirdparty/include")
@@ -48,7 +48,7 @@ if (WITH_GLFW)
     endif()
 endif()
 
-option(WITH_VULKAN "Vulkan rendering API" YES)
+option(WITH_VULKAN "Vulkan rendering API" NO)
 if (WITH_VULKAN)
     message(STATUS "Using Vulkan as rendering API")
     set(VULKAN_INCLUDE "${PROJECT_SOURCE_DIR}/thirdparty/include")
