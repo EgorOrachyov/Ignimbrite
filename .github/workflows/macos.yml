@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: 
       - master
+      - (26)VkRenderDevice
   push:
     branches: 
       - master
@@ -18,6 +19,13 @@ jobs:
       - name: build 
         run: |
           mkdir build
+          mkdir build/tests
+          mkdir build/tests/shaders
+          cp -a ./resources/shaders/spirv/. ./build/tests/shaders
           cd build
           cmake ..
-          cmake --build . --target Renderer 
+          cmake --build . --target Ignimbrite
+          cmake --build . --target VulkanDevice
+          cmake --build . --target TestObjectID
+          cmake --build . --target TestGlfwWindow
+          cmake --build . --target TestVulkanApplication

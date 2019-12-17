@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - master
+      - (26)VkRenderDevice
   push:
     branches:
       - master
@@ -20,4 +21,8 @@ jobs:
           mkdir build
           chdir build
           cmake ..
-          cmake --build . --target Renderer
+          cmake --build . --target Ignimbrite
+          cmake --build . --target VulkanDevice
+          cmake --build . --target TestObjectID
+          cmake --build . --target TestGlfwWindow
+          cmake --build . --target TestVulkanApplication
