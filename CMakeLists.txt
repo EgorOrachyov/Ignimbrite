@@ -11,10 +11,16 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -g")
 
 ##################################################################
-## Platform specific setup
+## Compiler specific setup
 
-set(THIRD_PARTY_LIBS)
-set(THIRD_PARTY_LIBS_PATH)
+set(gcc_like_cxx "CXX" "ARMClang" "AppleClang" "Clang" "GNU")
+set(msvc_cxx "CXX" "MSVC")
+
+if ("${CMAKE_CXX_COMPILER_ID}" IN_LIST gcc_like_cxx)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wextra -Wshadow -Wformat=2 -Wunused")
+elseif ("${CMAKE_CXX_COMPILER_ID}" IN_LIST msvc_cxx)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -W3")
+endif ()
 
 ##################################################################
 ## Third-party setup
