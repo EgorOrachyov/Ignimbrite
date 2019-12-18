@@ -1,4 +1,4 @@
-# VulkanRenderer
+# Ignimbrite
 
 ![MacOS build](https://github.com/EgorOrachyov/VulkanRenderer/workflows/MacOS/badge.svg)
 ![Linux build](https://github.com/EgorOrachyov/VulkanRenderer/workflows/Linux/badge.svg)
@@ -15,9 +15,9 @@ C/C++ library for visualization dynamic 3D scene with GPU hardware acceleration 
 * MacOS
 
 ## Dependencies
-* Vulkan API
+* Vulkan SDK
 * GLFW
 * GLM
-* Glslang
+* SPIRV-CROSS
 
 ## Build
