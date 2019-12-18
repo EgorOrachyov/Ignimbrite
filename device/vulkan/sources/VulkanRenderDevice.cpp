@@ -390,7 +390,7 @@ namespace ignimbrite {
             attachmentDescriptions.push_back(description);
         }
 
-        std::array<VkSubpassDependency, 2> dependencies({});
+        std::array<VkSubpassDependency, 2> dependencies;
 
         dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
         dependencies[0].dstSubpass = 0;
