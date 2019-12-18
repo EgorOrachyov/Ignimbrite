@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.11)
 project(Ignimbrite)
 
+message(STATUS "Configure Ignimbrite library")
+
 set(Ignimbrite_HEADERS
     include/ignimbrite/Compilation.h
     include/ignimbrite/DeviceDefinitions.h
@@ -19,6 +21,10 @@ set(Ignimbrite_SOURCES
     sources/FileUtils.cpp
 )
 
-message(STATUS "Config Ignimbrite library")
-add_library(Ignimbrite STATIC ${Ignimbrite_HEADERS} ${Ignimbrite_SOURCES})
+add_library(Ignimbrite
+    STATIC
+    ${Ignimbrite_HEADERS}
+    ${Ignimbrite_SOURCES}
+)
+
 target_include_directories(Ignimbrite PUBLIC include)
