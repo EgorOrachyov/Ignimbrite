@@ -133,8 +133,8 @@ public:
         shaderDescs[0].type = ShaderType::Vertex;
         shaderDescs[1].type = ShaderType::Fragment;
 
-        std::ifstream vertFile("shaders/vert.spv", std::ios::binary);
-        std::ifstream fragFile("shaders/frag.spv", std::ios::binary);
+        std::ifstream vertFile("resources/shaders/spirv/vert.spv", std::ios::binary);
+        std::ifstream fragFile("resources/shaders/spirv/frag.spv", std::ios::binary);
 
         if (!vertFile.is_open() || !fragFile.is_open()) {
             throw std::runtime_error("Failed to open spir-v files");

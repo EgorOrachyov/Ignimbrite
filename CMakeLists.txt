@@ -28,6 +28,8 @@ endif ()
 ##################################################################
 ## Third-party setup
 
+include_directories(thirdparty/test_include)
+
 option(WITH_GLFW "GLFW Window system" NO)
 if (WITH_GLFW)
     message(STATUS "Using GLFW as window system API")
