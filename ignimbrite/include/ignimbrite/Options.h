@@ -1,9 +1,9 @@
 #ifndef IGNIMBRITELIBRARY_OPTIONS_H
 #define IGNIMBRITELIBRARY_OPTIONS_H
 
-#define WITH_GLFW
+/* #undef WITH_GLFW */
 /* #undef WITH_GLM */
-#define WITH_VULKAN
+/* #undef WITH_VULKAN */
 /* #undef WITH_SPIRVCROSS */
 
 #define IgnimbriteLibrary_VERSION_MAJOR 1
