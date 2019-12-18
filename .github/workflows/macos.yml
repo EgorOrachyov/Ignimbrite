@@ -1,12 +1,6 @@
 name: MacOS
 
-on:
-  pull_request:
-    branches: 
-      - '*'
-  push:
-    branches: 
-      - '*'
+on: [push, pull_request]
   
 jobs:
   build:
@@ -17,9 +11,6 @@ jobs:
       - name: build 
         run: |
           mkdir build
-          mkdir build/tests
-          mkdir build/tests/shaders
-          cp -a ./resources/shaders/spirv/. ./build/tests/shaders
           cd build
           cmake ..
           cmake --build . --target Ignimbrite
