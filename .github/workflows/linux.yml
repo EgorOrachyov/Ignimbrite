@@ -23,8 +23,4 @@ jobs:
           mkdir build
           cd build
           cmake ..
-          cmake --build . --target Ignimbrite
-          cmake --build . --target VulkanDevice
-          cmake --build . --target TestObjectID
-          cmake --build . --target TestGlfwWindow
-          cmake --build . --target TestVulkanApplication
+          make -j
