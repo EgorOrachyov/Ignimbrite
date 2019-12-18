@@ -1274,15 +1274,23 @@ namespace ignimbrite {
         }
 
         for (size_t i = 0; i < colors.size(); i++) {
-            clearValues[i].color = {{colors[i].components[0],
-                                            colors[i].components[1],
-                                            colors[i].components[2],
-                                            colors[i].components[3]}};
+            clearValues[i].color = {
+                {colors[i].components[0],
+                 colors[i].components[1],
+                 colors[i].components[2],
+                 colors[i].components[3]}
+            };
         }
 
-        clearValues.push_back({.depthStencil = {clearDepth, clearStencil}});
+        VkClearValue depthStencilClearValues = {
+            .depthStencil = {
+                clearDepth, clearStencil
+            }
+        };
 
-        VkRenderPassBeginInfo renderPassBeginInfo{};
+        clearValues.push_back(depthStencilClearValues);
+
+        VkRenderPassBeginInfo renderPassBeginInfo = {};
         renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassBeginInfo.renderPass = fboFormat.renderPass;
         renderPassBeginInfo.renderArea.offset.x = 0;

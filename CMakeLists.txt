@@ -19,7 +19,7 @@ set(msvc_cxx "CXX" "MSVC")
 if ("${CMAKE_CXX_COMPILER_ID}" IN_LIST gcc_like_cxx)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wextra -Wshadow -Wformat=2 -Wunused")
 elseif ("${CMAKE_CXX_COMPILER_ID}" IN_LIST msvc_cxx)
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -W3")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}") # -W3
 endif ()
 
 ##################################################################
