@@ -9,3 +9,7 @@ All the libraries are stored as-is, therefore they could be build from sources.
 ## Vulkan SDK
 
 ## GLFW
+
+A multi-platform library for OpenGL, OpenGL ES, Vulkan, window and input.  
+Zlib License [link](https://github.com/glfw/glfw/blob/master/LICENSE.md).  
+GitHub repository [link](https://github.com/glfw/glfw).
