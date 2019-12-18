@@ -1,20 +1,14 @@
 cmake_minimum_required(VERSION 3.11)
 project(Tests)
 
-add_executable(Tests "")
-message(STATUS "Build Tests executable")
+add_executable(TestObjectID TestObjectID.cpp)
+target_link_libraries(TestObjectID PRIVATE Ignimbrite)
 
-set_property(TARGET Tests PROPERTY CXX_STANDARD 11)
-set_property(TARGET Tests PROPERTY CXX_STANDARD_REQUIRED ON)
+add_executable(TestGlfwWindow TestGlfwWindow.cpp)
+target_link_libraries(TestGlfwWindow PRIVATE Ignimbrite)
+target_link_libraries(TestGlfwWindow PRIVATE glfw)
 
-target_include_directories(Tests PRIVATE ${Renderer_SOURCE_DIR}/include)
-target_link_libraries(Tests PRIVATE Renderer)
-
-target_sources(Tests
-    PUBLIC
-        ${CMAKE_CURRENT_LIST_DIR}/TestObjectID.h
-    PRIVATE
-        ${CMAKE_CURRENT_LIST_DIR}/main.cpp
-)
-
-add_test(NAME Tests COMMAND Tests)
+add_executable(TestVulkanApplication TestVulkanApplication.cpp)
+target_link_libraries(TestVulkanApplication PRIVATE Ignimbrite)
+target_link_libraries(TestVulkanApplication PRIVATE VulkanDevice)
+target_link_libraries(TestVulkanApplication PRIVATE glfw)

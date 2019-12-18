@@ -1,17 +1,37 @@
 cmake_minimum_required(VERSION 3.11)
 project(VulkanDevice)
 
-add_library(VulkanDevice STATIC)
-message(STATUS "Build VulkanDevice library")
+message(STATUS "Configure Vulkan Device library")
 
-target_sources(VulkanDevice
-    PUBLIC
-        ${CMAKE_CURRENT_LIST_DIR}/include/VulkanRenderDevice.h
-    PRIVATE
-        ${CMAKE_CURRENT_LIST_DIR}/sources/VulkanRenderDevice.cpp
+set(VulkanDevice_HEADERS
+    include/VulkanRenderDevice.h
+    include/VulkanDefinitions.h
+    include/VulkanContext.h
+    include/VulkanErrors.h
+    include/VulkanUtils.h
+    include/VulkanExtensions.h
+    include/VulkanObjects.h
 )
 
-variable_watch(VULKAN_INCLUDE)
+set(VulkanDevice_SOURCES
+    sources/VulkanRenderDevice.cpp
+    sources/VulkanContext.cpp
+    sources/VulkanExtensions.cpp
+    sources/VulkanUtils.cpp
+)
 
-target_include_directories(VulkanDevice PUBLIC ${CMAKE_CURRENT_LIST_DIR})
-target_include_directories(VulkanDevice PUBLIC ${VULKAN_INCLUDE})
+add_library(
+    VulkanDevice
+    STATIC
+    ${VulkanDevice_HEADERS}
+    ${VulkanDevice_SOURCES}
+)
+
+target_include_directories(VulkanDevice PUBLIC include)
+
+target_link_libraries(VulkanDevice PUBLIC Ignimbrite)
+target_link_libraries(VulkanDevice PUBLIC Vulkan)
+
+if (WITH_GLFW)
+    target_link_libraries(VulkanDevice PUBLIC glfw)
+endif()

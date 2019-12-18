@@ -1,0 +1,12 @@
+#ifndef IGNIMBRITELIBRARY_OPTIONS_H
+#define IGNIMBRITELIBRARY_OPTIONS_H
+
+#cmakedefine WITH_GLFW
+#cmakedefine WITH_GLM
+#cmakedefine WITH_VULKAN
+#cmakedefine WITH_SPIRVCROSS
+
+#define IgnimbriteLibrary_VERSION_MAJOR @IgnimbriteLibrary_VERSION_MAJOR@
+#define IgnimbriteLibrary_VERSION_MINOR @IgnimbriteLibrary_VERSION_MINOR@
+
+#endif // IGNIMBRITELIBRARY_OPTIONS_H
