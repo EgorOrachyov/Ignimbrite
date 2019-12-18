@@ -46,15 +46,20 @@ option(WITH_GLM "GLM math header library" NO)
 option(WITH_SPIRVCROSS "SPIR-V Cross" NO)
 
 ##################################################################
+## Include actual sub directories
+
+add_subdirectory(ignimbrite)
+
+
+option(WITH_TESTS "Compile tests and examples for library" OFF)
+if (WITH_TESTS)
+    add_subdirectory(tests)
+endif()
+
+##################################################################
 ## Configure project options
 
 configure_file(
     ${PROJECT_SOURCE_DIR}/ignimbrite/include/ignimbrite/Options.h.in
     ${PROJECT_SOURCE_DIR}/ignimbrite/include/ignimbrite/Options.h
 )
-
-##################################################################
-## Include actual sub directories
-
-add_subdirectory(ignimbrite)
-add_subdirectory(tests)
