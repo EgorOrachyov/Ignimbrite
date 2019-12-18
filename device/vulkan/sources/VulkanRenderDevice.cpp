@@ -1282,13 +1282,11 @@ namespace ignimbrite {
             };
         }
 
-        VkClearValue depthStencilClearValues = {
-            .depthStencil = {
-                clearDepth, clearStencil
-            }
-        };
-
-        clearValues.push_back(depthStencilClearValues);
+        {
+            VkClearValue depthStencilClearValues = {};
+            depthStencilClearValues.depthStencil = { clearDepth, clearStencil };
+            clearValues.push_back(depthStencilClearValues);
+        }
 
         VkRenderPassBeginInfo renderPassBeginInfo = {};
         renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
