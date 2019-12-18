@@ -1,0 +1,30 @@
+
+name: C++ Check
+
+on:
+  pull_request:
+    branches: 
+      - '*'
+  push:
+    branches: 
+      - '*'
+  
+jobs:
+  build:
+    runs-on: macos 
+  
+    steps:
+      - uses: actions/checkout@v1
+      - name: build 
+        run: |
+          mkdir build
+          mkdir build/tests
+          mkdir build/tests/shaders
+          cp -a ./resources/shaders/spirv/. ./build/tests/shaders
+          cd build
+          cmake ..
+          cmake --build . --target Ignimbrite
+          cmake --build . --target VulkanDevice
+          cmake --build . --target TestObjectID
+          cmake --build . --target TestGlfwWindow
+          cmake --build . --target TestVulkanApplication
