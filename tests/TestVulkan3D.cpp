@@ -107,8 +107,8 @@ void Vulkan3DTest::init() {
 
     vertexLayout = device.createVertexLayout({ vertexBufferLayoutDesc });
 
-    loadModel("double.obj");
-    loadTexture("double.png");
+    loadModel("resources/models/double.obj");
+    loadTexture("resources/textures/double.png");
 
     uniformMvpBuffer = device.createUniformBuffer(BufferUsage::Dynamic, sizeof(Transform), transform.values);
 
@@ -137,7 +137,7 @@ void Vulkan3DTest::init() {
             rasterizationDesc, blendStateDesc
     );
 
-    initOffscreen();
+    //initOffscreen();
 }
 
 void Vulkan3DTest::initDevice() {
@@ -206,7 +206,8 @@ void Vulkan3DTest::loop() {
         // render to separate framebuffer with color and depth
         device.drawListBegin();
         {
-            device.drawListBindFramebuffer(framebufferId, clearColors, area);
+            // device.drawListBindFramebuffer(framebufferId, clearColors, area);
+            device.drawListBindSurface(surface, clearColor, area);
 
             device.drawListBindPipeline(graphicsPipeline);
 
@@ -215,15 +216,15 @@ void Vulkan3DTest::loop() {
             device.drawListBindIndexBuffer(indexBuffer, ignimbrite::IndicesType::Uint32, 0);
             device.drawListDrawIndexed(indexCount, 1);
 
-            // TODO: default render area, which is same as surface size
-            device.drawListBindSurface(surface, clearColor, area);
-
-            device.drawListBindPipeline(additionalPipeline);
-
-            device.drawListBindUniformSet(quadUniformSet);
-            device.drawListBindVertexBuffer(quadVertexBuffer, 0, 0);
-            device.drawListBindIndexBuffer(quadIndexBuffer, ignimbrite::IndicesType::Uint32, 0);
-            device.drawListDrawIndexed(quadIndexCount, 1);
+//            // TODO: default render area, which is same as surface size
+//            device.drawListBindSurface(surface, clearColor, area);
+//
+//            device.drawListBindPipeline(additionalPipeline);
+//
+//            device.drawListBindUniformSet(quadUniformSet);
+//            device.drawListBindVertexBuffer(quadVertexBuffer, 0, 0);
+//            device.drawListBindIndexBuffer(quadIndexBuffer, ignimbrite::IndicesType::Uint32, 0);
+//            device.drawListDrawIndexed(quadIndexCount, 1);
         }
         device.drawListEnd();
     }

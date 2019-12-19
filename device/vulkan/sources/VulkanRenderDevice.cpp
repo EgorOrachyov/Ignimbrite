@@ -189,7 +189,7 @@ namespace ignimbrite {
         } else if (color) {
             texture.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         } else if (depth) {
-            texture.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            texture.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
         } else {
             throw VulkanException("Texture has invalid usage flags");
         }
@@ -199,7 +199,8 @@ namespace ignimbrite {
             VulkanUtils::createImage(
                     context,
                     textureDesc.width, textureDesc.height, textureDesc.depth,
-                    1, imageType, format, VK_IMAGE_TILING_OPTIMAL, usageFlags | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+                    1, imageType, format, VK_IMAGE_TILING_OPTIMAL,
+                    usageFlags | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                     texture.image, texture.imageMemory
             );
@@ -231,7 +232,8 @@ namespace ignimbrite {
                     textureDesc.width, textureDesc.height, textureDesc.depth,
                     imageType, format, viewType,
                     texture.image, texture.imageMemory,
-                    texture.imageView, usageFlags | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT
+                    texture.imageView,
+                    usageFlags | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
             );
 
             VkImageSubresourceRange subresourceRange;
