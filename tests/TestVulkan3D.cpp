@@ -33,6 +33,8 @@ public:
 
 private:
     void initDevice();
+    void initOffscreen();
+    void createFramebuffer();
 
     void drawMesh();
 
@@ -72,6 +74,7 @@ private:
     ID dsAttchId;
     ID framebufferFormatId;
     ID framebufferId;
+    ID framebufferColorSampler;
     ID additionalPipeline;
 
     struct Transform {
@@ -139,76 +142,20 @@ void Vulkan3DTest::init() {
     rasterizationDesc.lineWidth = 1.0f;
     rasterizationDesc.mode = PolygonMode::Fill;
 
-    PrimitiveTopology topology = PrimitiveTopology::TriangleList;
-
     RenderDevice::BlendAttachmentDesc blendAttachmentDesc = {};
     blendAttachmentDesc.blendEnable = false;
-
     RenderDevice::PipelineSurfaceBlendStateDesc blendStateDesc = {};
     blendStateDesc.attachment = blendAttachmentDesc;
     blendStateDesc.logicOpEnable = false;
     blendStateDesc.logicOp = LogicOperation::NoOp;
 
-
-    // create framebuffer for color and depth
-    RenderDevice::FramebufferAttachmentDesc color = {};
-    color.type = AttachmentType::Color;
-    color.format = DataFormat::R8G8B8A8_UNORM;
-    color.samples = TextureSamples::Samples1;
-    RenderDevice::FramebufferAttachmentDesc depthStencil = {};
-    depthStencil.type = AttachmentType::DepthStencil;
-    depthStencil.format = DataFormat::D32_SFLOAT_S8_UINT;
-    depthStencil.samples = TextureSamples::Samples1;
-
-    std::vector<RenderDevice::FramebufferAttachmentDesc> attchs = { color, depthStencil };
-
-    RenderDevice::TextureDesc colorTexDesc;
-    colorTexDesc.type = TextureType::Texture2D;
-    colorTexDesc.format = DataFormat::R8G8B8A8_UNORM;
-    colorTexDesc.width = width;
-    colorTexDesc.height = height;
-    colorTexDesc.mipmaps = 1;
-    colorTexDesc.depth = 1;
-    colorTexDesc.usageFlags = (uint32)TextureUsageBit::ColorAttachment;
-    RenderDevice::TextureDesc dsTexDesc;
-    dsTexDesc.type = TextureType::Texture2D;
-    dsTexDesc.format = DataFormat::D32_SFLOAT_S8_UINT;
-    dsTexDesc.width = width;
-    dsTexDesc.height = height;
-    dsTexDesc.mipmaps = 1;
-    dsTexDesc.depth = 1;
-    dsTexDesc.usageFlags = (uint32)TextureUsageBit::DepthStencilAttachment;
-
-    colorAttchId = device.createTexture(colorTexDesc);
-    dsAttchId = device.createTexture(dsTexDesc);
-    std::vector<ObjectID> atthTextures = { colorAttchId, dsAttchId };
-
-    framebufferFormatId = device.createFramebufferFormat(attchs);
-    framebufferId = device.createFramebuffer(atthTextures, framebufferFormatId);
-
-    RenderDevice::PipelineDepthStencilStateDesc depthStencilStateDesc = {};
-    depthStencilStateDesc.depthTestEnable = true;
-    depthStencilStateDesc.depthWriteEnable = true;
-    depthStencilStateDesc.stencilTestEnable = false;
-    depthStencilStateDesc.depthCompareOp = CompareOperation::Less;
-
-    RenderDevice::BlendAttachmentDesc blendAttachmentADesc = {};
-    blendAttachmentDesc.writeR = blendAttachmentDesc.writeG =
-            blendAttachmentDesc.writeB = blendAttachmentDesc.writeA = true;
-    blendAttachmentDesc.blendEnable = false;
-    RenderDevice::PipelineBlendStateDesc blendStateADesc = {};
-    blendStateADesc.attachments.push_back(blendAttachmentDesc);
-    blendStateADesc.logicOpEnable = false;
-    blendStateADesc.logicOp = LogicOperation::Copy;
-
-    //additionalPipeline = device.createGraphicsPipeline(topology, shaderProgram,vertexLayout, uniformLayout,
-    //        framebufferFormatId, rasterizationDesc, blendStateADesc, depthStencilStateDesc);
-
     graphicsPipeline = device.createGraphicsPipeline(
-            surface,
-            topology,
-            shaderProgram, vertexLayout, uniformLayout, rasterizationDesc, blendStateDesc
+            surface, PrimitiveTopology::TriangleList,
+            shaderProgram, vertexLayout, uniformLayout,
+            rasterizationDesc, blendStateDesc
     );
+
+    initOffscreen();
 }
 
 void Vulkan3DTest::initDevice() {
@@ -270,21 +217,17 @@ void Vulkan3DTest::loop() {
         device.updateUniformBuffer(uniformMvpBuffer, sizeof(Transform), 0, transform.values);
 
 
-        // glfwGetWindowSize(window, (int*)&width, (int*)&height);
+         glfwGetWindowSize(window, (int*)&width, (int*)&height);
         area.extent.x = width;
         area.extent.y = height;
 
         // render to separate framebuffer with color and depth
-        /*device.drawListBegin();
+        device.drawListBegin();
             device.drawListBindFramebuffer(framebufferId, clearColors, area);
 
             device.drawListBindPipeline(additionalPipeline);
             drawMesh();
 
-        device.drawListEnd();*/
-
-
-        device.drawListBegin();
             // TODO: default render area, which is same as surface size
             device.drawListBindSurface(surface, clearColor, area);
 
@@ -459,6 +402,90 @@ void Vulkan3DTest::loadTexture(const char *path) {
     samplerDesc.mipLodBias = 0;
 
     textureSamplerId = pDevice->createSampler(samplerDesc);
+}
+
+void Vulkan3DTest::initOffscreen() {
+    using namespace ignimbrite;
+
+    createFramebuffer();
+
+    RenderDevice::PipelineRasterizationDesc rasterizationDesc = {};
+    rasterizationDesc.cullMode = PolygonCullMode::Disabled;
+    rasterizationDesc.frontFace = PolygonFrontFace::FrontCounterClockwise;
+    rasterizationDesc.lineWidth = 1.0f;
+    rasterizationDesc.mode = PolygonMode::Fill;
+
+    RenderDevice::BlendAttachmentDesc blendAttachmentADesc = {};
+    blendAttachmentADesc.writeR = blendAttachmentADesc.writeG =
+        blendAttachmentADesc.writeB = blendAttachmentADesc.writeA = true;
+    blendAttachmentADesc.blendEnable = false;
+    RenderDevice::PipelineBlendStateDesc blendStateADesc = {};
+    blendStateADesc.attachments.push_back(blendAttachmentADesc);
+    blendStateADesc.logicOpEnable = false;
+    blendStateADesc.logicOp = LogicOperation::Copy;
+
+    RenderDevice::PipelineDepthStencilStateDesc depthStencilStateDesc = {};
+    depthStencilStateDesc.depthTestEnable = true;
+    depthStencilStateDesc.depthWriteEnable = true;
+    depthStencilStateDesc.stencilTestEnable = false;
+    depthStencilStateDesc.depthCompareOp = CompareOperation::Less;
+
+    additionalPipeline = pDevice->createGraphicsPipeline(PrimitiveTopology::TriangleList, shaderProgram, vertexLayout, uniformLayout,
+                                                       framebufferFormatId, rasterizationDesc, blendStateADesc, depthStencilStateDesc);
+
+    RenderDevice::SamplerDesc samplerDesc = {};
+    samplerDesc.mag = SamplerFilter::Linear;
+    samplerDesc.min = SamplerFilter::Linear;
+    samplerDesc.u = samplerDesc.v = samplerDesc.w = SamplerRepeatMode::ClampToEdge;
+    samplerDesc.useAnisotropy = false;
+    samplerDesc.anisotropyMax = 1;
+    samplerDesc.color = SamplerBorderColor::Black;
+    samplerDesc.minLod = 0;
+    samplerDesc.maxLod = 1;
+    samplerDesc.mipmapMode = SamplerFilter::Linear;
+    samplerDesc.mipLodBias = 0;
+
+    framebufferColorSampler = pDevice->createSampler(samplerDesc);
+}
+
+void Vulkan3DTest::createFramebuffer() {
+    using namespace ignimbrite;
+
+    // create framebuffer for color and depth
+    RenderDevice::FramebufferAttachmentDesc color = {};
+    color.type = AttachmentType::Color;
+    color.format = DataFormat::R8G8B8A8_UNORM;
+    color.samples = TextureSamples::Samples1;
+    RenderDevice::FramebufferAttachmentDesc depthStencil = {};
+    depthStencil.type = AttachmentType::DepthStencil;
+    depthStencil.format = DataFormat::D32_SFLOAT_S8_UINT;
+    depthStencil.samples = TextureSamples::Samples1;
+
+    std::vector<RenderDevice::FramebufferAttachmentDesc> attchs = { color, depthStencil };
+
+    RenderDevice::TextureDesc colorTexDesc;
+    colorTexDesc.type = TextureType::Texture2D;
+    colorTexDesc.format = DataFormat::R8G8B8A8_UNORM;
+    colorTexDesc.width = width;
+    colorTexDesc.height = height;
+    colorTexDesc.mipmaps = 1;
+    colorTexDesc.depth = 1;
+    colorTexDesc.usageFlags = (uint32)TextureUsageBit::ColorAttachment;
+    RenderDevice::TextureDesc dsTexDesc;
+    dsTexDesc.type = TextureType::Texture2D;
+    dsTexDesc.format = DataFormat::D32_SFLOAT_S8_UINT;
+    dsTexDesc.width = width;
+    dsTexDesc.height = height;
+    dsTexDesc.mipmaps = 1;
+    dsTexDesc.depth = 1;
+    dsTexDesc.usageFlags = (uint32)TextureUsageBit::DepthStencilAttachment;
+
+    colorAttchId = pDevice->createTexture(colorTexDesc);
+    dsAttchId = pDevice->createTexture(dsTexDesc);
+    std::vector<ObjectID> atthTextures = { colorAttchId, dsAttchId };
+
+    framebufferFormatId = pDevice->createFramebufferFormat(attchs);
+    framebufferId = pDevice->createFramebuffer(atthTextures, framebufferFormatId);
 }
 
 void Vertex::getAttributeDescriptions(std::vector<ignimbrite::RenderDevice::VertexAttributeDesc> &outAttrs) {

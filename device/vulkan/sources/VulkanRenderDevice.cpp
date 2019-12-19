@@ -199,7 +199,7 @@ namespace ignimbrite {
             VulkanUtils::createImage(
                     context,
                     textureDesc.width, textureDesc.height, textureDesc.depth,
-                    1, imageType, format, VK_IMAGE_TILING_OPTIMAL, usageFlags,
+                    1, imageType, format, VK_IMAGE_TILING_OPTIMAL, usageFlags | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                     texture.image, texture.imageMemory
             );
@@ -229,8 +229,9 @@ namespace ignimbrite {
             VulkanUtils::createDepthStencilBuffer(
                     context,
                     textureDesc.width, textureDesc.height, textureDesc.depth,
-                    imageType, format,
-                    texture.image, texture.imageMemory, usageFlags
+                    imageType, format, viewType,
+                    texture.image, texture.imageMemory,
+                    texture.imageView, usageFlags | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT
             );
 
             VkImageSubresourceRange subresourceRange;
