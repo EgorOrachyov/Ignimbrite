@@ -26,6 +26,8 @@ struct Vertex
 };
 
 class Vulkan3DTest {
+    typedef ignimbrite::ObjectID ID;
+
 public:
     void init();
     void loop();
@@ -36,16 +38,16 @@ private:
     void initOffscreen();
     void createFramebuffer();
 
-    void drawMesh();
+    void createQuadUniform();
+    void createUniform();
 
     void loadModel(const char *objPath);
     void loadTexture(const char *path);
-    void loadShader(const char *vertSpirvPath, const char *fragSpirvPath);
+    ID loadShader(const char *vertSpirvPath, const char *fragSpirvPath);
 
     static void calculateMvp(float viewWidth, float viewHeight, float fov, float angle, float *outMat4);
 
 private:
-    typedef ignimbrite::ObjectID ID;
 
     ID surface;
     GLFWwindow* window;
@@ -75,6 +77,15 @@ private:
     ID framebufferFormatId;
     ID framebufferId;
     ID framebufferColorSampler;
+
+    ID quadVertexLayout;
+    ID quadVertexBuffer;
+    ID quadIndexBuffer;
+    uint32_t quadIndexCount;
+
+    ID quadUniformLayout;
+    ID quadUniformSet;
+    ID quadShaderProgram;
     ID additionalPipeline;
 
     struct Transform {
@@ -101,40 +112,11 @@ void Vulkan3DTest::init() {
 
     uniformMvpBuffer = device.createUniformBuffer(BufferUsage::Dynamic, sizeof(Transform), transform.values);
 
-    loadShader("resources/shaders/spirv/vert3d.spv", "resources/shaders/spirv/frag3d.spv");
+    shaderProgram = loadShader(
+            "resources/shaders/spirv/vert3d.spv",
+            "resources/shaders/spirv/frag3d.spv");
 
-
-    RenderDevice::UniformLayoutBufferDesc uniformLayoutBufferDesc = {};
-    uniformLayoutBufferDesc.binding = 0;
-    uniformLayoutBufferDesc.flags = (uint32) ShaderStageFlagBits::VertexBit;
-    RenderDevice::UniformLayoutTextureDesc uniformLayoutTextureDesc = {};
-    uniformLayoutTextureDesc.binding = 1;
-    uniformLayoutTextureDesc.flags = (ShaderStageFlags)ShaderStageFlagBits::FragmentBit;;
-
-    RenderDevice::UniformLayoutDesc uniformLayoutDesc = {};
-    uniformLayoutDesc.buffers.push_back(uniformLayoutBufferDesc);
-    uniformLayoutDesc.textures.push_back(uniformLayoutTextureDesc);
-
-    uniformLayout = device.createUniformLayout(uniformLayoutDesc);
-
-
-    RenderDevice::UniformBufferDesc uniformBufferDesc = {};
-    uniformBufferDesc.binding = 0;
-    uniformBufferDesc.offset = 0;
-    uniformBufferDesc.range = sizeof(Transform);
-    uniformBufferDesc.buffer = uniformMvpBuffer;
-    RenderDevice::UniformTextureDesc uniformTextureDesc = {};
-    uniformTextureDesc.binding = 1;
-    uniformTextureDesc.texture = textureId;
-    uniformTextureDesc.sampler = textureSamplerId;
-    uniformTextureDesc.stageFlags = (ShaderStageFlags)ShaderStageFlagBits::FragmentBit;
-
-    RenderDevice::UniformSetDesc uniformSetDesc = {};
-    uniformSetDesc.buffers.push_back(uniformBufferDesc);
-    uniformSetDesc.textures.push_back(uniformTextureDesc);
-
-    uniformSet = device.createUniformSet(uniformSetDesc, uniformLayout);
-
+    createUniform();
 
     RenderDevice::PipelineRasterizationDesc rasterizationDesc = {};
     rasterizationDesc.cullMode = PolygonCullMode::Disabled;
@@ -217,23 +199,32 @@ void Vulkan3DTest::loop() {
         device.updateUniformBuffer(uniformMvpBuffer, sizeof(Transform), 0, transform.values);
 
 
-         glfwGetWindowSize(window, (int*)&width, (int*)&height);
+        glfwGetWindowSize(window, (int*)&width, (int*)&height);
         area.extent.x = width;
         area.extent.y = height;
 
         // render to separate framebuffer with color and depth
         device.drawListBegin();
+        {
             device.drawListBindFramebuffer(framebufferId, clearColors, area);
 
-            device.drawListBindPipeline(additionalPipeline);
-            drawMesh();
+            device.drawListBindPipeline(graphicsPipeline);
+
+            device.drawListBindUniformSet(uniformSet);
+            device.drawListBindVertexBuffer(vertexBuffer, 0, 0);
+            device.drawListBindIndexBuffer(indexBuffer, ignimbrite::IndicesType::Uint32, 0);
+            device.drawListDrawIndexed(indexCount, 1);
 
             // TODO: default render area, which is same as surface size
             device.drawListBindSurface(surface, clearColor, area);
 
-            device.drawListBindPipeline(graphicsPipeline);
-            drawMesh();
+            device.drawListBindPipeline(additionalPipeline);
 
+            device.drawListBindUniformSet(quadUniformSet);
+            device.drawListBindVertexBuffer(quadVertexBuffer, 0, 0);
+            device.drawListBindIndexBuffer(quadIndexBuffer, ignimbrite::IndicesType::Uint32, 0);
+            device.drawListDrawIndexed(quadIndexCount, 1);
+        }
         device.drawListEnd();
     }
 }
@@ -336,10 +327,8 @@ void Vulkan3DTest::loadModel(const char *path) {
                                              indexCount * sizeof(uint32), outIndices.data());
 }
 
-void Vulkan3DTest::loadShader(const char *vertSpirvPath, const char *fragSpirvPath) {
-
+Vulkan3DTest::ID Vulkan3DTest::loadShader(const char *vertSpirvPath, const char *fragSpirvPath) {
     using namespace ignimbrite;
-
 
     std::vector<RenderDevice::ShaderDataDesc> shaderDescs(2);
 
@@ -357,14 +346,7 @@ void Vulkan3DTest::loadShader(const char *vertSpirvPath, const char *fragSpirvPa
     shaderDescs[0].source = std::move(vertSpv);
     shaderDescs[1].source = std::move(fragSpv);
 
-    shaderProgram = pDevice->createShaderProgram(shaderDescs);
-}
-
-void Vulkan3DTest::drawMesh() {
-    pDevice->drawListBindUniformSet(uniformSet);
-    pDevice->drawListBindVertexBuffer(vertexBuffer, 0, 0);
-    pDevice->drawListBindIndexBuffer(indexBuffer, ignimbrite::IndicesType::Uint32, 0);
-    pDevice->drawListDrawIndexed(indexCount, 1);
+    return pDevice->createShaderProgram(shaderDescs);
 }
 
 void Vulkan3DTest::loadTexture(const char *path) {
@@ -409,6 +391,41 @@ void Vulkan3DTest::initOffscreen() {
 
     createFramebuffer();
 
+    RenderDevice::VertexAttributeDesc attrib = {};
+    attrib.location = 0;
+    attrib.format = DataFormat::R32G32_SFLOAT;
+    attrib.offset = 0;
+
+    RenderDevice::VertexBufferLayoutDesc vertexBufferLayoutDesc = {};
+    vertexBufferLayoutDesc.attributes.push_back(attrib);
+    vertexBufferLayoutDesc.stride = 2 * sizeof(float);
+    vertexBufferLayoutDesc.usage = VertexUsage::PerVertex;
+
+    quadVertexLayout = pDevice->createVertexLayout({ vertexBufferLayoutDesc });
+
+    float quadVerts[] = {
+            1.0f, 1.0f,
+            0.0f, 1.0f,
+            0.0f, 0.0f,
+            1.0f, 0.0f };
+
+    uint32 quadIndices[] = { 0, 1, 2, 2, 3, 0 };
+
+    quadVertexBuffer = pDevice->createVertexBuffer(BufferUsage::Static,
+            8 * sizeof(float), quadVerts);
+
+    quadIndexCount = 6;
+    indexBuffer = pDevice->createIndexBuffer(BufferUsage::Static,
+            quadIndexCount * sizeof(uint32), quadIndices);
+
+    // framebuffer attachments are initialized, setup uniform set
+    createQuadUniform();
+
+    quadShaderProgram = loadShader(
+            "resources/shaders/spirv/quadv.spv",
+            "resources/shaders/spirv/quadf.spv");
+
+
     RenderDevice::PipelineRasterizationDesc rasterizationDesc = {};
     rasterizationDesc.cullMode = PolygonCullMode::Disabled;
     rasterizationDesc.frontFace = PolygonFrontFace::FrontCounterClockwise;
@@ -417,7 +434,7 @@ void Vulkan3DTest::initOffscreen() {
 
     RenderDevice::BlendAttachmentDesc blendAttachmentADesc = {};
     blendAttachmentADesc.writeR = blendAttachmentADesc.writeG =
-        blendAttachmentADesc.writeB = blendAttachmentADesc.writeA = true;
+    blendAttachmentADesc.writeB = blendAttachmentADesc.writeA = true;
     blendAttachmentADesc.blendEnable = false;
     RenderDevice::PipelineBlendStateDesc blendStateADesc = {};
     blendStateADesc.attachments.push_back(blendAttachmentADesc);
@@ -430,22 +447,8 @@ void Vulkan3DTest::initOffscreen() {
     depthStencilStateDesc.stencilTestEnable = false;
     depthStencilStateDesc.depthCompareOp = CompareOperation::Less;
 
-    additionalPipeline = pDevice->createGraphicsPipeline(PrimitiveTopology::TriangleList, shaderProgram, vertexLayout, uniformLayout,
-                                                       framebufferFormatId, rasterizationDesc, blendStateADesc, depthStencilStateDesc);
-
-    RenderDevice::SamplerDesc samplerDesc = {};
-    samplerDesc.mag = SamplerFilter::Linear;
-    samplerDesc.min = SamplerFilter::Linear;
-    samplerDesc.u = samplerDesc.v = samplerDesc.w = SamplerRepeatMode::ClampToEdge;
-    samplerDesc.useAnisotropy = false;
-    samplerDesc.anisotropyMax = 1;
-    samplerDesc.color = SamplerBorderColor::Black;
-    samplerDesc.minLod = 0;
-    samplerDesc.maxLod = 1;
-    samplerDesc.mipmapMode = SamplerFilter::Linear;
-    samplerDesc.mipLodBias = 0;
-
-    framebufferColorSampler = pDevice->createSampler(samplerDesc);
+    additionalPipeline = pDevice->createGraphicsPipeline(PrimitiveTopology::TriangleList, quadShaderProgram, quadVertexLayout,
+            quadUniformLayout, framebufferFormatId, rasterizationDesc, blendStateADesc, depthStencilStateDesc);
 }
 
 void Vulkan3DTest::createFramebuffer() {
@@ -484,8 +487,80 @@ void Vulkan3DTest::createFramebuffer() {
     dsAttchId = pDevice->createTexture(dsTexDesc);
     std::vector<ObjectID> atthTextures = { colorAttchId, dsAttchId };
 
+    RenderDevice::SamplerDesc samplerDesc = {};
+    samplerDesc.mag = SamplerFilter::Linear;
+    samplerDesc.min = SamplerFilter::Linear;
+    samplerDesc.u = samplerDesc.v = samplerDesc.w = SamplerRepeatMode::ClampToEdge;
+    samplerDesc.useAnisotropy = false;
+    samplerDesc.anisotropyMax = 1;
+    samplerDesc.color = SamplerBorderColor::Black;
+    samplerDesc.minLod = 0;
+    samplerDesc.maxLod = 1;
+    samplerDesc.mipmapMode = SamplerFilter::Linear;
+    samplerDesc.mipLodBias = 0;
+
     framebufferFormatId = pDevice->createFramebufferFormat(attchs);
     framebufferId = pDevice->createFramebuffer(atthTextures, framebufferFormatId);
+    framebufferColorSampler = pDevice->createSampler(samplerDesc);
+}
+
+void Vulkan3DTest::createUniform() {
+    using namespace ignimbrite;
+
+    RenderDevice::UniformLayoutBufferDesc uniformLayoutBufferDesc = {};
+    uniformLayoutBufferDesc.binding = 0;
+    uniformLayoutBufferDesc.flags = (uint32) ShaderStageFlagBits::VertexBit;
+    RenderDevice::UniformLayoutTextureDesc uniformLayoutTextureDesc = {};
+    uniformLayoutTextureDesc.binding = 1;
+    uniformLayoutTextureDesc.flags = (ShaderStageFlags)ShaderStageFlagBits::FragmentBit;
+
+    RenderDevice::UniformLayoutDesc uniformLayoutDesc = {};
+    uniformLayoutDesc.buffers.push_back(uniformLayoutBufferDesc);
+    uniformLayoutDesc.textures.push_back(uniformLayoutTextureDesc);
+
+    uniformLayout = pDevice->createUniformLayout(uniformLayoutDesc);
+
+
+    RenderDevice::UniformBufferDesc uniformBufferDesc = {};
+    uniformBufferDesc.binding = 0;
+    uniformBufferDesc.offset = 0;
+    uniformBufferDesc.range = sizeof(Transform);
+    uniformBufferDesc.buffer = uniformMvpBuffer;
+    RenderDevice::UniformTextureDesc uniformTextureDesc = {};
+    uniformTextureDesc.binding = 1;
+    uniformTextureDesc.texture = textureId;
+    uniformTextureDesc.sampler = textureSamplerId;
+    uniformTextureDesc.stageFlags = (ShaderStageFlags)ShaderStageFlagBits::FragmentBit;
+
+    RenderDevice::UniformSetDesc uniformSetDesc = {};
+    uniformSetDesc.buffers.push_back(uniformBufferDesc);
+    uniformSetDesc.textures.push_back(uniformTextureDesc);
+
+    uniformSet = pDevice->createUniformSet(uniformSetDesc, uniformLayout);
+}
+
+void Vulkan3DTest::createQuadUniform() {
+    using namespace ignimbrite;
+
+    RenderDevice::UniformLayoutTextureDesc uniformLayoutTextureDesc = {};
+    uniformLayoutTextureDesc.binding = 0;
+    uniformLayoutTextureDesc.flags = (ShaderStageFlags)ShaderStageFlagBits::FragmentBit;
+
+    RenderDevice::UniformLayoutDesc uniformLayoutDesc = {};
+    uniformLayoutDesc.textures.push_back(uniformLayoutTextureDesc);
+
+    quadUniformLayout = pDevice->createUniformLayout(uniformLayoutDesc);
+
+    RenderDevice::UniformTextureDesc uniformTextureDesc = {};
+    uniformTextureDesc.binding = 0;
+    uniformTextureDesc.texture = colorAttchId;
+    uniformTextureDesc.sampler = framebufferColorSampler;
+    uniformTextureDesc.stageFlags = (ShaderStageFlags)ShaderStageFlagBits::FragmentBit;
+
+    RenderDevice::UniformSetDesc uniformSetDesc = {};
+    uniformSetDesc.textures.push_back(uniformTextureDesc);
+
+    quadUniformSet = pDevice->createUniformSet(uniformSetDesc, quadUniformLayout);
 }
 
 void Vertex::getAttributeDescriptions(std::vector<ignimbrite::RenderDevice::VertexAttributeDesc> &outAttrs) {
