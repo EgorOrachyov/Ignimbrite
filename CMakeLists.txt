@@ -9,6 +9,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -g")
+set(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/cmake)
+
+message(STATUS "${CMAKE_PREFIX_PATH}")
 
 ##################################################################
 ## Compiler specific setup
@@ -38,7 +41,10 @@ endif()
 option(WITH_VULKAN "Vulkan rendering API" NO)
 if (WITH_VULKAN)
     message(STATUS "Using Vulkan as rendering API")
-    add_subdirectory(thirdparty/vulkan)
+    find_package(Vulkan REQUIRED)
+    add_library(Vulkan INTERFACE)
+    target_include_directories(Vulkan INTERFACE ${Vulkan_INCLUDE_DIRS})
+    target_link_libraries(Vulkan INTERFACE ${Vulkan_LIBRARIES})
     add_subdirectory(device/vulkan)
 endif()
 
