@@ -42,24 +42,36 @@ if (WITH_VULKAN)
     add_subdirectory(device/vulkan)
 endif()
 
-option(WITH_GLM "GLM math header library" NO)
 option(WITH_SPIRVCROSS "SPIR-V Cross" NO)
+if (WITH_SPIRVCROSS)
+    message(STATUS "Using SPIRV-CROSS as reflection tool for spir-v files")
+    set(SPIRV_CROSS_STATIC ON CACHE BOOL "" FORCE)
+    set(SPIRV_CROSS_ENABLE_CPP ON CACHE BOOL "" FORCE)
+    set(SPIRV_CROSS_CLI OFF CACHE BOOL "" FORCE)
+    set(SPIRV_CROSS_ENABLE_REFLECT ON CACHE BOOL "" FORCE)
+    set(SPIRV_CROSS_ENABLE_GLSL ON CACHE BOOL "" FORCE)
+    set(SPIRV_CROSS_ENABLE_HLSL OFF CACHE BOOL "" FORCE)
+    set(SPIRV_CROSS_ENABLE_MSL OFF CACHE BOOL "" FORCE)
+    set(SPIRV_CROSS_ENABLE_C_API OFF CACHE BOOL "" FORCE)
+    add_subdirectory(thirdparty/spirv-cross)
+endif()
+
+option(WITH_GLM "GLM math header library" NO)
+
+##################################################################
+## Configure project options
+
+configure_file(
+        ${PROJECT_SOURCE_DIR}/ignimbrite/include/ignimbrite/Options.h.in
+        ${PROJECT_SOURCE_DIR}/ignimbrite/include/ignimbrite/Options.h
+)
 
 ##################################################################
 ## Include actual sub directories
 
 add_subdirectory(ignimbrite)
 
-
 option(WITH_TESTS "Compile tests and examples for library" OFF)
 if (WITH_TESTS)
     add_subdirectory(tests)
 endif()
-
-##################################################################
-## Configure project options
-
-configure_file(
-    ${PROJECT_SOURCE_DIR}/ignimbrite/include/ignimbrite/Options.h.in
-    ${PROJECT_SOURCE_DIR}/ignimbrite/include/ignimbrite/Options.h
-)
