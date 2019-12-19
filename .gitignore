@@ -14,20 +14,12 @@
 #  Use ! to negate a previous pattern.  But it doesn't work if the parent sub-folder was masked out already.
 # 
 
-# Ignore CLion files
 /**/.idea/
-
-# Ignore VS files
 /**/.vs/
-
-# Ignore build files
 /**/cmake-build-debug/
 /build
 /out
-
-# Ignore third-party (must be setup explicitly)
 /thirdparty/include/*
 /thirdparty/lib/*
-
-# MacOS finder files
 /**/.DS_Store
+/**/.git
