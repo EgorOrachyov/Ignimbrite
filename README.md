@@ -44,6 +44,7 @@ library image. You can set the following options to get desired functionality:
 * WITH_SPIRVCROSS=(YES/NO) - build spirv-cross tools to automate shaders reflection.
 * WITH_VULKAN=(YES/NO) - build vulkan device to be able to use vulkan graphics backend.
 * WITH_STBIMAGE=(YES/NO) - use stb image utility to load image data for tests. 
+* WITH_GLM=(YES/NO) - use gln as math library for tests
 * WITH_TESTS=(YES/NO) - build tests executables with samples and test examples.
 
 By default all the options are set in 'NO', therefore will be built only minimal library image. All the

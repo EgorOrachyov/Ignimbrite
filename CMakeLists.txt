@@ -63,6 +63,10 @@ if (WITH_SPIRVCROSS)
 endif()
 
 option(WITH_GLM "GLM math header library" NO)
+if (WITH_GLM)
+    message(STATUS "Using GLM as math library")
+    add_subdirectory(thirdparty/glm)
+endif()
 
 option(WITH_STBIMAGE "STB Image utility to load image files" NO)
 if (WITH_STBIMAGE)
@@ -74,8 +78,8 @@ endif()
 ## Configure project options
 
 configure_file(
-        ${PROJECT_SOURCE_DIR}/ignimbrite/include/ignimbrite/Options.h.in
-        ${PROJECT_SOURCE_DIR}/ignimbrite/include/ignimbrite/Options.h
+    ${PROJECT_SOURCE_DIR}/ignimbrite/include/ignimbrite/Options.h.in
+    ${PROJECT_SOURCE_DIR}/ignimbrite/include/ignimbrite/Options.h
 )
 
 ##################################################################
@@ -85,5 +89,6 @@ add_subdirectory(ignimbrite)
 
 option(WITH_TESTS "Compile tests and examples for library" OFF)
 if (WITH_TESTS)
+    message(STATUS "Configure tests folder")
     add_subdirectory(tests)
 endif()

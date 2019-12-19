@@ -14,6 +14,13 @@ A multi-platform library for OpenGL, OpenGL ES, Vulkan, window and input.
 Zlib License [link](https://github.com/glfw/glfw/blob/master/LICENSE.md). 
 GitHub repository [link](https://github.com/glfw/glfw).
 
+## GLM
+
+OpenGL Mathematics (GLM) is a header only C++ mathematics library for graphics software 
+based on the OpenGL Shading Language (GLSL) specifications. The Happy Bunny License (Modified MIT License) 
+[link](https://github.com/g-truc/glm/blob/master/copying.txt). 
+GitHub repository [link](https://github.com/g-truc/glm).
+
 ## SPIR-V Cross
 
 SPIRV-Cross is a tool designed for parsing and converting SPIR-V to other shader languages.
