@@ -145,25 +145,31 @@ namespace ignimbrite {
         vkUnmapMemory(context.device, bufferMemory);
     }
 
-    void VulkanUtils::createTextureImage(VulkanContext &context, const void *imageData,
+    void VulkanUtils::createTextureImage(VulkanContext &context, const void *imageData, uint32 imageDataSize,
                                          uint32 width, uint32 height,
                                          uint32 depth, uint32 mipLevels,
                                          VkImageType imageType, VkFormat format, VkImageTiling tiling,
                                          VkImage &outTextureImage, VkDeviceMemory &outTextureMemory,
                                          VkImageLayout textureLayout) {
+
+        createImage(context, width, height, depth, mipLevels, imageType, format, tiling,
+                // for copying and sampling in shaders
+                    VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                // TODO: updatable from cpu
+                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                    outTextureImage, outTextureMemory);
+
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
 
-        VkDeviceSize imageSize = (VkDeviceSize) width * height * depth;
-
         // create staging buffer to create image in device local memory
         createBuffer(context,
-                     imageSize,
+                     imageDataSize,
                      VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                      stagingBuffer, stagingBufferMemory);
 
-        updateBufferMemory(context, stagingBufferMemory, 0, imageSize, imageData);
+        updateBufferMemory(context, stagingBufferMemory, 0, imageDataSize, imageData);
 
         createImage(context, width, height, depth, mipLevels, imageType, format, tiling,
                 // for copying and sampling in shaders
@@ -183,9 +189,15 @@ namespace ignimbrite {
         vkDestroyBuffer(context.device, stagingBuffer, nullptr);
         vkFreeMemory(context.device, stagingBufferMemory, nullptr);
 
-        // generate mipmaps and layout transition
-        // from transfer destination to shader readonly
-        generateMipmaps(context, outTextureImage, format, width, height, mipLevels, textureLayout);
+        if (mipLevels > 1) {
+            // generate mipmaps and layout transition
+            // from transfer destination to shader readonly
+            generateMipmaps(context, outTextureImage, format, width, height, depth, mipLevels, textureLayout);
+        }
+        else {
+            transitionImageLayout(context, outTextureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, textureLayout,
+                                  mipLevels);
+        }
     }
 
     void VulkanUtils::createImage(VulkanContext &context, uint32 width, uint32 height,

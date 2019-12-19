@@ -61,7 +61,7 @@ namespace ignimbrite {
 
         static void createTextureImage(
                 VulkanContext &context,
-                const void *imageData,
+                const void *imageData, uint32 imageDataSize,
                 uint32 width, uint32 height,
                 uint32 depth, uint32 mipLevels,
                 VkImageType imageType, VkFormat format, VkImageTiling tiling,

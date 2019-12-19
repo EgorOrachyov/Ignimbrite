@@ -12,6 +12,9 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 struct Vertex
 {
     float Position[4];
@@ -31,7 +34,10 @@ public:
 private:
     void initDevice();
 
+    void drawMesh();
+
     void loadModel(const char *objPath);
+    void loadTexture(const char *path);
     void loadShader(const char *vertSpirvPath, const char *fragSpirvPath);
 
     static void calculateMvp(float viewWidth, float viewHeight, float fov, float angle, float *outMat4);
@@ -53,11 +59,20 @@ private:
     ID vertexBuffer;
     ID indexBuffer;
     uint32_t indexCount;
+    ID textureId;
+    ID textureSamplerId;
+
     ID uniformMvpBuffer;
     ID uniformLayout;
     ID uniformSet;
     ID shaderProgram;
     ID graphicsPipeline;
+
+    ID colorAttchId;
+    ID dsAttchId;
+    ID framebufferFormatId;
+    ID framebufferId;
+    ID additionalPipeline;
 
     struct Transform {
         float values[16];
@@ -79,32 +94,44 @@ void Vulkan3DTest::init() {
     vertexLayout = device.createVertexLayout({ vertexBufferLayoutDesc });
 
     loadModel("double.obj");
+    loadTexture("double.png");
 
     uniformMvpBuffer = device.createUniformBuffer(BufferUsage::Dynamic, sizeof(Transform), transform.values);
-    calculateMvp(width, height, 50, 0, transform.values);
-    device.updateUniformBuffer(uniformMvpBuffer, sizeof(Transform), 0, transform.values);
 
     loadShader("resources/shaders/spirv/vert3d.spv", "resources/shaders/spirv/frag3d.spv");
+
 
     RenderDevice::UniformLayoutBufferDesc uniformLayoutBufferDesc = {};
     uniformLayoutBufferDesc.binding = 0;
     uniformLayoutBufferDesc.flags = (uint32) ShaderStageFlagBits::VertexBit;
+    RenderDevice::UniformLayoutTextureDesc uniformLayoutTextureDesc = {};
+    uniformLayoutTextureDesc.binding = 1;
+    uniformLayoutTextureDesc.flags = (ShaderStageFlags)ShaderStageFlagBits::FragmentBit;;
 
     RenderDevice::UniformLayoutDesc uniformLayoutDesc = {};
     uniformLayoutDesc.buffers.push_back(uniformLayoutBufferDesc);
+    uniformLayoutDesc.textures.push_back(uniformLayoutTextureDesc);
 
     uniformLayout = device.createUniformLayout(uniformLayoutDesc);
+
 
     RenderDevice::UniformBufferDesc uniformBufferDesc = {};
     uniformBufferDesc.binding = 0;
     uniformBufferDesc.offset = 0;
     uniformBufferDesc.range = sizeof(Transform);
     uniformBufferDesc.buffer = uniformMvpBuffer;
+    RenderDevice::UniformTextureDesc uniformTextureDesc = {};
+    uniformTextureDesc.binding = 1;
+    uniformTextureDesc.texture = textureId;
+    uniformTextureDesc.sampler = textureSamplerId;
+    uniformTextureDesc.stageFlags = (ShaderStageFlags)ShaderStageFlagBits::FragmentBit;
 
     RenderDevice::UniformSetDesc uniformSetDesc = {};
     uniformSetDesc.buffers.push_back(uniformBufferDesc);
+    uniformSetDesc.textures.push_back(uniformTextureDesc);
 
     uniformSet = device.createUniformSet(uniformSetDesc, uniformLayout);
+
 
     RenderDevice::PipelineRasterizationDesc rasterizationDesc = {};
     rasterizationDesc.cullMode = PolygonCullMode::Disabled;
@@ -120,7 +147,62 @@ void Vulkan3DTest::init() {
     RenderDevice::PipelineSurfaceBlendStateDesc blendStateDesc = {};
     blendStateDesc.attachment = blendAttachmentDesc;
     blendStateDesc.logicOpEnable = false;
-    blendStateDesc.logicOp = LogicOperation::Copy;
+    blendStateDesc.logicOp = LogicOperation::NoOp;
+
+
+    // create framebuffer for color and depth
+    RenderDevice::FramebufferAttachmentDesc color = {};
+    color.type = AttachmentType::Color;
+    color.format = DataFormat::R8G8B8A8_UNORM;
+    color.samples = TextureSamples::Samples1;
+    RenderDevice::FramebufferAttachmentDesc depthStencil = {};
+    depthStencil.type = AttachmentType::DepthStencil;
+    depthStencil.format = DataFormat::D32_SFLOAT_S8_UINT;
+    depthStencil.samples = TextureSamples::Samples1;
+
+    std::vector<RenderDevice::FramebufferAttachmentDesc> attchs = { color, depthStencil };
+
+    RenderDevice::TextureDesc colorTexDesc;
+    colorTexDesc.type = TextureType::Texture2D;
+    colorTexDesc.format = DataFormat::R8G8B8A8_UNORM;
+    colorTexDesc.width = width;
+    colorTexDesc.height = height;
+    colorTexDesc.mipmaps = 1;
+    colorTexDesc.depth = 1;
+    colorTexDesc.usageFlags = (uint32)TextureUsageBit::ColorAttachment;
+    RenderDevice::TextureDesc dsTexDesc;
+    dsTexDesc.type = TextureType::Texture2D;
+    dsTexDesc.format = DataFormat::D32_SFLOAT_S8_UINT;
+    dsTexDesc.width = width;
+    dsTexDesc.height = height;
+    dsTexDesc.mipmaps = 1;
+    dsTexDesc.depth = 1;
+    dsTexDesc.usageFlags = (uint32)TextureUsageBit::DepthStencilAttachment;
+
+    colorAttchId = device.createTexture(colorTexDesc);
+    dsAttchId = device.createTexture(dsTexDesc);
+    std::vector<ObjectID> atthTextures = { colorAttchId, dsAttchId };
+
+    framebufferFormatId = device.createFramebufferFormat(attchs);
+    framebufferId = device.createFramebuffer(atthTextures, framebufferFormatId);
+
+    RenderDevice::PipelineDepthStencilStateDesc depthStencilStateDesc = {};
+    depthStencilStateDesc.depthTestEnable = true;
+    depthStencilStateDesc.depthWriteEnable = true;
+    depthStencilStateDesc.stencilTestEnable = false;
+    depthStencilStateDesc.depthCompareOp = CompareOperation::Less;
+
+    RenderDevice::BlendAttachmentDesc blendAttachmentADesc = {};
+    blendAttachmentDesc.writeR = blendAttachmentDesc.writeG =
+            blendAttachmentDesc.writeB = blendAttachmentDesc.writeA = true;
+    blendAttachmentDesc.blendEnable = false;
+    RenderDevice::PipelineBlendStateDesc blendStateADesc = {};
+    blendStateADesc.attachments.push_back(blendAttachmentDesc);
+    blendStateADesc.logicOpEnable = false;
+    blendStateADesc.logicOp = LogicOperation::Copy;
+
+    //additionalPipeline = device.createGraphicsPipeline(topology, shaderProgram,vertexLayout, uniformLayout,
+    //        framebufferFormatId, rasterizationDesc, blendStateADesc, depthStencilStateDesc);
 
     graphicsPipeline = device.createGraphicsPipeline(
             surface,
@@ -170,40 +252,46 @@ void Vulkan3DTest::loop() {
 
     auto& device = *pDevice;
 
+    RenderDevice::Region area = {};
     RenderDevice::Color clearColor = {};
     clearColor.components[0] = clearColor.components[1] = clearColor.components[2] = 0.5f;
+    std::vector<RenderDevice::Color> clearColors = { clearColor };
 
-    RenderDevice::Region area = {};
-    area.extent.x = width;
-    area.extent.y = height;
-
-    // TODO: DELETE THIS
-    device.swapBuffers(surface);
 
     float b = 0.0f, delta = 0.005f;
 
     while (!glfwWindowShouldClose(window)) {
+        device.swapBuffers(surface);
         glfwPollEvents();
 
-        device.drawListBegin();
-        // TODO: default render area, which is same as surface size
-        device.drawListBindSurface(surface, clearColor, area);
-
-        device.drawListBindPipeline(graphicsPipeline);
-
-        calculateMvp(width, height, 50, b, transform.values);
-        device.updateUniformBuffer(uniformMvpBuffer, sizeof(Transform), 0, transform.values);
-        device.drawListBindUniformSet(uniformSet);
-        device.drawListBindVertexBuffer(vertexBuffer, 0, 0);
-        device.drawListBindIndexBuffer(indexBuffer, IndicesType::Uint32, 0);
-        device.drawListDrawIndexed(indexCount, 1);
-
-        device.drawListEnd();
-
-        device.swapBuffers(surface);
-        //glfwSwapBuffers(window);
 
         b += delta;
+        calculateMvp(width, height, 90, b, transform.values);
+        device.updateUniformBuffer(uniformMvpBuffer, sizeof(Transform), 0, transform.values);
+
+
+        // glfwGetWindowSize(window, (int*)&width, (int*)&height);
+        area.extent.x = width;
+        area.extent.y = height;
+
+        // render to separate framebuffer with color and depth
+        /*device.drawListBegin();
+            device.drawListBindFramebuffer(framebufferId, clearColors, area);
+
+            device.drawListBindPipeline(additionalPipeline);
+            drawMesh();
+
+        device.drawListEnd();*/
+
+
+        device.drawListBegin();
+            // TODO: default render area, which is same as surface size
+            device.drawListBindSurface(surface, clearColor, area);
+
+            device.drawListBindPipeline(graphicsPipeline);
+            drawMesh();
+
+        device.drawListEnd();
     }
 }
 
@@ -216,7 +304,7 @@ void Vulkan3DTest::calculateMvp(float viewWidth, float viewHeight, float fov, fl
     auto projection = glm::perspective(fov, viewWidth / viewHeight, 0.1f, 100.0f);
 
     auto view = glm::lookAt(
-            glm::vec3(-5, 0, -5),
+            glm::vec3(-5, 5, -15),
             glm::vec3(0, 0, 0),
             glm::vec3(0, 1, 0)
     );
@@ -255,6 +343,8 @@ void Vulkan3DTest::loadModel(const char *path) {
     bool loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path);
     assert(loaded);
 
+    bool useUv = attrib.texcoords.size() != 0;
+
     uint32_t i = 0;
     for (const auto& shape : shapes)
     {
@@ -280,8 +370,10 @@ void Vulkan3DTest::loadModel(const char *path) {
                 vertex.Normal[2] = 0.0f;
             }
 
-            vertex.UV[0] = attrib.texcoords[2 * index.texcoord_index + 0];
-            vertex.UV[1] = 1.0f - attrib.texcoords[2 * index.texcoord_index + 1];
+            if (useUv) {
+                vertex.UV[0] = attrib.texcoords[2 * index.texcoord_index + 0];
+                vertex.UV[1] = 1.0f - attrib.texcoords[2 * index.texcoord_index + 1];
+            }
 
             vertex.Color[0] = 1.0f;
             vertex.Color[1] = 1.0f;
@@ -323,6 +415,50 @@ void Vulkan3DTest::loadShader(const char *vertSpirvPath, const char *fragSpirvPa
     shaderDescs[1].source = std::move(fragSpv);
 
     shaderProgram = pDevice->createShaderProgram(shaderDescs);
+}
+
+void Vulkan3DTest::drawMesh() {
+    pDevice->drawListBindUniformSet(uniformSet);
+    pDevice->drawListBindVertexBuffer(vertexBuffer, 0, 0);
+    pDevice->drawListBindIndexBuffer(indexBuffer, ignimbrite::IndicesType::Uint32, 0);
+    pDevice->drawListDrawIndexed(indexCount, 1);
+}
+
+void Vulkan3DTest::loadTexture(const char *path) {
+    using namespace ignimbrite;
+
+    int texWidth, texHeight, texChannels;
+    stbi_uc* pixels = stbi_load(path, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    uint32 mipmapCount = (uint32)std::floor(std::log2(std::max(texWidth, texHeight))) + 1;
+
+    RenderDevice::TextureDesc textureDesc = {};
+    textureDesc.height = texHeight;
+    textureDesc.width = texWidth;
+    textureDesc.depth = 1;
+    textureDesc.type = TextureType::Texture2D;
+    textureDesc.usageFlags = (uint32)TextureUsageBit::ShaderSampling;
+    textureDesc.format = DataFormat::R8G8B8A8_UNORM;
+    textureDesc.data = pixels;
+    textureDesc.dataSize = texWidth * texHeight * texChannels;
+    textureDesc.mipmaps = mipmapCount;
+
+    textureId = pDevice->createTexture(textureDesc);
+
+    stbi_image_free(pixels);
+
+    RenderDevice::SamplerDesc samplerDesc = {};
+    samplerDesc.mag = SamplerFilter::Linear;
+    samplerDesc.min = SamplerFilter::Linear;
+    samplerDesc.u = samplerDesc.v = samplerDesc.w = SamplerRepeatMode::Repeat;
+    samplerDesc.useAnisotropy = true;
+    samplerDesc.anisotropyMax = 16;
+    samplerDesc.color = SamplerBorderColor::Black;
+    samplerDesc.minLod = 0;
+    samplerDesc.maxLod = mipmapCount;
+    samplerDesc.mipmapMode = SamplerFilter::Linear;
+    samplerDesc.mipLodBias = 0;
+
+    textureSamplerId = pDevice->createSampler(samplerDesc);
 }
 
 void Vertex::getAttributeDescriptions(std::vector<ignimbrite::RenderDevice::VertexAttributeDesc> &outAttrs) {
