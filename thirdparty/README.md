@@ -33,6 +33,12 @@ Image loading/decoding utility for files/memory data of the formats: JPG, PNG, T
 Available under MIT License and Public Domain (www.unlicense.org) (license text in .h file).
 GitHub repository [link](https://github.com/nothings/stb).
 
+### Tiny-OBJ-Loader
+
+Powerful single file wavefront obj loader written in C++03. 
+MIT License [link](https://github.com/syoyo/tinyobjloader/blob/master/LICENSE). 
+GitHub repository [link](https://github.com/syoyo/tinyobjloader).
+
 ## Vulkan SDK
 
 SDK for high-performance, industry-standard Vulkan graphics and compute API.

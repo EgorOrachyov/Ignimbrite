@@ -74,6 +74,12 @@ if (WITH_STBIMAGE)
     add_subdirectory(thirdparty/stb-image)
 endif()
 
+option(WITH_TINYOBJLOADER "Tiny OBJ loader for geometry and materials in .obj .mtl formats" NO)
+if (WITH_TINYOBJLOADER)
+    message(STATUS "Using Tiny OBJ loader for loading .obj/.mtl data")
+    add_subdirectory(thirdparty/tinyobjloader)
+endif()
+
 ##################################################################
 ## Configure project options
 
