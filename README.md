@@ -23,37 +23,27 @@ C/C++ library for visualization dynamic 3D scene with GPU hardware acceleration 
 ## Get and build 
 
 This project uses git as primary CVS and CMake 3.11 as build configuration tool.
-Project language is C++11 with std library 11. The following commands allows to get 
+Project language is C++11 with std library 11. The following commands allow to get 
 repository and build the minimal library image in /build folder.
-
-### Linux and MacOS
 
 ```
 $ git clone https://github.com/EgorOrachyov/Ignimbrite.git
+$ cd Ignimbrite
 $ mkdir build
 $ cd build
 $ cmake .. 
 $ cmake --build .
 ```
 
-### Windows
-
-```
-$ git clone https://github.com/EgorOrachyov/Ignimbrite.git
-$ mkdir build
-$ chdir build
-$ cmake .. 
-$ cmake --build .
-```
-
 ### CMake optional flags
 
-We exports some optional flags to configure cmake build and final
+We export some optional flags to configure cmake build and final
 library image. You can set the following options to get desired functionality:
 
 * WITH_GLFW=(YES/NO) - build glfw library to be able to create glfw based window applications.
 * WITH_SPIRVCROSS=(YES/NO) - build spirv-cross tools to automate shaders reflection.
 * WITH_VULKAN=(YES/NO) - build vulkan device to be able to use vulkan graphics backend.
+* WITH_STBIMAGE=(YES/NO) - use stb image utility to load image data for tests. 
 * WITH_TESTS=(YES/NO) - build tests executables with samples and test examples.
 
 By default all the options are set in 'NO', therefore will be built only minimal library image. All the

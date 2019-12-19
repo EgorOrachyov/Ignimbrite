@@ -20,6 +20,12 @@ SPIRV-Cross is a tool designed for parsing and converting SPIR-V to other shader
 Apache License 2.0 [link](https://github.com/KhronosGroup/SPIRV-Cross/blob/master/LICENSE).
 GitHub repository [link](https://github.com/KhronosGroup/SPIRV-Cross).
 
+## Stb-Image
+
+Image loading/decoding utility for files/memory data of the formats: JPG, PNG, TGA, BMP, PSD, GIF, HDR, PIC.
+Available under MIT License and Public Domain (www.unlicense.org) (license text in .h file).
+GitHub repository [link](https://github.com/nothings/stb).
+
 ## Vulkan SDK
 
 SDK for high-performance, industry-standard Vulkan graphics and compute API.

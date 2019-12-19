@@ -64,6 +64,12 @@ endif()
 
 option(WITH_GLM "GLM math header library" NO)
 
+option(WITH_STBIMAGE "STB Image utility to load image files" NO)
+if (WITH_STBIMAGE)
+    message(STATUS "Using STB Image utility to load image files")
+    add_subdirectory(thirdparty/stb-image)
+endif()
+
 ##################################################################
 ## Configure project options
 
