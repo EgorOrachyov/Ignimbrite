@@ -79,6 +79,21 @@ namespace ignimbrite {
         bool drawCalled = false;
     };
 
+    struct VulkanSwapChain {
+        /** Associated with chain data also needed for screen rendering (managed automatically) */
+        VkSwapchainKHR swapChainKHR;
+        VkExtent2D extent;
+        VulkanFrameBufferFormat framebufferFormat;
+        std::vector<VkFramebuffer> framebuffers;
+        /** Images and views for swap chain color attachment 0 */
+        std::vector<VkImage> images;
+        std::vector<VkImageView> imageViews;
+        /** Images and views for swap chain depth buffer (created by hand) */
+        std::vector<VkImage> depthStencilImages;
+        std::vector<VkImageView> depthStencilImageViews;
+        std::vector<VkDeviceMemory> depthStencilImageMemory;
+    };
+
     /** Represents window drawing area, created by native OS window system */
     struct VulkanSurface {
         std::string name;
@@ -94,18 +109,7 @@ namespace ignimbrite {
         VkPresentModeKHR presentMode;
         VkSurfaceFormatKHR surfaceFormat;
         VkSurfaceCapabilitiesKHR surfaceCapabilities;
-        /** Associated with chain data also needed for screen rendering (managed automatically) */
-        VkSwapchainKHR swapChain;
-        VkExtent2D swapChainExtent;
-        VulkanFrameBufferFormat framebufferFormat;
-        std::vector<VkFramebuffer> swapChainFramebuffers;
-        /** Images and views for swap chain color attachment 0 */
-        std::vector<VkImage> swapChainImages;
-        std::vector<VkImageView> swapChainImageViews;
-        /** Images and views for swap chain depth buffer (created by hand) */
-        std::vector<VkImage> swapChainDepthStencilImages;
-        std::vector<VkImageView> swapChainDepthStencilImageViews;
-        std::vector<VkDeviceMemory> swapChainDepthStencilImageMemory;
+        VulkanSwapChain swapChain;
         /** Swap buffer data */
         uint32 currentImageIndex = 0;
         uint32 currentFrameIndex = 0;

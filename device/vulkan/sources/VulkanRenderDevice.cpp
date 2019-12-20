@@ -892,7 +892,7 @@ namespace ignimbrite {
         const auto &vkUniformLayout = mUniformLayouts.get(uniformLayout);
         const auto &vkVertexLayout = mVertexLayouts.get(vertexLayout);
         auto &vkSurface = mSurfaces.get(surface);
-        auto &vkFramebufferFormat = vkSurface.framebufferFormat;
+        auto &vkFramebufferFormat = vkSurface.swapChain.framebufferFormat;
 
         VkResult result;
         VkPipeline pipeline;
@@ -1124,7 +1124,7 @@ namespace ignimbrite {
             presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
             presentInfo.pNext = nullptr;
             presentInfo.swapchainCount = 1;
-            presentInfo.pSwapchains = &surface.swapChain;
+            presentInfo.pSwapchains = &surface.swapChain.swapChainKHR;
             presentInfo.pImageIndices = &imageIndex;
             // wait until render will be finished
             presentInfo.waitSemaphoreCount = 1;
@@ -1148,7 +1148,7 @@ namespace ignimbrite {
 
             // acquire next image
             uint32 nextImageIndex;
-            result = vkAcquireNextImageKHR(context.device, surface.swapChain, UINT64_MAX,
+            result = vkAcquireNextImageKHR(context.device, surface.swapChain.swapChainKHR, UINT64_MAX,
                                            surface.imageAvailableSemaphores[nextFrameIndex], VK_NULL_HANDLE,
                                            &nextImageIndex);
 
@@ -1175,7 +1175,7 @@ namespace ignimbrite {
         const uint32 clearStencil = 0;
 
         VkCommandBuffer cmd = drawList.buffer;
-        VkFramebuffer surfFramebuffer = surface.swapChainFramebuffers[surface.currentImageIndex];
+        VkFramebuffer surfFramebuffer = surface.swapChain.framebuffers[surface.currentImageIndex];
 
         uint32_t viewportOffsetX = area.xOffset;
         uint32_t viewportOffsetY = area.yOffset;
@@ -1192,7 +1192,7 @@ namespace ignimbrite {
 
         VkRenderPassBeginInfo renderPassBeginInfo{};
         renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassBeginInfo.renderPass = surface.framebufferFormat.renderPass;
+        renderPassBeginInfo.renderPass = surface.swapChain.framebufferFormat.renderPass;
         renderPassBeginInfo.renderArea.offset.x = 0;
         renderPassBeginInfo.renderArea.offset.y = 0;
 

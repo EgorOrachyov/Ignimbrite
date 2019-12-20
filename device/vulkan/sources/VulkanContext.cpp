@@ -430,7 +430,9 @@ namespace ignimbrite {
         uint32 swapChainMinImageCount = SWAPCHAIN_MIN_IMAGE_COUNT;
         VkSurfaceKHR surfaceKHR = surface.surface;
         VkSurfaceCapabilitiesKHR &surfaceCapabilities = surface.surfaceCapabilities;
-        VkSwapchainKHR swapChain = VK_NULL_HANDLE;
+        VkSwapchainKHR swapChainKHR = VK_NULL_HANDLE;
+
+        VulkanSwapChain& swapChain = surface.swapChain;
 
         std::vector<VkSurfaceFormatKHR> surfaceFormats;
         std::vector<VkPresentModeKHR> presentModes;
@@ -517,22 +519,22 @@ namespace ignimbrite {
         swapChainCreateInfo.minImageCount = swapChainMinImageCount;
         swapChainCreateInfo.imageArrayLayers = 1;
 
-        VkResult result = vkCreateSwapchainKHR(device, &swapChainCreateInfo, nullptr, &swapChain);
+        VkResult result = vkCreateSwapchainKHR(device, &swapChainCreateInfo, nullptr, &swapChainKHR);
         if (result != VK_SUCCESS) {
             throw VulkanException("Can't create swap chain");
         }
 
         uint32 swapChainImageCount;
-        result = vkGetSwapchainImagesKHR(device, swapChain, &swapChainImageCount, nullptr);
+        result = vkGetSwapchainImagesKHR(device, swapChainKHR, &swapChainImageCount, nullptr);
 
         if (result != VK_SUCCESS) {
             throw VulkanException("Can't get images from swap chain");
         }
 
-        surface.swapChainImages.resize(swapChainImageCount);
-        surface.swapChainImageViews.resize(swapChainImageCount);
+        swapChain.images.resize(swapChainImageCount);
+        swapChain.imageViews.resize(swapChainImageCount);
 
-        result = vkGetSwapchainImagesKHR(device, swapChain, &swapChainImageCount, surface.swapChainImages.data());
+        result = vkGetSwapchainImagesKHR(device, swapChainKHR, &swapChainImageCount, swapChain.images.data());
 
         if (result != VK_SUCCESS) {
             throw VulkanException("Can't get images from swap chain");
@@ -544,7 +546,7 @@ namespace ignimbrite {
             viewInfo.pNext = NULL;
             viewInfo.flags = 0;
 
-            viewInfo.image = surface.swapChainImages[i];
+            viewInfo.image = swapChain.images[i];
             viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
             viewInfo.format = chosenSurfaceFormat.format;
             viewInfo.components.r = VK_COMPONENT_SWIZZLE_R;
@@ -557,7 +559,7 @@ namespace ignimbrite {
             viewInfo.subresourceRange.baseArrayLayer = 0;
             viewInfo.subresourceRange.layerCount = 1;
 
-            result = vkCreateImageView(device, &viewInfo, nullptr, &surface.swapChainImageViews[i]);
+            result = vkCreateImageView(device, &viewInfo, nullptr, &swapChain.imageViews[i]);
 
             if (result != VK_SUCCESS) {
                 throw VulkanException("Can't create image view for swapchain");
@@ -565,9 +567,9 @@ namespace ignimbrite {
         }
 
         // Setup depth stencil buffers for each swap chain image
-        surface.swapChainDepthStencilImages.resize(swapChainImageCount);
-        surface.swapChainDepthStencilImageViews.resize(swapChainImageCount);
-        surface.swapChainDepthStencilImageMemory.resize(swapChainImageCount);
+        swapChain.depthStencilImages.resize(swapChainImageCount);
+        swapChain.depthStencilImageViews.resize(swapChainImageCount);
+        swapChain.depthStencilImageMemory.resize(swapChainImageCount);
 
         VkFormat depthFormats[] = { VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT };
         VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL;
@@ -582,8 +584,8 @@ namespace ignimbrite {
                     VK_IMAGE_TILING_OPTIMAL,
                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    surface.swapChainDepthStencilImages[i],
-                    surface.swapChainDepthStencilImageMemory[i]
+                    swapChain.depthStencilImages[i],
+                    swapChain.depthStencilImageMemory[i]
              );
 
             VkImageSubresourceRange subresourceRange = {};
@@ -602,8 +604,8 @@ namespace ignimbrite {
 
             VulkanUtils::createImageView(
                     *this,
-                    surface.swapChainDepthStencilImageViews[i],
-                    surface.swapChainDepthStencilImages[i],
+                    swapChain.depthStencilImageViews[i],
+                    swapChain.depthStencilImages[i],
                     VK_IMAGE_VIEW_TYPE_2D,
                     depthFormat,
                     subresourceRange,
@@ -645,10 +647,10 @@ namespace ignimbrite {
             surface.imagesInFlight[i] = VK_NULL_HANDLE;
         }
 
-        surface.swapChain = swapChain;
         surface.presentMode = chosenPresentMode;
         surface.surfaceFormat = chosenSurfaceFormat;
-        surface.swapChainExtent = swapChainCreateInfo.imageExtent;
+        swapChain.extent = swapChainCreateInfo.imageExtent;
+        swapChain.swapChainKHR = swapChainKHR;
     }
 
     void VulkanContext::destroySwapChain(VulkanSurface &surface) {
@@ -665,18 +667,19 @@ namespace ignimbrite {
         }
 
         // Counts of images for all image related objects are equal
-        uint32 swapChainObjects = surface.swapChainImages.size();
+        VulkanSwapChain& swapChain = surface.swapChain;
+        uint32 swapChainObjects = swapChain.images.size();
 
         for (uint32 i = 0; i < swapChainObjects; i++) {
             // destroy only image views, images will be destroyed with swap chain
-            vkDestroyImageView(device, surface.swapChainImageViews[i], nullptr);
+            vkDestroyImageView(device, swapChain.imageViews[i], nullptr);
             // destroy manually created depth stencil buffers
-            vkDestroyImageView(device, surface.swapChainDepthStencilImageViews[i], nullptr);
-            vkDestroyImage(device, surface.swapChainDepthStencilImages[i], nullptr);
-            vkFreeMemory(device, surface.swapChainDepthStencilImageMemory[i], nullptr);
+            vkDestroyImageView(device, swapChain.depthStencilImageViews[i], nullptr);
+            vkDestroyImage(device, swapChain.depthStencilImages[i], nullptr);
+            vkFreeMemory(device, swapChain.depthStencilImageMemory[i], nullptr);
         }
 
-        vkDestroySwapchainKHR(device, surface.swapChain, nullptr);
+        vkDestroySwapchainKHR(device, swapChain.swapChainKHR, nullptr);
     }
 
     void VulkanContext::recreateSwapChain(VulkanSurface &surface) {
@@ -740,21 +743,22 @@ namespace ignimbrite {
             throw VulkanException("Failed to create render pass for surface");
         }
 
-        auto &format = surface.framebufferFormat;
+        auto &format = surface.swapChain.framebufferFormat;
         format.renderPass = renderPass;
         format.useDepthStencil = false;
         format.numOfAttachments = 1;
     }
 
     void VulkanContext::destroyFramebufferFormat(VulkanSurface &surface) {
-        vkDestroyRenderPass(device, surface.framebufferFormat.renderPass, nullptr);
+        vkDestroyRenderPass(device, surface.swapChain.framebufferFormat.renderPass, nullptr);
     }
 
     void VulkanContext::createFramebuffers(VulkanSurface &surface) {
         VkResult result;
 
-        auto &imageViews = surface.swapChainImageViews;
-        auto &framebuffers = surface.swapChainFramebuffers;
+        auto &swapChain = surface.swapChain;
+        auto &imageViews = swapChain.imageViews;
+        auto &framebuffers = swapChain.framebuffers;
         framebuffers.resize(imageViews.size());
 
         for (size_t i = 0; i < framebuffers.size(); i++) {
@@ -762,12 +766,12 @@ namespace ignimbrite {
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
             framebufferInfo.pNext = nullptr;
             framebufferInfo.flags = 0;
-            framebufferInfo.width = surface.swapChainExtent.width;
-            framebufferInfo.height = surface.swapChainExtent.height;
+            framebufferInfo.width = swapChain.extent.width;
+            framebufferInfo.height = swapChain.extent.height;
             framebufferInfo.layers = 1;
             framebufferInfo.attachmentCount = 1;
             framebufferInfo.pAttachments = &imageViews[i];
-            framebufferInfo.renderPass = surface.framebufferFormat.renderPass;
+            framebufferInfo.renderPass = swapChain.framebufferFormat.renderPass;
 
             result = vkCreateFramebuffer(device, &framebufferInfo, nullptr, &framebuffers[i]);
 
@@ -778,7 +782,7 @@ namespace ignimbrite {
     }
 
     void VulkanContext::destroyFramebuffers(VulkanSurface &surface) {
-        for (auto &framebuffer: surface.swapChainFramebuffers) {
+        for (auto &framebuffer: surface.swapChain.framebuffers) {
             vkDestroyFramebuffer(device, framebuffer, nullptr);
         }
     }
