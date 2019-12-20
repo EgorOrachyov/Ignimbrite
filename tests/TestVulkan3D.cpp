@@ -458,13 +458,12 @@ void Vertex::getAttributeDescriptions(std::vector<ignimbrite::RenderDevice::Vert
 }
 
 int main(int argc, char **argv) {
-    Vulkan3DTest test;
-
-    if (argc < 3 || std::strcmp(argv[1], "--help") == 0) {
-        printf("Arguments should be: <path to .obj mesh> <path to texture>");
+    if (argc < 3 || (argc >= 2 && std::strcmp(argv[1], "--help") == 0)) {
+        printf("Arguments should be: <path to .obj mesh> <path to texture>\n");
         return 0;
     }
-
+    
+    Vulkan3DTest test;
     test.init(argv[1], argv[2]);
     test.loop();
 }
