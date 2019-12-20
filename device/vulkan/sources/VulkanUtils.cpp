@@ -18,6 +18,26 @@ namespace ignimbrite {
         return properties;
     }
 
+    VkFormat VulkanUtils::findSupportedFormat(ignimbrite::VulkanContext &context, const VkFormat *candidates,
+                                              ignimbrite::uint32 candidatesCount, VkImageTiling tiling,
+                                              VkFormatFeatureFlags features) {
+        for (uint32 i = 0; i < candidatesCount; i++) {
+            auto format = candidates[i];
+            auto properties = getDeviceFormatProperties(context, candidates[i]);
+
+            if (tiling == VK_IMAGE_TILING_LINEAR &&
+                (properties.linearTilingFeatures & features) == features) {
+                return candidates[i];
+            }
+            else if (tiling == VK_IMAGE_TILING_OPTIMAL &&
+                (properties.optimalTilingFeatures & features) == features) {
+                return format;
+            }
+        }
+
+        throw VulkanException("Failed to find supported format");
+    }
+
     uint32 VulkanUtils::getMemoryTypeIndex(VulkanContext &context, uint32 memoryTypeBits, VkFlags requirementsMask) {
         // for each memory type available for this device
         for (uint32 i = 0; i < context.deviceMemoryProperties.memoryTypeCount; i++) {
@@ -148,7 +168,7 @@ namespace ignimbrite {
         createImage(context, width, height, depth, mipLevels, imageType, format, tiling,
                 // for copying and sampling in shaders
                     VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                // TODO: updatable from cpu
+                // TODO: updatable from cpu ??
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                     outTextureImage, outTextureMemory);
 
@@ -279,8 +299,12 @@ namespace ignimbrite {
         }
 
         vkCmdPipelineBarrier(
-                commandBuffer, sourceStage, destinationStage,
-                0, 0, nullptr, 0, nullptr, 1, &barrier);
+                commandBuffer,
+                sourceStage,
+                destinationStage,
+                0, 0, nullptr, 0, nullptr, 1,
+                &barrier
+        );
 
         endTempCommandBuffer(context, commandBuffer, context.transferQueue, context.transferTempCommandPool);
     }
@@ -492,9 +516,8 @@ namespace ignimbrite {
     }
 
     void VulkanUtils::createDepthStencilBuffer(VulkanContext &context, uint32 width, uint32 height, uint32 depth,
-                                               VkImageType imageType, VkFormat format, VkImageViewType viewType,
-                                               VkImage &outImage, VkDeviceMemory &outImageMemory,
-                                               VkImageView &outImageView, VkImageUsageFlags usageFlags) {
+                                               VkImageType imageType, VkFormat format, VkImage &outImage,
+                                               VkDeviceMemory &outImageMemory, VkImageUsageFlags usageFlags) {
 
         // get properties of depth stencil format
         const VkFormatProperties &properties = getDeviceFormatProperties(context, format);

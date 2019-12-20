@@ -13,7 +13,7 @@
 
 namespace ignimbrite {
 
-/** Vulkan implementation for Render Device interface */
+    /** Vulkan implementation for Render Device interface */
     class VulkanRenderDevice : public RenderDevice {
     public:
 

@@ -79,30 +79,35 @@ namespace ignimbrite {
         bool drawCalled = false;
     };
 
+    /** Represents window drawing area, created by native OS window system */
     struct VulkanSurface {
         std::string name;
         uint32 width;
         uint32 height;
         uint32 widthFramebuffer;
         uint32 heightFramebuffer;
-        bool tripleBuffering = false;
         uint32 presentsFamily;
         VkQueue presentQueue;
         VkQueue graphicsQueue;
-        /// Surface created vie extension for specific WSI
+        /** Surface created vie extension for specific WSI */
         VkSurfaceKHR surface;
-        VkSurfaceCapabilitiesKHR surfaceCapabilities;
         VkPresentModeKHR presentMode;
         VkSurfaceFormatKHR surfaceFormat;
-        /// Associated with chain data also needed for screen rendering (managed automatically)
+        VkSurfaceCapabilitiesKHR surfaceCapabilities;
+        /** Associated with chain data also needed for screen rendering (managed automatically) */
         VkSwapchainKHR swapChain;
         VkExtent2D swapChainExtent;
         VulkanFrameBufferFormat framebufferFormat;
+        std::vector<VkFramebuffer> swapChainFramebuffers;
+        /** Images and views for swap chain color attachment 0 */
         std::vector<VkImage> swapChainImages;
         std::vector<VkImageView> swapChainImageViews;
-        std::vector<VkFramebuffer> swapChainFramebuffers;
+        /** Images and views for swap chain depth buffer (created by hand) */
+        std::vector<VkImage> swapChainDepthStencilImages;
+        std::vector<VkImageView> swapChainDepthStencilImageViews;
+        std::vector<VkDeviceMemory> swapChainDepthStencilImageMemory;
+        /** Swap buffer data */
         uint32 currentImageIndex = 0;
-
         uint32 currentFrameIndex = 0;
         uint32 maxFramesInFlight = 3;
         std::vector<VkSemaphore> imageAvailableSemaphores;
@@ -135,7 +140,7 @@ namespace ignimbrite {
 
     struct VulkanUniformSet {
         RenderDevice::ID uniformLayout;
-        VkDescriptorSet descriptorSet;
+        VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
     };
 
     struct VulkanShader {
@@ -150,7 +155,7 @@ namespace ignimbrite {
     struct VulkanGraphicsPipeline {
         VkPipeline pipeline;
         VkPipelineLayout pipelineLayout;
-        bool withSurfaceOnly;
+        bool withSurfaceOnly = false;
         RenderDevice::ID surface;
         RenderDevice::ID program;
         RenderDevice::ID uniformLayout;

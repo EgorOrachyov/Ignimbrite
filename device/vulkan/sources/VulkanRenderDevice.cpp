@@ -9,6 +9,12 @@
 #include <exception>
 #include <array>
 
+#define VK_RESULT_ASSERT(result, message)                               \
+    do {                                                                \
+        if ((result) != VK_SUCCESS)                                     \
+            throw VulkanException(message);                             \
+    } while (false);
+
 namespace ignimbrite {
 
     VulkanRenderDevice::VulkanRenderDevice(uint32 extensionsCount, const char *const *extensions) {
@@ -223,9 +229,8 @@ namespace ignimbrite {
             VulkanUtils::createDepthStencilBuffer(
                     context,
                     textureDesc.width, textureDesc.height, textureDesc.depth,
-                    imageType, format, viewType,
-                    texture.image, texture.imageMemory,
-                    texture.imageView, usageFlags
+                    imageType, format,
+                    texture.image, texture.imageMemory, usageFlags
             );
 
             VkImageSubresourceRange subresourceRange;
@@ -248,7 +253,7 @@ namespace ignimbrite {
                     viewType, format, subresourceRange, components
             );
 
-        } else if (sampling) {
+        } else {
 
             // create texture image with mipmaps and allocate memory
             VulkanUtils::createTextureImage(
@@ -346,9 +351,7 @@ namespace ignimbrite {
         height = window.height;
     }
 
-    RenderDevice::ID
-    VulkanRenderDevice::createFramebufferFormat(
-            const std::vector<RenderDevice::FramebufferAttachmentDesc> &attachments) {
+    RenderDevice::ID VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::FramebufferAttachmentDesc> &attachments) {
         std::vector<VkAttachmentDescription> attachmentDescriptions;
         attachmentDescriptions.reserve(attachments.size());
 
@@ -390,7 +393,7 @@ namespace ignimbrite {
             attachmentDescriptions.push_back(description);
         }
 
-        std::array<VkSubpassDependency, 2> dependencies;
+        std::array<VkSubpassDependency, 2> dependencies = {};
 
         dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
         dependencies[0].dstSubpass = 0;
@@ -428,9 +431,7 @@ namespace ignimbrite {
 
         result = vkCreateRenderPass(context.device, &renderPassInfo, nullptr, &renderPass);
 
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Failed to create render pass");
-        }
+        VK_RESULT_ASSERT(result, "Failed to create render pass");
 
         VulkanFrameBufferFormat format = {};
         format.renderPass = renderPass;
@@ -491,9 +492,7 @@ namespace ignimbrite {
         VkFramebuffer framebuffer;
         VkResult result = vkCreateFramebuffer(context.device, &framebufferInfo, nullptr, &framebuffer);
 
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Filed to create framebuffer");
-        }
+        VK_RESULT_ASSERT(result, "Filed to create framebuffer");
 
         fbo.framebuffer = framebuffer;
         fbo.framebufferFormatId = framebufferFormatId;

@@ -18,6 +18,13 @@ namespace ignimbrite {
                 VkFormat format
         );
 
+        static VkFormat findSupportedFormat(
+                VulkanContext &context,
+                const VkFormat *candidates, uint32 candidatesCount,
+                VkImageTiling tiling,
+                VkFormatFeatureFlags features
+        );
+
         static uint32 getMemoryTypeIndex(
                 VulkanContext &context,
                 uint32 memoryTypeBits,
@@ -38,7 +45,12 @@ namespace ignimbrite {
                 VkBuffer &outBuffer, VkDeviceMemory &outBufferMemory
         );
 
-        static void copyBuffer(VulkanContext &context, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+        static void copyBuffer(
+                VulkanContext &context,
+                VkBuffer srcBuffer,
+                VkBuffer dstBuffer,
+                VkDeviceSize size
+        );
 
         static void updateBufferMemory(
                 VulkanContext &context,
@@ -98,11 +110,10 @@ namespace ignimbrite {
                 uint32 depth, uint32 mipLevels, VkImageLayout newLayout
         );
 
-        static void createDepthStencilBuffer(VulkanContext &context,
-                                             uint32 width, uint32 height, uint32 depth,
-                                             VkImageType imageType, VkFormat format, VkImageViewType viewType,
-                                             VkImage &outImage, VkDeviceMemory &outImageMemory,
-                                             VkImageView &outImageView, VkImageUsageFlags usageFlags
+        static void createDepthStencilBuffer(
+                VulkanContext &context, uint32 width, uint32 height, uint32 depth,
+                VkImageType imageType, VkFormat format, VkImage &outImage,
+                VkDeviceMemory &outImageMemory, VkImageUsageFlags usageFlags
         );
 
         static void getSurfaceProperties(
@@ -195,14 +206,17 @@ namespace ignimbrite {
 
         static VkCommandPool createCommandPool(
                 VulkanContext &context,
-                VkCommandPoolCreateFlags flags, uint32_t queueFamilyIndex);
+                VkCommandPoolCreateFlags flags, uint32_t queueFamilyIndex
+        );
 
         static VkCommandBuffer beginTempCommandBuffer(
-                VulkanContext &context, VkCommandPool commandPool);
+                VulkanContext &context, VkCommandPool commandPool
+        );
 
         static void endTempCommandBuffer(
                 VulkanContext &context, VkCommandBuffer commandBuffer,
-                VkQueue queue, VkCommandPool commandPool);
+                VkQueue queue, VkCommandPool commandPool
+        );
     };
 
 } // namespace ignimbrite

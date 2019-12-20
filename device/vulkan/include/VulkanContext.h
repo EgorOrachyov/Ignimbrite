@@ -18,7 +18,6 @@ namespace ignimbrite {
      */
     struct VulkanContext {
 
-        /* Private section: setup vulkan instance */
         void createInstance();
         void destroyInstance();
 
@@ -77,6 +76,8 @@ namespace ignimbrite {
         void createCommandPools();
         void destroyCommandPools();
 
+        static const uint32 SWAPCHAIN_MIN_IMAGE_COUNT = 2;
+        static const VkFormat SWAPCHAIN_DEFAULT_DEPTH_STENCIL_FORMAT = VkFormat::VK_FORMAT_D32_SFLOAT_S8_UINT;
         static const uint32 DESCRIPTOR_POOL_MAX_SET_COUNT = 8;
         static const VkFormat PREFERRED_FORMAT = VkFormat::VK_FORMAT_B8G8R8A8_UNORM;
         static const VkColorSpaceKHR PREFERRED_COLOR_SPACE = VkColorSpaceKHR::VK_COLORSPACE_SRGB_NONLINEAR_KHR;
