@@ -42,14 +42,14 @@ namespace ignimbrite {
         // for each memory type available for this device
         for (uint32 i = 0; i < context.deviceMemoryProperties.memoryTypeCount; i++) {
             // if type is available
-            if ((memoryTypeBits & 1) == 1) {
+            if ((memoryTypeBits & 1u) == 1) {
                 if ((context.deviceMemoryProperties.memoryTypes[i].propertyFlags & requirementsMask) ==
                     requirementsMask) {
                     return i;
                 }
             }
 
-            memoryTypeBits >>= 1;
+            memoryTypeBits >>= 1u;
         }
 
         throw VulkanException("Can't find memory type in device memory properties");
@@ -185,7 +185,7 @@ namespace ignimbrite {
 
         // generate mipmaps and layout transition
         // from transfer destination to shader readonly
-        generateMipmaps(context, outTextureImage, format, width, height, depth, mipLevels, textureLayout);
+        generateMipmaps(context, outTextureImage, format, width, height, mipLevels, textureLayout);
     }
 
     void VulkanUtils::createImage(VulkanContext &context, uint32 width, uint32 height,
@@ -328,9 +328,9 @@ namespace ignimbrite {
         }
     }
 
-    void VulkanUtils::generateMipmaps(VulkanContext &context, VkImage image, VkFormat format,
-                                      uint32 width, uint32 height, uint32 depth, uint32 mipLevels,
-                                      VkImageLayout newLayout) {
+    void
+    VulkanUtils::generateMipmaps(VulkanContext &context, VkImage image, VkFormat format, uint32 width, uint32 height,
+                                 uint32 mipLevels, VkImageLayout newLayout) {
         VkFormatProperties formatProperties = getDeviceFormatProperties(context, format);
 
         if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
@@ -384,27 +384,32 @@ namespace ignimbrite {
             blit.dstSubresource.baseArrayLayer = 0;
             blit.dstSubresource.layerCount = 1;
 
-            vkCmdBlitImage(commandBuffer,
-                           image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                           image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                           1, &blit,
+            vkCmdBlitImage(
+                    commandBuffer,
+                    image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                    image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    1, &blit,
                     // using linear interpolation
-                           VK_FILTER_LINEAR);
+                    VK_FILTER_LINEAR
+           );
 
             barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
             barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-            vkCmdPipelineBarrier(commandBuffer,
-                                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                                 0, nullptr,
-                                 0, nullptr,
-                                 1, &barrier);
+            vkCmdPipelineBarrier(
+                    commandBuffer,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT,
+                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                    0, nullptr,
+                    0, nullptr,
+                    1, &barrier
+            );
 
             if (mipWidth > 1) {
                 mipWidth /= 2;
-            };
+            }
 
             if (mipHeight > 1) {
                 mipHeight /= 2;
@@ -417,11 +422,13 @@ namespace ignimbrite {
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-        vkCmdPipelineBarrier(commandBuffer,
-                             VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                             0, nullptr,
-                             0, nullptr,
-                             1, &barrier);
+        vkCmdPipelineBarrier(
+                commandBuffer,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                0, nullptr,
+                0, nullptr,
+                1, &barrier
+        );
 
         endTempCommandBuffer(context, commandBuffer, context.transferQueue, context.transferTempCommandPool);
     }

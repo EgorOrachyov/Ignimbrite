@@ -1183,10 +1183,12 @@ namespace ignimbrite {
         uint32_t viewportHeight = area.extent.y;
 
         VkClearValue clearValues[2];
-        clearValues[0].color = {{color.components[0],
-                                        color.components[1],
-                                        color.components[2],
-                                        color.components[3]}};
+        clearValues[0].color = {
+            {color.components[0],
+             color.components[1],
+             color.components[2],
+             color.components[3]}
+        };
         clearValues[1].depthStencil.depth = clearDepth;
         clearValues[1].depthStencil.stencil = clearStencil;
 

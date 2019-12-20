@@ -61,10 +61,10 @@ namespace ignimbrite {
     };
 
     struct VulkanFrameBuffer {
-        VkFramebuffer framebuffer;
+        VkFramebuffer framebuffer = VK_NULL_HANDLE;
         ObjectID framebufferFormatId;
-        uint32 width;
-        uint32 height;
+        uint32 width = 0;
+        uint32 height = 0;
     };
 
     struct VulkanDrawList {
@@ -79,16 +79,16 @@ namespace ignimbrite {
         bool drawCalled = false;
     };
 
+    /** Associated with chain data also needed for screen rendering (managed automatically) */
     struct VulkanSwapChain {
-        /** Associated with chain data also needed for screen rendering (managed automatically) */
         VkSwapchainKHR swapChainKHR;
         VkExtent2D extent;
         VulkanFrameBufferFormat framebufferFormat;
         std::vector<VkFramebuffer> framebuffers;
-        /** Images and views for swap chain color attachment 0 */
+        /** Images and views color attachment 0 */
         std::vector<VkImage> images;
         std::vector<VkImageView> imageViews;
-        /** Images and views for swap chain depth buffer (created by hand) */
+        /** Images and views for depth buffer (created by hand) */
         std::vector<VkImage> depthStencilImages;
         std::vector<VkImageView> depthStencilImageViews;
         std::vector<VkDeviceMemory> depthStencilImageMemory;
@@ -157,8 +157,8 @@ namespace ignimbrite {
     };
 
     struct VulkanGraphicsPipeline {
-        VkPipeline pipeline;
-        VkPipelineLayout pipelineLayout;
+        VkPipeline pipeline = VK_NULL_HANDLE;
+        VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
         bool withSurfaceOnly = false;
         RenderDevice::ID surface;
         RenderDevice::ID program;

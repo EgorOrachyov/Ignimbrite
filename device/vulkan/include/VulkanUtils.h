@@ -103,12 +103,8 @@ namespace ignimbrite {
                 VkComponentMapping components = {}
         );
 
-        static void generateMipmaps(
-                VulkanContext &context,
-                VkImage image, VkFormat format,
-                uint32 width, uint32 height,
-                uint32 depth, uint32 mipLevels, VkImageLayout newLayout
-        );
+        static void generateMipmaps(VulkanContext &context, VkImage image, VkFormat format, uint32 width, uint32 height,
+                                    uint32 mipLevels, VkImageLayout newLayout);
 
         static void createDepthStencilBuffer(
                 VulkanContext &context, uint32 width, uint32 height, uint32 depth,
