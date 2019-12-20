@@ -101,19 +101,17 @@ void Vulkan3DTest::init(const char *objMeshPath, const char *texturePath) {
 
     initDevice();
 
-    auto& device = *pDevice;
-
     RenderDevice::VertexBufferLayoutDesc vertexBufferLayoutDesc = {};
     Vertex::getAttributeDescriptions(vertexBufferLayoutDesc.attributes);
     vertexBufferLayoutDesc.stride = sizeof(Vertex);
     vertexBufferLayoutDesc.usage = VertexUsage::PerVertex;
 
-    vertexLayout = device.createVertexLayout({ vertexBufferLayoutDesc });
+    vertexLayout = pDevice->createVertexLayout({ vertexBufferLayoutDesc });
 
     loadModel(objMeshPath);
     loadTexture(texturePath);
 
-    uniformBuffer = device.createUniformBuffer(BufferUsage::Dynamic, sizeof(ShaderUniformBuffer), nullptr);
+    uniformBuffer = pDevice->createUniformBuffer(BufferUsage::Dynamic, sizeof(ShaderUniformBuffer), nullptr);
 
     shaderProgram = loadShader(
             "resources/shaders/spirv/vert3d.spv",
@@ -134,10 +132,16 @@ void Vulkan3DTest::init(const char *objMeshPath, const char *texturePath) {
     blendStateDesc.logicOpEnable = false;
     blendStateDesc.logicOp = LogicOperation::NoOp;
 
-    graphicsPipeline = device.createGraphicsPipeline(
+    RenderDevice::PipelineDepthStencilStateDesc depthStencilStateDesc = {};
+    depthStencilStateDesc.depthCompareOp = CompareOperation::Less;
+    depthStencilStateDesc.depthWriteEnable = true;
+    depthStencilStateDesc.depthTestEnable = true;
+    depthStencilStateDesc.stencilTestEnable = false;
+
+    graphicsPipeline = pDevice->createGraphicsPipeline(
             surface, PrimitiveTopology::TriangleList,
             shaderProgram, vertexLayout, uniformLayout,
-            rasterizationDesc, blendStateDesc
+            rasterizationDesc, blendStateDesc, depthStencilStateDesc
     );
 }
 
@@ -155,9 +159,7 @@ void Vulkan3DTest::initDevice() {
     glfwSetScrollCallback(window, scrollCallback);
 
     pDevice = new VulkanRenderDevice(extensionsCount, extensions);
-    auto& device = *pDevice;
-
-    surface = VulkanExtensions::createSurfaceGLFW(device, window, width, height, widthFrameBuffer, heightFrameBuffer, name);
+    surface = VulkanExtensions::createSurfaceGLFW(*pDevice, window, width, height, widthFrameBuffer, heightFrameBuffer, name);
 }
 
 Vulkan3DTest::~Vulkan3DTest() {

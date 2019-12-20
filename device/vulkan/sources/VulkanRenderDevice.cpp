@@ -230,9 +230,8 @@ namespace ignimbrite {
             VulkanUtils::createDepthStencilBuffer(
                     context,
                     textureDesc.width, textureDesc.height, textureDesc.depth,
-                    imageType, format, viewType,
+                    imageType, format, //viewType,
                     texture.image, texture.imageMemory,
-                    texture.imageView,
                     usageFlags | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
             );
 

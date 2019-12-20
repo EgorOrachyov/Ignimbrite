@@ -701,6 +701,7 @@ namespace ignimbrite {
     void VulkanContext::createFramebufferFormat(VulkanSurface &surface) {
         VkAttachmentDescription descriptions[2] = {};
 
+        descriptions[0].flags = 0;
         descriptions[0].format = surface.surfaceFormat.format;
         descriptions[0].samples = VK_SAMPLE_COUNT_1_BIT;
         descriptions[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -710,6 +711,7 @@ namespace ignimbrite {
         descriptions[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         descriptions[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
+        descriptions[1].flags = 0;
         descriptions[1].format = surface.swapChain.depthFormat;
         descriptions[1].samples = VK_SAMPLE_COUNT_1_BIT;
         descriptions[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;

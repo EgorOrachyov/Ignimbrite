@@ -88,7 +88,8 @@ namespace ignimbrite {
         void swapBuffers(ID surfaceId) override;
 
     private:
-
+        friend class VulkanExtensions;
+        
         template<typename T>
         using Buffer = ObjectIDBuffer<T>;
 

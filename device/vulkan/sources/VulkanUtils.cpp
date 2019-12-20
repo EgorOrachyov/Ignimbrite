@@ -175,13 +175,6 @@ namespace ignimbrite {
 
         updateBufferMemory(context, stagingBufferMemory, 0, imageDataSize, imageData);
 
-        createImage(context, width, height, depth, mipLevels, imageType, format, tiling,
-                // for copying and sampling in shaders
-                    VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                // TODO: updatable from cpu ??
-                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    outTextureImage, outTextureMemory);
-
         // layout transition from undefined
         // to transfer destination to prepare image for copying
         transitionImageLayout(context, outTextureImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -196,7 +189,7 @@ namespace ignimbrite {
         if (mipLevels > 1) {
             // generate mipmaps and layout transition
             // from transfer destination to shader readonly
-            generateMipmaps(context, outTextureImage, format, width, height, depth, mipLevels, textureLayout);
+            generateMipmaps(context, outTextureImage, format, width, height, mipLevels, textureLayout);
         }
         else {
             transitionImageLayout(context, outTextureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, textureLayout,
