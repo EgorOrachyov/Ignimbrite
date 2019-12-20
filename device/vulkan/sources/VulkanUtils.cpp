@@ -133,6 +133,10 @@ namespace ignimbrite {
     void VulkanUtils::updateBufferMemory(VulkanContext &context, VkDeviceMemory bufferMemory, VkDeviceSize offset,
                                          VkDeviceSize size,
                                          const void *data) {
+        if (data == nullptr) {
+            return;
+        }
+
         void *mappedData;
         VkResult result;
         result = vkMapMemory(context.device, bufferMemory, offset, size, 0, &mappedData);

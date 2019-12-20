@@ -12,15 +12,18 @@ layout (location = 1) out vec2 outTexCoord;
 layout (binding = 0) uniform UBO 
 {
 	mat4 mvp;
+	mat4 model;
+	vec3 lightDir;
+	vec3 ambient;
 } ubo;
 
 
 void main() 
 {	
-	vec3 lightDir = normalize(vec3(-1, -1, 0));
-	float light = max(0.0, dot(inNormal, lightDir)) + 0.3;
+	vec3 normal = normalize(mat3(ubo.model) * inNormal);
+	float light = max(0.0, dot(normal, normalize(ubo.lightDir)));
 
-	outColor = inColor * light;
+	outColor = inColor * light + vec4(ubo.ambient, 0.0);
 	outTexCoord = inTexCoord;
 	gl_Position = ubo.mvp * inPos;
 }
