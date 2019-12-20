@@ -46,6 +46,9 @@ private:
             float fovDegrees, float pitch, float yaw, float z,
             float *outMat4, float *outModelMat4);
 
+    static void mouseCallback(GLFWwindow *window, double x, double y);
+    static void scrollCallback(GLFWwindow *window, double x, double y);
+
 private:
 
     ID surface;
@@ -71,11 +74,12 @@ private:
     ID shaderProgram;
     ID graphicsPipeline;
 
-    const float delta = 0.1f;
-    float pitch = 0;
-    float yaw = 0;
-    float fov = 70;
-    float z = -20;
+    static float pitch;
+    static float yaw;
+    static float fov;
+    static float z;
+    static float prevx;
+    static float prevy;
 
     struct ShaderUniformBuffer {
         float mvp[16];
@@ -84,6 +88,13 @@ private:
         float ambient[3];
     } transform;
 };
+
+float Vulkan3DTest::pitch = 0;
+float Vulkan3DTest::yaw = 0;
+float Vulkan3DTest::fov = 70;
+float Vulkan3DTest::z = -20;
+float Vulkan3DTest::prevx = 0;
+float Vulkan3DTest::prevy = 0;
 
 void Vulkan3DTest::init(const char *objMeshPath, const char *texturePath) {
     using namespace ignimbrite;
@@ -139,6 +150,9 @@ void Vulkan3DTest::initDevice() {
     window = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
     glfwGetFramebufferSize(window, (int*) &widthFrameBuffer, (int*) &heightFrameBuffer);
     extensions = glfwGetRequiredInstanceExtensions(&extensionsCount);
+
+    glfwSetCursorPosCallback(window, mouseCallback);
+    glfwSetScrollCallback(window, scrollCallback);
 
     pDevice = new VulkanRenderDevice(extensionsCount, extensions);
     auto& device = *pDevice;
@@ -204,31 +218,6 @@ void Vulkan3DTest::loop() {
 }
 
 void Vulkan3DTest::updateScene() {
-    if (glfwGetKey(window, GLFW_KEY_E)) {
-        pitch += delta;
-    }
-    if (glfwGetKey(window, GLFW_KEY_Q)) {
-        pitch -= delta;
-    }
-    if (glfwGetKey(window, GLFW_KEY_D)) {
-        yaw += delta;
-    }
-    if (glfwGetKey(window, GLFW_KEY_A)) {
-        yaw -= delta;
-    }
-    if (glfwGetKey(window, GLFW_KEY_W)) {
-        z += delta;
-    }
-    if (glfwGetKey(window, GLFW_KEY_S)) {
-        z -= delta;
-    }
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT)) {
-        fov += delta;
-    }
-    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL)) {
-        fov -= delta;
-    }
-
     calculateMvp(width, height, fov, pitch, yaw, z, transform.mvp, transform.model);
     transform.lightDir[0] = -1;
     transform.lightDir[1] = 1;
@@ -240,7 +229,7 @@ void Vulkan3DTest::updateScene() {
 }
 
 void Vulkan3DTest::calculateMvp(float viewWidth, float viewHeight,
-        float fovDegrees, float pitch, float yaw, float cz,
+        float fovDegrees, float apitch, float ayaw, float cz,
         float *outMat4, float *outModelMat4) {
     auto projection = glm::perspective(fovDegrees, viewWidth / viewHeight, 0.1f, 100.0f);
 
@@ -251,8 +240,8 @@ void Vulkan3DTest::calculateMvp(float viewWidth, float viewHeight,
     );
 
     auto model = glm::mat4(1.0f);
-    model = glm::rotate(model, pitch, glm::vec3(1, 0, 0));
-    model = glm::rotate(model, yaw, glm::vec3(0, 1, 0));
+    model = glm::rotate(model, apitch, glm::vec3(1, 0, 0));
+    model = glm::rotate(model, ayaw, glm::vec3(0, 1, 0));
 
     auto clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
                           0.0f, -1.0f, 0.0f, 0.0f,
@@ -428,6 +417,22 @@ void Vulkan3DTest::createUniform() {
     uniformSetDesc.textures.push_back(uniformTextureDesc);
 
     uniformSet = pDevice->createUniformSet(uniformSetDesc, uniformLayout);
+}
+
+void Vulkan3DTest::scrollCallback(GLFWwindow*, double, double y) {
+    z += (float)y;
+}
+
+void Vulkan3DTest::mouseCallback(GLFWwindow *window, double x, double y) {
+    const float sensitivity = 0.01f;
+
+    if (glfwGetMouseButton(window, 0) == GLFW_PRESS) {
+        yaw += (float)x * sensitivity - prevx;
+        pitch -= (float)y * sensitivity - prevy;
+    }
+
+    prevx = (float)x * sensitivity;
+    prevy = (float)y * sensitivity;
 }
 
 void Vertex::getAttributeDescriptions(std::vector<ignimbrite::RenderDevice::VertexAttributeDesc> &outAttrs) {
