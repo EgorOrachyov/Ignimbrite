@@ -20,23 +20,17 @@ namespace ignimbrite {
 
     class VulkanException : public std::exception {
     public:
-        explicit VulkanException(const char *message) noexcept
-                : message(message) {
+        explicit VulkanException(const char *message) noexcept {
+            std::strncat(buffer, message, MESSAGE_SIZE);
         }
         ~VulkanException() noexcept override = default;
         const char *what() const noexcept override {
-            return message.c_str();
+            return buffer;
         }
-
     private:
-        std::string message;
+        static const uint32 MESSAGE_SIZE = 256;
+        char buffer[sizeof(char) * MESSAGE_SIZE] = { '\0' };
     };
-
-    inline void VulkanCheck(VkResult result) {
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Operation failed");
-        }
-    }
 
 } // namespace ignimbrite
 

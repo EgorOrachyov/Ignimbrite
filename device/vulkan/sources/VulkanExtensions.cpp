@@ -51,7 +51,7 @@ namespace ignimbrite {
         VulkanContext &context = device.context;
 
         context.deviceWaitIdle();
-        context.destroyCmdBuffers(vulkanSurface);
+        context.destroyCommandBuffers(vulkanSurface);
         context.destroyFramebuffers(vulkanSurface);
         context.destroyFramebufferFormat(vulkanSurface);
         context.destroySwapChain(vulkanSurface);

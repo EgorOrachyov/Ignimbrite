@@ -9,6 +9,12 @@
 #include <exception>
 #include <array>
 
+#define VK_RESULT_ASSERT(result, message)                               \
+    do {                                                                \
+        if ((result) != VK_SUCCESS)                                     \
+            throw VulkanException(message);                             \
+    } while (false);
+
 namespace ignimbrite {
 
     VulkanRenderDevice::VulkanRenderDevice(uint32 extensionsCount, const char *const *extensions) {
@@ -223,9 +229,8 @@ namespace ignimbrite {
             VulkanUtils::createDepthStencilBuffer(
                     context,
                     textureDesc.width, textureDesc.height, textureDesc.depth,
-                    imageType, format, viewType,
-                    texture.image, texture.imageMemory,
-                    texture.imageView, usageFlags
+                    imageType, format,
+                    texture.image, texture.imageMemory, usageFlags
             );
 
             VkImageSubresourceRange subresourceRange;
@@ -248,7 +253,7 @@ namespace ignimbrite {
                     viewType, format, subresourceRange, components
             );
 
-        } else if (sampling) {
+        } else {
 
             // create texture image with mipmaps and allocate memory
             VulkanUtils::createTextureImage(
@@ -346,9 +351,7 @@ namespace ignimbrite {
         height = window.height;
     }
 
-    RenderDevice::ID
-    VulkanRenderDevice::createFramebufferFormat(
-            const std::vector<RenderDevice::FramebufferAttachmentDesc> &attachments) {
+    RenderDevice::ID VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::FramebufferAttachmentDesc> &attachments) {
         std::vector<VkAttachmentDescription> attachmentDescriptions;
         attachmentDescriptions.reserve(attachments.size());
 
@@ -390,7 +393,7 @@ namespace ignimbrite {
             attachmentDescriptions.push_back(description);
         }
 
-        std::array<VkSubpassDependency, 2> dependencies;
+        std::array<VkSubpassDependency, 2> dependencies = {};
 
         dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
         dependencies[0].dstSubpass = 0;
@@ -428,9 +431,7 @@ namespace ignimbrite {
 
         result = vkCreateRenderPass(context.device, &renderPassInfo, nullptr, &renderPass);
 
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Failed to create render pass");
-        }
+        VK_RESULT_ASSERT(result, "Failed to create render pass");
 
         VulkanFrameBufferFormat format = {};
         format.renderPass = renderPass;
@@ -491,9 +492,7 @@ namespace ignimbrite {
         VkFramebuffer framebuffer;
         VkResult result = vkCreateFramebuffer(context.device, &framebufferInfo, nullptr, &framebuffer);
 
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Filed to create framebuffer");
-        }
+        VK_RESULT_ASSERT(result, "Filed to create framebuffer");
 
         fbo.framebuffer = framebuffer;
         fbo.framebufferFormatId = framebufferFormatId;
@@ -512,7 +511,6 @@ namespace ignimbrite {
 
     RenderDevice::ID VulkanRenderDevice::createUniformSet(const UniformSetDesc &setDesc, ID uniformLayout) {
         auto &layout = mUniformLayouts.get(uniformLayout);
-        auto setLayout = layout.setLayout;
 
         const auto &uniformBuffers = setDesc.buffers;
         const auto &uniformTextures = setDesc.textures;
@@ -527,32 +525,7 @@ namespace ignimbrite {
             throw VulkanException("Uniform layout has not textures and buffers to be bounded");
         }
 
-        VkResult result;
-        VkDescriptorSet descriptorSet;
-
-        if (layout.freeSets.empty()) {
-            auto &pool = VulkanUtils::getAvailableDescriptorPool(context, layout);
-
-            VkDescriptorSetAllocateInfo descSetAllocInfo = {};
-            descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-            descSetAllocInfo.pNext = nullptr;
-            descSetAllocInfo.descriptorPool = pool.pool;
-            descSetAllocInfo.descriptorSetCount = 1;
-            descSetAllocInfo.pSetLayouts = &setLayout;
-
-            result = vkAllocateDescriptorSets(context.device, &descSetAllocInfo, &descriptorSet);
-
-            if (result != VK_SUCCESS) {
-                throw VulkanException("Can't allocate descriptor set from descriptor pool");
-            }
-
-            pool.allocatedSets += 1;
-            layout.usedDescriptorSets += 1;
-        } else {
-            descriptorSet = layout.freeSets.back();
-            layout.freeSets.pop_back();
-            layout.usedDescriptorSets += 1;
-        }
+        VkDescriptorSet descriptorSet = VulkanUtils::getAvailableDescriptorSet(context, layout);
 
         std::vector<VkWriteDescriptorSet> writeDescSets;
         writeDescSets.reserve(buffersCount + texturesCount);
@@ -797,14 +770,13 @@ namespace ignimbrite {
         const auto &vkVertexLayout = mVertexLayouts.get(vertexLayout);
         const auto &vkFramebufferFormat = mFrameBufferFormats.get(framebufferFormat);
 
-        auto framebufferColorAttachmentsCount = vkFramebufferFormat.useDepthStencil ?
-                                                vkFramebufferFormat.numOfAttachments -
-                                                1
-                                                                                    : vkFramebufferFormat.numOfAttachments;
+        auto framebufferColorAttachmentsCount =
+                vkFramebufferFormat.useDepthStencil      ?
+                vkFramebufferFormat.numOfAttachments - 1 :
+                vkFramebufferFormat.numOfAttachments     ;
 
         if (blendStateDesc.attachments.size() != framebufferColorAttachmentsCount) {
-            throw VulkanException(
-                    "Incompatible number of color and blend attachments for specified framebuffer format and blend state");
+            throw VulkanException("Incompatible number of color and blend attachments for specified framebuffer format and blend state");
         }
 
         if (depthStencilStateDesc.depthTestEnable && !vkFramebufferFormat.useDepthStencil) {
@@ -869,7 +841,7 @@ namespace ignimbrite {
                                            colorBlending);
 
         VkPipelineDepthStencilStateCreateInfo depthStencilState = {};
-        if (depthStencilStateDesc.depthTestEnable) {
+        if (depthStencilStateDesc.depthTestEnable || depthStencilStateDesc.stencilTestEnable) {
             VulkanUtils::createDepthStencilState(depthStencilStateDesc, depthStencilState);
         }
 
@@ -909,17 +881,17 @@ namespace ignimbrite {
         return mGraphicsPipelines.move(graphicsPipeline);
     }
 
-    RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(RenderDevice::ID surface, PrimitiveTopology topology,
-                                                                RenderDevice::ID program, RenderDevice::ID vertexLayout,
-                                                                RenderDevice::ID uniformLayout,
-                                                                const RenderDevice::PipelineRasterizationDesc &rasterizationDesc,
-                                                                const RenderDevice::PipelineSurfaceBlendStateDesc &blendStateDesc) {
-
+    RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(ID surface,
+                                                                PrimitiveTopology topology,
+                                                                ID program, ID vertexLayout, ID uniformLayout,
+                                                                const PipelineRasterizationDesc &rasterizationDesc,
+                                                                const PipelineSurfaceBlendStateDesc &blendStateDesc,
+                                                                const PipelineDepthStencilStateDesc &depthStencilStateDesc) {
         const auto &vkProgram = mShaderPrograms.get(program);
         const auto &vkUniformLayout = mUniformLayouts.get(uniformLayout);
         const auto &vkVertexLayout = mVertexLayouts.get(vertexLayout);
         auto &vkSurface = mSurfaces.get(surface);
-        auto &vkFramebufferFormat = vkSurface.framebufferFormat;
+        auto &vkFramebufferFormat = vkSurface.swapChain.framebufferFormat;
 
         VkResult result;
         VkPipeline pipeline;
@@ -975,6 +947,17 @@ namespace ignimbrite {
         VkPipelineColorBlendStateCreateInfo colorBlending = {};
         VulkanUtils::createSurfaceColorBlendState(blendStateDesc, &attachment, colorBlending);
 
+        VkPipelineDepthStencilStateCreateInfo depthStencilState = {};
+        if (depthStencilStateDesc.depthTestEnable || depthStencilStateDesc.stencilTestEnable) {
+            VulkanUtils::createDepthStencilState(depthStencilStateDesc, depthStencilState);
+        } else {
+            depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+            depthStencilState.depthTestEnable = VK_FALSE;
+            depthStencilState.depthWriteEnable = VK_FALSE;
+            depthStencilState.depthBoundsTestEnable = VK_FALSE;
+            depthStencilState.stencilTestEnable = VK_FALSE;
+        }
+
         VkGraphicsPipelineCreateInfo pipelineInfo = {};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipelineInfo.stageCount = (uint32) shaderStages.size();
@@ -985,7 +968,7 @@ namespace ignimbrite {
         pipelineInfo.pRasterizationState = &rasterizer;
         pipelineInfo.pMultisampleState = &multisampleState;
         pipelineInfo.pColorBlendState = &colorBlending;
-        pipelineInfo.pDepthStencilState = nullptr;
+        pipelineInfo.pDepthStencilState = &depthStencilState;
         pipelineInfo.pDynamicState = &dynamicState;
         pipelineInfo.layout = pipelineLayout;
         pipelineInfo.renderPass = vkFramebufferFormat.renderPass;
@@ -1151,7 +1134,7 @@ namespace ignimbrite {
             presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
             presentInfo.pNext = nullptr;
             presentInfo.swapchainCount = 1;
-            presentInfo.pSwapchains = &surface.swapChain;
+            presentInfo.pSwapchains = &surface.swapChain.swapChainKHR;
             presentInfo.pImageIndices = &imageIndex;
             // wait until render will be finished
             presentInfo.waitSemaphoreCount = 1;
@@ -1175,7 +1158,7 @@ namespace ignimbrite {
 
             // acquire next image
             uint32 nextImageIndex;
-            result = vkAcquireNextImageKHR(context.device, surface.swapChain, UINT64_MAX,
+            result = vkAcquireNextImageKHR(context.device, surface.swapChain.swapChainKHR, UINT64_MAX,
                                            surface.imageAvailableSemaphores[nextFrameIndex], VK_NULL_HANDLE,
                                            &nextImageIndex);
 
@@ -1202,7 +1185,7 @@ namespace ignimbrite {
         const uint32 clearStencil = 0;
 
         VkCommandBuffer cmd = drawList.buffer;
-        VkFramebuffer surfFramebuffer = surface.swapChainFramebuffers[surface.currentImageIndex];
+        VkFramebuffer surfFramebuffer = surface.swapChain.framebuffers[surface.currentImageIndex];
 
         uint32_t viewportOffsetX = area.xOffset;
         uint32_t viewportOffsetY = area.yOffset;
@@ -1210,16 +1193,18 @@ namespace ignimbrite {
         uint32_t viewportHeight = area.extent.y;
 
         VkClearValue clearValues[2];
-        clearValues[0].color = {{color.components[0],
-                                        color.components[1],
-                                        color.components[2],
-                                        color.components[3]}};
+        clearValues[0].color = {
+            {color.components[0],
+             color.components[1],
+             color.components[2],
+             color.components[3]}
+        };
         clearValues[1].depthStencil.depth = clearDepth;
         clearValues[1].depthStencil.stencil = clearStencil;
 
         VkRenderPassBeginInfo renderPassBeginInfo{};
         renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassBeginInfo.renderPass = surface.framebufferFormat.renderPass;
+        renderPassBeginInfo.renderPass = surface.swapChain.framebufferFormat.renderPass;
         renderPassBeginInfo.renderArea.offset.x = 0;
         renderPassBeginInfo.renderArea.offset.y = 0;
 

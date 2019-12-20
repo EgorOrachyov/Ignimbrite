@@ -13,7 +13,7 @@
 
 namespace ignimbrite {
 
-/** Vulkan implementation for Render Device interface */
+    /** Vulkan implementation for Render Device interface */
     class VulkanRenderDevice : public RenderDevice {
     public:
 
@@ -65,11 +65,10 @@ namespace ignimbrite {
                                   const PipelineRasterizationDesc &rasterizationDesc,
                                   const PipelineBlendStateDesc &blendStateDesc,
                                   const PipelineDepthStencilStateDesc &depthStencilStateDesc) override;
-        ID createGraphicsPipeline(ID surface,
-                                  PrimitiveTopology topology,
-                                  ID program, ID vertexLayout, ID uniformLayout,
+        ID createGraphicsPipeline(ID surface, PrimitiveTopology topology, ID program, ID vertexLayout, ID uniformLayout,
                                   const PipelineRasterizationDesc &rasterizationDesc,
-                                  const PipelineSurfaceBlendStateDesc &blendStateDesc) override;
+                                  const PipelineSurfaceBlendStateDesc &blendStateDesc,
+                                  const PipelineDepthStencilStateDesc &depthStencilStateDesc) override;
         void destroyGraphicsPipeline(ID pipeline) override;
 
         void drawListBegin() override;
@@ -89,8 +88,6 @@ namespace ignimbrite {
         void swapBuffers(ID surfaceId) override;
 
     private:
-
-        friend class VulkanExtensions;
 
         template<typename T>
         using Buffer = ObjectIDBuffer<T>;

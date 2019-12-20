@@ -28,8 +28,13 @@ public:
         pDevice = new VulkanRenderDevice(extensionsCount, extensions);
         auto &device = *pDevice;
 
-        surface = VulkanExtensions::createSurfaceGLFW(device, window, width, height, widthFrameBuffer,
-                                                      heightFrameBuffer, name);
+        surface = VulkanExtensions::createSurfaceGLFW(
+                device,
+                window,
+                width, height,
+                widthFrameBuffer, heightFrameBuffer,
+                name
+        );
 
         RenderDevice::VertexAttributeDesc vertexAttributeDesc = {};
         vertexAttributeDesc.format = DataFormat::R32G32B32_SFLOAT;
@@ -44,9 +49,7 @@ public:
         vertexLayout = device.createVertexLayout({vertexBufferLayoutDesc});
 
         vertexBuffer = device.createVertexBuffer(BufferUsage::Dynamic, sizeof(vertices), vertices);
-
         indexBuffer = device.createIndexBuffer(BufferUsage::Static, sizeof(indices), indices);
-
         uniformBuffer = device.createUniformBuffer(BufferUsage::Dynamic, sizeof(Transform), &transform);
 
         loadTestShader(device);
@@ -87,6 +90,10 @@ public:
         blendStateDesc.logicOpEnable = false;
         blendStateDesc.logicOp = LogicOperation::Copy;
 
+        RenderDevice::PipelineDepthStencilStateDesc depthStencilStateDesc = {};
+        depthStencilStateDesc.depthTestEnable = false;
+        depthStencilStateDesc.stencilTestEnable = false;
+
         graphicsPipeline = device.createGraphicsPipeline(
                 surface,
                 topology,
@@ -94,11 +101,10 @@ public:
                 vertexLayout,
                 uniformLayout,
                 rasterizationDesc,
-                blendStateDesc
+                blendStateDesc,
+                depthStencilStateDesc
         );
-
     }
-
 
     ~VulkanApplication() {
         auto &device = *pDevice;
@@ -146,13 +152,9 @@ public:
     void loop() {
         auto &device = *pDevice;
 
-        RenderDevice::Color clearColor = {
-                {0.1f, 0.4f, 0.7f, 0.0f}
-        };
-
+        RenderDevice::Color clearColor = { {0.1f, 0.4f, 0.7f, 0.0f} };
         RenderDevice::Region area = {};
-        area.extent.x = widthFrameBuffer;
-        area.extent.y = heightFrameBuffer;
+        area.extent = { widthFrameBuffer, heightFrameBuffer };
 
         // TODO: DELETE THIS
         device.swapBuffers(surface);
@@ -161,9 +163,7 @@ public:
             glfwPollEvents();
 
             device.drawListBegin();
-            // TODO: default render area, which is same as surface size
             device.drawListBindSurface(surface, clearColor, area);
-
             device.drawListBindPipeline(graphicsPipeline);
 
             device.drawListBindUniformSet(uniformSet);
@@ -174,7 +174,6 @@ public:
             device.drawListEnd();
 
             device.swapBuffers(surface);
-            //glfwSwapBuffers(window);
         }
     }
 
@@ -225,7 +224,7 @@ private:
 
 };
 
-int32 main(int32 argc, char** argv) {
+int32 main() {
     VulkanApplication application;
     application.loop();
 }
