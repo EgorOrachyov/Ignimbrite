@@ -148,10 +148,10 @@ namespace ignimbrite {
     };
 
     struct VulkanGraphicsPipeline {
-        RenderDevice::ID surface;
-        bool withSurfaceOnly;
         VkPipeline pipeline;
         VkPipelineLayout pipelineLayout;
+        bool withSurfaceOnly;
+        RenderDevice::ID surface;
         RenderDevice::ID program;
         RenderDevice::ID uniformLayout;
         RenderDevice::ID vertexLayout;

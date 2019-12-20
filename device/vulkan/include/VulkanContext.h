@@ -36,9 +36,9 @@ namespace ignimbrite {
         void destroyDebugMessenger();
 
         void outDeviceInfoVerbose();
-        bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+        bool checkDeviceExtensionSupport(VkPhysicalDevice inPhysicalDevice);
 
-        void findQueueFamilies(VkPhysicalDevice device, VulkanQueueFamilyIndices &indices);
+        void findQueueFamilies(VkPhysicalDevice inPhysicalDevice, VulkanQueueFamilyIndices &indices);
         void findPresentsFamily(VulkanSurface &surface);
 
         VkResult createDebugUtilsMessengerEXT(
@@ -48,7 +48,7 @@ namespace ignimbrite {
         );
 
         void destroyDebugUtilsMessengerEXT(
-                VkDebugUtilsMessengerEXT debugMessenger,
+                VkDebugUtilsMessengerEXT inDebugMessenger,
                 const VkAllocationCallbacks *pAllocator
         );
 

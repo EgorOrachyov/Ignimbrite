@@ -38,13 +38,7 @@ namespace ignimbrite {
                 VkBuffer &outBuffer, VkDeviceMemory &outBufferMemory
         );
 
-        static void copyBuffer(
-                VulkanContext &context,
-                VkCommandPool commandPool,
-                VkQueue queue,
-                VkBuffer srcBuffer, VkBuffer dstBuffer,
-                VkDeviceSize size
-        );
+        static void copyBuffer(VulkanContext &context, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
         static void updateBufferMemory(
                 VulkanContext &context,
@@ -133,6 +127,11 @@ namespace ignimbrite {
 
         static VulkanDescriptorPool &getAvailableDescriptorPool(
                 VulkanContext &context,
+                VulkanUniformLayout &layout
+        );
+
+        static VkDescriptorSet getAvailableDescriptorSet(
+                VulkanContext& context,
                 VulkanUniformLayout &layout
         );
 

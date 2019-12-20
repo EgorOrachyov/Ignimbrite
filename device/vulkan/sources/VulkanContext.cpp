@@ -165,12 +165,12 @@ namespace ignimbrite {
         }
     }
 
-    void VulkanContext::destroyDebugUtilsMessengerEXT(VkDebugUtilsMessengerEXT debugMessenger,
+    void VulkanContext::destroyDebugUtilsMessengerEXT(VkDebugUtilsMessengerEXT inDebugMessenger,
                                                       const VkAllocationCallbacks *pAllocator) {
         auto pFunction = (PFN_vkDestroyDebugUtilsMessengerEXT)
                 vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
         if (pFunction != nullptr) {
-            pFunction(instance, debugMessenger, pAllocator);
+            pFunction(instance, inDebugMessenger, pAllocator);
         } else {
             throw VulkanException("Cannot load \"vkDestroyDebugUtilsMessengerEXT\" function");
         }
@@ -195,23 +195,23 @@ namespace ignimbrite {
         std::vector<VkPhysicalDevice> devices(deviceCount);
         vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
-        for (auto device: devices) {
-            findQueueFamilies(device, familyIndices);
+        for (auto deviceElement: devices) {
+            findQueueFamilies(deviceElement, familyIndices);
 
             bool queueFamilySupport = familyIndices.isComplete();
-            bool extensionsSupported = checkDeviceExtensionSupport(device);
+            bool extensionsSupported = checkDeviceExtensionSupport(deviceElement);
             bool suitable = queueFamilySupport && extensionsSupported;
 
             if (suitable) {
-                vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-                vkGetPhysicalDeviceMemoryProperties(device, &deviceMemoryProperties);
-                vkGetPhysicalDeviceProperties(device, &deviceProperties);
+                vkGetPhysicalDeviceFeatures(deviceElement, &deviceFeatures);
+                vkGetPhysicalDeviceMemoryProperties(deviceElement, &deviceMemoryProperties);
+                vkGetPhysicalDeviceProperties(deviceElement, &deviceProperties);
 
 #ifdef MODE_DEBUG
                 printf("Physical devices (count: %u). Chosen device info:\n", (uint32) devices.size());
                 outDeviceInfoVerbose();
 #endif
-                physicalDevice = device;
+                physicalDevice = deviceElement;
 
                 break;
             }
@@ -223,12 +223,12 @@ namespace ignimbrite {
     }
 
 
-    bool VulkanContext::checkDeviceExtensionSupport(VkPhysicalDevice device) {
+    bool VulkanContext::checkDeviceExtensionSupport(VkPhysicalDevice inPhysicalDevice) {
         uint32 extensionCount;
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+        vkEnumerateDeviceExtensionProperties(inPhysicalDevice, nullptr, &extensionCount, nullptr);
 
         std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+        vkEnumerateDeviceExtensionProperties(inPhysicalDevice, nullptr, &extensionCount, availableExtensions.data());
 
 #ifdef MODE_DEBUG
         printf("Required (count: %u) physical device extensions:\n", (uint32) deviceExtensions.size());
@@ -258,12 +258,12 @@ namespace ignimbrite {
         return true;
     }
 
-    void VulkanContext::findQueueFamilies(VkPhysicalDevice device, VulkanQueueFamilyIndices &indices) {
+    void VulkanContext::findQueueFamilies(VkPhysicalDevice inPhysicalDevice, VulkanQueueFamilyIndices &indices) {
         uint32 queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+        vkGetPhysicalDeviceQueueFamilyProperties(inPhysicalDevice, &queueFamilyCount, nullptr);
 
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+        vkGetPhysicalDeviceQueueFamilyProperties(inPhysicalDevice, &queueFamilyCount, queueFamilies.data());
 
 #ifdef MODE_DEBUG
         printf("Available queue families: %u\n", queueFamilyCount);

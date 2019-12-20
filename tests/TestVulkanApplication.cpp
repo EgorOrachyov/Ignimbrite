@@ -225,7 +225,7 @@ private:
 
 };
 
-int32 main(int32 argc, char** argv) {
+int32 main() {
     VulkanApplication application;
     application.loop();
 }

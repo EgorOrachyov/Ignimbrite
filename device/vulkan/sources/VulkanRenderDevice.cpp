@@ -512,7 +512,6 @@ namespace ignimbrite {
 
     RenderDevice::ID VulkanRenderDevice::createUniformSet(const UniformSetDesc &setDesc, ID uniformLayout) {
         auto &layout = mUniformLayouts.get(uniformLayout);
-        auto setLayout = layout.setLayout;
 
         const auto &uniformBuffers = setDesc.buffers;
         const auto &uniformTextures = setDesc.textures;
@@ -527,32 +526,7 @@ namespace ignimbrite {
             throw VulkanException("Uniform layout has not textures and buffers to be bounded");
         }
 
-        VkResult result;
-        VkDescriptorSet descriptorSet;
-
-        if (layout.freeSets.empty()) {
-            auto &pool = VulkanUtils::getAvailableDescriptorPool(context, layout);
-
-            VkDescriptorSetAllocateInfo descSetAllocInfo = {};
-            descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-            descSetAllocInfo.pNext = nullptr;
-            descSetAllocInfo.descriptorPool = pool.pool;
-            descSetAllocInfo.descriptorSetCount = 1;
-            descSetAllocInfo.pSetLayouts = &setLayout;
-
-            result = vkAllocateDescriptorSets(context.device, &descSetAllocInfo, &descriptorSet);
-
-            if (result != VK_SUCCESS) {
-                throw VulkanException("Can't allocate descriptor set from descriptor pool");
-            }
-
-            pool.allocatedSets += 1;
-            layout.usedDescriptorSets += 1;
-        } else {
-            descriptorSet = layout.freeSets.back();
-            layout.freeSets.pop_back();
-            layout.usedDescriptorSets += 1;
-        }
+        VkDescriptorSet descriptorSet = VulkanUtils::getAvailableDescriptorSet(context, layout);
 
         std::vector<VkWriteDescriptorSet> writeDescSets;
         writeDescSets.reserve(buffersCount + texturesCount);

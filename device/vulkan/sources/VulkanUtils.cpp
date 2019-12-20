@@ -91,15 +91,13 @@ namespace ignimbrite {
                      outBuffer,
                      outBufferMemory);
 
-        copyBuffer(context, context.transferTempCommandPool, context.transferQueue, stagingBuffer, outBuffer, size);
+        copyBuffer(context, stagingBuffer, outBuffer, size);
 
         vkDestroyBuffer(context.device, stagingBuffer, nullptr);
         vkFreeMemory(context.device, stagingBufferMemory, nullptr);
     }
 
-    void VulkanUtils::copyBuffer(VulkanContext &context, VkCommandPool commandPool, VkQueue queue, VkBuffer srcBuffer,
-                                 VkBuffer dstBuffer,
-                                 VkDeviceSize size) {
+    void VulkanUtils::copyBuffer(VulkanContext &context, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
         VkCommandBuffer commandBuffer = beginTempCommandBuffer(context, context.transferTempCommandPool);
 
         VkBufferCopy copyRegion = {};
@@ -330,7 +328,7 @@ namespace ignimbrite {
         int32_t mipWidth = width;
         int32_t mipHeight = height;
 
-        // i=0 is oiginal image
+        // i=0 is original image
         for (uint32 i = 1; i < mipLevels; i++) {
             barrier.subresourceRange.baseMipLevel = i - 1;
             barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -568,6 +566,40 @@ namespace ignimbrite {
 
         allocateDescriptorPool(context, layout);
         return layout.pools.back();
+    }
+
+    VkDescriptorSet VulkanUtils::getAvailableDescriptorSet(ignimbrite::VulkanContext &context,
+                                                           ignimbrite::VulkanUniformLayout &layout) {
+        VkDescriptorSet descriptorSet;
+
+        if (layout.freeSets.empty()) {
+            VkResult result;
+
+            auto &pool = VulkanUtils::getAvailableDescriptorPool(context, layout);
+
+            VkDescriptorSetAllocateInfo descSetAllocInfo = {};
+            descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            descSetAllocInfo.pNext = nullptr;
+            descSetAllocInfo.descriptorPool = pool.pool;
+            descSetAllocInfo.descriptorSetCount = 1;
+            descSetAllocInfo.pSetLayouts = &layout.setLayout;
+
+            result = vkAllocateDescriptorSets(context.device, &descSetAllocInfo, &descriptorSet);
+
+            if (result != VK_SUCCESS) {
+                throw VulkanException("Can't allocate descriptor set from descriptor pool");
+            }
+
+            pool.allocatedSets += 1;
+            layout.usedDescriptorSets += 1;
+        }
+        else {
+            descriptorSet = layout.freeSets.back();
+            layout.freeSets.pop_back();
+            layout.usedDescriptorSets += 1;
+        }
+
+        return descriptorSet;
     }
 
     void

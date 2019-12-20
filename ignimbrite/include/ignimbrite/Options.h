@@ -2,7 +2,7 @@
 #define IGNIMBRITELIBRARY_OPTIONS_H
 
 #define WITH_GLFW
-/* #undef WITH_GLM */
+#define WITH_GLM
 #define WITH_VULKAN
 #define WITH_SPIRVCROSS
 
