@@ -68,8 +68,8 @@ namespace ignimbrite {
         void createFramebuffers(VulkanSurface &surface);
         void destroyFramebuffers(VulkanSurface &surface);
 
-        void createCmdBuffers(VulkanSurface &surface);
-        void destroyCmdBuffers(VulkanSurface &surface);
+        void createCommandBuffers(VulkanSurface &surface);
+        void destroyCommandBuffers(VulkanSurface &surface);
 
         void deviceWaitIdle();
 
@@ -77,7 +77,6 @@ namespace ignimbrite {
         void destroyCommandPools();
 
         static const uint32 SWAPCHAIN_MIN_IMAGE_COUNT = 2;
-        static const VkFormat SWAPCHAIN_DEFAULT_DEPTH_STENCIL_FORMAT = VkFormat::VK_FORMAT_D32_SFLOAT_S8_UINT;
         static const uint32 DESCRIPTOR_POOL_MAX_SET_COUNT = 8;
         static const VkFormat PREFERRED_FORMAT = VkFormat::VK_FORMAT_B8G8R8A8_UNORM;
         static const VkColorSpaceKHR PREFERRED_COLOR_SPACE = VkColorSpaceKHR::VK_COLORSPACE_SRGB_NONLINEAR_KHR;

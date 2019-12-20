@@ -83,6 +83,7 @@ namespace ignimbrite {
     struct VulkanSwapChain {
         VkSwapchainKHR swapChainKHR;
         VkExtent2D extent;
+        VkFormat depthFormat;
         VulkanFrameBufferFormat framebufferFormat;
         std::vector<VkFramebuffer> framebuffers;
         /** Images and views color attachment 0 */

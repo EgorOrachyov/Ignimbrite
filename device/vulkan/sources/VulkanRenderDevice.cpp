@@ -770,14 +770,13 @@ namespace ignimbrite {
         const auto &vkVertexLayout = mVertexLayouts.get(vertexLayout);
         const auto &vkFramebufferFormat = mFrameBufferFormats.get(framebufferFormat);
 
-        auto framebufferColorAttachmentsCount = vkFramebufferFormat.useDepthStencil ?
-                                                vkFramebufferFormat.numOfAttachments -
-                                                1
-                                                                                    : vkFramebufferFormat.numOfAttachments;
+        auto framebufferColorAttachmentsCount =
+                vkFramebufferFormat.useDepthStencil      ?
+                vkFramebufferFormat.numOfAttachments - 1 :
+                vkFramebufferFormat.numOfAttachments     ;
 
         if (blendStateDesc.attachments.size() != framebufferColorAttachmentsCount) {
-            throw VulkanException(
-                    "Incompatible number of color and blend attachments for specified framebuffer format and blend state");
+            throw VulkanException("Incompatible number of color and blend attachments for specified framebuffer format and blend state");
         }
 
         if (depthStencilStateDesc.depthTestEnable && !vkFramebufferFormat.useDepthStencil) {
@@ -842,7 +841,7 @@ namespace ignimbrite {
                                            colorBlending);
 
         VkPipelineDepthStencilStateCreateInfo depthStencilState = {};
-        if (depthStencilStateDesc.depthTestEnable) {
+        if (depthStencilStateDesc.depthTestEnable || depthStencilStateDesc.stencilTestEnable) {
             VulkanUtils::createDepthStencilState(depthStencilStateDesc, depthStencilState);
         }
 
@@ -882,12 +881,12 @@ namespace ignimbrite {
         return mGraphicsPipelines.move(graphicsPipeline);
     }
 
-    RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(RenderDevice::ID surface, PrimitiveTopology topology,
-                                                                RenderDevice::ID program, RenderDevice::ID vertexLayout,
-                                                                RenderDevice::ID uniformLayout,
-                                                                const RenderDevice::PipelineRasterizationDesc &rasterizationDesc,
-                                                                const RenderDevice::PipelineSurfaceBlendStateDesc &blendStateDesc) {
-
+    RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(ID surface,
+                                                                PrimitiveTopology topology,
+                                                                ID program, ID vertexLayout, ID uniformLayout,
+                                                                const PipelineRasterizationDesc &rasterizationDesc,
+                                                                const PipelineSurfaceBlendStateDesc &blendStateDesc,
+                                                                const PipelineDepthStencilStateDesc &depthStencilStateDesc) {
         const auto &vkProgram = mShaderPrograms.get(program);
         const auto &vkUniformLayout = mUniformLayouts.get(uniformLayout);
         const auto &vkVertexLayout = mVertexLayouts.get(vertexLayout);
@@ -948,6 +947,17 @@ namespace ignimbrite {
         VkPipelineColorBlendStateCreateInfo colorBlending = {};
         VulkanUtils::createSurfaceColorBlendState(blendStateDesc, &attachment, colorBlending);
 
+        VkPipelineDepthStencilStateCreateInfo depthStencilState = {};
+        if (depthStencilStateDesc.depthTestEnable || depthStencilStateDesc.stencilTestEnable) {
+            VulkanUtils::createDepthStencilState(depthStencilStateDesc, depthStencilState);
+        } else {
+            depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+            depthStencilState.depthTestEnable = VK_FALSE;
+            depthStencilState.depthWriteEnable = VK_FALSE;
+            depthStencilState.depthBoundsTestEnable = VK_FALSE;
+            depthStencilState.stencilTestEnable = VK_FALSE;
+        }
+
         VkGraphicsPipelineCreateInfo pipelineInfo = {};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipelineInfo.stageCount = (uint32) shaderStages.size();
@@ -958,7 +968,7 @@ namespace ignimbrite {
         pipelineInfo.pRasterizationState = &rasterizer;
         pipelineInfo.pMultisampleState = &multisampleState;
         pipelineInfo.pColorBlendState = &colorBlending;
-        pipelineInfo.pDepthStencilState = nullptr;
+        pipelineInfo.pDepthStencilState = &depthStencilState;
         pipelineInfo.pDynamicState = &dynamicState;
         pipelineInfo.layout = pipelineLayout;
         pipelineInfo.renderPass = vkFramebufferFormat.renderPass;

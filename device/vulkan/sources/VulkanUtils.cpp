@@ -767,7 +767,7 @@ namespace ignimbrite {
         stateCreateInfo.depthWriteEnable = desc.depthWriteEnable;
         stateCreateInfo.minDepthBounds = 0.0f;
         stateCreateInfo.maxDepthBounds = 0.1f;
-        stateCreateInfo.depthBoundsTestEnable = false;
+        stateCreateInfo.depthBoundsTestEnable = VK_FALSE;
         stateCreateInfo.depthCompareOp = VulkanDefinitions::compareOperation(desc.depthCompareOp);
         stateCreateInfo.stencilTestEnable = desc.stencilTestEnable;
         stateCreateInfo.front = createStencilOperationState(desc.front);

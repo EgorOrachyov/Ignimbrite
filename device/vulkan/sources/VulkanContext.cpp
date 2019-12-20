@@ -576,6 +576,8 @@ namespace ignimbrite {
         VkFormatFeatureFlags featureFlags = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
         VkFormat depthFormat = VulkanUtils::findSupportedFormat(*this, depthFormats, 2, imageTiling, featureFlags);
 
+        swapChain.depthFormat = depthFormat;
+
         for (uint32 i = 0; i < swapChainImageCount; i++) {
             VulkanUtils::createImage(
                     *this,
@@ -685,7 +687,7 @@ namespace ignimbrite {
     void VulkanContext::recreateSwapChain(VulkanSurface &surface) {
         deviceWaitIdle();
 
-        destroyCmdBuffers(surface);
+        destroyCommandBuffers(surface);
         destroyFramebuffers(surface);
         destroyFramebufferFormat(surface);
         destroySwapChain(surface);
@@ -693,23 +695,37 @@ namespace ignimbrite {
         createSwapChain(surface);
         createFramebufferFormat(surface);
         createFramebuffers(surface);
-        createCmdBuffers(surface);
+        createCommandBuffers(surface);
     }
 
     void VulkanContext::createFramebufferFormat(VulkanSurface &surface) {
-        VkAttachmentDescription description = {};
-        description.format = surface.surfaceFormat.format;
-        description.samples = VK_SAMPLE_COUNT_1_BIT;
-        description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        VkAttachmentDescription descriptions[2] = {};
 
-        VkAttachmentReference reference = {};
-        reference.attachment = 0;
-        reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        descriptions[0].format = surface.surfaceFormat.format;
+        descriptions[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        descriptions[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        descriptions[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        descriptions[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        descriptions[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        descriptions[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        descriptions[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+        descriptions[1].format = surface.swapChain.depthFormat;
+        descriptions[1].samples = VK_SAMPLE_COUNT_1_BIT;
+        descriptions[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        descriptions[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        descriptions[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        descriptions[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+        descriptions[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        descriptions[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        VkAttachmentReference references[2] = {};
+
+        references[0].attachment = 0;
+        references[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        references[1].attachment = 1;
+        references[1].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
         VkSubpassDependency dependency = {};
         dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -722,13 +738,13 @@ namespace ignimbrite {
         VkSubpassDescription subpass = {};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &reference;
-        subpass.pDepthStencilAttachment = nullptr;
+        subpass.pColorAttachments = &references[0];
+        subpass.pDepthStencilAttachment = &references[1];
 
         VkRenderPassCreateInfo renderPassInfo = {};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassInfo.attachmentCount = 1;
-        renderPassInfo.pAttachments = &description;
+        renderPassInfo.attachmentCount = 2;
+        renderPassInfo.pAttachments = descriptions;
         renderPassInfo.subpassCount = 1;
         renderPassInfo.pSubpasses = &subpass;
         renderPassInfo.dependencyCount = 1;
@@ -739,14 +755,12 @@ namespace ignimbrite {
 
         result = vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass);
 
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Failed to create render pass for surface");
-        }
+        VK_RESULT_ASSERT(result, "Failed to create render pass for surface");
 
         auto &format = surface.swapChain.framebufferFormat;
         format.renderPass = renderPass;
-        format.useDepthStencil = false;
-        format.numOfAttachments = 1;
+        format.useDepthStencil = true;
+        format.numOfAttachments = 2;
     }
 
     void VulkanContext::destroyFramebufferFormat(VulkanSurface &surface) {
@@ -757,11 +771,12 @@ namespace ignimbrite {
         VkResult result;
 
         auto &swapChain = surface.swapChain;
-        auto &imageViews = swapChain.imageViews;
         auto &framebuffers = swapChain.framebuffers;
-        framebuffers.resize(imageViews.size());
+        framebuffers.resize(swapChain.imageViews.size());
 
         for (size_t i = 0; i < framebuffers.size(); i++) {
+            VkImageView imageViews[2] = { swapChain.imageViews[i], swapChain.depthStencilImageViews[i] };
+
             VkFramebufferCreateInfo framebufferInfo = {};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
             framebufferInfo.pNext = nullptr;
@@ -769,15 +784,13 @@ namespace ignimbrite {
             framebufferInfo.width = swapChain.extent.width;
             framebufferInfo.height = swapChain.extent.height;
             framebufferInfo.layers = 1;
-            framebufferInfo.attachmentCount = 1;
-            framebufferInfo.pAttachments = &imageViews[i];
+            framebufferInfo.attachmentCount = 2;
+            framebufferInfo.pAttachments = imageViews;
             framebufferInfo.renderPass = swapChain.framebufferFormat.renderPass;
 
             result = vkCreateFramebuffer(device, &framebufferInfo, nullptr, &framebuffers[i]);
 
-            if (result != VK_SUCCESS) {
-                throw VulkanException("Filed to create framebuffer for surface");
-            }
+            VK_RESULT_ASSERT(result, "Filed to create framebuffer for surface");
         }
     }
 
@@ -814,7 +827,7 @@ namespace ignimbrite {
         vkDestroyCommandPool(device, transferTempCommandPool, nullptr);
     }
 
-    void VulkanContext::createCmdBuffers(VulkanSurface &surface) {
+    void VulkanContext::createCommandBuffers(VulkanSurface &surface) {
 //    // create command buffers for each swapchain image
 //    std::vector<VkCommandBuffer> &cmdBuffers = surface.drawCmdBuffers;
 //    cmdBuffers.resize(surface.tripleBuffering ? 3 : 2);
@@ -832,7 +845,7 @@ namespace ignimbrite {
 //    }
     }
 
-    void VulkanContext::destroyCmdBuffers(VulkanSurface &surface) {
+    void VulkanContext::destroyCommandBuffers(VulkanSurface &surface) {
 //    vkFreeCommandBuffers(device, this->graphicsCommandPool, surface.drawCmdBuffers.size(), surface.drawCmdBuffers.data());
     }
 

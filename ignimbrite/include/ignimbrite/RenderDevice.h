@@ -279,8 +279,7 @@ namespace ignimbrite {
          * Supports only single color attachment, therefore fragment shader must write result
          * color value only to single out variable with location 0.
          *
-         * Supports no depth or stencil buffering. If you need rendering with possible depth
-         * or stencil test, use offscreen rendering instead, and then present final image in the surface.
+         * Supports depth and stencil buffering.
          *
          * @param surface ID of the target surface for rendering via this pipeline
          * @param topology Rendered primitives topology
@@ -289,6 +288,7 @@ namespace ignimbrite {
          * @param uniformLayout ID of uniform layout, which describes CPU -> shader communication format
          * @param rasterizationDesc Primitives rasterization state descriptor
          * @param blendStateDesc Blending descriptor for single surface color attachment
+         * @param depthStateDesc State describes stencil and depth operations
          *
          * @return ID of the created graphics pipeline
          */
@@ -296,7 +296,8 @@ namespace ignimbrite {
                                           PrimitiveTopology topology,
                                           ID program, ID vertexLayout, ID uniformLayout,
                                           const PipelineRasterizationDesc &rasterizationDesc,
-                                          const PipelineSurfaceBlendStateDesc &blendStateDesc) = 0;
+                                          const PipelineSurfaceBlendStateDesc &blendStateDesc,
+                                          const PipelineDepthStencilStateDesc &depthStateDesc) = 0;
 
         /**
          * @brief Destroys graphics pipeline

@@ -87,6 +87,10 @@ public:
         blendStateDesc.logicOpEnable = false;
         blendStateDesc.logicOp = LogicOperation::Copy;
 
+        RenderDevice::PipelineDepthStencilStateDesc depthStencilStateDesc = {};
+        depthStencilStateDesc.depthTestEnable = false;
+        depthStencilStateDesc.stencilTestEnable = false;
+
         graphicsPipeline = device.createGraphicsPipeline(
                 surface,
                 topology,
@@ -94,11 +98,9 @@ public:
                 vertexLayout,
                 uniformLayout,
                 rasterizationDesc,
-                blendStateDesc
-        );
-
+                blendStateDesc,
+                depthStencilStateDesc);
     }
-
 
     ~VulkanApplication() {
         auto &device = *pDevice;
