@@ -9,11 +9,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
-
-#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+
+#include <fstream>
+
+using namespace ignimbrite;
+typedef ignimbrite::ObjectID ID;
 
 struct Vertex
 {
@@ -26,12 +28,12 @@ struct Vertex
 };
 
 class Vulkan3DTest {
-    typedef ignimbrite::ObjectID ID;
 
 public:
-    void init(const char *objMeshPath, const char *texturePath);
-    void loop();
+    Vulkan3DTest(const char *objMeshPath, const char *texturePath);
     ~Vulkan3DTest();
+
+    void loop();
 
 private:
     void initDevice();
@@ -42,29 +44,30 @@ private:
     void loadTexture(const char *path);
     ID loadShader(const char *vertSpirvPath, const char *fragSpirvPath);
 
-    static void calculateMvp(float viewWidth, float viewHeight,
+    static void calculateMvp(
+            float viewWidth, float viewHeight,
             float fovDegrees, float pitch, float yaw, float z,
-            float *outMat4, float *outModelMat4);
+            float *outMat4, float *outModelMat4
+    );
 
     static void mouseCallback(GLFWwindow *window, double x, double y);
     static void scrollCallback(GLFWwindow *window, double x, double y);
 
 private:
-
     ID surface;
-    GLFWwindow* window;
+    GLFWwindow* window = nullptr;
     std::string name = "Test";
-    uint32_t width = 960, height = 720;
-    uint32_t widthFrameBuffer, heightFrameBuffer;
-    uint32_t extensionsCount;
-    const char* const* extensions;
+    uint32 width = 640, height = 480;
+    uint32 widthFrameBuffer = 0, heightFrameBuffer = 0;
+    uint32 extensionsCount = 0;
+    const char* const* extensions = nullptr;
 
-    ignimbrite::VulkanRenderDevice* pDevice;
+    VulkanRenderDevice* pDevice = nullptr;
 
     ID vertexLayout;
     ID vertexBuffer;
     ID indexBuffer;
-    uint32_t indexCount;
+    uint32 indexCount = 0;
     ID textureId;
     ID textureSamplerId;
 
@@ -82,23 +85,21 @@ private:
     static float prevy;
 
     struct ShaderUniformBuffer {
-        float mvp[16];
-        float model[16];
-        float lightDir[3];
-        float ambient[3];
+        float mvp[16] = {};
+        float model[16] = {};
+        float lightDir[3] = {};
+        float ambient[3] = {};
     } transform;
 };
 
 float Vulkan3DTest::pitch = 0;
 float Vulkan3DTest::yaw = 0;
 float Vulkan3DTest::fov = 70;
-float Vulkan3DTest::z = -20;
+float Vulkan3DTest::z = -80;
 float Vulkan3DTest::prevx = 0;
 float Vulkan3DTest::prevy = 0;
 
-void Vulkan3DTest::init(const char *objMeshPath, const char *texturePath) {
-    using namespace ignimbrite;
-
+Vulkan3DTest::Vulkan3DTest(const char *objMeshPath, const char *texturePath) {
     initDevice();
 
     RenderDevice::VertexBufferLayoutDesc vertexBufferLayoutDesc = {};
@@ -115,7 +116,8 @@ void Vulkan3DTest::init(const char *objMeshPath, const char *texturePath) {
 
     shaderProgram = loadShader(
             "resources/shaders/spirv/vert3d.spv",
-            "resources/shaders/spirv/frag3d.spv");
+            "resources/shaders/spirv/frag3d.spv"
+    );
 
     createUniform();
 
@@ -146,8 +148,6 @@ void Vulkan3DTest::init(const char *objMeshPath, const char *texturePath) {
 }
 
 void Vulkan3DTest::initDevice() {
-    using namespace ignimbrite;
-
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
@@ -185,34 +185,28 @@ Vulkan3DTest::~Vulkan3DTest() {
 }
 
 void Vulkan3DTest::loop() {
-    using namespace ignimbrite;
-
     auto& device = *pDevice;
 
-    RenderDevice::Region area = {};
-    RenderDevice::Color clearColor = {};
-    clearColor.components[0] = clearColor.components[1] = clearColor.components[2] = 0.8f;
+    RenderDevice::Region area = { 0, 0, { widthFrameBuffer, heightFrameBuffer} };
+    RenderDevice::Color clearColor = { { 0.8, 0.8, 0.8, 0.0} };
     std::vector<RenderDevice::Color> clearColors = { clearColor };
 
     while (!glfwWindowShouldClose(window)) {
-        device.swapBuffers(surface);
         glfwPollEvents();
+        glfwSwapBuffers(window);
 
         updateScene();
 
-        glfwGetWindowSize(window, (int*)&width, (int*)&height);
-        area.extent.x = width;
-        area.extent.y = height;
-
+        device.swapBuffers(surface);
         device.drawListBegin();
         {
             device.drawListBindSurface(surface, clearColor, area);
-
             device.drawListBindPipeline(graphicsPipeline);
 
             device.drawListBindUniformSet(uniformSet);
             device.drawListBindVertexBuffer(vertexBuffer, 0, 0);
             device.drawListBindIndexBuffer(indexBuffer, ignimbrite::IndicesType::Uint32, 0);
+
             device.drawListDrawIndexed(indexCount, 1);
         }
         device.drawListEnd();
@@ -263,9 +257,6 @@ void Vulkan3DTest::calculateMvp(float viewWidth, float viewHeight,
 }
 
 void Vulkan3DTest::loadModel(const char *path) {
-
-    using namespace ignimbrite;
-
     std::vector<Vertex> outVertices;
     std::vector<uint32> outIndices;
 
@@ -279,7 +270,7 @@ void Vulkan3DTest::loadModel(const char *path) {
 
     bool useUv = attrib.texcoords.size() != 0;
 
-    uint32_t i = 0;
+    uint32 i = 0;
     for (const auto& shape : shapes)
     {
         for (const auto& index : shape.mesh.indices)
@@ -328,7 +319,7 @@ void Vulkan3DTest::loadModel(const char *path) {
 }
 
 Vulkan3DTest::ID Vulkan3DTest::loadShader(const char *vertSpirvPath, const char *fragSpirvPath) {
-    using namespace ignimbrite;
+
 
     std::vector<RenderDevice::ShaderDataDesc> shaderDescs(2);
 
@@ -350,8 +341,6 @@ Vulkan3DTest::ID Vulkan3DTest::loadShader(const char *vertSpirvPath, const char 
 }
 
 void Vulkan3DTest::loadTexture(const char *path) {
-    using namespace ignimbrite;
-
     int texWidth, texHeight, texChannels;
     stbi_uc* pixels = stbi_load(path, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     uint32 mipmapCount = (uint32)std::floor(std::log2(std::max(texWidth, texHeight))) + 1;
@@ -387,7 +376,7 @@ void Vulkan3DTest::loadTexture(const char *path) {
 }
 
 void Vulkan3DTest::createUniform() {
-    using namespace ignimbrite;
+
 
     RenderDevice::UniformLayoutBufferDesc uniformLayoutBufferDesc = {};
     uniformLayoutBufferDesc.binding = 0;
@@ -438,8 +427,6 @@ void Vulkan3DTest::mouseCallback(GLFWwindow *window, double x, double y) {
 }
 
 void Vertex::getAttributeDescriptions(std::vector<ignimbrite::RenderDevice::VertexAttributeDesc> &outAttrs) {
-    using namespace ignimbrite;
-
     outAttrs.resize(4);
 
     outAttrs[0].location = 0;

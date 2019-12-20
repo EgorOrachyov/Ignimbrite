@@ -17,7 +17,7 @@ if (WITH_VULKAN AND WITH_GLFW)
     target_link_libraries(TestVulkanApplication PRIVATE glfw)
 endif()
 
-if (WITH_VULKAN AND WITH_GLFW)
+if (WITH_VULKAN AND WITH_GLFW AND WITH_GLM AND WITH_STBIMAGE AND WITH_TINYOBJLOADER)
     add_executable(TestVulkan3D TestVulkan3D.cpp)
     target_link_libraries(TestVulkan3D PRIVATE Ignimbrite)
     target_link_libraries(TestVulkan3D PRIVATE VulkanDevice)
