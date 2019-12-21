@@ -163,7 +163,9 @@ namespace ignimbrite {
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                      stagingBuffer, stagingBufferMemory);
 
-        updateBufferMemory(context, stagingBufferMemory, 0, imageSize, imageData);
+        if (imageData != nullptr) {
+            updateBufferMemory(context, stagingBufferMemory, 0, imageSize, imageData);
+        }
 
         createImage(context, width, height, depth, mipLevels, imageType, format, tiling,
                 // for copying and sampling in shaders

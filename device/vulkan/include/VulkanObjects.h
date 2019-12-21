@@ -71,6 +71,7 @@ namespace ignimbrite {
         VkCommandBuffer buffer = VK_NULL_HANDLE;
         VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
         ObjectID surfaceId;
+        bool surfaceAttached = false;
         bool frameBufferAttached = false;
         bool pipelineAttached = false;
         bool uniformSetAttached = false;
