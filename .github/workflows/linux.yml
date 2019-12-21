@@ -25,10 +25,11 @@ jobs:
       - name: Install Vulkan SDK
         run: |
           mkdir vulkan
-          wget -O sdk.tar.gz "https://sdk.lunarg.com/sdk/download/1.1.130.0/linux/vulkansdk-sdk.tar.gz?u="
+          wget -O sdk.tar.gz "https://sdk.lunarg.com/sdk/download/1.1.130.0/linux/vulkansdk-sdk.tar.gz?Human=true"
           tar -C vulkan -xf sdk.tar.gz
           cd vulkan/1.1.130.0
-          sh setup-env.sh
+          echo "sh setup-env.sh" >> ~/.bash_profile
+          source ~/.bash_profile
       - name: Build library modules and tests
         run: |
           mkdir build
