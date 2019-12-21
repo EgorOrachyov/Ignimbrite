@@ -30,6 +30,8 @@ The module will also define two cache variables::
 
 #]=======================================================================]
 
+message(STATUS "Looking for Vulkan in $ENV{VULKAN_SDK}")
+
 if(WIN32)
     find_path(Vulkan_INCLUDE_DIR
         NAMES vulkan/vulkan.h
