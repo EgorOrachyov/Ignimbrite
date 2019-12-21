@@ -20,8 +20,6 @@ jobs:
       - uses: actions/checkout@v1
       - name: Install Vulkan SDK
         run: |
-          sudo apt update
-          sudo apt dist-upgrade
           mkdir vulkan
           wget -O sdk.tar.gz "https://sdk.lunarg.com/sdk/download/1.1.130.0/linux/vulkansdk-sdk.tar.gz?u="
           tar -C vulkan -xf sdk.tar.gz
