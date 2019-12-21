@@ -29,6 +29,6 @@ jobs:
         run: |
           echo $VulkanSDK
           mkdir build
-          chdir build
+          cd build
           cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_GLFW=YES -DWITH_VULKAN=YES -DWITH_TESTS=YES
           cmake --build .
