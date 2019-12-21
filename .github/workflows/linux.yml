@@ -32,10 +32,10 @@ jobs:
           PATH="$VULKAN_SDK/bin:$PATH"
           LD_LIBRARY_PATH="$VULKAN_SDK/lib:${LD_LIBRARY_PATH:-}"
           VK_LAYER_PATH="$VULKAN_SDK/etc/vulkan/explicit_layer.d"
-          echo $VULKAN_SDK >> ~/.bash_profile
-          echo $PATH >> ~/.bash_profile
-          echo $LD_LIBRARY_PATH >> ~/.bash_profile
-          echo $VK_LAYER_PATH >> ~/.bash_profile
+          echo "VULKAN_SDK=$VULKAN_SDK">> ~/.bash_profile
+          echo "PATH=$PATH" >> ~/.bash_profile
+          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> ~/.bash_profile
+          echo "VK_LAYER_PATH=$VK_LAYER_PATH" >> ~/.bash_profile
           source ~/.bash_profile
       - name: Build library modules and tests
         run: |
