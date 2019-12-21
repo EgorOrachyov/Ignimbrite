@@ -71,6 +71,24 @@ public:
     }
 
     ~OffscreenRendering() {
+        device->destroyGraphicsPipeline(surfacePass.pipeline);
+        device->destroyUniformSet(surfacePass.uniformSet);
+        device->destroyUniformLayout(surfacePass.uniformLayout);
+        device->destroySampler(surfacePass.sampler);
+        device->destroyVertexBuffer(surfacePass.vertexBuffer);
+        device->destroyVertexLayout(surfacePass.vertexLayout);
+        device->destroyShaderProgram(surfacePass.shader);
+
+        device->destroyGraphicsPipeline(offscreenPass.pipeline);
+        device->destroyFramebuffer(offscreenPass.frameBuffer);
+        device->destroyFramebufferFormat(offscreenPass.frameBufferFormat);
+        device->destroyUniformLayout(offscreenPass.uniformLayout);
+        device->destroyTexture(offscreenPass.colorTexture);
+        device->destroyTexture(offscreenPass.depthTexture);
+        device->destroyVertexBuffer(offscreenPass.vertexBuffer);
+        device->destroyVertexLayout(offscreenPass.vertexLayout);
+        device->destroyShaderProgram(offscreenPass.shader);
+
         VulkanExtensions::destroySurface(*device, surface);
         delete device;
 
@@ -249,9 +267,6 @@ public:
                 surfacePass.shader,
                 surfacePass.vertexLayout,
                 surfacePass.uniformLayout,
-//                offscreenPass.shader,
-//                offscreenPass.vertexLayout,
-//                offscreenPass.uniformLayout,
                 rasterizationDesc,
                 blendStateDesc,
                 depthStencilStateDesc
@@ -301,21 +316,12 @@ public:
                 device->drawListBindPipeline(offscreenPass.pipeline);
                 device->drawListBindVertexBuffer(offscreenPass.vertexBuffer, 0, 0);
                 device->drawListDraw(3, 1);
-                device->drawListEnd();
-                device->drawListBegin();
                 device->drawListBindSurface(surface, color, region);
                 device->drawListBindPipeline(surfacePass.pipeline);
                 device->drawListBindUniformSet(surfacePass.uniformSet);
                 device->drawListBindVertexBuffer(surfacePass.vertexBuffer, 0, 0);
                 device->drawListDraw(6, 1);
                 device->drawListEnd();
-
-//                device->drawListBegin();
-//                device->drawListBindSurface(surface, color, region);
-//                device->drawListBindPipeline(surfacePass.pipeline);
-//                device->drawListBindVertexBuffer(offscreenPass.vertexBuffer, 0, 0);
-//                device->drawListDraw(3, 1);
-//                device->drawListEnd();
             }
         }
     }
