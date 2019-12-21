@@ -195,15 +195,15 @@ public:
         surfacePass.uniformLayout = device->createUniformLayout(uniformLayoutDesc);
 
         RenderDevice::SamplerDesc samplerDesc = {};
-        samplerDesc.min = SamplerFilter::Nearest;
-        samplerDesc.mag = SamplerFilter::Nearest;
+        samplerDesc.min = SamplerFilter::Linear;
+        samplerDesc.mag = SamplerFilter::Linear;
         samplerDesc.minLod = 0.0f;
         samplerDesc.maxLod = 1.0f;
         samplerDesc.useAnisotropy = true;
         samplerDesc.anisotropyMax = 1.0f;
         samplerDesc.color = SamplerBorderColor::Black;
-        samplerDesc.u = SamplerRepeatMode::ClampToBorder;
-        samplerDesc.v = SamplerRepeatMode::ClampToBorder;
+        samplerDesc.u = SamplerRepeatMode::Repeat;
+        samplerDesc.v = SamplerRepeatMode::Repeat;
         samplerDesc.anisotropyMax = 16;
         samplerDesc.mipmapMode = SamplerFilter::Nearest;
         samplerDesc.mipLodBias = 0;
@@ -238,9 +238,9 @@ public:
         blendStateDesc.logicOp = LogicOperation::Copy;
 
         RenderDevice::PipelineDepthStencilStateDesc depthStencilStateDesc = {};
-        depthStencilStateDesc.depthTestEnable = true;
+        depthStencilStateDesc.depthTestEnable = false;
         depthStencilStateDesc.depthCompareOp = CompareOperation::Less;
-        depthStencilStateDesc.depthWriteEnable = true;
+        depthStencilStateDesc.depthWriteEnable = false;
         depthStencilStateDesc.stencilTestEnable = false;
 
         surfacePass.pipeline = device->createGraphicsPipeline(
@@ -249,6 +249,9 @@ public:
                 surfacePass.shader,
                 surfacePass.vertexLayout,
                 surfacePass.uniformLayout,
+//                offscreenPass.shader,
+//                offscreenPass.vertexLayout,
+//                offscreenPass.uniformLayout,
                 rasterizationDesc,
                 blendStateDesc,
                 depthStencilStateDesc
@@ -294,16 +297,25 @@ public:
 
             {
                 device->drawListBegin();
-                device->drawListBindFramebuffer(offscreenPass.frameBuffer, colors, 0.0f, 0, region);
+                device->drawListBindFramebuffer(offscreenPass.frameBuffer, colors, 1.0f, 0, region);
                 device->drawListBindPipeline(offscreenPass.pipeline);
                 device->drawListBindVertexBuffer(offscreenPass.vertexBuffer, 0, 0);
                 device->drawListDraw(3, 1);
+                device->drawListEnd();
+                device->drawListBegin();
                 device->drawListBindSurface(surface, color, region);
                 device->drawListBindPipeline(surfacePass.pipeline);
                 device->drawListBindUniformSet(surfacePass.uniformSet);
                 device->drawListBindVertexBuffer(surfacePass.vertexBuffer, 0, 0);
                 device->drawListDraw(6, 1);
                 device->drawListEnd();
+
+//                device->drawListBegin();
+//                device->drawListBindSurface(surface, color, region);
+//                device->drawListBindPipeline(surfacePass.pipeline);
+//                device->drawListBindVertexBuffer(offscreenPass.vertexBuffer, 0, 0);
+//                device->drawListDraw(3, 1);
+//                device->drawListEnd();
             }
         }
     }

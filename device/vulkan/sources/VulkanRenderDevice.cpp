@@ -1032,7 +1032,7 @@ namespace ignimbrite {
             VkCommandBuffer commandBuffer = drawList.buffer;
 
             vkCmdEndRenderPass(commandBuffer);
-            vkEndCommandBuffer(commandBuffer);
+            //vkEndCommandBuffer(commandBuffer);
 
             VkPipelineStageFlags pipelineStageFlags[1] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
@@ -1047,13 +1047,15 @@ namespace ignimbrite {
             submitInfo.commandBufferCount = 1;
             submitInfo.pCommandBuffers = &commandBuffer;
 
-            result = vkQueueSubmit(context.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+            //result = vkQueueSubmit(context.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 
-            VK_RESULT_ASSERT(result, "Failed to submit command buffer for rendering");
+            VulkanUtils::endTempCommandBuffer(context, commandBuffer, context.graphicsQueue, context.graphicsTempCommandPool);
+
+            //VK_RESULT_ASSERT(result, "Failed to submit command buffer for rendering");
 
             // TODO: remove wait idle (wait on special fence for queue?)
-            vkQueueWaitIdle(context.graphicsQueue);
-            vkFreeCommandBuffers(context.device, context.graphicsTempCommandPool, 1, &commandBuffer);
+            //vkQueueWaitIdle(context.graphicsQueue);
+            //vkFreeCommandBuffers(context.device, context.graphicsTempCommandPool, 1, &commandBuffer);
         }
         else {
             // submit for rendering and wait
@@ -1216,10 +1218,10 @@ namespace ignimbrite {
         VkCommandBuffer cmd = drawList.buffer;
         VkFramebuffer surfFramebuffer = surface.swapChain.framebuffers[surface.currentImageIndex];
 
-        uint32_t viewportOffsetX = area.xOffset;
-        uint32_t viewportOffsetY = area.yOffset;
-        uint32_t viewportWidth = area.extent.x;
-        uint32_t viewportHeight = area.extent.y;
+        uint32 viewportOffsetX = area.xOffset;
+        uint32 viewportOffsetY = area.yOffset;
+        uint32 viewportWidth = area.extent.x;
+        uint32 viewportHeight = area.extent.y;
 
         VkClearValue clearValues[2];
         clearValues[0].color = {
@@ -1297,11 +1299,9 @@ namespace ignimbrite {
             };
         }
 
-        {
-            VkClearValue depthStencilClearValues = {};
-            depthStencilClearValues.depthStencil = { clearDepth, clearStencil };
-            clearValues.push_back(depthStencilClearValues);
-        }
+        VkClearValue depthStencilClearValues = {};
+        depthStencilClearValues.depthStencil = { clearDepth, clearStencil };
+        clearValues.back() = depthStencilClearValues;
 
         VkRenderPassBeginInfo renderPassBeginInfo = {};
         renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
