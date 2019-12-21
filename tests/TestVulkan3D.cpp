@@ -318,7 +318,7 @@ void Vulkan3DTest::loadModel(const char *path) {
                                              indexCount * sizeof(uint32), outIndices.data());
 }
 
-Vulkan3DTest::ID Vulkan3DTest::loadShader(const char *vertSpirvPath, const char *fragSpirvPath) {
+ID Vulkan3DTest::loadShader(const char *vertSpirvPath, const char *fragSpirvPath) {
 
 
     std::vector<RenderDevice::ShaderDataDesc> shaderDescs(2);
@@ -452,8 +452,7 @@ int main(int argc, char **argv) {
         return 0;
     }
     
-    Vulkan3DTest test;
-    test.init(argv[1], argv[2]);
+    Vulkan3DTest test(argv[1], argv[2]);
     test.loop();
 }
 
