@@ -28,18 +28,13 @@ jobs:
           wget -O sdk.tar.gz "https://sdk.lunarg.com/sdk/download/1.1.130.0/linux/vulkansdk-sdk.tar.gz?Human=true"
           tar -C vulkan -xf sdk.tar.gz
           cd vulkan/1.1.130.0
-          VULKAN_SDK="$PWD/x86_64"
-          PATH="$VULKAN_SDK/bin:$PATH"
-          LD_LIBRARY_PATH="$VULKAN_SDK/lib:${LD_LIBRARY_PATH:-}"
-          VK_LAYER_PATH="$VULKAN_SDK/etc/vulkan/explicit_layer.d"
-          echo "VULKAN_SDK=$VULKAN_SDK" >> ~/.bash_profile
-          echo "PATH=$PATH" >> ~/.bash_profile
-          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> ~/.bash_profile
-          echo "VK_LAYER_PATH=$VK_LAYER_PATH" >> ~/.bash_profile
-          source ~/.bash_profile
+          echo ::set-env name=VULKAN_SDK::"$PWD/x86_64"
+          echo ::set-env name=PATH::"$VULKAN_SDK/bin:$PATH"
+          echo ::set-env name=LD_LIBRARY_PATH::"$VULKAN_SDK/lib:${LD_LIBRARY_PATH:-}"
+          echo ::set-env name=VK_LAYER_PATH::"$VULKAN_SDK/etc/vulkan/explicit_layer.d"
       - name: Build library modules and tests
         run: |
-          source ~/.bash_profile
+          echo $VULKAN_SDK
           mkdir build
           cd build
           cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_GLFW=YES -DWITH_VULKAN=YES -DWITH_TESTS=YES
