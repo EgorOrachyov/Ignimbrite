@@ -22,7 +22,7 @@ environment:
 install:
   - curl -L --output VulkanSDK.exe https://sdk.lunarg.com/sdk/download/1.1.130.0/windows/VulkanSDK-1.1.130.0-Installer.exe?Human=true
   - start .\VulkanSDK /S
-  - export VULKAN_SDK="C:\VulkanSDK\1.1.130.0"
+  - setx /M VULKAN_SDK "C:\VulkanSDK\1.1.130.0"
 
 build_script:
   - echo $VULKAN_SDK
