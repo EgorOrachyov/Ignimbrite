@@ -543,7 +543,7 @@ namespace ignimbrite {
         for (uint32 i = 0; i < swapChainImageCount; i++) {
             VkImageViewCreateInfo viewInfo = {};
             viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            viewInfo.pNext = NULL;
+            viewInfo.pNext = nullptr;
             viewInfo.flags = 0;
 
             viewInfo.image = swapChain.images[i];

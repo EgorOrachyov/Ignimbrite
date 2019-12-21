@@ -1,0 +1,1 @@
+#version 450layout (location = 0) out vec4 outputColor;layout (location = 0) in vec2 screenCoords;layout (binding = 0) uniform sampler2D texture0;void main() {    outputColor = vec4(texture(texture0, screenCoords.xy).r, 1.0f, 0.0f, 1.0f);}
