@@ -6,7 +6,7 @@
 #define IGNIMBRITELIBRARY_VULKANERRORS_H
 
 #include <exception>
-#include <string>
+#include <cstring>
 
 namespace ignimbrite {
 

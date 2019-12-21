@@ -16,6 +16,7 @@ struct TestObjectIDBuffer {
     static void test1() {
         ObjectIDBuffer<std::string> strings;
 
+
         auto s1id = strings.add("hello");
         auto s2id = strings.add("world");
 
