@@ -18,10 +18,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v1
-      - name: Instal RandR (libxrandr)
+      - name: Instal GLFW dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install libxrandr-dev
+          sudo apt-get install libxrandr-dev libxinerama-dev xorg-dev
       - name: Install Vulkan SDK
         run: |
           mkdir vulkan
