@@ -28,7 +28,14 @@ jobs:
           wget -O sdk.tar.gz "https://sdk.lunarg.com/sdk/download/1.1.130.0/linux/vulkansdk-sdk.tar.gz?Human=true"
           tar -C vulkan -xf sdk.tar.gz
           cd vulkan/1.1.130.0
-          echo "sh setup-env.sh" >> ~/.bash_profile
+          VULKAN_SDK="$(dirname "$(readlink -f "${BASH_SOURCE:-$_}" )" )/x86_64"
+          PATH="$VULKAN_SDK/bin:$PATH"
+          LD_LIBRARY_PATH="$VULKAN_SDK/lib:${LD_LIBRARY_PATH:-}"
+          VK_LAYER_PATH="$VULKAN_SDK/etc/vulkan/explicit_layer.d"
+          echo $VULKAN_SDK >> ~/.bash_profile
+          echo PATH >> ~/.bash_profile
+          echo LD_LIBRARY_PATH >> ~/.bash_profile
+          echo VK_LAYER_PATH >> ~/.bash_profile
           source ~/.bash_profile
       - name: Build library modules and tests
         run: |
