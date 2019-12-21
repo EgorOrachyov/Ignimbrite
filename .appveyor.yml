@@ -17,14 +17,19 @@ configuration:
 
 environment:
   matrix:
-    - TOOLCHAIN: msvc14
+    - ARCH: x64
+      COMPILER: MinGW
 
 install:
-  - curl -L --output VulkanSDK.exe https://sdk.lunarg.com/sdk/download/1.1.130.0/windows/VulkanSDK-1.1.130.0-Installer.exe?Human=true
+  # Install Vulkan SDK
+  - curl -L --output VulkanSDK.exe
+    https://sdk.lunarg.com/sdk/download/1.1.130.0/windows/VulkanSDK-1.1.130.0-Installer.exe?Human=true
   - start .\VulkanSDK /S
 
 build_script:
+  # Build library and tests
   - mkdir build
   - cd build
-  - cmake -E env VULKAN_SDK="C:\VulkanSDK\1.1.130.0" cmake .. %CMAKE_CONFIGURE_FLAGS% -DCMAKE_BUILD_TYPE=Debug -DWITH_GLFW=YES -DWITH_VULKAN=YES -DWITH_TESTS=YES
+  - cmake -E env VULKAN_SDK="C:\VulkanSDK\1.1.130.0"
+    cmake .. %CMAKE_CONFIGURE_FLAGS% -DCMAKE_BUILD_TYPE=Debug -DWITH_GLFW=YES -DWITH_VULKAN=YES -DWITH_TESTS=YES
   - cmake --build .

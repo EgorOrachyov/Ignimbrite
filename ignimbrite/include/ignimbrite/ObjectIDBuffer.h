@@ -13,13 +13,13 @@
 
 namespace ignimbrite {
 
-/**
- * ID indexed buffer. Allows to access objects via unique ID in O(1).
- * Supported operations: add, get, remove.
- *
- * @note Not thread safe
- * @tparam T Type of stored objects
- */
+    /**
+     * ID indexed buffer. Allows to access objects via unique ID in O(1).
+     * Supported operations: add, get, remove.
+     *
+     * @note Not thread safe
+     * @tparam T Type of stored objects
+     */
     template<typename T>
     class ObjectIDBuffer {
     public:
@@ -70,10 +70,8 @@ namespace ignimbrite {
                      const std::vector<uint32> &freeGensIndices);
 
             bool operator!=(const Iterator &other);
-
-            T &operator*();
-
             void operator++();
+            T &operator*();
 
             ObjectID getID();
 
