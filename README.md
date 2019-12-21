@@ -2,7 +2,7 @@
 
 ![MacOS build](https://github.com/EgorOrachyov/VulkanRenderer/workflows/MacOS/badge.svg)
 ![Linux build](https://github.com/EgorOrachyov/VulkanRenderer/workflows/Linux/badge.svg)
-![Windows build](https://github.com/EgorOrachyov/VulkanRenderer/workflows/Windows/badge.svg)
+[![Windows build](https://ci.appveyor.com/api/projects/status/2432f94ocyqo8kly/branch/master?svg=true)](https://ci.appveyor.com/project/EgorOrachyov/ignimbrite/branch/master)
 
 C/C++ library for visualization dynamic 3D scene with GPU hardware acceleration via Vulkan API
 
