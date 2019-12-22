@@ -24,6 +24,7 @@ jobs:
           curl -L --output VulkanSDK.exe https://sdk.lunarg.com/sdk/download/1.1.130.0/windows/VulkanSDK-1.1.130.0-Installer.exe?Human=true
           VulkanSDK.exe /S
           echo Current Vulkan SDK location: %VULKAN_SDK%
+          d:
           cd %VULKAN_SDK%
           dir
         env:
