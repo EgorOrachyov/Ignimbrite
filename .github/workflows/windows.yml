@@ -25,8 +25,7 @@ jobs:
           VulkanSDK.exe /S
           curl -L --output VulkanRuntime.exe https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-runtime.exe?u=
           VulkanRuntime.exe /S
-          ::set-env name={VULKAN_SDK}::{C:/VulkanSDK/1.1.130.0}
-          echo Current Vulkan SDK location: %VULKAN_SDK%
+          echo Current Vulkan SDK location: $VULKAN_SDK
       - name: Build library modules and tests
         shell: bash
         run: |
