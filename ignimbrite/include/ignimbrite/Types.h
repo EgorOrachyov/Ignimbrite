@@ -6,6 +6,7 @@
 #define IGNIMBRITELIBRARY_TYPES_H
 
 #include <inttypes.h>
+#include <ignimbrite/Platform.h>
 
 namespace ignimbrite {
 
