@@ -38,7 +38,7 @@ build_script:
   - mkdir build
   - cd build
 
-  - if [%COMPILER%]==[MinGW-w64] cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=C:\ming-w64 -DCMAKE_BUILD_TYPE=%BUILD_TYPE%
+  - if [%COMPILER%]==[MinGW-w64] cmake .. -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=C:\ming-w64 -DCMAKE_BUILD_TYPE=%BUILD_TYPE%
     -DCMAKE_BUILD_TYPE=%BUILD_TYPE% -DWITH_GLFW=YES -DWITH_VULKAN=YES -DWITH_TESTS=YES
 
   - cmake --build .
