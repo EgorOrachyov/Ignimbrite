@@ -26,15 +26,19 @@ install:
   - curl -L --output VulkanSDK.exe
     https://sdk.lunarg.com/sdk/download/1.1.130.0/windows/VulkanSDK-1.1.130.0-Installer.exe?Human=true
   - start .\VulkanSDK /S
+  - set VULKAN_SDK="C:\VulkanSDK\1.1.130.0"
 
   # Configure MinGW 64
   - if [%COMPILER%]==[MinGW-w64] set CC=C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\bin
   - if [%COMPILER%]==[MinGW-w64] set CXX=C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\bin
+  - if [%COMPILER%]==[MinGW-w64] set PATH=C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\bin;%PATH%
 
 build_script:
   # Build library and tests
   - mkdir build
   - cd build
-  - cmake -E env VULKAN_SDK="C:\VulkanSDK\1.1.130.0"
-    cmake .. %CMAKE_CONFIGURE_FLAGS% -DCMAKE_BUILD_TYPE=%BUILD_TYPE% -DWITH_GLFW=YES -DWITH_VULKAN=YES -DWITH_TESTS=YES
+
+  - if [%COMPILER%]==[MinGW-w64] cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=C:\ming-w64 -DCMAKE_BUILD_TYPE=%BUILD_TYPE%
+    -DCMAKE_BUILD_TYPE=%BUILD_TYPE% -DWITH_GLFW=YES -DWITH_VULKAN=YES -DWITH_TESTS=YES
+
   - cmake --build .
