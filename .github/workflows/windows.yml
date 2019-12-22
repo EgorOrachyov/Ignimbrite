@@ -22,7 +22,7 @@ jobs:
         shell: cmd
         run: |
           curl -L --output VulkanSDK.exe https://sdk.lunarg.com/sdk/download/1.1.130.0/windows/VulkanSDK-1.1.130.0-Installer.exe?Human=true
-          start /b VulkanSDK /S
+          VulkanSDK.exe /S
           echo ::set-env name=VULKAN_SDK::"C:\VulkanSDK\1.1.130.0"
       - name: Build library modules and tests
         shell: bash
