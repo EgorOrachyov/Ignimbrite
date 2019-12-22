@@ -17,12 +17,17 @@ or another data in real-time with high level of customization.
 **Note**: project under heavy development. It is not ready for usage.
 
 ## Features
+
+### API
 * Back-end graphical interface
 * Material system
 * Mesh system
 * Post-process effects manager
 * Graphical pipeline
 * Shader compilation and reflection
+
+### Graphical back-ends
+* Vulkan API 1.1.130.0 on macOS, Window and Linux
 
 ## Platforms
 * Windows
@@ -43,16 +48,28 @@ or another data in real-time with high level of customization.
 
 ## Get and build 
 
-This project uses git as primary CVS and CMake 3.11 as build configuration tool.
+This project uses git as primary VCS and CMake 3.11 as build configuration tool.
 Project language is C++11 with std library 11. The following commands allow to get 
-repository and build the minimal library image in /build folder.
+repository:
 
 ```
 $ git clone https://github.com/EgorOrachyov/Ignimbrite.git
 $ cd Ignimbrite
+```
+
+Create build folder, configure and run build:
+
+```
 $ mkdir build
 $ cd build
-$ cmake .. 
+$ cmake .. -DCMAKE_BUILD_MODE=Debug
+$ cmake --build .
+```
+
+Build with all enabled options (see cmake options below):
+
+```
+$ cmake .. -DCMAKE_BUILD_MODE=Debug -DWITH_GLFW=ON -DWITH_VULKAN=ON -DWITH_TESTS=ON 
 $ cmake --build .
 ```
 
@@ -69,12 +86,8 @@ library image. You can set the following options to get desired functionality:
 * WITH_TINYOBJLOADER=(YES/NO) - use tiny obj loader to import geometry for tests.
 * WITH_TESTS=(YES/NO) - build tests executables with samples and test examples.
 
-By default all the options are set in 'NO', therefore will be built only minimal library image. All the
-flags can be configured when cmake configuration build is called:
-
-```
-$ cmake .. -DWITH_GLFW=ON -DWITH_VULKAN=ON -DWITH_TESTS=ON -DWITH_SPIRVCROSS=ON
-```
+By default all the options are set in 'YES', except Vulkan and GLFW usage, because
+they may require additional dependency setup process on you machine. 
 
 ### Dependencies setup
 
