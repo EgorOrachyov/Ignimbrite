@@ -1,7 +1,7 @@
 #version 450
 
-layout (location = 0) in vec3 position;
-layout (location = 0) out vec2 screenCoords;
+layout(location = 0) in vec3 position;
+layout(location = 0) out vec2 screenCoords;
 
 void main() {
     screenCoords = position.xy;
