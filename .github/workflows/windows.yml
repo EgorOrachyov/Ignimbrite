@@ -1,0 +1,33 @@
+name: Windows
+
+on:
+  push:
+    branches:
+      - master
+      - development
+      - release
+  pull_request:
+    branches:
+      - master
+      - development
+      - release
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install Vulkan SDK
+        shell: bash
+        run: |
+          curl -L --output VulkanSDK.exe https://sdk.lunarg.com/sdk/download/1.1.130.0/windows/VulkanSDK-1.1.130.0-Installer.exe?Human=true
+          start .\VulkanSDK /S
+          echo ::set-env name=VULKAN_SDK::"C:\VulkanSDK\1.1.130.0"
+      - name: Build library modules and tests
+        shell: bash
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_GLFW=YES -DWITH_VULKAN=YES -DWITH_TESTS=YES
+          cmake --build .
