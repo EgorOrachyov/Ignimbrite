@@ -23,12 +23,14 @@ jobs:
         run: |
           curl -L --output VulkanSDK.exe https://sdk.lunarg.com/sdk/download/1.1.130.0/windows/VulkanSDK-1.1.130.0-Installer.exe?Human=true
           VulkanSDK.exe /S
-          echo ::set-env name=VULKAN_SDK::"C:\VulkanSDK\1.1.130.0"
-          cd %VULKAN_SDK%
-          dir
+          curl -L --output VulkanRuntime.exe https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-runtime.exe?u=
+          VulkanRuntime.exe /S
+          echo Current Vulkan SDK location:
+          echo %VULKAN_SDK%
       - name: Build library modules and tests
         shell: bash
         run: |
+          dir
           mkdir build
           cd build
           cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_GLFW=YES -DWITH_VULKAN=YES -DWITH_TESTS=YES
