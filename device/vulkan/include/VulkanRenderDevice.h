@@ -12,8 +12,7 @@
 #include <ignimbrite/ObjectIDBuffer.h>
 #include <VulkanObjects.h>
 #include <VulkanContext.h>
-#include <vulkan/vulkan.h>
-#include "VulkanUtils.h"
+#include <VulkanUtils.h>
 
 namespace ignimbrite {
 
@@ -47,9 +46,6 @@ namespace ignimbrite {
 
         ID createTexture(const TextureDesc &textureDesc) override;
         void destroyTexture(ID texture) override;
-
-        ID getSurface(const std::string &surfaceName) override;
-        void getSurfaceSize(ID surface, uint32 &width, uint32 &height) override;
 
         ID createUniformSet(const UniformSetDesc &setDesc, ID uniformLayout) override;
         void destroyUniformSet(ID set) override;
@@ -86,10 +82,14 @@ namespace ignimbrite {
         void drawListBindUniformSet(ID uniformLayout) override;
         void drawListBindVertexBuffer(ID vertexBuffer, uint32 binding, uint32 offset) override;
         void drawListBindIndexBuffer(ID indexBuffer, IndicesType indicesType, uint32 offset) override;
-        void drawListDraw(uint32 verticesCount, uint32 instancesCount) override;
 
+        void drawListDraw(uint32 verticesCount, uint32 instancesCount) override;
         void drawListDrawIndexed(uint32 indicesCount, uint32 instancesCount) override;
+
+        ID getSurface(const std::string &surfaceName) override;
+        void getSurfaceSize(ID surface, uint32 &width, uint32 &height) override;
         void swapBuffers(ID surfaceId) override;
+
 
     private:
 

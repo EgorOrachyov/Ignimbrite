@@ -577,7 +577,7 @@ namespace ignimbrite {
         poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolCreateInfo.poolSizeCount = poolSizesCount;
         poolCreateInfo.pPoolSizes = poolSizes;
-        poolCreateInfo.maxSets = VulkanContext::DESCRIPTOR_POOL_MAX_SET_COUNT;
+        poolCreateInfo.maxSets = VulkanContext::DESCRIPTOR_POOL_INITIAL_SET_COUNT;
 
         result = vkCreateDescriptorPool(context.device, &poolCreateInfo, nullptr, &pool);
 
@@ -587,7 +587,7 @@ namespace ignimbrite {
 
         VulkanDescriptorPool vulkanDescriptorPool = {};
         vulkanDescriptorPool.allocatedSets = 0;
-        vulkanDescriptorPool.maxSets = VulkanContext::DESCRIPTOR_POOL_MAX_SET_COUNT;
+        vulkanDescriptorPool.maxSets = VulkanContext::DESCRIPTOR_POOL_INITIAL_SET_COUNT;
         vulkanDescriptorPool.pool = pool;
 
         layout.pools.push_back(vulkanDescriptorPool);
@@ -792,8 +792,7 @@ namespace ignimbrite {
         return state;
     }
 
-    VkCommandPool
-    VulkanUtils::createCommandPool(VulkanContext &context, VkCommandPoolCreateFlags flags, uint32_t queueFamilyIndex) {
+    VkCommandPool VulkanUtils::createCommandPool(VulkanContext &context, VkCommandPoolCreateFlags flags, uint32_t queueFamilyIndex) {
         VkCommandPoolCreateInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         info.pNext = nullptr;

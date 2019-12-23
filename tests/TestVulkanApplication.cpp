@@ -35,7 +35,6 @@ public:
         surface = VulkanExtensions::createSurfaceGLFW(
                 device,
                 window,
-                width, height,
                 widthFrameBuffer, heightFrameBuffer,
                 name
         );

@@ -328,26 +328,29 @@ namespace ignimbrite {
         /**
          * @brief Begin draw list
          *
-         * Single time submit draw list.
+         * Single time submit draw list. Requires drawListEnd() to be called.
+         * Between this functions' calls allowed only commands with drawList prefix.
          */
         virtual void drawListBegin() = 0;
 
         /**
          * @brief End draw list
          *
-         * Finish draw list commands setup. Submits
-         * draw list on GPU for rendering and waits, until
-         * draw list executed.
+         * Finish draw list commands setup. Submits draw list on GPU for
+         * rendering and waits, until draw list is executed.
          */
         virtual void drawListEnd() = 0;
 
         virtual void drawListBindSurface(ID surface, const Color &color, const Region &area) = 0;
 
-        virtual void drawListBindFramebuffer(ID framebuffer, const std::vector<Color> &colors, const Region &area) = 0;
+        virtual void drawListBindFramebuffer(ID framebuffer,
+                                             const std::vector<Color> &colors,
+                                             const Region &area) = 0;
 
-        virtual void
-        drawListBindFramebuffer(ID framebuffer, const std::vector<Color> &colors, float32 depth, uint32 stencil,
-                                const Region &area) = 0;
+        virtual void drawListBindFramebuffer(ID framebuffer,
+                                             const std::vector<Color> &colors,
+                                             float32 depth, uint32 stencil,
+                                             const Region &area) = 0;
 
         virtual void drawListBindPipeline(ID graphicsPipeline) = 0;
 
@@ -373,6 +376,13 @@ namespace ignimbrite {
          */
         virtual ID getSurface(const std::string &surfaceName) = 0;
 
+        /**
+         * @brief Get surface size
+         *
+         * @param surface ID of surface to get size
+         * @param width[out] Surface framebuffer width
+         * @param height[out] Surface framebuffer height
+         */
         virtual void getSurfaceSize(ID surface, uint32 &width, uint32 &height) = 0;
 
         /**

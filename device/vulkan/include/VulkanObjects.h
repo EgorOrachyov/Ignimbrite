@@ -105,8 +105,6 @@ namespace ignimbrite {
         std::string name;
         uint32 width;
         uint32 height;
-        uint32 widthFramebuffer;
-        uint32 heightFramebuffer;
         uint32 presentsFamily;
         VkQueue presentQueue;
         VkQueue graphicsQueue;
@@ -119,7 +117,7 @@ namespace ignimbrite {
         /** Swap buffer data */
         uint32 currentImageIndex = 0;
         uint32 currentFrameIndex = 0;
-        uint32 maxFramesInFlight = 3;
+        uint32 maxFramesInFlight = 0;
         std::vector<VkSemaphore> imageAvailableSemaphores;
         std::vector<VkSemaphore> renderFinishedSemaphores;
         std::vector<VkFence> inFlightFences;

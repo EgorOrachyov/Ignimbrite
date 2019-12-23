@@ -13,39 +13,37 @@ namespace ignimbrite {
 
 #ifdef WITH_GLFW
 
-    VulkanExtensions::ID VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device, GLFWwindow *handle, uint32 width, uint32 height,
-                                        uint32 widthFramebuffer, uint32 heightFramebuffer, const std::string &name) {
+    VulkanExtensions::ID
+    VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device, GLFWwindow *handle, uint32 widthFramebuffer,
+                                        uint32 heightFramebuffer, const std::string &name) {
         VkResult result;
-        VkSurfaceKHR surface;
+        VkSurfaceKHR surfaceKHR;
         VulkanContext &context = device.context;
 
-        result = glfwCreateWindowSurface(context.instance, handle, nullptr, &surface);
+        result = glfwCreateWindowSurface(
+                context.instance,
+                handle,
+                nullptr,
+                &surfaceKHR
+        );
 
         if (result != VK_SUCCESS) {
             throw VulkanException("Failed to create window surface");
         }
 
-        VulkanSurface window = {};
-        window.name = name;
-        window.width = width;
-        window.widthFramebuffer = widthFramebuffer;
-        window.heightFramebuffer = heightFramebuffer;
-        window.height = height;
-        window.surface = surface;
+        VulkanSurface surface = {};
+        surface.name = name;
+        surface.width = widthFramebuffer;
+        surface.height = heightFramebuffer;
+        surface.surface = surfaceKHR;
 
-        result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.context.physicalDevice, surface,
-                                                           &window.surfaceCapabilities);
+        context.updateSurfaceCapabilities(surface);
+        context.findPresentsFamily(surface);
+        context.createSwapChain(surface);
+        context.createFramebufferFormat(surface);
+        context.createFramebuffers(surface);
 
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Failed to get surface capabilities");
-        }
-
-        context.findPresentsFamily(window);
-        context.createSwapChain(window);
-        context.createFramebufferFormat(window);
-        context.createFramebuffers(window);
-
-        return device.mSurfaces.move(window);
+        return device.mSurfaces.move(surface);
     }
 
 #endif
@@ -55,7 +53,6 @@ namespace ignimbrite {
         VulkanContext &context = device.context;
 
         context.deviceWaitIdle();
-        context.destroyCommandBuffers(vulkanSurface);
         context.destroyFramebuffers(vulkanSurface);
         context.destroyFramebufferFormat(vulkanSurface);
         context.destroySwapChain(vulkanSurface);

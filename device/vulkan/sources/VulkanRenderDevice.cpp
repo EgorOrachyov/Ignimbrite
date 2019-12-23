@@ -338,23 +338,6 @@ namespace ignimbrite {
         mSamplers.remove(samplerId);
     }
 
-    RenderDevice::ID VulkanRenderDevice::getSurface(const std::string &surfaceName) {
-        for (auto i = mSurfaces.begin(); i != mSurfaces.end(); ++i) {
-            auto &window = *i;
-            if (window.name == surfaceName) {
-                return i.getID();
-            }
-        }
-        return INVALID;
-    }
-
-    void VulkanRenderDevice::getSurfaceSize(RenderDevice::ID surface, uint32 &width, uint32 &height) {
-        auto &window = mSurfaces.get(surface);
-
-        width = window.width;
-        height = window.height;
-    }
-
     RenderDevice::ID VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::FramebufferAttachmentDesc> &attachments) {
         std::vector<VkAttachmentDescription> attachmentDescriptions;
         attachmentDescriptions.reserve(attachments.size());
@@ -1036,7 +1019,7 @@ namespace ignimbrite {
             VkCommandBuffer commandBuffer = drawList.buffer;
 
             vkCmdEndRenderPass(commandBuffer);
-            //vkEndCommandBuffer(commandBuffer);
+            vkEndCommandBuffer(commandBuffer);
 
             VkPipelineStageFlags pipelineStageFlags[1] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
@@ -1051,29 +1034,28 @@ namespace ignimbrite {
             submitInfo.commandBufferCount = 1;
             submitInfo.pCommandBuffers = &commandBuffer;
 
-            //result = vkQueueSubmit(context.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+            result = vkQueueSubmit(context.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 
-            VulkanUtils::endTempCommandBuffer(context, commandBuffer, context.graphicsQueue, context.graphicsTempCommandPool);
+            //VulkanUtils::endTempCommandBuffer(context, commandBuffer, context.graphicsQueue, context.graphicsTempCommandPool);
 
-            //VK_RESULT_ASSERT(result, "Failed to submit command buffer for rendering");
+            VK_RESULT_ASSERT(result, "Failed to submit command buffer for rendering");
 
             // TODO: remove wait idle (wait on special fence for queue?)
-            //vkQueueWaitIdle(context.graphicsQueue);
-            //vkFreeCommandBuffers(context.device, context.graphicsTempCommandPool, 1, &commandBuffer);
+            vkQueueWaitIdle(context.graphicsQueue);
+            vkFreeCommandBuffers(context.device, context.graphicsTempCommandPool, 1, &commandBuffer);
         }
         else {
             // submit for rendering and wait
             VulkanSurface &surface = mSurfaces.get(drawList.surfaceId);
             uint32 imageIndex = surface.currentImageIndex;
             uint32 frameIndex = surface.currentFrameIndex;
-            VkCommandBuffer cmd = drawList.buffer;
+            VkCommandBuffer commandBuffer = drawList.buffer;
 
-            // end renderpass associated with surface
-            vkCmdEndRenderPass(cmd);
+            vkCmdEndRenderPass(commandBuffer);
 
             // TODO: remove after 'getAvailableCmdBuffer' implementation
             // as temp cmd buffer is used now, so delete it
-            vkEndCommandBuffer(cmd);
+            vkEndCommandBuffer(commandBuffer);
             if (surface.imagesInFlight[imageIndex] != VK_NULL_HANDLE) {
                 vkWaitForFences(context.device, 1, &surface.imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
             }
@@ -1092,7 +1074,7 @@ namespace ignimbrite {
             submitInfo.signalSemaphoreCount = 1;
             submitInfo.pSignalSemaphores = &surface.renderFinishedSemaphores[frameIndex];
             submitInfo.commandBufferCount = 1;
-            submitInfo.pCommandBuffers = &cmd;
+            submitInfo.pCommandBuffers = &commandBuffer;
 
             // reset fence to unsignaled state before submitting
             VkResult result = vkResetFences(context.device, 1, &surface.inFlightFences[frameIndex]);
@@ -1108,7 +1090,7 @@ namespace ignimbrite {
 
             // TODO: remove wait idle (wait on special fence for queue?)
             vkQueueWaitIdle(surface.graphicsQueue);
-            vkFreeCommandBuffers(context.device, context.graphicsTempCommandPool, 1, &cmd);
+            vkFreeCommandBuffers(context.device, context.graphicsTempCommandPool, 1, &commandBuffer);
         }
     }
 
@@ -1154,10 +1136,9 @@ namespace ignimbrite {
         drawList.drawCalled = true;
     }
 
-// TODO: DELETE THIS
-    static bool firstTime = true;
-
     void VulkanRenderDevice::swapBuffers(RenderDevice::ID surfaceId) {
+        static bool firstTime = true;
+
         VulkanSurface &surface = mSurfaces.get(surfaceId);
         const uint32 imageIndex = surface.currentImageIndex;
         const uint32 frameIndex = surface.currentFrameIndex;
@@ -1178,7 +1159,7 @@ namespace ignimbrite {
 
             result = vkQueuePresentKHR(surface.presentQueue, &presentInfo);
             if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-                // TODO: resize
+                context.resizeSurface(surface);
             } else if (result != VK_SUCCESS) {
                 throw VulkanException("Can't queue and image for presentation");
             }
@@ -1198,7 +1179,7 @@ namespace ignimbrite {
                                            &nextImageIndex);
 
             if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-                // TODO: process resize
+                context.resizeSurface(surface);
             } else if (result != VK_SUCCESS) {
                 throw VulkanException("Can't acquire next image in swapchain");
             }
@@ -1243,8 +1224,8 @@ namespace ignimbrite {
         renderPassBeginInfo.renderArea.offset.x = 0;
         renderPassBeginInfo.renderArea.offset.y = 0;
 
-        renderPassBeginInfo.renderArea.extent.width = surface.widthFramebuffer;
-        renderPassBeginInfo.renderArea.extent.height = surface.heightFramebuffer;
+        renderPassBeginInfo.renderArea.extent.width = surface.width;
+        renderPassBeginInfo.renderArea.extent.height = surface.height;
         renderPassBeginInfo.clearValueCount = 2;
         renderPassBeginInfo.pClearValues = clearValues;
         renderPassBeginInfo.framebuffer = surfFramebuffer;
@@ -1343,6 +1324,24 @@ namespace ignimbrite {
     void VulkanRenderDevice::drawListBindFramebuffer(RenderDevice::ID framebufferId, const std::vector<Color> &colors,
                                                      const RenderDevice::Region &area) {
         drawListBindFramebuffer(framebufferId, colors, 1.0f, 0, area);
+    }
+
+
+    RenderDevice::ID VulkanRenderDevice::getSurface(const std::string &surfaceName) {
+        for (auto i = mSurfaces.begin(); i != mSurfaces.end(); ++i) {
+            auto &window = *i;
+            if (window.name == surfaceName) {
+                return i.getID();
+            }
+        }
+        return INVALID;
+    }
+
+    void VulkanRenderDevice::getSurfaceSize(RenderDevice::ID surface, uint32 &width, uint32 &height) {
+        auto &window = mSurfaces.get(surface);
+
+        width = window.width;
+        height = window.height;
     }
 
 } // namespace ignimbrite

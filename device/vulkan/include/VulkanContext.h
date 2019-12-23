@@ -64,7 +64,6 @@ namespace ignimbrite {
 
         void createSwapChain(VulkanSurface &surface);
         void destroySwapChain(VulkanSurface &surface);
-        void recreateSwapChain(VulkanSurface &surface);
 
         void createFramebufferFormat(VulkanSurface &surface);
         void destroyFramebufferFormat(VulkanSurface &surface);
@@ -72,16 +71,26 @@ namespace ignimbrite {
         void createFramebuffers(VulkanSurface &surface);
         void destroyFramebuffers(VulkanSurface &surface);
 
-        void createCommandBuffers(VulkanSurface &surface);
-        void destroyCommandBuffers(VulkanSurface &surface);
-
-        void deviceWaitIdle();
+        void updateSurfaceCapabilities(VulkanSurface &surface);
+        void resizeSurface(VulkanSurface &surface);
 
         void createCommandPools();
         void destroyCommandPools();
 
+        void deviceWaitIdle();
+
+        /** Default number of frames in flight (how much images could be rendered simultaneously) */
+        static const uint32 FRAMES_IN_FLIGHT = 2;
+
+        /** Min image count for double buffering */
         static const uint32 SWAPCHAIN_MIN_IMAGE_COUNT = 2;
-        static const uint32 DESCRIPTOR_POOL_MAX_SET_COUNT = 8;
+
+        /** Descriptor pool initial size to allocate descriptor sets  */
+        static const uint32 DESCRIPTOR_POOL_INITIAL_SET_COUNT = 4;
+
+        /** Factor to increase size of the pool (when allocate another one)*/
+        static const uint32 DESCRIPTOR_POOL_SIZE_FACTOR = 2;
+
         static const VkFormat PREFERRED_FORMAT = VkFormat::VK_FORMAT_B8G8R8A8_UNORM;
         static const VkColorSpaceKHR PREFERRED_COLOR_SPACE = VkColorSpaceKHR::VK_COLORSPACE_SRGB_NONLINEAR_KHR;
         static const VkPresentModeKHR PREFERRED_PRESENT_MODE = VkPresentModeKHR::VK_PRESENT_MODE_FIFO_KHR;

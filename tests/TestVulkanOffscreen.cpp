@@ -52,6 +52,7 @@ struct OffscreenPass {
     ObjectID frameBuffer;
     ObjectID colorTexture;
     ObjectID depthTexture;
+    uint32 width = 0, height = 0;
 };
 
 class OffscreenRendering {
@@ -69,7 +70,6 @@ public:
         surface = VulkanExtensions::createSurfaceGLFW(
                 *device,
                 window.handle,
-                window.width, window.height,
                 window.widthFBO, window.heightFBO,
                 window.name
         );
@@ -159,6 +159,8 @@ public:
         std::vector<ObjectID> attachments = { offscreenPass.colorTexture, offscreenPass.depthTexture };
 
         offscreenPass.frameBuffer = device->createFramebuffer(attachments, offscreenPass.frameBufferFormat);
+        offscreenPass.width = window.widthFBO;
+        offscreenPass.height = window.heightFBO;
 
         RenderDevice::PipelineRasterizationDesc rasterizationDesc = {};
         rasterizationDesc.cullMode = PolygonCullMode::Back;
@@ -311,16 +313,18 @@ public:
         while (!glfwWindowShouldClose(window.handle)) {
             glfwPollEvents();
             glfwSwapBuffers(window.handle);
+            glfwGetFramebufferSize(window.handle, &window.widthFBO, &window.heightFBO);
 
             RenderDevice::Color color = {  { 0.1, 0.2, 0.3, 0.0 } };
             RenderDevice::Region region = { 0, 0, { (uint32) window.widthFBO, (uint32) window.heightFBO } };
+            RenderDevice::Region regionOffscreen = { 0, 0, { offscreenPass.width, offscreenPass.height } };
             std::vector<RenderDevice::Color> colors = { { { 0.0, 0.0, 0.0, 0.0 }} };
 
             device->swapBuffers(surface);
 
             {
                 device->drawListBegin();
-                device->drawListBindFramebuffer(offscreenPass.frameBuffer, colors, 1.0f, 0, region);
+                device->drawListBindFramebuffer(offscreenPass.frameBuffer, colors, 1.0f, 0, regionOffscreen);
                 device->drawListBindPipeline(offscreenPass.pipeline);
                 device->drawListBindVertexBuffer(offscreenPass.vertexBuffer, 0, 0);
                 device->drawListDraw(3, 1);

@@ -40,15 +40,9 @@ namespace ignimbrite {
          * @param heightFramebuffer
          * @param name Required param to reference created window
          */
-        static ID createSurfaceGLFW(
-                VulkanRenderDevice &device,
-                GLFWwindow *handle,
-                uint32 width,
-                uint32 height,
-                uint32 widthFramebuffer,
-                uint32 heightFramebuffer,
-                const std::string &name
-        );
+        static VulkanExtensions::ID
+        createSurfaceGLFW(VulkanRenderDevice &device, GLFWwindow *handle, uint32 widthFramebuffer,
+                          uint32 heightFramebuffer, const std::string &name);
 
 #endif
 
