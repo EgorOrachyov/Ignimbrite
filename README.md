@@ -27,7 +27,7 @@ or another data in real-time with high level of customization.
 * Shader compilation and reflection
 
 ### Graphical back-ends
-* Vulkan API 1.1.130.0 on macOS, Window and Linux
+* Vulkan 1.0 on macOS, Window and Linux
 
 ## Platforms
 * Windows
