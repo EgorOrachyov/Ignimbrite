@@ -30,7 +30,7 @@ endif ()
 
 option(WITH_GLFW "GLFW Window system" NO)
 if (WITH_GLFW)
-    message(STATUS "Using GLFW as window system API")
+    message(STATUS "Add GLFW as window system API")
     set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
     set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
@@ -40,7 +40,7 @@ endif()
 
 option(WITH_VULKAN "Vulkan rendering API" NO)
 if (WITH_VULKAN)
-    message(STATUS "Using Vulkan as rendering API")
+    message(STATUS "Add Vulkan as rendering API")
     message(STATUS "Looking for Vulkan in $ENV{VULKAN_SDK}")
     find_package(Vulkan REQUIRED)
     add_library(Vulkan INTERFACE)
@@ -51,7 +51,7 @@ endif()
 
 option(WITH_SPIRVCROSS "SPIR-V Cross" YES)
 if (WITH_SPIRVCROSS)
-    message(STATUS "Using SPIRV-CROSS as reflection tool for spir-v files")
+    message(STATUS "Add SPIRV-CROSS as reflection tool for spir-v files")
     set(SPIRV_CROSS_STATIC ON CACHE BOOL "" FORCE)
     set(SPIRV_CROSS_ENABLE_CPP ON CACHE BOOL "" FORCE)
     set(SPIRV_CROSS_CLI OFF CACHE BOOL "" FORCE)
@@ -65,19 +65,19 @@ endif()
 
 option(WITH_GLM "GLM math header library" YES)
 if (WITH_GLM)
-    message(STATUS "Using GLM as math library")
+    message(STATUS "Add GLM as math library")
     add_subdirectory(thirdparty/glm)
 endif()
 
 option(WITH_STBIMAGE "STB Image utility to load image files" YES)
 if (WITH_STBIMAGE)
-    message(STATUS "Using STB Image utility to load image files")
+    message(STATUS "Add STB Image utility to load image files")
     add_subdirectory(thirdparty/stb-image)
 endif()
 
 option(WITH_TINYOBJLOADER "Tiny OBJ loader for geometry and materials in .obj .mtl formats" YES)
 if (WITH_TINYOBJLOADER)
-    message(STATUS "Using Tiny OBJ loader for loading .obj/.mtl data")
+    message(STATUS "Add Tiny OBJ loader for loading .obj/.mtl data")
     add_subdirectory(thirdparty/tinyobjloader)
 endif()
 
@@ -92,10 +92,11 @@ configure_file(
 ##################################################################
 ## Include actual sub directories
 
+message(STATUS "Add Ignimbrite main sub directory")
 add_subdirectory(ignimbrite)
 
 option(WITH_TESTS "Compile tests and examples for library" OFF)
 if (WITH_TESTS)
-    message(STATUS "Configure tests folder")
+    message(STATUS "Add tests folder to build tests")
     add_subdirectory(tests)
 endif()

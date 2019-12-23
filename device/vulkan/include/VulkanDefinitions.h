@@ -6,7 +6,7 @@
 #define IGNIMBRITELIBRARY_VULKANDEFINITIONS_H
 
 #include <vulkan/vulkan.h>
-#include <ignimbrite/DeviceDefinitions.h>
+#include <ignimbrite/RenderDeviceDefinitions.h>
 #include <VulkanErrors.h>
 
 namespace ignimbrite {

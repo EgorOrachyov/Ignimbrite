@@ -2,7 +2,7 @@
 // Created by Egor Orachyov on 2019-11-11.
 //
 
-#include <ignimbrite/DeviceDefinitions.h>
+#include <ignimbrite/RenderDeviceDefinitions.h>
 #include <ignimbrite/Compilation.h>
 #include <VulkanUtils.h>
 #include <exception>

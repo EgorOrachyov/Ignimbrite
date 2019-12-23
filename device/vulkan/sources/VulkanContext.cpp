@@ -4,7 +4,7 @@
 
 #include <VulkanContext.h>
 #include <ignimbrite/Compilation.h>
-#include <ignimbrite/DeviceDefinitions.h>
+#include <ignimbrite/RenderDeviceDefinitions.h>
 #include <exception>
 #include <cstring>
 #include <set>

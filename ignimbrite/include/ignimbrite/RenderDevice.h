@@ -6,7 +6,7 @@
 #define IGNIMBRITELIBRARY_RENDERDEVICE_H
 
 #include <ignimbrite/ObjectID.h>
-#include <ignimbrite/DeviceDefinitions.h>
+#include <ignimbrite/RenderDeviceDefinitions.h>
 #include <string>
 #include <vector>
 
