@@ -18,7 +18,7 @@ or another data in real-time with high level of customization.
 
 ## Features
 
-### API
+### Rendering
 * Back-end graphical interface
 * Material system
 * Mesh system
@@ -26,7 +26,7 @@ or another data in real-time with high level of customization.
 * Graphical pipeline
 * Shader compilation and reflection
 
-### Graphical back-ends
+### Back-ends support
 * Vulkan 1.0 on macOS, Window and Linux
 
 ## Platforms
@@ -38,7 +38,7 @@ or another data in real-time with high level of customization.
 * C++11 with standard library
 * CMake 3.11 or higher
 
-## Dependencies
+## Third-party projects
 * [Vulkan SDK](https://vulkan.lunarg.com)
 * [GLFW](https://github.com/glfw/glfw) 
 * [SPIRV-Cross](https://github.com/KhronosGroup/SPIRV-Cross)
@@ -101,6 +101,11 @@ Follow the instructions, listed in the 'Getting started' manual page for each pl
 > Note: remember to export env variable VULKAN_SDK=/path/to/installed/vulkan/sdk, 
 > because we use this variable to locate vulkan include .h files and binary libs on your
 > machine in case, when cmake failed to find these files in standard system /include and /lib directories.
+
+## License
+
+This project is licensed under MIT license. 
+Full text could be found in [license file](https://github.com/EgorOrachyov/Ignimbrite/blob/master/LICENSE.md).
 
 ## Contributors
 
