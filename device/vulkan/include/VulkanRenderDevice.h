@@ -1,6 +1,10 @@
-//
-// Created by Egor Orachyov on 2019-11-02.
-//
+/**********************************************************************************/
+/* This file is part of Ignimbrite project                                        */
+/* https://github.com/EgorOrachyov/Berserk                                        */
+/**********************************************************************************/
+/* Licensed under MIT License                                                     */
+/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/**********************************************************************************/
 
 #ifndef IGNIMBRITELIBRARY_VULKANRENDERDEVICE_H
 #define IGNIMBRITELIBRARY_VULKANRENDERDEVICE_H

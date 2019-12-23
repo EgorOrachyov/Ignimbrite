@@ -1,6 +1,10 @@
-//
-// Created by Egor Orachyov on 2019-11-07.
-//
+/**********************************************************************************/
+/* This file is part of Ignimbrite project                                        */
+/* https://github.com/EgorOrachyov/Berserk                                        */
+/**********************************************************************************/
+/* Licensed under MIT License                                                     */
+/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/**********************************************************************************/
 
 #ifndef IGNIMBRITELIBRARY_VULKANUTILS_H
 #define IGNIMBRITELIBRARY_VULKANUTILS_H

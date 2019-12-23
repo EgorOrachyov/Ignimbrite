@@ -1,6 +1,10 @@
-//
-// Created by Egor Orachyov on 2019-12-18.
-//
+/**********************************************************************************/
+/* This file is part of Ignimbrite project                                        */
+/* https://github.com/EgorOrachyov/Berserk                                        */
+/**********************************************************************************/
+/* Licensed under MIT License                                                     */
+/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/**********************************************************************************/
 
 #include <ignimbrite/Types.h>
 #include <GLFW/glfw3.h>
