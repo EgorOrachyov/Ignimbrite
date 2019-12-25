@@ -13,12 +13,6 @@
 #include <exception>
 #include <array>
 
-#define VK_RESULT_ASSERT(result, message)                               \
-    do {                                                                \
-        if ((result) != VK_SUCCESS)                                     \
-            throw VulkanException(message);                             \
-    } while (false);
-
 namespace ignimbrite {
 
     VulkanRenderDevice::VulkanRenderDevice(uint32 extensionsCount, const char *const *extensions) {
@@ -80,14 +74,21 @@ namespace ignimbrite {
         VkBufferUsageFlagBits usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 
         if (type == BufferUsage::Dynamic) {
-            VulkanUtils::createBuffer(context, size, usage,
+            VulkanUtils::createBuffer(size,
+                                      usage,
                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                      vertexBuffer.vkBuffer, vertexBuffer.vkDeviceMemory
+                                      vertexBuffer.vkBuffer,
+                                      vertexBuffer.vkDeviceMemory
             );
-            VulkanUtils::updateBufferMemory(context, vertexBuffer.vkDeviceMemory, 0, size, data);
+            VulkanUtils::updateBufferMemory(vertexBuffer.vkDeviceMemory, 0, size, data);
         } else {
-            VulkanUtils::createBufferLocal(context, data, size, usage, vertexBuffer.vkBuffer,
-                                           vertexBuffer.vkDeviceMemory);
+            VulkanUtils::createBufferLocal(
+                    data,
+                    size,
+                    usage,
+                    vertexBuffer.vkBuffer,
+                    vertexBuffer.vkDeviceMemory
+            );
         }
 
         return mVertexBuffers.move(vertexBuffer);
@@ -101,13 +102,15 @@ namespace ignimbrite {
         VkBufferUsageFlagBits usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 
         if (type == BufferUsage::Dynamic) {
-            VulkanUtils::createBuffer(context, size, usage,
+            VulkanUtils::createBuffer(size,
+                                      usage,
                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                      indexBuffer.vkBuffer, indexBuffer.vkDeviceMemory
+                                      indexBuffer.vkBuffer,
+                                      indexBuffer.vkDeviceMemory
             );
-            VulkanUtils::updateBufferMemory(context, indexBuffer.vkDeviceMemory, 0, size, data);
+            VulkanUtils::updateBufferMemory(indexBuffer.vkDeviceMemory, 0, size, data);
         } else {
-            VulkanUtils::createBufferLocal(context, data, size, usage, indexBuffer.vkBuffer,
+            VulkanUtils::createBufferLocal(data, size, usage, indexBuffer.vkBuffer,
                                            indexBuffer.vkDeviceMemory);
         }
 
@@ -127,7 +130,7 @@ namespace ignimbrite {
             throw VulkanException("Attempt to update out-of-buffer memory region for vertex buffer");
         }
 
-        VulkanUtils::updateBufferMemory(context, memory, offset, size, data);
+        VulkanUtils::updateBufferMemory(memory, offset, size, data);
     }
 
     void
@@ -143,7 +146,7 @@ namespace ignimbrite {
             throw VulkanException("Attempt to update out-of-buffer memory region for index buffer");
         }
 
-        VulkanUtils::updateBufferMemory(context, memory, offset, size, data);
+        VulkanUtils::updateBufferMemory(memory, offset, size, data);
     }
 
     void VulkanRenderDevice::destroyVertexBuffer(RenderDevice::ID bufferId) {
@@ -201,7 +204,6 @@ namespace ignimbrite {
         if (color) {
 
             VulkanUtils::createImage(
-                    context,
                     textureDesc.width, textureDesc.height, textureDesc.depth,
                     1, imageType, format, VK_IMAGE_TILING_OPTIMAL, usageFlags,
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -223,7 +225,6 @@ namespace ignimbrite {
             };
 
             VulkanUtils::createImageView(
-                    context,
                     texture.imageView, texture.image,
                     viewType, format, subresourceRange, components
             );
@@ -231,7 +232,6 @@ namespace ignimbrite {
         } else if (depth) {
 
             VulkanUtils::createDepthStencilBuffer(
-                    context,
                     textureDesc.width, textureDesc.height, textureDesc.depth,
                     imageType, format,
                     texture.image, texture.imageMemory, usageFlags
@@ -252,7 +252,6 @@ namespace ignimbrite {
             };
 
             VulkanUtils::createImageView(
-                    context,
                     texture.imageView, texture.image,
                     viewType, format, subresourceRange, components
             );
@@ -261,7 +260,7 @@ namespace ignimbrite {
 
             // create texture image with mipmaps and allocate memory
             VulkanUtils::createTextureImage(
-                    context, textureDesc.data,
+                    textureDesc.data,
                     textureDesc.width, textureDesc.height, textureDesc.depth,
                     textureDesc.mipmaps,
                     imageType, format, VK_IMAGE_TILING_OPTIMAL,
@@ -283,7 +282,6 @@ namespace ignimbrite {
             };
 
             VulkanUtils::createImageView(
-                    context,
                     texture.imageView, texture.image,
                     viewType, format, subresourceRange, components
             );
@@ -325,10 +323,7 @@ namespace ignimbrite {
 
         VkSampler sampler;
         VkResult result = vkCreateSampler(context.device, &samplerInfo, nullptr, &sampler);
-
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Failed to create sampler object");
-        }
+        VK_RESULT_ASSERT(result, "Failed to create sampler object");
 
         return mSamplers.add(sampler);
     }
@@ -417,7 +412,6 @@ namespace ignimbrite {
         VkRenderPass renderPass;
 
         result = vkCreateRenderPass(context.device, &renderPassInfo, nullptr, &renderPass);
-
         VK_RESULT_ASSERT(result, "Failed to create render pass");
 
         VulkanFrameBufferFormat format = {};
@@ -478,7 +472,6 @@ namespace ignimbrite {
 
         VkFramebuffer framebuffer;
         VkResult result = vkCreateFramebuffer(context.device, &framebufferInfo, nullptr, &framebuffer);
-
         VK_RESULT_ASSERT(result, "Filed to create framebuffer");
 
         fbo.framebuffer = framebuffer;
@@ -512,7 +505,7 @@ namespace ignimbrite {
             throw VulkanException("Uniform layout has not textures and buffers to be bounded");
         }
 
-        VkDescriptorSet descriptorSet = VulkanUtils::getAvailableDescriptorSet(context, layout);
+        VkDescriptorSet descriptorSet = VulkanUtils::getAvailableDescriptorSet(layout);
 
         std::vector<VkWriteDescriptorSet> writeDescSets;
         writeDescSets.reserve(buffersCount + texturesCount);
@@ -662,14 +655,14 @@ namespace ignimbrite {
         uniformBuffer.size = size;
 
         if (usage == BufferUsage::Static) {
-            VulkanUtils::createBufferLocal(context, data, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VulkanUtils::createBufferLocal(data, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                            uniformBuffer.buffer, uniformBuffer.memory);
         } else if (usage == BufferUsage::Dynamic) {
             VkMemoryPropertyFlags memoryPropertyFlags =
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-            VulkanUtils::createBuffer(context, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VulkanUtils::createBuffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                       memoryPropertyFlags, uniformBuffer.buffer, uniformBuffer.memory);
-            VulkanUtils::updateBufferMemory(context, uniformBuffer.memory, 0, size, data);
+            VulkanUtils::updateBufferMemory(uniformBuffer.memory, 0, size, data);
         } else {
             throw VulkanException("Undefined uniform buffer usage");
         }
@@ -689,7 +682,7 @@ namespace ignimbrite {
             throw VulkanException("Attempt to update out-of-buffer memory region for uniform buffer");
         }
 
-        VulkanUtils::updateBufferMemory(context, uniformBuffer.memory, offset, size, data);
+        VulkanUtils::updateBufferMemory(uniformBuffer.memory, offset, size, data);
     }
 
     void VulkanRenderDevice::destroyUniformBuffer(RenderDevice::ID bufferId) {
@@ -720,10 +713,7 @@ namespace ignimbrite {
             createInfo.codeSize = (uint32) desc.source.size();
 
             result = vkCreateShaderModule(context.device, &createInfo, nullptr, &module);
-
-            if (result != VK_SUCCESS) {
-                throw VulkanException("Failed to create shader module");
-            }
+            VK_RESULT_ASSERT(result, "Failed to create shader module");
 
             VulkanShader shader = {};
             shader.module = module;
@@ -758,9 +748,9 @@ namespace ignimbrite {
         const auto &vkFramebufferFormat = mFrameBufferFormats.get(framebufferFormat);
 
         auto framebufferColorAttachmentsCount =
-                vkFramebufferFormat.useDepthStencil      ?
+                vkFramebufferFormat.useDepthStencil ?
                 vkFramebufferFormat.numOfAttachments - 1 :
-                vkFramebufferFormat.numOfAttachments     ;
+                vkFramebufferFormat.numOfAttachments;
 
         if (blendStateDesc.attachments.size() != framebufferColorAttachmentsCount) {
             throw VulkanException("Incompatible number of color and blend attachments for specified framebuffer format and blend state");
@@ -774,7 +764,7 @@ namespace ignimbrite {
         VkPipeline pipeline;
         VkPipelineLayout pipelineLayout;
 
-        VulkanUtils::createPipelineLayout(context, vkUniformLayout, pipelineLayout);
+        VulkanUtils::createPipelineLayout(vkUniformLayout, pipelineLayout);
 
         std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
         shaderStages.reserve(vkProgram.shaders.size());
@@ -855,11 +845,6 @@ namespace ignimbrite {
         }
 
         VulkanGraphicsPipeline graphicsPipeline;
-        graphicsPipeline.withSurfaceOnly = false;
-        graphicsPipeline.vertexLayout = vertexLayout;
-        graphicsPipeline.uniformLayout = uniformLayout;
-        graphicsPipeline.framebufferFormat = framebufferFormat;
-        graphicsPipeline.program = program;
         graphicsPipeline.pipeline = pipeline;
         graphicsPipeline.pipelineLayout = pipelineLayout;
 
@@ -882,7 +867,7 @@ namespace ignimbrite {
         VkPipeline pipeline;
         VkPipelineLayout pipelineLayout;
 
-        VulkanUtils::createPipelineLayout(context, vkUniformLayout, pipelineLayout);
+        VulkanUtils::createPipelineLayout(vkUniformLayout, pipelineLayout);
 
         std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
         shaderStages.reserve(vkProgram.shaders.size());
@@ -968,14 +953,8 @@ namespace ignimbrite {
         }
 
         VulkanGraphicsPipeline graphicsPipeline;
-        graphicsPipeline.withSurfaceOnly = false;
-        graphicsPipeline.vertexLayout = vertexLayout;
-        graphicsPipeline.uniformLayout = uniformLayout;
-        graphicsPipeline.program = program;
         graphicsPipeline.pipeline = pipeline;
         graphicsPipeline.pipelineLayout = pipelineLayout;
-        graphicsPipeline.withSurfaceOnly = true;
-        graphicsPipeline.surface = surface;
 
         return mGraphicsPipelines.move(graphicsPipeline);
     }
@@ -990,25 +969,10 @@ namespace ignimbrite {
     }
 
     void VulkanRenderDevice::drawListBegin() {
-        // get free command buffer and reset drawList
+        VkCommandBuffer commandBuffer = VulkanUtils::beginTempCommandBuffer(context.graphicsTempCommandPool);
 
-        // TODO: get available cmd buffer
-//    VkCommandBuffer cmd = ?;
-//
-//    // clear command buffer
-//    vkResetCommandBuffer(cmd, 0);
-//
-//    // and start recording
-//    VkCommandBufferBeginInfo beginInfo = {};
-//    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-//    vkBeginCommandBuffer(cmd, &beginInfo);
-
-        // for now, just create temp cmd buffer
-        VkCommandBuffer cmd = VulkanUtils::beginTempCommandBuffer(context, context.graphicsTempCommandPool);
-
-        // clear draw list
         drawList = {};
-        drawList.buffer = cmd;
+        drawList.buffer = commandBuffer;
     }
 
     void VulkanRenderDevice::drawListEnd() {
@@ -1036,15 +1000,14 @@ namespace ignimbrite {
 
             result = vkQueueSubmit(context.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 
-            //VulkanUtils::endTempCommandBuffer(context, commandBuffer, context.graphicsQueue, context.graphicsTempCommandPool);
+            //VulkanUtils::endTempCommandBuffer(commandBuffer, context.graphicsQueue, context.graphicsTempCommandPool);
 
             VK_RESULT_ASSERT(result, "Failed to submit command buffer for rendering");
 
             // TODO: remove wait idle (wait on special fence for queue?)
             vkQueueWaitIdle(context.graphicsQueue);
             vkFreeCommandBuffers(context.device, context.graphicsTempCommandPool, 1, &commandBuffer);
-        }
-        else {
+        } else {
             // submit for rendering and wait
             VulkanSurface &surface = mSurfaces.get(drawList.surfaceId);
             uint32 imageIndex = surface.currentImageIndex;
@@ -1095,6 +1058,10 @@ namespace ignimbrite {
     }
 
     void VulkanRenderDevice::drawListBindPipeline(RenderDevice::ID graphicsPipelineId) {
+        if (!drawList.frameBufferAttached && !drawList.surfaceAttached) {
+            throw VulkanException("No framebuffer or surface attached to the draw list");
+        }
+
         const auto &graphicsPipeline = mGraphicsPipelines.get(graphicsPipelineId);
         vkCmdBindPipeline(drawList.buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.pipeline);
         drawList.pipelineLayout = graphicsPipeline.pipelineLayout;
@@ -1102,15 +1069,22 @@ namespace ignimbrite {
     }
 
     void VulkanRenderDevice::drawListBindUniformSet(RenderDevice::ID uniformSetId) {
+        if (!drawList.pipelineAttached) {
+            throw VulkanException("No pipeline attached to the draw list");
+        }
+
         const auto &uniformSet = mUniformSets.get(uniformSetId);
         vkCmdBindDescriptorSets(drawList.buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, drawList.pipelineLayout, 0, 1,
                                 &uniformSet.descriptorSet, 0, nullptr);
-
         drawList.uniformSetAttached = true;
     }
 
     void VulkanRenderDevice::drawListBindIndexBuffer(RenderDevice::ID indexBufferId,
                                                      IndicesType indicesType, uint32 offset) {
+        if (!drawList.pipelineAttached) {
+            throw VulkanException("No pipeline attached to the draw list");
+        }
+
         const auto &indexBuffer = mIndexBuffers.get(indexBufferId);
         vkCmdBindIndexBuffer(drawList.buffer, indexBuffer.vkBuffer, offset, VulkanDefinitions::indexType(indicesType));
 
@@ -1127,11 +1101,23 @@ namespace ignimbrite {
     }
 
     void VulkanRenderDevice::drawListDrawIndexed(uint32 indicesCount, uint32 instancesCount) {
+        if (!drawList.vertexBufferAttached) {
+            throw VulkanException("No vertex buffer attached to the draw list");
+        }
+
+        if (!drawList.indexBufferAttached) {
+            throw VulkanException("No index buffer attached to the draw list");
+        }
+
         vkCmdDrawIndexed(drawList.buffer, indicesCount, instancesCount, 0, 0, 0);
         drawList.drawCalled = true;
     }
 
     void VulkanRenderDevice::drawListDraw(uint32 verticesCount, uint32 instancesCount) {
+        if (!drawList.vertexBufferAttached) {
+            throw VulkanException("No vertex buffer attached to the draw list");
+        }
+
         vkCmdDraw(drawList.buffer, verticesCount, instancesCount, 0, 0);
         drawList.drawCalled = true;
     }
@@ -1209,11 +1195,12 @@ namespace ignimbrite {
         uint32 viewportHeight = area.extent.y;
 
         VkClearValue clearValues[2];
-        clearValues[0].color = {
-            {color.components[0],
-             color.components[1],
-             color.components[2],
-             color.components[3]}
+        clearValues[0].color = { {
+                color.components[0],
+                color.components[1],
+                color.components[2],
+                color.components[3]
+            }
         };
         clearValues[1].depthStencil.depth = clearDepth;
         clearValues[1].depthStencil.stencil = clearStencil;
@@ -1276,16 +1263,16 @@ namespace ignimbrite {
         }
 
         for (size_t i = 0; i < colors.size(); i++) {
-            clearValues[i].color = {
-                {colors[i].components[0],
-                 colors[i].components[1],
-                 colors[i].components[2],
-                 colors[i].components[3]}
+            clearValues[i].color = { {
+                colors[i].components[0],
+                colors[i].components[1],
+                colors[i].components[2],
+                colors[i].components[3]}
             };
         }
 
         VkClearValue depthStencilClearValues = {};
-        depthStencilClearValues.depthStencil = { clearDepth, clearStencil };
+        depthStencilClearValues.depthStencil = {clearDepth, clearStencil};
         clearValues.back() = depthStencilClearValues;
 
         VkRenderPassBeginInfo renderPassBeginInfo = {};
@@ -1325,7 +1312,6 @@ namespace ignimbrite {
                                                      const RenderDevice::Region &area) {
         drawListBindFramebuffer(framebufferId, colors, 1.0f, 0, area);
     }
-
 
     RenderDevice::ID VulkanRenderDevice::getSurface(const std::string &surfaceName) {
         for (auto i = mSurfaces.begin(); i != mSurfaces.end(); ++i) {

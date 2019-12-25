@@ -13,12 +13,11 @@ namespace ignimbrite {
 
 #ifdef WITH_GLFW
 
-    VulkanExtensions::ID
-    VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device, GLFWwindow *handle, uint32 widthFramebuffer,
+    RenderDevice::ID VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device, GLFWwindow *handle, uint32 widthFramebuffer,
                                         uint32 heightFramebuffer, const std::string &name) {
         VkResult result;
         VkSurfaceKHR surfaceKHR;
-        VulkanContext &context = device.context;
+        auto &context = VulkanContext::getSingleton();
 
         result = glfwCreateWindowSurface(
                 context.instance,
@@ -48,9 +47,9 @@ namespace ignimbrite {
 
 #endif
 
-    void VulkanExtensions::destroySurface(VulkanRenderDevice &device, VulkanExtensions::ID surface) {
-        VulkanSurface &vulkanSurface = device.mSurfaces.get(surface);
-        VulkanContext &context = device.context;
+    void VulkanExtensions::destroySurface(VulkanRenderDevice &device, RenderDevice::ID surface) {
+        auto &vulkanSurface = device.mSurfaces.get(surface);
+        auto &context = VulkanContext::getSingleton();
 
         context.deviceWaitIdle();
         context.destroyFramebuffers(vulkanSurface);

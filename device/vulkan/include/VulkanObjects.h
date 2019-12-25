@@ -131,7 +131,7 @@ namespace ignimbrite {
         VkDeviceMemory memory;
     };
 
-    struct VulkanDescriptorPool {
+    struct _VulkanDescriptorPool {
         VkDescriptorPool pool;
         uint32 allocatedSets;
         uint32 maxSets;
@@ -142,7 +142,7 @@ namespace ignimbrite {
         uint32 texturesCount;
         uint32 buffersCount;
         uint32 usedDescriptorSets;
-        std::vector<VulkanDescriptorPool> pools;
+        std::vector<_VulkanDescriptorPool> pools;
         std::vector<VkDescriptorSet> freeSets;
     };
 
@@ -163,12 +163,6 @@ namespace ignimbrite {
     struct VulkanGraphicsPipeline {
         VkPipeline pipeline = VK_NULL_HANDLE;
         VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
-        bool withSurfaceOnly = false;
-        RenderDevice::ID surface;
-        RenderDevice::ID program;
-        RenderDevice::ID uniformLayout;
-        RenderDevice::ID vertexLayout;
-        RenderDevice::ID framebufferFormat;
     };
 
 } // namespace ignimbrite

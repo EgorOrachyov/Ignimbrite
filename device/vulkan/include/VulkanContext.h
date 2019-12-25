@@ -20,7 +20,8 @@ namespace ignimbrite {
      * device and creates logical device for application.
      * defines queue families, finds graphics, present and transfer queues
      */
-    struct VulkanContext {
+    class VulkanContext {
+    public:
 
         void createInstance();
         void destroyInstance();
@@ -79,6 +80,24 @@ namespace ignimbrite {
 
         void deviceWaitIdle();
 
+    private:
+
+        VulkanContext() = default;
+        ~VulkanContext() = default;
+        VulkanContext(VulkanContext&& context) = default;
+        VulkanContext(const VulkanContext& context) = default;
+
+    public:
+
+        /**
+         * Access vulkan context for the application.
+         * Allowed only single context instance.
+         * @return Vulkan context instance
+         */
+        static VulkanContext& getSingleton();
+
+    public:
+
         /** Default number of frames in flight (how much images could be rendered simultaneously) */
         static const uint32 FRAMES_IN_FLIGHT = 2;
 
@@ -88,12 +107,11 @@ namespace ignimbrite {
         /** Descriptor pool initial size to allocate descriptor sets  */
         static const uint32 DESCRIPTOR_POOL_INITIAL_SET_COUNT = 4;
 
-        /** Factor to increase size of the pool (when allocate another one)*/
-        static const uint32 DESCRIPTOR_POOL_SIZE_FACTOR = 2;
-
         static const VkFormat PREFERRED_FORMAT = VkFormat::VK_FORMAT_B8G8R8A8_UNORM;
         static const VkColorSpaceKHR PREFERRED_COLOR_SPACE = VkColorSpaceKHR::VK_COLORSPACE_SRGB_NONLINEAR_KHR;
         static const VkPresentModeKHR PREFERRED_PRESENT_MODE = VkPresentModeKHR::VK_PRESENT_MODE_FIFO_KHR;
+
+    public:
 
         std::vector<const char *> requiredExtensions = {VK_KHR_SURFACE_EXTENSION_NAME};
         const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
@@ -121,6 +139,7 @@ namespace ignimbrite {
 
         // NOTE: do not use this vector with multithreading ??
         std::vector<VkClearValue> tempClearValues = {};
+
     };
 
 } // namespace ignimbrite

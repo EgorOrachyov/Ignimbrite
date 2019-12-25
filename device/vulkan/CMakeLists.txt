@@ -11,6 +11,7 @@ set(VulkanDevice_HEADERS
     include/VulkanUtils.h
     include/VulkanExtensions.h
     include/VulkanObjects.h
+    include/VulkanDescriptorAllocator.h
 )
 
 set(VulkanDevice_SOURCES
@@ -18,6 +19,7 @@ set(VulkanDevice_SOURCES
     sources/VulkanContext.cpp
     sources/VulkanExtensions.cpp
     sources/VulkanUtils.cpp
+    sources/VulkanDescriptorAllocator.cpp
 )
 
 add_library(

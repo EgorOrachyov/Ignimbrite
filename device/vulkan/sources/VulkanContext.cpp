@@ -9,17 +9,10 @@
 #include <VulkanContext.h>
 #include <ignimbrite/Compilation.h>
 #include <ignimbrite/RenderDeviceDefinitions.h>
-#include <exception>
 #include <cstring>
 #include <set>
 #include <array>
 #include <VulkanUtils.h>
-
-#define VK_RESULT_ASSERT(result, message)                               \
-    do {                                                                \
-        if ((result) != VK_SUCCESS)                                     \
-            throw VulkanException(message);                             \
-    } while (false);
 
 namespace ignimbrite {
 
@@ -566,13 +559,13 @@ namespace ignimbrite {
         VkFormat depthFormats[] = { VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT };
         VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL;
         VkFormatFeatureFlags featureFlags = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        VkFormat depthFormat = VulkanUtils::findSupportedFormat(*this, depthFormats, 2, imageTiling, featureFlags);
+        VkFormat depthFormat = VulkanUtils::findSupportedFormat(depthFormats, 2, imageTiling, featureFlags);
 
         swapChain.depthFormat = depthFormat;
 
         for (uint32 i = 0; i < swapChainImageCount; i++) {
             VulkanUtils::createImage(
-                    *this,
+                    
                     width, height, 1, 1,
                     VK_IMAGE_TYPE_2D, depthFormat,
                     VK_IMAGE_TILING_OPTIMAL,
@@ -597,7 +590,7 @@ namespace ignimbrite {
             };
 
             VulkanUtils::createImageView(
-                    *this,
+                    
                     swapChain.depthStencilImageViews[i],
                     swapChain.depthStencilImages[i],
                     VK_IMAGE_VIEW_TYPE_2D,
@@ -793,23 +786,18 @@ namespace ignimbrite {
         }
     }
 
-    void VulkanContext::deviceWaitIdle() {
-        VkResult result = vkDeviceWaitIdle(device);
-        VK_RESULT_ASSERT(result, "Failed to wait idle on device")
-    }
-
     void VulkanContext::createCommandPools() {
-        graphicsCommandPool = VulkanUtils::createCommandPool(*this,
+        graphicsCommandPool = VulkanUtils::createCommandPool(
                                                              VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
                                                              familyIndices.graphicsFamily.get());
-        transferCommandPool = VulkanUtils::createCommandPool(*this,
+        transferCommandPool = VulkanUtils::createCommandPool(
                                                              VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
                                                              familyIndices.transferFamily.get());
 
-        graphicsTempCommandPool = VulkanUtils::createCommandPool(*this,
+        graphicsTempCommandPool = VulkanUtils::createCommandPool(
                                                                  VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
                                                                  familyIndices.graphicsFamily.get());
-        transferTempCommandPool = VulkanUtils::createCommandPool(*this,
+        transferTempCommandPool = VulkanUtils::createCommandPool(
                                                                  VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
                                                                  familyIndices.transferFamily.get());
     }
@@ -820,5 +808,17 @@ namespace ignimbrite {
         vkDestroyCommandPool(device, graphicsTempCommandPool, nullptr);
         vkDestroyCommandPool(device, transferTempCommandPool, nullptr);
     }
+
+    void VulkanContext::deviceWaitIdle() {
+        VkResult result = vkDeviceWaitIdle(device);
+        VK_RESULT_ASSERT(result, "Failed to wait idle on device")
+    }
+
+    VulkanContext& VulkanContext::getSingleton() {
+        static VulkanContext context;
+        return context;
+    }
+
+
 
 } // namespace ignimbrite

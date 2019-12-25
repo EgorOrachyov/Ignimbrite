@@ -90,7 +90,6 @@ namespace ignimbrite {
         void getSurfaceSize(ID surface, uint32 &width, uint32 &height) override;
         void swapBuffers(ID surfaceId) override;
 
-
     private:
 
         friend class VulkanExtensions;
@@ -98,8 +97,8 @@ namespace ignimbrite {
         template<typename T>
         using Buffer = ObjectIDBuffer<T>;
 
-        VulkanContext context;
         VulkanDrawList drawList;
+        VulkanContext& context = VulkanContext::getSingleton();
 
         Buffer<VulkanSurface> mSurfaces;
         Buffer<VulkanVertexLayout> mVertexLayouts;
