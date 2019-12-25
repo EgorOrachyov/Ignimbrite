@@ -25,8 +25,6 @@ namespace ignimbrite {
     VkFormat VulkanUtils::findSupportedFormat(const VkFormat *candidates,
                                               uint32 candidatesCount, VkImageTiling tiling,
                                               VkFormatFeatureFlags features) {
-    auto& context = VulkanContext::getSingleton();
-
         for (uint32 i = 0; i < candidatesCount; i++) {
             auto format = candidates[i];
             auto properties = getDeviceFormatProperties(candidates[i]);
@@ -75,9 +73,7 @@ namespace ignimbrite {
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         VkResult result = vkCreateBuffer(context.device, &bufferInfo, nullptr, &outBuffer);
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Can't create buffer for vertex data");
-        }
+        VK_RESULT_ASSERT(result, "Can't create buffer for vertex data");
 
         VkMemoryRequirements memRequirements;
         vkGetBufferMemoryRequirements(context.device, outBuffer, &memRequirements);
@@ -88,14 +84,10 @@ namespace ignimbrite {
         allocInfo.memoryTypeIndex = getMemoryTypeIndex(memRequirements.memoryTypeBits, properties);
 
         result = vkAllocateMemory(context.device, &allocInfo, nullptr, &outBufferMemory);
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Can't allocate memory for vertex buffer");
-        }
+        VK_RESULT_ASSERT(result, "Can't allocate memory for vertex buffer");
 
         result = vkBindBufferMemory(context.device, outBuffer, outBufferMemory, 0);
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Can't bind buffer memory for vertex buffer");
-        }
+        VK_RESULT_ASSERT(result, "Can't bind buffer memory for vertex buffer");
     }
 
     void
@@ -152,10 +144,7 @@ namespace ignimbrite {
         void *mappedData;
         VkResult result;
         result = vkMapMemory(context.device, bufferMemory, offset, size, 0, &mappedData);
-
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Failed to map memory buffer");
-        }
+        VK_RESULT_ASSERT(result, "Failed to map memory buffer");
 
         std::memcpy(mappedData, data, (size_t) size);
         vkUnmapMemory(context.device, bufferMemory);
@@ -231,10 +220,7 @@ namespace ignimbrite {
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         VkResult result = vkCreateImage(context.device, &imageInfo, nullptr, &outImage);
-
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Failed to create image");
-        }
+        VK_RESULT_ASSERT(result, "Failed to create image");
 
         VkMemoryRequirements memRequirements;
         vkGetImageMemoryRequirements(context.device, outImage, &memRequirements);
@@ -245,15 +231,10 @@ namespace ignimbrite {
         allocInfo.memoryTypeIndex = getMemoryTypeIndex(memRequirements.memoryTypeBits, properties);
 
         result = vkAllocateMemory(context.device, &allocInfo, nullptr, &outImageMemory);
-
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Failed to allocate memory for image");
-        }
+        VK_RESULT_ASSERT(result, "Failed to allocate memory for image");
 
         result = vkBindImageMemory(context.device, outImage, outImageMemory, 0);
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Failed to bind image memory");
-        }
+        VK_RESULT_ASSERT(result, "Failed to bind image memory");
     }
 
     void
@@ -348,10 +329,7 @@ namespace ignimbrite {
         imageViewInfo.subresourceRange = subResourceRange;
 
         VkResult result = vkCreateImageView(context.device, &imageViewInfo, nullptr, &outImageView);
-
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Failed to create image view");
-        }
+        VK_RESULT_ASSERT(result, "Failed to create image view");
     }
 
     void
@@ -631,10 +609,7 @@ namespace ignimbrite {
         pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
         result = vkCreatePipelineLayout(context.device, &pipelineLayoutInfo, nullptr, &pipelineLayout);
-
-        if (result != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create pipeline layout");
-        }
+        VK_RESULT_ASSERT(result, "Failed to create pipeline layout");
     }
 
     void VulkanUtils::createMultisampleState(VkPipelineMultisampleStateCreateInfo &state) {
@@ -731,10 +706,7 @@ namespace ignimbrite {
 
         VkCommandPool commandPool;
         VkResult result = vkCreateCommandPool(context.device, &info, nullptr, &commandPool);
-
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Failed to create command pool");
-        }
+        VK_RESULT_ASSERT(result, "Failed to create command pool");
 
         return commandPool;
     }
@@ -750,20 +722,14 @@ namespace ignimbrite {
 
         VkCommandBuffer commandBuffer;
         VkResult result = vkAllocateCommandBuffers(context.device, &allocInfo, &commandBuffer);
-
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Failed to allocate command buffer");
-        }
+        VK_RESULT_ASSERT(result, "Failed to allocate command buffer");
 
         VkCommandBufferBeginInfo beginInfo = {};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
         result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Failed to begin command buffer");
-        }
+        VK_RESULT_ASSERT(result, "Failed to begin command buffer");
 
         return commandBuffer;
     }
@@ -773,10 +739,7 @@ namespace ignimbrite {
         auto& context = VulkanContext::getSingleton();
 
         VkResult result = vkEndCommandBuffer(commandBuffer);
-
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Failed to end command buffer");
-        }
+        VK_RESULT_ASSERT(result, "Failed to end command buffer");
 
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -784,16 +747,10 @@ namespace ignimbrite {
         submitInfo.pCommandBuffers = &commandBuffer;
 
         result = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
-
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Failed to submit queue");
-        }
+        VK_RESULT_ASSERT(result, "Failed to submit queue");
 
         result = vkQueueWaitIdle(queue);
-
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Error on vkQueueWaitIdle");
-        }
+        VK_RESULT_ASSERT(result, "Error on vkQueueWaitIdle");
 
         vkFreeCommandBuffers(context.device, commandPool, 1, &commandBuffer);
     }
