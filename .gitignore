@@ -16,10 +16,9 @@
 
 /**/.idea/
 /**/.vs/
+/**/.DS_Store
+/**/.git
 /**/cmake-build-debug/
 /build
 /out
-/thirdparty/include/*
-/thirdparty/lib/*
-/**/.DS_Store
-/**/.git
+/documents

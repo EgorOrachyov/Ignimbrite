@@ -494,18 +494,19 @@ namespace ignimbrite {
 
         const auto &uniformBuffers = setDesc.buffers;
         const auto &uniformTextures = setDesc.textures;
+        const auto &properties = layout.properties;
         uint32 buffersCount = uniformBuffers.size();
         uint32 texturesCount = uniformTextures.size();
 
-        if (buffersCount != layout.buffersCount || texturesCount != layout.texturesCount) {
+        if (buffersCount != properties.uniformBuffersCount || texturesCount != properties.samplersCount) {
             throw VulkanException("Incompatible uniform layout and uniform set descriptor");
         }
 
-        if (layout.buffersCount == 0 && layout.texturesCount == 0) {
+        if (properties.uniformBuffersCount == 0 && properties.samplersCount == 0) {
             throw VulkanException("Uniform layout has not textures and buffers to be bounded");
         }
 
-        VkDescriptorSet descriptorSet = VulkanUtils::getAvailableDescriptorSet(layout);
+        VkDescriptorSet descriptorSet = layout.allocator.allocateSet();
 
         std::vector<VkWriteDescriptorSet> writeDescSets;
         writeDescSets.reserve(buffersCount + texturesCount);
@@ -573,9 +574,7 @@ namespace ignimbrite {
         auto &uniformSet = mUniformSets.get(setId);
         auto &layout = mUniformLayouts.get(uniformSet.uniformLayout);
 
-        layout.usedDescriptorSets -= 1;
-        layout.freeSets.push_back(uniformSet.descriptorSet);
-
+        layout.allocator.freeSet(uniformSet.descriptorSet);
         mUniformSets.remove(setId);
     }
 
@@ -619,33 +618,22 @@ namespace ignimbrite {
         createInfo.pBindings = bindings.data();
 
         result = vkCreateDescriptorSetLayout(context.device, &createInfo, nullptr, &descriptorSetLayout);
-
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Failed to create descriptor set layout");
-        }
+        VK_RESULT_ASSERT(result, "Failed to create descriptor set layout");
 
         VulkanUniformLayout uniformLayout;
-        uniformLayout.buffersCount = buffersCount;
-        uniformLayout.texturesCount = texturesCount;
-        uniformLayout.setLayout = descriptorSetLayout;
-        uniformLayout.usedDescriptorSets = 0;
+        uniformLayout.properties.layout = descriptorSetLayout;
+        uniformLayout.properties.samplersCount = texturesCount;
+        uniformLayout.properties.uniformBuffersCount = buffersCount;
+        uniformLayout.allocator.setProperties(uniformLayout.properties);
 
         return mUniformLayouts.move(uniformLayout);
     }
 
     void VulkanRenderDevice::destroyUniformLayout(RenderDevice::ID layout) {
         auto &uniformLayout = mUniformLayouts.get(layout);
+        auto &properties = uniformLayout.properties;
 
-        // No uniform set must use this layout if we want to destroy it
-        if (uniformLayout.usedDescriptorSets != 0) {
-            throw VulkanException("An attempt to destroy in-use uniform layout");
-        }
-
-        for (auto &pool: uniformLayout.pools) {
-            vkDestroyDescriptorPool(context.device, pool.pool, nullptr);
-        }
-
-        vkDestroyDescriptorSetLayout(context.device, uniformLayout.setLayout, nullptr);
+        vkDestroyDescriptorSetLayout(context.device, properties.layout, nullptr);
         mUniformLayouts.remove(layout);
     }
 

@@ -9,11 +9,23 @@
 #ifndef IGNIMBRITELIBRARY_VULKANCONTEXT_H
 #define IGNIMBRITELIBRARY_VULKANCONTEXT_H
 
+#include <ignimbrite/Optional.h>
 #include <VulkanDefinitions.h>
-#include <VulkanObjects.h>
+#include <VulkanSurface.h>
 #include <vector>
 
 namespace ignimbrite {
+
+    /** Collects info about queue families for VK device */
+    struct VulkanQueueFamilyIndices {
+        Optional<uint32> graphicsFamily;
+        Optional<uint32> transferFamily;
+
+        bool isComplete() {
+            return graphicsFamily.hasValue() &&
+                   transferFamily.hasValue();
+        }
+    };
 
     /**
      * Handles vulkan instance setup. Defines physical
@@ -103,9 +115,6 @@ namespace ignimbrite {
 
         /** Min image count for double buffering */
         static const uint32 SWAPCHAIN_MIN_IMAGE_COUNT = 2;
-
-        /** Descriptor pool initial size to allocate descriptor sets  */
-        static const uint32 DESCRIPTOR_POOL_INITIAL_SET_COUNT = 4;
 
         static const VkFormat PREFERRED_FORMAT = VkFormat::VK_FORMAT_B8G8R8A8_UNORM;
         static const VkColorSpaceKHR PREFERRED_COLOR_SPACE = VkColorSpaceKHR::VK_COLORSPACE_SRGB_NONLINEAR_KHR;

@@ -6,13 +6,12 @@
 /* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
 /**********************************************************************************/
 
-#include <ignimbrite/RenderDeviceDefinitions.h>
-#include <ignimbrite/Compilation.h>
+#include <VulkanDefinitions.h>
+#include <VulkanContext.h>
 #include <VulkanUtils.h>
-#include <exception>
 #include <cstring>
-#include <set>
 #include <array>
+#include <set>
 
 namespace ignimbrite {
 
@@ -566,95 +565,7 @@ namespace ignimbrite {
         );
     }
 
-    void VulkanUtils::allocateDescriptorPool(VulkanUniformLayout &layout) {
-        auto& context = VulkanContext::getSingleton();
-
-        VkResult result;
-        VkDescriptorPool pool;
-
-        VkDescriptorPoolSize poolSizes[2];
-        uint32 poolSizesCount = 0;
-
-        if (layout.buffersCount > 0) {
-            poolSizes[poolSizesCount].descriptorCount = layout.buffersCount;
-            poolSizes[poolSizesCount].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            poolSizesCount += 1;
-        }
-
-        if (layout.texturesCount > 0) {
-            poolSizes[poolSizesCount].descriptorCount = layout.texturesCount;
-            poolSizes[poolSizesCount].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            poolSizesCount += 1;
-        }
-
-        VkDescriptorPoolCreateInfo poolCreateInfo = {};
-        poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolCreateInfo.poolSizeCount = poolSizesCount;
-        poolCreateInfo.pPoolSizes = poolSizes;
-        poolCreateInfo.maxSets = VulkanContext::DESCRIPTOR_POOL_INITIAL_SET_COUNT;
-
-        result = vkCreateDescriptorPool(context.device, &poolCreateInfo, nullptr, &pool);
-
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Failed to create descriptor pool");
-        }
-
-        _VulkanDescriptorPool vulkanDescriptorPool = {};
-        vulkanDescriptorPool.allocatedSets = 0;
-        vulkanDescriptorPool.maxSets = VulkanContext::DESCRIPTOR_POOL_INITIAL_SET_COUNT;
-        vulkanDescriptorPool.pool = pool;
-
-        layout.pools.push_back(vulkanDescriptorPool);
-    }
-
-    _VulkanDescriptorPool &VulkanUtils::getAvailableDescriptorPool(VulkanUniformLayout &layout) {
-        for (auto &pool: layout.pools) {
-            if (pool.allocatedSets < pool.maxSets) {
-                return pool;
-            }
-        }
-
-        allocateDescriptorPool(layout);
-        return layout.pools.back();
-    }
-
-    VkDescriptorSet VulkanUtils::getAvailableDescriptorSet(VulkanUniformLayout &layout) {
-        auto& context = VulkanContext::getSingleton();
-
-        VkDescriptorSet descriptorSet;
-
-        if (layout.freeSets.empty()) {
-            VkResult result;
-
-            auto &pool = VulkanUtils::getAvailableDescriptorPool(layout);
-
-            VkDescriptorSetAllocateInfo descSetAllocInfo = {};
-            descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-            descSetAllocInfo.pNext = nullptr;
-            descSetAllocInfo.descriptorPool = pool.pool;
-            descSetAllocInfo.descriptorSetCount = 1;
-            descSetAllocInfo.pSetLayouts = &layout.setLayout;
-
-            result = vkAllocateDescriptorSets(context.device, &descSetAllocInfo, &descriptorSet);
-
-            if (result != VK_SUCCESS) {
-                throw VulkanException("Can't allocate descriptor set from descriptor pool");
-            }
-
-            pool.allocatedSets += 1;
-            layout.usedDescriptorSets += 1;
-        }
-        else {
-            descriptorSet = layout.freeSets.back();
-            layout.freeSets.pop_back();
-            layout.usedDescriptorSets += 1;
-        }
-
-        return descriptorSet;
-    }
-
-    void
-    VulkanUtils::createVertexInputState(const VulkanVertexLayout &layout, VkPipelineVertexInputStateCreateInfo &state) {
+    void VulkanUtils::createVertexInputState(const VulkanVertexLayout &layout, VkPipelineVertexInputStateCreateInfo &state) {
         const auto &bindings = layout.vkBindings;
         const auto &attributes = layout.vkAttributes;
 
@@ -715,7 +626,7 @@ namespace ignimbrite {
         VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = 1;
-        pipelineLayoutInfo.pSetLayouts = &uniformLayout.setLayout;
+        pipelineLayoutInfo.pSetLayouts = &uniformLayout.properties.layout;
         pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
         pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 

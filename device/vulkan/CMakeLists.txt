@@ -12,7 +12,10 @@ set(VulkanDevice_HEADERS
     include/VulkanExtensions.h
     include/VulkanObjects.h
     include/VulkanDescriptorAllocator.h
+    include/VulkanSurface.h
+    include/VulkanFramebuffer.h
 )
+
 
 set(VulkanDevice_SOURCES
     sources/VulkanRenderDevice.cpp

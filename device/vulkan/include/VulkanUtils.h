@@ -9,7 +9,7 @@
 #ifndef IGNIMBRITELIBRARY_VULKANUTILS_H
 #define IGNIMBRITELIBRARY_VULKANUTILS_H
 
-#include <VulkanContext.h>
+#include <VulkanObjects.h>
 #include <VulkanDefinitions.h>
 
 namespace ignimbrite {
@@ -121,18 +121,6 @@ namespace ignimbrite {
 
         static VkCompositeAlphaFlagBitsKHR getAvailableCompositeAlpha(
                 const VkSurfaceCapabilitiesKHR &surfaceCapabilities
-        );
-
-        static void allocateDescriptorPool(
-                VulkanUniformLayout &layout
-        );
-
-        static _VulkanDescriptorPool &getAvailableDescriptorPool(
-                VulkanUniformLayout &layout
-        );
-
-        static VkDescriptorSet getAvailableDescriptorSet(
-                VulkanUniformLayout &layout
         );
 
         static void createVertexInputState(
