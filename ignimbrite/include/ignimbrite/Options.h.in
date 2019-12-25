@@ -13,6 +13,7 @@
 #cmakedefine WITH_GLM
 #cmakedefine WITH_VULKAN
 #cmakedefine WITH_SPIRVCROSS
+#cmakedefine WITH_IGNIMBRITE_QT
 
 #define IgnimbriteLibrary_VERSION_MAJOR @IgnimbriteLibrary_VERSION_MAJOR@
 #define IgnimbriteLibrary_VERSION_MINOR @IgnimbriteLibrary_VERSION_MINOR@

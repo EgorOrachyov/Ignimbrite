@@ -81,6 +81,14 @@ if (WITH_TINYOBJLOADER)
     add_subdirectory(thirdparty/tinyobjloader)
 endif()
 
+option(WITH_IGNIMBRITE_QT "Use QT to create surface for rendering" NO)
+if (WITH_IGNIMBRITE_QT)
+    message(STATUS "Add QT for surface creation")
+    find_package(Qt5 COMPONENTS Core Gui REQUIRED)
+    message(STATUS "Including QT5 directories: ${Qt5Core_INCLUDE_DIRS} ${Qt5Gui_INCLUDE_DIRS}")
+    include_directories(${Qt5Core_INCLUDE_DIRS} ${Qt5Gui_INCLUDE_DIRS})
+endif()
+
 ##################################################################
 ## Configure project options
 

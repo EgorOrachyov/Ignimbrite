@@ -17,6 +17,11 @@
 #   include "GLFW/glfw3.h"
 #endif
 
+#ifdef WITH_IGNIMBRITE_QT
+#   include <QVulkanWindow>
+#   include <QVulkanInstance>
+#endif
+
 namespace ignimbrite {
 
     /**
@@ -52,12 +57,31 @@ namespace ignimbrite {
 
 #endif
 
+#ifdef WITH_IGNIMBRITE_QT
+
+        static ID createSurfaceQtWindow(
+                VulkanRenderDevice &device,
+                QVulkanInstance *qvkInstance,
+                QWindow *qwindow
+        );
+#endif
+
         /** Idle device and destroy surface with all its relative data */
         static void destroySurface(
                 VulkanRenderDevice &device,
                 ID surface
         );
 
+    private:
+        static ID createSurfaceFromKHR(
+                VulkanRenderDevice &device,
+                VkSurfaceKHR surfaceKhr,
+                uint32 width,
+                uint32 height,
+                uint32 widthFramebuffer,
+                uint32 heightFramebuffer,
+                const std::string &name
+        );
     };
 
 } // namespace ignimbrite

@@ -9,8 +9,8 @@
 #ifndef IGNIMBRITELIBRARY_VULKANCONTEXT_H
 #define IGNIMBRITELIBRARY_VULKANCONTEXT_H
 
-#include <VulkanDefinitions.h>
-#include <VulkanObjects.h>
+#include "VulkanDefinitions.h"
+#include "VulkanObjects.h"
 #include <vector>
 
 namespace ignimbrite {
