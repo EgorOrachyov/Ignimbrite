@@ -1,11 +1,9 @@
 cmake_minimum_required(VERSION 3.11)
 project(Ignimbrite)
 
-message(STATUS "Configure Ignimbrite library")
-
 set(Ignimbrite_HEADERS
     include/ignimbrite/Compilation.h
-    include/ignimbrite/DeviceDefinitions.h
+    include/ignimbrite/RenderDeviceDefinitions.h
     include/ignimbrite/RenderDevice.h
     include/ignimbrite/FileUtils.h
     include/ignimbrite/ObjectID.h

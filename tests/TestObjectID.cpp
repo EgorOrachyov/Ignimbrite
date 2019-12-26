@@ -1,6 +1,10 @@
-//
-// Created by Egor Orachyov on 2019-10-26.
-//
+/**********************************************************************************/
+/* This file is part of Ignimbrite project                                        */
+/* https://github.com/EgorOrachyov/Ignimbrite                                     */
+/**********************************************************************************/
+/* Licensed under MIT License                                                     */
+/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/**********************************************************************************/
 
 #ifndef IGNIMBRITELIBRARY_TESTOBJECTID_CPP
 #define IGNIMBRITELIBRARY_TESTOBJECTID_CPP
@@ -15,6 +19,7 @@ struct TestObjectIDBuffer {
 
     static void test1() {
         ObjectIDBuffer<std::string> strings;
+
 
         auto s1id = strings.add("hello");
         auto s2id = strings.add("world");

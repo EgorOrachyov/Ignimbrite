@@ -1,12 +1,16 @@
-//
-// Created by Egor Orachyov on 2019-10-14.
-//
+/**********************************************************************************/
+/* This file is part of Ignimbrite project                                        */
+/* https://github.com/EgorOrachyov/Ignimbrite                                     */
+/**********************************************************************************/
+/* Licensed under MIT License                                                     */
+/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/**********************************************************************************/
 
 #ifndef IGNIMBRITELIBRARY_RENDERDEVICE_H
 #define IGNIMBRITELIBRARY_RENDERDEVICE_H
 
 #include <ignimbrite/ObjectID.h>
-#include <ignimbrite/DeviceDefinitions.h>
+#include <ignimbrite/RenderDeviceDefinitions.h>
 #include <string>
 #include <vector>
 
@@ -245,20 +249,20 @@ namespace ignimbrite {
         };
 
         struct StencilOpStateDesc {
-            StencilOperation failOp;
-            StencilOperation passOp;
-            StencilOperation depthFailOp;
-            CompareOperation compareOp;
-            uint32 compareMask;
-            uint32 writeMask;
-            uint32 reference;
+            StencilOperation failOp = StencilOperation::Keep;
+            StencilOperation passOp = StencilOperation::Keep;
+            StencilOperation depthFailOp = StencilOperation::Keep;
+            CompareOperation compareOp = CompareOperation::Always;
+            uint32 compareMask = 0x0;
+            uint32 writeMask = 0x0;
+            uint32 reference = 0x0;
         };
 
         struct PipelineDepthStencilStateDesc {
-            bool depthTestEnable;
-            bool depthWriteEnable;
-            CompareOperation depthCompareOp;
-            bool stencilTestEnable;
+            bool depthTestEnable = false;
+            bool depthWriteEnable = false;
+            CompareOperation depthCompareOp = CompareOperation::Less;
+            bool stencilTestEnable = false;
             /** processing rasterized fragments from points, lines and front-facing polygons */
             StencilOpStateDesc front;
             /** processing rasterized fragments from back-facing polygons */

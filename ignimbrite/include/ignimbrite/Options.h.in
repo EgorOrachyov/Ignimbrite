@@ -1,3 +1,11 @@
+/**********************************************************************************/
+/* This file is part of Ignimbrite project                                        */
+/* https://github.com/EgorOrachyov/Ignimbrite                                     */
+/**********************************************************************************/
+/* Licensed under MIT License                                                     */
+/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/**********************************************************************************/
+
 #ifndef IGNIMBRITELIBRARY_OPTIONS_H
 #define IGNIMBRITELIBRARY_OPTIONS_H
 
@@ -5,6 +13,7 @@
 #cmakedefine WITH_GLM
 #cmakedefine WITH_VULKAN
 #cmakedefine WITH_SPIRVCROSS
+#cmakedefine WITH_IGNIMBRITE_QT
 
 #define IgnimbriteLibrary_VERSION_MAJOR @IgnimbriteLibrary_VERSION_MAJOR@
 #define IgnimbriteLibrary_VERSION_MINOR @IgnimbriteLibrary_VERSION_MINOR@

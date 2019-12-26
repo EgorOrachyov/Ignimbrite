@@ -1,6 +1,10 @@
-//
-// Created by Egor Orachyov on 2019-11-02.
-//
+/**********************************************************************************/
+/* This file is part of Ignimbrite project                                        */
+/* https://github.com/EgorOrachyov/Ignimbrite                                     */
+/**********************************************************************************/
+/* Licensed under MIT License                                                     */
+/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/**********************************************************************************/
 
 #include <VulkanRenderDevice.h>
 #include <VulkanDefinitions.h>
@@ -1029,54 +1033,87 @@ namespace ignimbrite {
     }
 
     void VulkanRenderDevice::drawListEnd() {
-        // submit for rendering and wait
+        if (!drawList.surfaceAttached) {
+            // Offscreen rendering only
 
-        VulkanSurface &surface = mSurfaces.get(drawList.surfaceId);
-        uint32 imageIndex = surface.currentImageIndex;
-        uint32 frameIndex = surface.currentFrameIndex;
-        VkCommandBuffer cmd = drawList.buffer;
+            VkResult result;
+            VkCommandBuffer commandBuffer = drawList.buffer;
 
-        // end renderpass associated with surface
-        vkCmdEndRenderPass(cmd);
+            vkCmdEndRenderPass(commandBuffer);
+            //vkEndCommandBuffer(commandBuffer);
 
-        // TODO: remove after 'getAvailableCmdBuffer' implemetation
-        // as temp cmd buffer is used now, so delete it
-        vkEndCommandBuffer(cmd);;
-        if (surface.imagesInFlight[imageIndex] != VK_NULL_HANDLE) {
-            vkWaitForFences(context.device, 1, &surface.imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+            VkPipelineStageFlags pipelineStageFlags[1] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+
+            VkSubmitInfo submitInfo;
+            submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            submitInfo.pNext = nullptr;
+            submitInfo.pWaitDstStageMask = pipelineStageFlags;
+            submitInfo.waitSemaphoreCount = 0;
+            submitInfo.pWaitSemaphores = nullptr;
+            submitInfo.signalSemaphoreCount = 0;
+            submitInfo.pSignalSemaphores = nullptr;
+            submitInfo.commandBufferCount = 1;
+            submitInfo.pCommandBuffers = &commandBuffer;
+
+            //result = vkQueueSubmit(context.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+
+            VulkanUtils::endTempCommandBuffer(context, commandBuffer, context.graphicsQueue, context.graphicsTempCommandPool);
+
+            //VK_RESULT_ASSERT(result, "Failed to submit command buffer for rendering");
+
+            // TODO: remove wait idle (wait on special fence for queue?)
+            //vkQueueWaitIdle(context.graphicsQueue);
+            //vkFreeCommandBuffers(context.device, context.graphicsTempCommandPool, 1, &commandBuffer);
         }
+        else {
+            // submit for rendering and wait
+            VulkanSurface &surface = mSurfaces.get(drawList.surfaceId);
+            uint32 imageIndex = surface.currentImageIndex;
+            uint32 frameIndex = surface.currentFrameIndex;
+            VkCommandBuffer cmd = drawList.buffer;
 
-        surface.imagesInFlight[imageIndex] = surface.inFlightFences[frameIndex];
+            // end renderpass associated with surface
+            vkCmdEndRenderPass(cmd);
 
-        // when final colors are output of pipeline
-        VkPipelineStageFlags pipelineStageFlags[1] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+            // TODO: remove after 'getAvailableCmdBuffer' implementation
+            // as temp cmd buffer is used now, so delete it
+            vkEndCommandBuffer(cmd);
+            if (surface.imagesInFlight[imageIndex] != VK_NULL_HANDLE) {
+                vkWaitForFences(context.device, 1, &surface.imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+            }
 
-        VkSubmitInfo submitInfo;
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.pNext = nullptr;
-        submitInfo.pWaitDstStageMask = pipelineStageFlags;
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = &surface.imageAvailableSemaphores[frameIndex];
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = &surface.renderFinishedSemaphores[frameIndex];
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &cmd;
+            surface.imagesInFlight[imageIndex] = surface.inFlightFences[frameIndex];
 
-        // reset fence to unsignaled state before submitting
-        VkResult result = vkResetFences(context.device, 1, &surface.inFlightFences[frameIndex]);
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Can't reset fence");
+            // when final colors are output of pipeline
+            VkPipelineStageFlags pipelineStageFlags[1] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+
+            VkSubmitInfo submitInfo;
+            submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            submitInfo.pNext = nullptr;
+            submitInfo.pWaitDstStageMask = pipelineStageFlags;
+            submitInfo.waitSemaphoreCount = 1;
+            submitInfo.pWaitSemaphores = &surface.imageAvailableSemaphores[frameIndex];
+            submitInfo.signalSemaphoreCount = 1;
+            submitInfo.pSignalSemaphores = &surface.renderFinishedSemaphores[frameIndex];
+            submitInfo.commandBufferCount = 1;
+            submitInfo.pCommandBuffers = &cmd;
+
+            // reset fence to unsignaled state before submitting
+            VkResult result = vkResetFences(context.device, 1, &surface.inFlightFences[frameIndex]);
+            if (result != VK_SUCCESS) {
+                throw VulkanException("Can't reset fence");
+            }
+
+            // submit command buffer to queue
+            result = vkQueueSubmit(surface.graphicsQueue, 1, &submitInfo, surface.inFlightFences[frameIndex]);
+            if (result != VK_SUCCESS) {
+                throw VulkanException("Can't submit queue");
+            }
+
+            // TODO: remove wait idle (wait on special fence for queue?)
+            vkQueueWaitIdle(surface.graphicsQueue);
+            vkFreeCommandBuffers(context.device, context.graphicsTempCommandPool, 1, &cmd);
         }
-
-        // submit command buffer to queue
-        result = vkQueueSubmit(surface.graphicsQueue, 1, &submitInfo, surface.inFlightFences[frameIndex]);
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Can't submit queue");
-        }
-
-        // TODO: remove wait idle
-        vkQueueWaitIdle(surface.graphicsQueue);
-        vkFreeCommandBuffers(context.device, context.graphicsTempCommandPool, 1, &cmd);
     }
 
     void VulkanRenderDevice::drawListBindPipeline(RenderDevice::ID graphicsPipelineId) {
@@ -1189,10 +1226,10 @@ namespace ignimbrite {
         VkCommandBuffer cmd = drawList.buffer;
         VkFramebuffer surfFramebuffer = surface.swapChain.framebuffers[surface.currentImageIndex];
 
-        uint32_t viewportOffsetX = area.xOffset;
-        uint32_t viewportOffsetY = area.yOffset;
-        uint32_t viewportWidth = area.extent.x;
-        uint32_t viewportHeight = area.extent.y;
+        uint32 viewportOffsetX = area.xOffset;
+        uint32 viewportOffsetY = area.yOffset;
+        uint32 viewportWidth = area.extent.x;
+        uint32 viewportHeight = area.extent.y;
 
         VkClearValue clearValues[2];
         clearValues[0].color = {
@@ -1235,6 +1272,7 @@ namespace ignimbrite {
         vkCmdSetScissor(cmd, 0, 1, &scissor);
 
         drawList.surfaceId = surfaceId;
+        drawList.surfaceAttached = true;
     }
 
     void VulkanRenderDevice::drawListBindFramebuffer(RenderDevice::ID framebufferId, const std::vector<Color> &colors,
@@ -1269,11 +1307,9 @@ namespace ignimbrite {
             };
         }
 
-        {
-            VkClearValue depthStencilClearValues = {};
-            depthStencilClearValues.depthStencil = { clearDepth, clearStencil };
-            clearValues.push_back(depthStencilClearValues);
-        }
+        VkClearValue depthStencilClearValues = {};
+        depthStencilClearValues.depthStencil = { clearDepth, clearStencil };
+        clearValues.back() = depthStencilClearValues;
 
         VkRenderPassBeginInfo renderPassBeginInfo = {};
         renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

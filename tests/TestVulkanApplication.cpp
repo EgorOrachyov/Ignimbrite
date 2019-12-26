@@ -1,6 +1,10 @@
-//
-// Created by Egor Orachyov on 2019-10-26.
-//
+/**********************************************************************************/
+/* This file is part of Ignimbrite project                                        */
+/* https://github.com/EgorOrachyov/Ignimbrite                                     */
+/**********************************************************************************/
+/* Licensed under MIT License                                                     */
+/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/**********************************************************************************/
 
 #ifndef IGNIMBRITELIBRARY_VULKANAPPLICATIONTEST_H
 #define IGNIMBRITELIBRARY_VULKANAPPLICATIONTEST_H
@@ -133,8 +137,8 @@ public:
         shaderDescs[0].type = ShaderType::Vertex;
         shaderDescs[1].type = ShaderType::Fragment;
 
-        std::ifstream vertFile("resources/shaders/spirv/vert.spv", std::ios::binary);
-        std::ifstream fragFile("resources/shaders/spirv/frag.spv", std::ios::binary);
+        std::ifstream vertFile("shaders/spirv/vert.spv", std::ios::binary);
+        std::ifstream fragFile("shaders/spirv/frag.spv", std::ios::binary);
 
         if (!vertFile.is_open() || !fragFile.is_open()) {
             throw std::runtime_error("Failed to open spir-v files");

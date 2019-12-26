@@ -1,8 +1,12 @@
-//
-// Created by Egor Orachyov on 2019-11-11.
-//
+/**********************************************************************************/
+/* This file is part of Ignimbrite project                                        */
+/* https://github.com/EgorOrachyov/Ignimbrite                                     */
+/**********************************************************************************/
+/* Licensed under MIT License                                                     */
+/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/**********************************************************************************/
 
-#include <ignimbrite/DeviceDefinitions.h>
+#include <ignimbrite/RenderDeviceDefinitions.h>
 #include <ignimbrite/Compilation.h>
 #include <VulkanUtils.h>
 #include <exception>
@@ -173,7 +177,9 @@ namespace ignimbrite {
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                      stagingBuffer, stagingBufferMemory);
 
-        updateBufferMemory(context, stagingBufferMemory, 0, imageDataSize, imageData);
+        if (imageData != nullptr) {
+            updateBufferMemory(context, stagingBufferMemory, 0, imageDataSize, imageData);
+        }
 
         // layout transition from undefined
         // to transfer destination to prepare image for copying

@@ -1,10 +1,14 @@
-//
-// Created by Egor Orachyov on 2019-11-03.
-//
+/**********************************************************************************/
+/* This file is part of Ignimbrite project                                        */
+/* https://github.com/EgorOrachyov/Ignimbrite                                     */
+/**********************************************************************************/
+/* Licensed under MIT License                                                     */
+/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/**********************************************************************************/
 
 #include <VulkanContext.h>
 #include <ignimbrite/Compilation.h>
-#include <ignimbrite/DeviceDefinitions.h>
+#include <ignimbrite/RenderDeviceDefinitions.h>
 #include <exception>
 #include <cstring>
 #include <set>
@@ -543,7 +547,7 @@ namespace ignimbrite {
         for (uint32 i = 0; i < swapChainImageCount; i++) {
             VkImageViewCreateInfo viewInfo = {};
             viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            viewInfo.pNext = NULL;
+            viewInfo.pNext = nullptr;
             viewInfo.flags = 0;
 
             viewInfo.image = swapChain.images[i];

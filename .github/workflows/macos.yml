@@ -18,9 +18,16 @@ jobs:
   
     steps:
       - uses: actions/checkout@v1
+      - name: Install Vulkan SDK
+        run: |
+          mkdir vulkan
+          wget -O sdk.tar.gz "https://sdk.lunarg.com/sdk/download/1.1.130.0/mac/vulkansdk-sdk.tar.gz?Human=true"
+          tar -C vulkan -xf sdk.tar.gz
+          cd vulkan/vulkansdk-macos-1.1.130.0
+          python install_vulkan.py
       - name: Build library modules and tests
         run: |
           mkdir build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_GLFW=YES -DWITH_VULKAN=NO -DWITH_TESTS=YES
+          cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_GLFW=YES -DWITH_VULKAN=YES -DWITH_TESTS=YES
           make -j

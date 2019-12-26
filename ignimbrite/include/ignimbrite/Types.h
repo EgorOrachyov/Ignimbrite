@@ -1,11 +1,16 @@
-//
-// Created by Egor Orachyov on 2019-10-15.
-//
+/**********************************************************************************/
+/* This file is part of Ignimbrite project                                        */
+/* https://github.com/EgorOrachyov/Ignimbrite                                     */
+/**********************************************************************************/
+/* Licensed under MIT License                                                     */
+/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/**********************************************************************************/
 
 #ifndef IGNIMBRITELIBRARY_TYPES_H
 #define IGNIMBRITELIBRARY_TYPES_H
 
 #include <inttypes.h>
+#include <ignimbrite/Platform.h>
 
 namespace ignimbrite {
 

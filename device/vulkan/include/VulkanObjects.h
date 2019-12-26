@@ -1,6 +1,10 @@
-//
-// Created by Egor Orachyov on 2019-11-11.
-//
+/**********************************************************************************/
+/* This file is part of Ignimbrite project                                        */
+/* https://github.com/EgorOrachyov/Ignimbrite                                     */
+/**********************************************************************************/
+/* Licensed under MIT License                                                     */
+/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/**********************************************************************************/
 
 #ifndef IGNIMBRITELIBRARY_VULKANOBJECTS_H
 #define IGNIMBRITELIBRARY_VULKANOBJECTS_H
@@ -71,6 +75,7 @@ namespace ignimbrite {
         VkCommandBuffer buffer = VK_NULL_HANDLE;
         VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
         ObjectID surfaceId;
+        bool surfaceAttached = false;
         bool frameBufferAttached = false;
         bool pipelineAttached = false;
         bool uniformSetAttached = false;

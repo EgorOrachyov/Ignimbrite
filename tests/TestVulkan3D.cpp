@@ -17,8 +17,8 @@
 using namespace ignimbrite;
 typedef ignimbrite::ObjectID ID;
 
-#define MODEL3D_SHADER_PATH_VERT "resources/shaders/spirv/vert3d.spv"
-#define MODEL3D_SHADER_PATH_FRAG "resources/shaders/spirv/frag3d.spv"
+#define MODEL3D_SHADER_PATH_VERT "shaders/spirv/vert3d.spv"
+#define MODEL3D_SHADER_PATH_FRAG "shaders/spirv/frag3d.spv"
 
 struct Vertex
 {

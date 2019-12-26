@@ -35,3 +35,7 @@ target_link_libraries(VulkanDevice PUBLIC Vulkan)
 if (WITH_GLFW)
     target_link_libraries(VulkanDevice PUBLIC glfw)
 endif()
+
+if (WITH_IGNIMBRITE_QT)
+    target_link_libraries(VulkanDevice PRIVATE Qt5::Core Qt5::Gui)
+endif()

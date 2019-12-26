@@ -1,9 +1,9 @@
 # Third-party dependencies
 
 The following file describes all the project third-party dependencies.
-All the libraries are stored as-is, therefore they could be build from sources.
-Using of submodules is not preferred there, because of project size constraints 
-and a requirements to be built out of the box.
+All the libraries are stored as-is, therefore they could be built from sources.
+Using of submodules is not preferred here, because of project size constraints 
+and a requirement to be built out of the box.
 
 > Note: list all the dependencies in ## header level.
 > Mark library license, original repository link and some special info.

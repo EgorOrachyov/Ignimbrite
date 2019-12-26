@@ -14,13 +14,28 @@ on:
 
 jobs:
   build:
-    runs-on: macos
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v1
+      - name: Instal GLFW dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install libxrandr-dev libxinerama-dev xorg-dev
+      - name: Install Vulkan SDK
+        run: |
+          mkdir vulkan
+          wget -O sdk.tar.gz "https://sdk.lunarg.com/sdk/download/1.1.130.0/linux/vulkansdk-sdk.tar.gz?Human=true"
+          tar -C vulkan -xf sdk.tar.gz
+          cd vulkan/1.1.130.0
+          echo ::set-env name=VULKAN_SDK::"$PWD/x86_64"
+          echo ::set-env name=PATH::"$VULKAN_SDK/bin:$PATH"
+          echo ::set-env name=LD_LIBRARY_PATH::"$VULKAN_SDK/lib:${LD_LIBRARY_PATH:-}"
+          echo ::set-env name=VK_LAYER_PATH::"$VULKAN_SDK/etc/vulkan/explicit_layer.d"
       - name: Build library modules and tests
         run: |
+          echo $VULKAN_SDK
           mkdir build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_GLFW=YES -DWITH_VULKAN=NO -DWITH_TESTS=YES
+          cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_GLFW=YES -DWITH_VULKAN=YES -DWITH_TESTS=YES
           make -j

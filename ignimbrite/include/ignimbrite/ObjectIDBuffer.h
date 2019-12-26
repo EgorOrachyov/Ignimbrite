@@ -1,6 +1,10 @@
-//
-// Created by Egor Orachyov on 2019-10-26.
-//
+/**********************************************************************************/
+/* This file is part of Ignimbrite project                                        */
+/* https://github.com/EgorOrachyov/Ignimbrite                                     */
+/**********************************************************************************/
+/* Licensed under MIT License                                                     */
+/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/**********************************************************************************/
 
 #ifndef IGNIMBRITELIBRARY_OBJECTIDBUFFER_H
 #define IGNIMBRITELIBRARY_OBJECTIDBUFFER_H
@@ -13,13 +17,13 @@
 
 namespace ignimbrite {
 
-/**
- * ID indexed buffer. Allows to access objects via unique ID in O(1).
- * Supported operations: add, get, remove.
- *
- * @note Not thread safe
- * @tparam T Type of stored objects
- */
+    /**
+     * ID indexed buffer. Allows to access objects via unique ID in O(1).
+     * Supported operations: add, get, remove.
+     *
+     * @note Not thread safe
+     * @tparam T Type of stored objects
+     */
     template<typename T>
     class ObjectIDBuffer {
     public:
@@ -70,10 +74,8 @@ namespace ignimbrite {
                      const std::vector<uint32> &freeGensIndices);
 
             bool operator!=(const Iterator &other);
-
-            T &operator*();
-
             void operator++();
+            T &operator*();
 
             ObjectID getID();
 

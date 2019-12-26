@@ -1,9 +1,13 @@
-//
-// Created by Egor Orachyov on 2019-10-27.
-//
+/**********************************************************************************/
+/* This file is part of Ignimbrite project                                        */
+/* https://github.com/EgorOrachyov/Ignimbrite                                     */
+/**********************************************************************************/
+/* Licensed under MIT License                                                     */
+/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/**********************************************************************************/
 
-#ifndef IGNIMBRITELIBRARY_DEVICEDEFINITIONS_H
-#define IGNIMBRITELIBRARY_DEVICEDEFINITIONS_H
+#ifndef IGNIMBRITELIBRARY_RENDERDEVICEDEFINITIONS_H
+#define IGNIMBRITELIBRARY_RENDERDEVICEDEFINITIONS_H
 
 #include <ignimbrite/Types.h>
 #define BIT_SHIFT(x) (1u << x)
@@ -212,4 +216,4 @@ namespace ignimbrite {
 
 #undef BIT_SHIFT
 
-#endif //IGNIMBRITELIBRARY_DEVICEDEFINITIONS_H
+#endif //IGNIMBRITELIBRARY_RENDERDEVICEDEFINITIONS_H
