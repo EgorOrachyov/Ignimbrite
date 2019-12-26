@@ -58,10 +58,42 @@ namespace ignimbrite {
 #endif
 
 #ifdef WITH_IGNIMBRITE_QT
-
+        /**
+         * Create Ignimbrite surface for specified QWindow
+         * @throw VulkanException if failed to create vulkan surface
+         *
+         * @param device Ignimbrite vulkan render device
+         * @param qvkInstance device's VkInstance will be set to this QVulkanInstance
+         * @param qwindow QWindow to get surface from
+         * @return Ignimbrite surface ID
+         */
         static ID createSurfaceQtWindow(
                 VulkanRenderDevice &device,
                 QVulkanInstance *qvkInstance,
+                QWindow *qwindow
+        );
+
+        /**
+         * Set render device VkInstance to QVulkanInstance
+         *
+         * @param device Ignimbrite vulkan render device
+         * @param qvkInstance device's VkInstance will be set to this QVulkanInstance
+         */
+        static void setVulkanInstance(
+                VulkanRenderDevice &device,
+                QVulkanInstance *qvkInstance
+        );
+
+        /**
+         * Create Ignimbrite surface for specified QWindow.
+         * Use this function if QWindow will be used as a widget
+         * and rendering surface is not a whole window.
+         * @param device Ignimbrite vulkan render device
+         * @param qwindow QWindow to get vulkan surface
+         * @return Ignimbrite surface ID
+         */
+        static ID createSurfaceQtWidget(
+                VulkanRenderDevice &device,
                 QWindow *qwindow
         );
 #endif

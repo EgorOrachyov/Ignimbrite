@@ -66,6 +66,31 @@ namespace ignimbrite {
                                                       windowTitle);
     }
 
+    void VulkanExtensions::setVulkanInstance(VulkanRenderDevice &device, QVulkanInstance *qvkInstance) {
+        // register instance
+        qvkInstance->setVkInstance(device.context.instance);
+    }
+
+    VulkanExtensions::ID VulkanExtensions::createSurfaceQtWidget(VulkanRenderDevice &device, QWindow *qwindow) {
+        // get VkSurfaceKHR from qt window
+        VkSurfaceKHR surfaceKhr = QVulkanInstance::surfaceForWindow(qwindow);
+
+        if (surfaceKhr == nullptr) {
+            qFatal("Failed to get VkSurfaceKHR from QWindow \"%s\"", (char*)qwindow->filePath().data());
+        }
+
+        // get size of the window without its window frame
+        uint32 width = qwindow->width();
+        uint32 height = qwindow->height();
+
+        const char *windowTitle = (char*)qwindow->title().data();
+
+        // create result from VkSurfaceKHR
+        return VulkanExtensions::createSurfaceFromKHR(device, surfaceKhr,
+                                                      width, height,
+                                                      width, height,
+                                                      windowTitle);
+    }
 #endif
 
     VulkanExtensions::ID VulkanExtensions::createSurfaceFromKHR(VulkanRenderDevice &device, VkSurfaceKHR surfaceKhr, uint32 width,
