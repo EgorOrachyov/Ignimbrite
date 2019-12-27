@@ -101,7 +101,8 @@ namespace ignimbrite {
         /** Idle device and destroy surface with all its relative data */
         static void destroySurface(
                 VulkanRenderDevice &device,
-                ID surface
+                ID surface,
+                bool destroySurfKhr = true
         );
 
     private:

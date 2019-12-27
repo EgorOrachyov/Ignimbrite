@@ -33,8 +33,7 @@ namespace ignimbrite {
 
     VulkanExtensions::ID VulkanExtensions::createSurfaceQtWindow(VulkanRenderDevice &device, QVulkanInstance *qvkInstance, QWindow *qwindow) {
 
-        // register instance
-        qvkInstance->setVkInstance(device.context.instance);
+        setVulkanInstance(device, qvkInstance);
 
         // create qt vulkan instance
         if (!qvkInstance->create()) {
@@ -46,24 +45,7 @@ namespace ignimbrite {
         // init
         qwindow->show();
 
-        // get VkSurfaceKHR from qt window
-        VkSurfaceKHR surfaceKhr = QVulkanInstance::surfaceForWindow(qwindow);
-
-        if (surfaceKhr == nullptr) {
-            qFatal("Failed to get VkSurfaceKHR from QWindow \"%s\"", (char*)qwindow->filePath().data());
-        }
-
-        // get size of the window without its window frame
-        uint32 width = qwindow->width();
-        uint32 height = qwindow->height();
-
-        const char *windowTitle = (char*)qwindow->title().data();
-
-        // create result from VkSurfaceKHR
-        return VulkanExtensions::createSurfaceFromKHR(device, surfaceKhr,
-                                                      width, height,
-                                                      width, height,
-                                                      windowTitle);
+        return createSurfaceQtWidget(device, qwindow);
     }
 
     void VulkanExtensions::setVulkanInstance(VulkanRenderDevice &device, QVulkanInstance *qvkInstance) {
@@ -122,7 +104,7 @@ namespace ignimbrite {
         return device.mSurfaces.move(window);
     }
 
-    void VulkanExtensions::destroySurface(VulkanRenderDevice &device, VulkanExtensions::ID surface) {
+    void VulkanExtensions::destroySurface(VulkanRenderDevice &device, VulkanExtensions::ID surface, bool destroySurfKhr) {
         VulkanSurface &vulkanSurface = device.mSurfaces.get(surface);
         VulkanContext &context = device.context;
 
@@ -132,7 +114,9 @@ namespace ignimbrite {
         context.destroyFramebufferFormat(vulkanSurface);
         context.destroySwapChain(vulkanSurface);
 
-        vkDestroySurfaceKHR(context.instance, vulkanSurface.surface, nullptr);
+        if (destroySurfKhr) {
+            vkDestroySurfaceKHR(context.instance, vulkanSurface.surface, nullptr);
+        }
 
         device.mSurfaces.remove(surface);
     }
