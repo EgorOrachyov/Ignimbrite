@@ -365,6 +365,17 @@ namespace ignimbrite {
         virtual void drawListDrawIndexed(uint32 indicesCount, uint32 instancesCount) = 0;
 
         /**
+         * @brief Flushes draw lists
+         *
+         * Flush all the created draw lists from previous drawListFlush() call.
+         * Immediately submits all the draw lists to be executed on GPU.
+         *
+         * @note After this stage host CPU and GPU are no synchronized.
+         *       To change state of render device object you must call hostSynchronize() function.
+         */
+        virtual void drawListFlush() = 0;
+
+        /**
          * @brief Get surface id
          *
          * Allows to get surface ID via name for specific window rendering.
@@ -396,7 +407,16 @@ namespace ignimbrite {
          *
          * @param surface ID of the surface to swap buffers to present final image
          */
-        virtual void swapBuffers(ID surface) = 0;
+        virtual void surfaceSwapBuffers(ID surface) = 0;
+
+        /**
+         * @brief CPU and GPU synchronization
+         *
+         * Synchronize CPU host program with the GPU. Wait for all the
+         * flush requests to be finished. After than function call all
+         * the render device objects could be safely modified.
+         */
+        virtual void hostSynchronize() = 0;
 
         /** @return Readable hardware API name */
         virtual const std::string &getDeviceName() const;
