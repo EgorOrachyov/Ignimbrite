@@ -11,20 +11,29 @@
 
 #include <ignimbrite/ObjectID.h>
 #include <vulkan/vulkan.h>
+#include <vector>
 
 namespace ignimbrite {
 
+    /**
+     * Represent render pass structure, format of used color/depth
+     * attachments and dependencies between resources.
+     */
     struct VulkanFrameBufferFormat {
         VkRenderPass renderPass;
         uint32 numOfAttachments;
         bool useDepthStencil;
     };
 
-    struct VulkanFrameBuffer {
-        VkFramebuffer framebuffer = VK_NULL_HANDLE;
-        ObjectID framebufferFormatId;
+    /**
+     * Concrete framebuffer object
+     * set of color and depth attachments.
+     */
+    struct VulkanFramebuffer {
         uint32 width = 0;
         uint32 height = 0;
+        ObjectID framebufferFormatId;
+        VkFramebuffer framebuffer = VK_NULL_HANDLE;
     };
 
 } // namespace ignimbrite
