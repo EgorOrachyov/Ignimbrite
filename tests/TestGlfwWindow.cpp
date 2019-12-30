@@ -11,7 +11,7 @@
 
 using namespace ignimbrite;
 
-int32 main(int32 argc, char** argv) {
+int32 main() {
     int32 width = 640;
     int32 height = 480;
     const char caption[] = "Test Window";

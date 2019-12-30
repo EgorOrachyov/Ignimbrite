@@ -38,4 +38,17 @@ namespace ignimbrite {
 
 } // namespace ignimbrite
 
+#define VK_RESULT_ASSERT(result, message)                               \
+    do {                                                                \
+        if ((result) != VK_SUCCESS)                                     \
+            throw VulkanException(message);                             \
+    } while (false);
+
+#define VK_TRUE_ASSERT(condition, message)                              \
+    {                                                                   \
+        if (!(condition)) {                                             \
+            throw VulkanException(message);                             \
+        }                                                               \
+    }
+
 #endif //IGNIMBRITELIBRARY_VULKANERRORS_H

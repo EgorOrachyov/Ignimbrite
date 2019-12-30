@@ -160,11 +160,12 @@ namespace ignimbrite {
         struct TextureDesc {
             TextureType type = TextureType::Texture2D;
             DataFormat format = DataFormat::R8G8B8A8_UNORM;
+            TextureUsageFlags usageFlags = 0;
             uint32 mipmaps = 1;
             uint32 width = 0;
             uint32 height = 0;
             uint32 depth = 1;
-            uint32 usageFlags = 0;
+            uint32 size = 0;
             void *data = nullptr;
         };
 
@@ -172,13 +173,17 @@ namespace ignimbrite {
 
         virtual void destroyTexture(ID texture) = 0;
 
-        struct ShaderDataDesc {
+        struct ShaderDesc {
             ShaderType type;
-            ShaderLanguage language;
             std::vector<uint8> source;
         };
 
-        virtual ID createShaderProgram(const std::vector<ShaderDataDesc> &shaders) = 0;
+        struct ProgramDesc {
+            ShaderLanguage language;
+            std::vector<ShaderDesc> shaders;
+        };
+
+        virtual ID createShaderProgram(const ProgramDesc &programDesc) = 0;
 
         virtual void destroyShaderProgram(ID program) = 0;
 
@@ -197,10 +202,10 @@ namespace ignimbrite {
         virtual void destroyFramebuffer(ID framebuffer) = 0;
 
         struct PipelineRasterizationDesc {
-            PolygonMode mode;
-            PolygonCullMode cullMode;
-            PolygonFrontFace frontFace;
-            float32 lineWidth;
+            PolygonMode mode = PolygonMode::Fill;
+            PolygonCullMode cullMode = PolygonCullMode::Back;
+            PolygonFrontFace frontFace = PolygonFrontFace::FrontCounterClockwise;
+            float32 lineWidth = 1.0f;
         };
 
         /**
@@ -328,26 +333,35 @@ namespace ignimbrite {
         /**
          * @brief Begin draw list
          *
-         * Single time submit draw list.
+         * Single time submit draw list. Requires drawListEnd() to be called.
+         * Between this functions' calls allowed only commands with drawList prefix.
+         *
+         * @note Order of commands execution inside single draw list IS SYNCHRONIZED.
+         * @note Order of different draw list execution IS NOT SYNCHRONIZED.
          */
         virtual void drawListBegin() = 0;
 
         /**
          * @brief End draw list
          *
-         * Finish draw list commands setup. Submits
-         * draw list on GPU for rendering and waits, until
-         * draw list executed.
+         * Finish draw list commands setup. Submits draw list on GPU for
+         * rendering and waits, until draw list is executed.
+         *
+         * @note Ended draw list won't be executed until flush() called,
+         *       followed by explicit synchronize() call.
          */
         virtual void drawListEnd() = 0;
 
         virtual void drawListBindSurface(ID surface, const Color &color, const Region &area) = 0;
 
-        virtual void drawListBindFramebuffer(ID framebuffer, const std::vector<Color> &colors, const Region &area) = 0;
+        virtual void drawListBindFramebuffer(ID framebuffer,
+                                             const std::vector<Color> &colors,
+                                             const Region &area) = 0;
 
-        virtual void
-        drawListBindFramebuffer(ID framebuffer, const std::vector<Color> &colors, float32 depth, uint32 stencil,
-                                const Region &area) = 0;
+        virtual void drawListBindFramebuffer(ID framebuffer,
+                                             const std::vector<Color> &colors,
+                                             float32 depth, uint32 stencil,
+                                             const Region &area) = 0;
 
         virtual void drawListBindPipeline(ID graphicsPipeline) = 0;
 
@@ -373,6 +387,13 @@ namespace ignimbrite {
          */
         virtual ID getSurface(const std::string &surfaceName) = 0;
 
+        /**
+         * @brief Get surface size
+         *
+         * @param surface ID of surface to get size
+         * @param width[out] Surface framebuffer width
+         * @param height[out] Surface framebuffer height
+         */
         virtual void getSurfaceSize(ID surface, uint32 &width, uint32 &height) = 0;
 
         /**
@@ -384,9 +405,37 @@ namespace ignimbrite {
          * all the currently filled command buffers for rendering in specified surface
          * and wait, until previous submit session is completed.
          *
+         * @note Before swap buffer all the draw lists must be executed.
+         *       To ensure, that all the draw lists executed call synchronize() method.
+         *
          * @param surface ID of the surface to swap buffers to present final image
          */
         virtual void swapBuffers(ID surface) = 0;
+
+        /**
+         * @brief Flushes draw lists
+         *
+         * Flush all the created draw lists from previous drawListFlush() call.
+         * Immediately submits all the draw lists to be executed on GPU.
+         *
+         * @note Order of the execution of draw lists is not specified.
+         *
+         * @note After this stage host CPU and GPU are no synchronized.
+         *       To change state of render device object you must call hostSynchronize() function.
+         */
+        virtual void flush() = 0;
+
+        /**
+         * @brief CPU and GPU synchronization
+         *
+         * Synchronize CPU host program with the GPU. Wait for all the
+         * flush requests to be finished. After than function call all
+         * the render device objects could be safely modified.
+         *
+         * @note Before swap buffer all the draw lists must be executed.
+         *       To ensure, that all the draw lists executed call synchronize() method.
+         */
+        virtual void synchronize() = 0;
 
         /** @return Readable hardware API name */
         virtual const std::string &getDeviceName() const;

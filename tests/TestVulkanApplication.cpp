@@ -35,7 +35,6 @@ public:
         surface = VulkanExtensions::createSurfaceGLFW(
                 device,
                 window,
-                width, height,
                 widthFrameBuffer, heightFrameBuffer,
                 name
         );
@@ -130,13 +129,6 @@ public:
     }
 
     void loadTestShader(VulkanRenderDevice &device) {
-        std::vector<RenderDevice::ShaderDataDesc> shaderDescs(2);
-
-        shaderDescs[0].language = ShaderLanguage::SPIRV;
-        shaderDescs[1].language = ShaderLanguage::SPIRV;
-        shaderDescs[0].type = ShaderType::Vertex;
-        shaderDescs[1].type = ShaderType::Fragment;
-
         std::ifstream vertFile("shaders/vert.spv", std::ios::binary);
         std::ifstream fragFile("shaders/frag.spv", std::ios::binary);
 
@@ -147,10 +139,17 @@ public:
         std::vector<uint8> vertSpv(std::istreambuf_iterator<char>(vertFile), {});
         std::vector<uint8> fragSpv(std::istreambuf_iterator<char>(fragFile), {});
 
-        shaderDescs[0].source = std::move(vertSpv);
-        shaderDescs[1].source = std::move(fragSpv);
+        RenderDevice::ProgramDesc programDesc;
+        programDesc.language = ShaderLanguage::SPIRV;
+        programDesc.shaders.resize(2);
 
-        shaderProgram = device.createShaderProgram(shaderDescs);
+        programDesc.shaders[0].type = ShaderType::Vertex;
+        programDesc.shaders[0].source = std::move(vertSpv);
+
+        programDesc.shaders[1].type = ShaderType::Fragment;
+        programDesc.shaders[1].source = std::move(fragSpv);
+
+        shaderProgram = device.createShaderProgram(programDesc);
     }
 
     void loop() {
@@ -159,9 +158,6 @@ public:
         RenderDevice::Color clearColor = { {0.1f, 0.4f, 0.7f, 0.0f} };
         RenderDevice::Region area = {};
         area.extent = { widthFrameBuffer, heightFrameBuffer };
-
-        // TODO: DELETE THIS
-        device.swapBuffers(surface);
 
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
@@ -177,6 +173,8 @@ public:
 
             device.drawListEnd();
 
+            device.flush();
+            device.synchronize();
             device.swapBuffers(surface);
         }
     }

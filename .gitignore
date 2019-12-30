@@ -16,10 +16,11 @@
 
 /**/.idea/
 /**/.vs/
-/**/cmake-build-debug/
-/build
-/out
-/thirdparty/include/*
-/thirdparty/lib/*
 /**/.DS_Store
 /**/.git
+/**/cmake-build-debug/
+/**/cmake-build-release/
+/ignimbrite/include/ignimbrite/Options.h
+/build
+/out
+/documents
