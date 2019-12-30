@@ -165,6 +165,7 @@ namespace ignimbrite {
             uint32 height = 0;
             uint32 depth = 1;
             uint32 usageFlags = 0;
+            uint32 size = 0;
             void *data = nullptr;
         };
 

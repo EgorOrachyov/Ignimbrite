@@ -150,22 +150,20 @@ namespace ignimbrite {
         vkUnmapMemory(context.device, bufferMemory);
     }
 
-    void VulkanUtils::createTextureImage(const void *imageData,
-                                         uint32 width, uint32 height,
-                                         uint32 depth, uint32 mipLevels,
-                                         VkImageType imageType, VkFormat format, VkImageTiling tiling,
-                                         VkImage &outTextureImage, VkDeviceMemory &outTextureMemory,
-                                         VkImageLayout textureLayout) {
+    void
+    VulkanUtils::createTextureImage(const void *imageData, uint32 dataSize, uint32 width, uint32 height, uint32 depth,
+                                    uint32 mipLevels,
+                                    VkImageType imageType, VkFormat format, VkImageTiling tiling,
+                                    VkImage &outTextureImage,
+                                    VkDeviceMemory &outTextureMemory, VkImageLayout textureLayout) {
         auto& context = VulkanContext::getInstance();
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
+        VkDeviceSize imageSize = dataSize;
 
-        VkDeviceSize imageSize = (VkDeviceSize) width * height * depth;
-
-        // create staging buffer to create image in device local memory
-        createBuffer(
-                     imageSize,
+        // Create staging buffer to create image in device local memory
+        createBuffer(imageSize,
                      VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                      stagingBuffer, stagingBufferMemory);
@@ -175,25 +173,19 @@ namespace ignimbrite {
         }
 
         createImage(width, height, depth, mipLevels, imageType, format, tiling,
-                // for copying and sampling in shaders
+                    // for copying and sampling in shaders
                     VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                // TODO: updatable from cpu ??
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                     outTextureImage, outTextureMemory);
 
-        // layout transition from undefined
-        // to transfer destination to prepare image for copying
-        transitionImageLayout(outTextureImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                              mipLevels);
-
-        // copy without mipmaps
+        // Transition layout to copy data
+        transitionImageLayout(outTextureImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,mipLevels);
         copyBufferToImage(stagingBuffer, outTextureImage, width, height, depth);
 
         vkDestroyBuffer(context.device, stagingBuffer, nullptr);
         vkFreeMemory(context.device, stagingBufferMemory, nullptr);
 
-        // generate mipmaps and layout transition
-        // from transfer destination to shader readonly
+        // Generate mipmaps and layout transition from transfer destination to shader readonly
         generateMipmaps(outTextureImage, format, width, height, mipLevels, textureLayout);
     }
 
@@ -237,9 +229,7 @@ namespace ignimbrite {
         VK_RESULT_ASSERT(result, "Failed to bind image memory");
     }
 
-    void
-    VulkanUtils::copyBufferToImage(VkBuffer buffer, VkImage image, uint32 width, uint32 height,
-                                   uint32 depth) {
+    void VulkanUtils::copyBufferToImage(VkBuffer buffer, VkImage image, uint32 width, uint32 height, uint32 depth) {
         auto& context = VulkanContext::getInstance();
 
         VkCommandBuffer commandBuffer = beginTmpCommandBuffer(context.transferTmpCommandPool);
@@ -261,8 +251,7 @@ namespace ignimbrite {
         endTmpCommandBuffer(commandBuffer, context.transferQueue, context.transferTmpCommandPool);
     }
 
-    void VulkanUtils::transitionImageLayout(VkImage image, VkImageLayout oldLayout,
-                                            VkImageLayout newLayout, uint32 mipLevels) {
+    void VulkanUtils::transitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32 mipLevels) {
         auto& context = VulkanContext::getInstance();
         VkCommandBuffer commandBuffer = beginTmpCommandBuffer(context.transferTmpCommandPool);
 

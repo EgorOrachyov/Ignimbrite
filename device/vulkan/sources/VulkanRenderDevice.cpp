@@ -257,7 +257,7 @@ namespace ignimbrite {
 
             // create texture image with mipmaps and allocate memory
             VulkanUtils::createTextureImage(
-                    textureDesc.data,
+                    textureDesc.data, textureDesc.size,
                     textureDesc.width, textureDesc.height, textureDesc.depth,
                     textureDesc.mipmaps,
                     imageType, format, VK_IMAGE_TILING_OPTIMAL,

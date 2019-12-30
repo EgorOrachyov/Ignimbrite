@@ -57,14 +57,12 @@ namespace ignimbrite {
                 const void *data
         );
 
-        static void createTextureImage(
-                const void *imageData,
-                uint32 width, uint32 height,
-                uint32 depth, uint32 mipLevels,
-                VkImageType imageType, VkFormat format, VkImageTiling tiling,
-                VkImage &outTextureImage, VkDeviceMemory &outTextureMemory,
-                VkImageLayout textureLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-        );
+        static void
+        createTextureImage(const void *imageData, uint32 dataSize, uint32 width, uint32 height, uint32 depth,
+                           uint32 mipLevels,
+                           VkImageType imageType, VkFormat format, VkImageTiling tiling, VkImage &outTextureImage,
+                           VkDeviceMemory &outTextureMemory,
+                           VkImageLayout textureLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
         static void createImage(
                 uint32 width, uint32 height,
