@@ -9,6 +9,7 @@
 #include <VulkanSurface.h>
 #include <VulkanUtils.h>
 #include <array>
+#include <limits>
 
 namespace ignimbrite {
 
@@ -352,7 +353,7 @@ namespace ignimbrite {
         auto result = vkAcquireNextImageKHR(
                 context.device,
                 swapChain.swapChainKHR,
-                std::numeric_limits<uint32>::max(),
+                std::numeric_limits<uint64>::max(),
                 VK_NULL_HANDLE,
                 imageAvailable.get(),
                 &currentImageIndex

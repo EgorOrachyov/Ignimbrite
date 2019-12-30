@@ -10,6 +10,7 @@
 #define IGNIMBRITELIBRARY_VULKANFENCE_H
 
 #include <VulkanContext.h>
+#include <limits>
 
 namespace ignimbrite {
 

@@ -400,8 +400,8 @@ namespace ignimbrite {
          * all the currently filled command buffers for rendering in specified surface
          * and wait, until previous submit session is completed.
          *
-         * @note Before swap buffer call synchronize() method must be explicitly
-         *       called to ensure, than no draw command will render in  any surface
+         * @note Before swap buffer all the draw lists must be executed.
+         *       To ensure, that all the draw lists executed call synchronize() method.
          *
          * @param surface ID of the surface to swap buffers to present final image
          */
@@ -427,8 +427,8 @@ namespace ignimbrite {
          * flush requests to be finished. After than function call all
          * the render device objects could be safely modified.
          *
-         * @note Must be explicitly called before any swap buffers request to
-         *       ensure, than no draw command will render in any surface.
+         * @note Before swap buffer all the draw lists must be executed.
+         *       To ensure, that all the draw lists executed call synchronize() method.
          */
         virtual void synchronize() = 0;
 
