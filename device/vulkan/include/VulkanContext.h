@@ -129,9 +129,6 @@ namespace ignimbrite {
         VkCommandPool graphicsTmpCommandPool = VK_NULL_HANDLE;
         VkCommandPool transferTmpCommandPool = VK_NULL_HANDLE;
 
-        // NOTE: do not use this vector with multithreading ??
-        std::vector<VkClearValue> tempClearValues = {};
-
     };
 
 } // namespace ignimbrite

@@ -353,7 +353,7 @@ namespace ignimbrite {
         auto result = vkAcquireNextImageKHR(
                 context.device,
                 swapChain.swapChainKHR,
-                std::numeric_limits<uint64>::max(),
+                UINT64_MAX,
                 VK_NULL_HANDLE,
                 imageAvailable.get(),
                 &currentImageIndex

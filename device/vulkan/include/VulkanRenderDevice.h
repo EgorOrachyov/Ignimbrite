@@ -59,7 +59,7 @@ namespace ignimbrite {
         void updateUniformBuffer(ID buffer, uint32 size, uint32 offset, const void *data) override;
         void destroyUniformBuffer(ID buffer) override;
 
-        ID createShaderProgram(const std::vector<ShaderDataDesc> &shaders) override;
+        ID createShaderProgram(const ProgramDesc &programDesc) override;
         void destroyShaderProgram(ID program) override;
 
         ID createGraphicsPipeline(PrimitiveTopology topology,
@@ -100,11 +100,13 @@ namespace ignimbrite {
         friend class VulkanExtensions;
 
         using CommandBuffers = std::vector<VkCommandBuffer>;
+        using ClearValues = std::vector<VkClearValue>;
 
         VulkanContext& mContext = VulkanContext::getInstance();
+        VulkanDrawListStateControl mDrawListState;
         CommandBuffers mDrawQueue;
         CommandBuffers mSyncQueue;
-        VulkanDrawListStateControl mDrawListState;
+        ClearValues mClearValues;
 
         ObjectIDBuffer<VulkanSurface> mSurfaces;
         ObjectIDBuffer<VulkanVertexLayout> mVertexLayouts;

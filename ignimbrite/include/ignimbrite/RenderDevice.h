@@ -172,13 +172,17 @@ namespace ignimbrite {
 
         virtual void destroyTexture(ID texture) = 0;
 
-        struct ShaderDataDesc {
+        struct ShaderDesc {
             ShaderType type;
-            ShaderLanguage language;
             std::vector<uint8> source;
         };
 
-        virtual ID createShaderProgram(const std::vector<ShaderDataDesc> &shaders) = 0;
+        struct ProgramDesc {
+            ShaderLanguage language;
+            std::vector<ShaderDesc> shaders;
+        };
+
+        virtual ID createShaderProgram(const ProgramDesc &programDesc) = 0;
 
         virtual void destroyShaderProgram(ID program) = 0;
 
@@ -197,10 +201,10 @@ namespace ignimbrite {
         virtual void destroyFramebuffer(ID framebuffer) = 0;
 
         struct PipelineRasterizationDesc {
-            PolygonMode mode;
-            PolygonCullMode cullMode;
-            PolygonFrontFace frontFace;
-            float32 lineWidth;
+            PolygonMode mode = PolygonMode::Fill;
+            PolygonCullMode cullMode = PolygonCullMode::Back;
+            PolygonFrontFace frontFace = PolygonFrontFace::FrontCounterClockwise;
+            float32 lineWidth = 1.0f;
         };
 
         /**

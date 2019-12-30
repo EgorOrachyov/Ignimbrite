@@ -10,7 +10,6 @@
 #define IGNIMBRITELIBRARY_VULKANFENCE_H
 
 #include <VulkanContext.h>
-#include <limits>
 
 namespace ignimbrite {
 
@@ -42,7 +41,7 @@ namespace ignimbrite {
         /** Blocks until fence is set */
         void wait() {
             auto &context = VulkanContext::getInstance();
-            auto result = vkWaitForFences(context.device, 1, &mFence, true, std::numeric_limits<uint64>::max());
+            auto result = vkWaitForFences(context.device, 1, &mFence, true, UINT64_MAX);
             VK_RESULT_ASSERT(result, "Failed to wait for fence");
         }
 

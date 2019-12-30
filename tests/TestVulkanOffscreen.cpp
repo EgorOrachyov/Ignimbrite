@@ -295,17 +295,17 @@ public:
         std::vector<uint8> vertexSpv(std::istreambuf_iterator<char>(vertexFile), {});
         std::vector<uint8> fragmentSpv(std::istreambuf_iterator<char>(fragmentFile), {});
 
-        std::vector<RenderDevice::ShaderDataDesc> descriptors(2);
+        RenderDevice::ProgramDesc programDesc;
+        programDesc.language = ShaderLanguage::SPIRV;
+        programDesc.shaders.resize(2);
 
-        descriptors[0].language = ShaderLanguage::SPIRV;
-        descriptors[0].type = ShaderType::Vertex;
-        descriptors[0].source = std::move(vertexSpv);
+        programDesc.shaders[0].type = ShaderType::Vertex;
+        programDesc.shaders[0].source = std::move(vertexSpv);
 
-        descriptors[1].language = ShaderLanguage::SPIRV;
-        descriptors[1].type = ShaderType::Fragment;
-        descriptors[1].source = std::move(fragmentSpv);
+        programDesc.shaders[1].type = ShaderType::Fragment;
+        programDesc.shaders[1].source = std::move(fragmentSpv);
 
-        id = device->createShaderProgram(descriptors);
+        id = device->createShaderProgram(programDesc);
     }
 
 
@@ -322,7 +322,7 @@ public:
 
             {
                 device->drawListBegin();
-                device->drawListBindFramebuffer(offscreenPass.frameBuffer, colors, 1.0f, 0, regionOffscreen);
+                device->drawListBindFramebuffer(offscreenPass.frameBuffer, colors, regionOffscreen);
                 device->drawListBindPipeline(offscreenPass.pipeline);
                 device->drawListBindVertexBuffer(offscreenPass.vertexBuffer, 0, 0);
                 device->drawListDraw(3, 1);
@@ -332,6 +332,7 @@ public:
                 device->drawListBindVertexBuffer(surfacePass.vertexBuffer, 0, 0);
                 device->drawListDraw(6, 1);
                 device->drawListEnd();
+
                 device->flush();
                 device->synchronize();
                 device->swapBuffers(surface);

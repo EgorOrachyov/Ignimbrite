@@ -677,17 +677,13 @@ namespace ignimbrite {
         mUniformBuffers.remove(bufferId);
     }
 
-    RenderDevice::ID VulkanRenderDevice::createShaderProgram(const std::vector<RenderDevice::ShaderDataDesc> &shaders) {
+    RenderDevice::ID VulkanRenderDevice::createShaderProgram(const ProgramDesc &programDesc) {
         VulkanShaderProgram program = {};
-        program.shaders.reserve(shaders.size());
+        program.shaders.reserve(programDesc.shaders.size());
 
-        for (const auto &desc: shaders) {
+        VK_TRUE_ASSERT(programDesc.language == ShaderLanguage::SPIRV, "Compiling shaders from not SPIR-V languages is not supported");
 
-            if (desc.language != ShaderLanguage::SPIRV) {
-                throw VulkanException("Compiling shaders from not SPIR-V languages is not supported");
-            }
-
-            VkResult result;
+        for (const auto &desc: programDesc.shaders) {
             VkShaderModule module;
 
             VkShaderModuleCreateInfo createInfo = {};
@@ -695,7 +691,7 @@ namespace ignimbrite {
             createInfo.pCode = (const uint32 *) desc.source.data();
             createInfo.codeSize = (uint32) desc.source.size();
 
-            result = vkCreateShaderModule(mContext.device, &createInfo, nullptr, &module);
+            auto result = vkCreateShaderModule(mContext.device, &createInfo, nullptr, &module);
             VK_RESULT_ASSERT(result, "Failed to create shader module");
 
             VulkanShader shader = {};
@@ -986,13 +982,10 @@ namespace ignimbrite {
         uint32 viewportHeight = area.extent.y;
 
         VkClearValue clearValues[2];
-        clearValues[0].color = { {
-                                         color.components[0],
-                                         color.components[1],
-                                         color.components[2],
-                                         color.components[3]
-                                 }
-        };
+        clearValues[0].color.float32[0] = color.components[0];
+        clearValues[0].color.float32[1] = color.components[1];
+        clearValues[0].color.float32[2] = color.components[2];
+        clearValues[0].color.float32[3] = color.components[3];
         clearValues[1].depthStencil.depth = clearDepth;
         clearValues[1].depthStencil.stencil = clearStencil;
 
@@ -1049,24 +1042,25 @@ namespace ignimbrite {
         uint32 viewportWidth = area.extent.x;
         uint32 viewportHeight = area.extent.y;
 
-        // to prevent allocation std::vector on each call of this function ??
-        std::vector<VkClearValue> &clearValues = mContext.tempClearValues;
-        if (clearValues.size() < colors.size() + 1) {
-            clearValues.resize(colors.size() + 1);
-        }
+        uint32 colorValuesCount = (uint32) colors.size();
+        uint32 clearValuesCount = colorValuesCount + 1;
+        mClearValues.reserve(colorValuesCount);
 
-        for (size_t i = 0; i < colors.size(); i++) {
-            clearValues[i].color = { {
-                                             colors[i].components[0],
-                                             colors[i].components[1],
-                                             colors[i].components[2],
-                                             colors[i].components[3]}
-            };
+        for (size_t i = 0; i < colorValuesCount; i++) {
+            VkClearColorValue colorValue;
+            auto color = colors[i];
+
+            colorValue.float32[0] = color.components[0];
+            colorValue.float32[1] = color.components[1];
+            colorValue.float32[2] = color.components[2];
+            colorValue.float32[3] = color.components[3];
+
+            mClearValues[i].color = colorValue;
         }
 
         VkClearValue depthStencilClearValues = {};
         depthStencilClearValues.depthStencil = {clearDepth, clearStencil};
-        clearValues.back() = depthStencilClearValues;
+        mClearValues[colorValuesCount] = depthStencilClearValues;
 
         VkRenderPassBeginInfo renderPassBeginInfo = {};
         renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -1076,8 +1070,8 @@ namespace ignimbrite {
 
         renderPassBeginInfo.renderArea.extent.width = fbo.width;
         renderPassBeginInfo.renderArea.extent.height = fbo.height;
-        renderPassBeginInfo.clearValueCount = (uint32) clearValues.size();
-        renderPassBeginInfo.pClearValues = clearValues.data();
+        renderPassBeginInfo.clearValueCount = clearValuesCount;
+        renderPassBeginInfo.pClearValues = mClearValues.data();
         renderPassBeginInfo.framebuffer = fbo.framebuffer;
 
         vkCmdBeginRenderPass(cmd, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
