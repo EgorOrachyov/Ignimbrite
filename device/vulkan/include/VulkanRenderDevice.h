@@ -12,7 +12,9 @@
 #include <ignimbrite/ObjectIDBuffer.h>
 #include <VulkanObjects.h>
 #include <VulkanContext.h>
+#include <VulkanSurface.h>
 #include <VulkanUtils.h>
+#include <VulkanDrawList.h>
 
 namespace ignimbrite {
 
@@ -90,29 +92,33 @@ namespace ignimbrite {
         void getSurfaceSize(ID surface, uint32 &width, uint32 &height) override;
         void swapBuffers(ID surfaceId) override;
 
+        void flush() override;
+        void synchronize() override;
+
     private:
 
         friend class VulkanExtensions;
 
-        template<typename T>
-        using Buffer = ObjectIDBuffer<T>;
+        using CommandBuffers = std::vector<VkCommandBuffer>;
 
-        VulkanDrawList drawList;
-        VulkanContext& context = VulkanContext::getSingleton();
+        VulkanContext& mContext = VulkanContext::getInstance();
+        CommandBuffers mDrawQueue;
+        CommandBuffers mSyncQueue;
+        VulkanDrawListStateControl mDrawListState;
 
-        Buffer<VulkanSurface> mSurfaces;
-        Buffer<VulkanVertexLayout> mVertexLayouts;
-        Buffer<VulkanVertexBuffer> mVertexBuffers;
-        Buffer<VulkanIndexBuffer> mIndexBuffers;
-        Buffer<VulkanFrameBufferFormat> mFrameBufferFormats;
-        Buffer<VulkanFrameBuffer> mFrameBuffers;
-        Buffer<VkSampler> mSamplers;
-        Buffer<VulkanTextureObject> mTextureObjects;
-        Buffer<VulkanUniformBuffer> mUniformBuffers;
-        Buffer<VulkanUniformLayout> mUniformLayouts;
-        Buffer<VulkanUniformSet> mUniformSets;
-        Buffer<VulkanShaderProgram> mShaderPrograms;
-        Buffer<VulkanGraphicsPipeline> mGraphicsPipelines;
+        ObjectIDBuffer<VulkanSurface> mSurfaces;
+        ObjectIDBuffer<VulkanVertexLayout> mVertexLayouts;
+        ObjectIDBuffer<VulkanVertexBuffer> mVertexBuffers;
+        ObjectIDBuffer<VulkanIndexBuffer> mIndexBuffers;
+        ObjectIDBuffer<VulkanFrameBufferFormat> mFrameBufferFormats;
+        ObjectIDBuffer<VulkanFramebuffer> mFrameBuffers;
+        ObjectIDBuffer<VkSampler> mSamplers;
+        ObjectIDBuffer<VulkanTextureObject> mTextureObjects;
+        ObjectIDBuffer<VulkanUniformBuffer> mUniformBuffers;
+        ObjectIDBuffer<VulkanUniformLayout> mUniformLayouts;
+        ObjectIDBuffer<VulkanUniformSet> mUniformSets;
+        ObjectIDBuffer<VulkanShaderProgram> mShaderPrograms;
+        ObjectIDBuffer<VulkanGraphicsPipeline> mGraphicsPipelines;
     };
 
 } // namespace ignimbrite

@@ -48,19 +48,6 @@ namespace ignimbrite {
         VkImageUsageFlags usageFlags;
     };
 
-    struct VulkanDrawList {
-        VkCommandBuffer buffer = VK_NULL_HANDLE;
-        VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
-        ObjectID surfaceId;
-        bool surfaceAttached = false;
-        bool frameBufferAttached = false;
-        bool pipelineAttached = false;
-        bool uniformSetAttached = false;
-        bool vertexBufferAttached = false;
-        bool indexBufferAttached = false;
-        bool drawCalled = false;
-    };
-
     struct VulkanUniformBuffer {
         BufferUsage usage;
         uint32 size;

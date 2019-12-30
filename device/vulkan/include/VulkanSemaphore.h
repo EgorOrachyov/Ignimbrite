@@ -26,10 +26,15 @@ namespace ignimbrite {
         }
 
         ~VulkanSemaphore() {
-            if (mSemaphore) {
+            if (mSemaphore != VK_NULL_HANDLE) {
                 auto &context = VulkanContext::getInstance();
                 vkDestroySemaphore(context.device, mSemaphore, nullptr);
             }
+        }
+
+        VulkanSemaphore(VulkanSemaphore && other) noexcept {
+            mSemaphore = other.mSemaphore;
+            other.mSemaphore = VK_NULL_HANDLE;
         }
 
         /** @return Vulkan semaphore handler */

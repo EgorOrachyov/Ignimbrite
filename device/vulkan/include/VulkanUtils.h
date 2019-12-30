@@ -22,7 +22,8 @@ namespace ignimbrite {
         );
 
         static VkFormat findSupportedFormat(
-                const VkFormat *candidates, uint32 candidatesCount,
+                const VkFormat *candidates,
+                uint32 candidatesCount,
                 VkImageTiling tiling,
                 VkFormatFeatureFlags features
         );
@@ -103,24 +104,9 @@ namespace ignimbrite {
         );
 
         static void createDepthStencilBuffer(
-                 uint32 width, uint32 height, uint32 depth,
+                uint32 width, uint32 height, uint32 depth,
                 VkImageType imageType, VkFormat format, VkImage &outImage,
                 VkDeviceMemory &outImageMemory, VkImageUsageFlags usageFlags
-        );
-
-        static void getSurfaceProperties(
-                VkPhysicalDevice physicalDevice, VkSurfaceKHR surfaceKHR,
-                std::vector<VkSurfaceFormatKHR> &outSurfaceFormats,
-                std::vector<VkPresentModeKHR> &outPresentModes
-        );
-
-        static VkExtent2D getSwapChainExtent(
-                uint32 preferredWidth, uint32 preferredHeight,
-                const VkSurfaceCapabilitiesKHR &surfaceCapabilities
-        );
-
-        static VkCompositeAlphaFlagBitsKHR getAvailableCompositeAlpha(
-                const VkSurfaceCapabilitiesKHR &surfaceCapabilities
         );
 
         static void createVertexInputState(
@@ -186,14 +172,21 @@ namespace ignimbrite {
                 uint32 queueFamilyIndex
         );
 
-        static VkCommandBuffer beginTempCommandBuffer(
-                 VkCommandPool commandPool
+        static VkCommandBuffer beginTmpCommandBuffer(
+                VkCommandPool commandPool
         );
 
-        static void endTempCommandBuffer(
-                 VkCommandBuffer commandBuffer,
-                VkQueue queue, VkCommandPool commandPool
+        static void endTmpCommandBuffer(
+                VkCommandBuffer commandBuffer,
+                VkQueue queue,
+                VkCommandPool commandPool
         );
+
+        static void destroyTmpComandBuffer(
+                VkCommandBuffer commandBuffer,
+                VkCommandPool commandPool
+        );
+
     };
 
 } // namespace ignimbrite

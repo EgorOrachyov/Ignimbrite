@@ -15,7 +15,7 @@ namespace ignimbrite {
             throw VulkanException("All descriptor sets, allocated for uniform layout, must be freed");
         }
 
-        auto& context = VulkanContext::getSingleton();
+        auto& context = VulkanContext::getInstance();
 
         for (const auto& pool: mPools) {
             vkDestroyDescriptorPool(context.device, pool.pool, nullptr);
@@ -23,7 +23,7 @@ namespace ignimbrite {
     }
 
     VkDescriptorSet VulkanDescriptorAllocator::allocateSet() {
-        auto& context = VulkanContext::getSingleton();
+        auto& context = VulkanContext::getInstance();
         VkDescriptorSet descriptorSet;
 
         if (mFreeSets.empty()) {
@@ -72,7 +72,7 @@ namespace ignimbrite {
     }
 
     VulkanDescriptorAllocator::VulkanPoolInfo& VulkanDescriptorAllocator::allocatePool() {
-        auto& context = VulkanContext::getSingleton();
+        auto& context = VulkanContext::getInstance();
 
         VkResult result;
         VkDescriptorPool pool;

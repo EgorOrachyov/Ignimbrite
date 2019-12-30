@@ -139,7 +139,7 @@ namespace ignimbrite {
         } else {
             index = mFreeGensIndices.back();
             mFreeGensIndices.pop_back();
-            generation = mGens[index] + 1;
+            generation = mGens[index];
 
             mFreeIDs -= 1;
         }
@@ -166,7 +166,7 @@ namespace ignimbrite {
         } else {
             index = mFreeGensIndices.back();
             mFreeGensIndices.pop_back();
-            generation = mGens[index] + 1;
+            generation = mGens[index];
 
             mFreeIDs -= 1;
         }

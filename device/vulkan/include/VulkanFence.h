@@ -27,10 +27,15 @@ namespace ignimbrite {
         }
 
         ~VulkanFence() {
-            if (mFence) {
+            if (mFence != VK_NULL_HANDLE) {
                 auto &context = VulkanContext::getInstance();
                 vkDestroyFence(context.device, mFence, nullptr);
             }
+        }
+
+        VulkanFence(VulkanFence && other) noexcept {
+            mFence = other.mFence;
+            other.mFence = VK_NULL_HANDLE;
         }
 
         /** Blocks until fence is set */

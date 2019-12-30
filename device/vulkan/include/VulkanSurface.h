@@ -11,6 +11,7 @@
 
 #include <ignimbrite/Types.h>
 #include <VulkanFramebuffer.h>
+#include <VulkanFence.h>
 #include <string>
 #include <vector>
 
@@ -33,27 +34,51 @@ namespace ignimbrite {
     };
 
     /** Represents window drawing area, created by native OS window system */
-    struct VulkanSurface {
+    class VulkanSurface {
+    public:
+        VulkanSurface(uint32 width, uint32 height, std::string name, VkSurfaceKHR surfaceKHR);
+        ~VulkanSurface() = default;
+        VulkanSurface(VulkanSurface && other) = default;
+
+        void createSwapChain();
+        void destroySwapChain();
+
+        void createFramebufferFormat();
+        void destroyFramebufferFormat();
+
+        void createFramebuffers();
+        void destroyFramebuffers();
+
+        /** Get valid surface properties (if surface is resized, properties will be changed) */
+        void updateSurfaceCapabilities();
+        void findPresentsFamily();
+
+        void resizeSurface();
+        void acquireFirstImage();
+        /** Get image ready for rendering and acquire next image */
+        void acquireNextImage();
+
+    private:
+        void getSurfaceProperties(std::vector<VkSurfaceFormatKHR> &outSurfaceFormats,
+                                  std::vector<VkPresentModeKHR> &outPresentModes);
+        VkExtent2D getSwapChainExtent(uint32 preferredWidth, uint32 preferredHeight);
+        VkCompositeAlphaFlagBitsKHR getAvailableCompositeAlpha();
+
+    public:
         std::string name;
         uint32 width;
         uint32 height;
-        uint32 presentsFamily;
-        VkQueue presentQueue;
-        VkQueue graphicsQueue;
-        /** Surface created vie extension for specific WSI */
-        VkSurfaceKHR surface;
+        uint32 presentsFamily = 0xffffffff;
+        VkQueue presentQueue = VK_NULL_HANDLE;
+        /** Surface created via extension for specific WSI */
+        VkSurfaceKHR surfaceKHR = VK_NULL_HANDLE;
         VkPresentModeKHR presentMode;
         VkSurfaceFormatKHR surfaceFormat;
         VkSurfaceCapabilitiesKHR surfaceCapabilities;
         VulkanSwapChain swapChain;
-        /** Swap buffer data */
         uint32 currentImageIndex = 0;
-        uint32 currentFrameIndex = 0;
-        uint32 maxFramesInFlight = 0;
-        std::vector<VkSemaphore> imageAvailableSemaphores;
-        std::vector<VkSemaphore> renderFinishedSemaphores;
-        std::vector<VkFence> inFlightFences;
-        std::vector<VkFence> imagesInFlight;
+        VulkanFence imageAvailable;
+
     };
 
 } // namespace ignimbrite

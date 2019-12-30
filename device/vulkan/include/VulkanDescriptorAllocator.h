@@ -81,25 +81,20 @@ namespace ignimbrite {
 
         /** First (initial) pool size */
         static const uint32 INITIAL_POOL_SIZE = 2;
-
         /** Factor to increase pools size */
         static const uint32 POOL_SIZE_FACTOR = 2;
 
         /** Next allocated pool size */
         uint32 mNextPoolSize = INITIAL_POOL_SIZE;
-
         /** Max number of sets, which currently could be allocated */
         uint32 mMaxSetsCount = 0;
-
         /** Number of sets, which currently in usage */
         uint32 mUsedSets = 0;
 
         /** Properties of the descriptor layout */
         VulkanDescriptorProperties mProperties;
-
         /** Pools, allocated for  */
         std::vector<VulkanPoolInfo> mPools;
-
         /** Reusable, free descriptor sets */
         std::vector<VkDescriptorSet> mFreeSets;
 

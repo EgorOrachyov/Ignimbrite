@@ -320,8 +320,6 @@ public:
             RenderDevice::Region regionOffscreen = { 0, 0, { offscreenPass.width, offscreenPass.height } };
             std::vector<RenderDevice::Color> colors = { { { 0.0, 0.0, 0.0, 0.0 }} };
 
-            device->swapBuffers(surface);
-
             {
                 device->drawListBegin();
                 device->drawListBindFramebuffer(offscreenPass.frameBuffer, colors, 1.0f, 0, regionOffscreen);
@@ -334,6 +332,9 @@ public:
                 device->drawListBindVertexBuffer(surfacePass.vertexBuffer, 0, 0);
                 device->drawListDraw(6, 1);
                 device->drawListEnd();
+                device->flush();
+                device->synchronize();
+                device->swapBuffers(surface);
             }
         }
     }

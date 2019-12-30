@@ -14,7 +14,7 @@
 #include <VulkanRenderDevice.h>
 
 #ifdef WITH_GLFW
-#   include "GLFW/glfw3.h"
+#   include <GLFW/glfw3.h>
 #endif
 
 namespace ignimbrite {

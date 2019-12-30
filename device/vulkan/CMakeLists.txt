@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.11)
 project(VulkanDevice)
 
-message(STATUS "Configure Vulkan Device library")
-
 set(VulkanDevice_HEADERS
     include/VulkanRenderDevice.h
     include/VulkanDefinitions.h
@@ -14,8 +12,10 @@ set(VulkanDevice_HEADERS
     include/VulkanDescriptorAllocator.h
     include/VulkanSurface.h
     include/VulkanFramebuffer.h
+        include/VulkanDrawList.h
+    include/VulkanFence.h
+    include/VulkanSemaphore.h
 )
-
 
 set(VulkanDevice_SOURCES
     sources/VulkanRenderDevice.cpp
@@ -23,6 +23,7 @@ set(VulkanDevice_SOURCES
     sources/VulkanExtensions.cpp
     sources/VulkanUtils.cpp
     sources/VulkanDescriptorAllocator.cpp
+    sources/VulkanSurface.cpp
 )
 
 add_library(

@@ -44,4 +44,11 @@ namespace ignimbrite {
             throw VulkanException(message);                             \
     } while (false);
 
+#define VK_TRUE_ASSERT(condition, message)                              \
+    {                                                                   \
+        if (!(condition)) {                                             \
+            throw VulkanException(message);                             \
+        }                                                               \
+    }
+
 #endif //IGNIMBRITELIBRARY_VULKANERRORS_H

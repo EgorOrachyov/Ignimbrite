@@ -330,6 +330,9 @@ namespace ignimbrite {
          *
          * Single time submit draw list. Requires drawListEnd() to be called.
          * Between this functions' calls allowed only commands with drawList prefix.
+         *
+         * @note Order of commands execution inside single draw list IS SYNCHRONIZED.
+         * @note Order of different draw list execution IS NOT SYNCHRONIZED.
          */
         virtual void drawListBegin() = 0;
 
@@ -338,6 +341,9 @@ namespace ignimbrite {
          *
          * Finish draw list commands setup. Submits draw list on GPU for
          * rendering and waits, until draw list is executed.
+         *
+         * @note Ended draw list won't be executed until flush() called,
+         *       followed by explicit synchronize() call.
          */
         virtual void drawListEnd() = 0;
 
@@ -363,17 +369,6 @@ namespace ignimbrite {
         virtual void drawListDraw(uint32 verticesCount, uint32 instancesCount) = 0;
 
         virtual void drawListDrawIndexed(uint32 indicesCount, uint32 instancesCount) = 0;
-
-        /**
-         * @brief Flushes draw lists
-         *
-         * Flush all the created draw lists from previous drawListFlush() call.
-         * Immediately submits all the draw lists to be executed on GPU.
-         *
-         * @note After this stage host CPU and GPU are no synchronized.
-         *       To change state of render device object you must call hostSynchronize() function.
-         */
-        virtual void drawListFlush() = 0;
 
         /**
          * @brief Get surface id
@@ -405,9 +400,25 @@ namespace ignimbrite {
          * all the currently filled command buffers for rendering in specified surface
          * and wait, until previous submit session is completed.
          *
+         * @note Before swap buffer call synchronize() method must be explicitly
+         *       called to ensure, than no draw command will render in  any surface
+         *
          * @param surface ID of the surface to swap buffers to present final image
          */
-        virtual void surfaceSwapBuffers(ID surface) = 0;
+        virtual void swapBuffers(ID surface) = 0;
+
+        /**
+         * @brief Flushes draw lists
+         *
+         * Flush all the created draw lists from previous drawListFlush() call.
+         * Immediately submits all the draw lists to be executed on GPU.
+         *
+         * @note Order of the execution of draw lists is not specified.
+         *
+         * @note After this stage host CPU and GPU are no synchronized.
+         *       To change state of render device object you must call hostSynchronize() function.
+         */
+        virtual void flush() = 0;
 
         /**
          * @brief CPU and GPU synchronization
@@ -415,8 +426,11 @@ namespace ignimbrite {
          * Synchronize CPU host program with the GPU. Wait for all the
          * flush requests to be finished. After than function call all
          * the render device objects could be safely modified.
+         *
+         * @note Must be explicitly called before any swap buffers request to
+         *       ensure, than no draw command will render in any surface.
          */
-        virtual void hostSynchronize() = 0;
+        virtual void synchronize() = 0;
 
         /** @return Readable hardware API name */
         virtual const std::string &getDeviceName() const;

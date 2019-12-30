@@ -11,7 +11,6 @@
 
 #include <ignimbrite/Optional.h>
 #include <VulkanDefinitions.h>
-#include <VulkanSurface.h>
 #include <vector>
 
 namespace ignimbrite {
@@ -55,7 +54,6 @@ namespace ignimbrite {
         bool checkDeviceExtensionSupport(VkPhysicalDevice inPhysicalDevice);
 
         void findQueueFamilies(VkPhysicalDevice inPhysicalDevice, VulkanQueueFamilyIndices &indices);
-        void findPresentsFamily(VulkanSurface &surface);
 
         VkResult createDebugUtilsMessengerEXT(
                 const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
@@ -74,18 +72,6 @@ namespace ignimbrite {
                 const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
                 void *pUserData
         );
-
-        void createSwapChain(VulkanSurface &surface);
-        void destroySwapChain(VulkanSurface &surface);
-
-        void createFramebufferFormat(VulkanSurface &surface);
-        void destroyFramebufferFormat(VulkanSurface &surface);
-
-        void createFramebuffers(VulkanSurface &surface);
-        void destroyFramebuffers(VulkanSurface &surface);
-
-        void updateSurfaceCapabilities(VulkanSurface &surface);
-        void resizeSurface(VulkanSurface &surface);
 
         void createCommandPools();
         void destroyCommandPools();
@@ -106,12 +92,9 @@ namespace ignimbrite {
          * Allowed only single context instance.
          * @return Vulkan context instance
          */
-        static VulkanContext& getSingleton();
+        static VulkanContext& getInstance();
 
     public:
-
-        /** Default number of frames in flight (how much images could be rendered simultaneously) */
-        static const uint32 FRAMES_IN_FLIGHT = 2;
 
         /** Min image count for double buffering */
         static const uint32 SWAPCHAIN_MIN_IMAGE_COUNT = 2;
@@ -143,8 +126,8 @@ namespace ignimbrite {
 
         VkCommandPool graphicsCommandPool = VK_NULL_HANDLE;
         VkCommandPool transferCommandPool = VK_NULL_HANDLE;
-        VkCommandPool graphicsTempCommandPool = VK_NULL_HANDLE;
-        VkCommandPool transferTempCommandPool = VK_NULL_HANDLE;
+        VkCommandPool graphicsTmpCommandPool = VK_NULL_HANDLE;
+        VkCommandPool transferTmpCommandPool = VK_NULL_HANDLE;
 
         // NOTE: do not use this vector with multithreading ??
         std::vector<VkClearValue> tempClearValues = {};
