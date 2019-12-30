@@ -160,11 +160,11 @@ namespace ignimbrite {
         struct TextureDesc {
             TextureType type = TextureType::Texture2D;
             DataFormat format = DataFormat::R8G8B8A8_UNORM;
+            TextureUsageFlags usageFlags = 0;
             uint32 mipmaps = 1;
             uint32 width = 0;
             uint32 height = 0;
             uint32 depth = 1;
-            uint32 usageFlags = 0;
             uint32 size = 0;
             void *data = nullptr;
         };

@@ -234,8 +234,10 @@ namespace ignimbrite {
                     texture.image, texture.imageMemory, usageFlags
             );
 
+            auto depthOnly = (textureDesc.usageFlags & (uint32) TextureUsageBit::DepthAttachment) != 0x0;
+
             VkImageSubresourceRange subresourceRange;
-            subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+            subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | (depthOnly ? 0x0u : VK_IMAGE_ASPECT_STENCIL_BIT);
             subresourceRange.baseMipLevel = 0; // depth stencil doesn't have mipmaps
             subresourceRange.levelCount = 1;
             subresourceRange.baseArrayLayer = 0;

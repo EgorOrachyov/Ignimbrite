@@ -152,7 +152,7 @@ public:
         depthTextureDesc.width = window.widthFBO;
         depthTextureDesc.height = window.heightFBO;
         depthTextureDesc.type = TextureType::Texture2D;
-        depthTextureDesc.usageFlags = (uint32)TextureUsageBit::DepthStencilAttachment | (uint32)TextureUsageBit ::ShaderSampling;
+        depthTextureDesc.usageFlags = (uint32)TextureUsageBit::DepthAttachment | (uint32)TextureUsageBit::ShaderSampling;
 
         offscreenPass.depthTexture = device->createTexture(depthTextureDesc);
 

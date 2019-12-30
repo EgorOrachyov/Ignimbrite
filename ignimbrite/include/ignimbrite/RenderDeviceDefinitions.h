@@ -34,7 +34,7 @@ namespace ignimbrite {
         SPIRV
     };
 
-/** All the possible data formats for textures and shader attributes */
+    /** All the possible data formats for textures and shader attributes */
     enum class DataFormat {
         R8G8B8_UNORM,
         R8G8B8A8_UNORM,
@@ -86,8 +86,11 @@ namespace ignimbrite {
         /** Could be used as framebuffer depth-stencil attachment */
         DepthStencilAttachment = BIT_SHIFT(1u),
         /** Could be used sampled from shader program as uniform texture */
-        ShaderSampling = BIT_SHIFT(2u)
+        ShaderSampling = BIT_SHIFT(2u),
+        /** Could be used as depth attachment and sampled from shader (with flag ShaderSampling) */
+        DepthAttachment = BIT_SHIFT(3u) | DepthStencilAttachment,
     };
+    typedef uint32 TextureUsageFlags;
 
     /** Num of samples **/
     enum class TextureSamples {
