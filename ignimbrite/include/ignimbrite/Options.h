@@ -13,7 +13,7 @@
 #define WITH_GLM
 #define WITH_VULKAN
 #define WITH_SPIRVCROSS
-#define WITH_IGNIMBRITE_QT
+/* #undef WITH_IGNIMBRITE_QT */
 
 #define IgnimbriteLibrary_VERSION_MAJOR 1
 #define IgnimbriteLibrary_VERSION_MINOR 0

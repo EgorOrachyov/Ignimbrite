@@ -1,3 +1,5 @@
+![Project logo](https://github.com/EgorOrachyov/Ignimbrite/blob/master/documents/pictures/Logo1020x240.png)
+
 # Ignimbrite
 
 ![MacOS build](https://github.com/EgorOrachyov/VulkanRenderer/workflows/MacOS/badge.svg)

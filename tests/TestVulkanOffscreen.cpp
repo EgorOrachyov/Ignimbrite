@@ -52,6 +52,7 @@ struct OffscreenPass {
     ObjectID frameBuffer;
     ObjectID colorTexture;
     ObjectID depthTexture;
+    uint32 width = 0, height = 0;
 };
 
 class OffscreenRendering {
@@ -69,7 +70,6 @@ public:
         surface = VulkanExtensions::createSurfaceGLFW(
                 *device,
                 window.handle,
-                window.width, window.height,
                 window.widthFBO, window.heightFBO,
                 window.name
         );
@@ -152,13 +152,15 @@ public:
         depthTextureDesc.width = window.widthFBO;
         depthTextureDesc.height = window.heightFBO;
         depthTextureDesc.type = TextureType::Texture2D;
-        depthTextureDesc.usageFlags = (uint32)TextureUsageBit::DepthStencilAttachment | (uint32)TextureUsageBit ::ShaderSampling;
+        depthTextureDesc.usageFlags = (uint32)TextureUsageBit::DepthAttachment | (uint32)TextureUsageBit::ShaderSampling;
 
         offscreenPass.depthTexture = device->createTexture(depthTextureDesc);
 
         std::vector<ObjectID> attachments = { offscreenPass.colorTexture, offscreenPass.depthTexture };
 
         offscreenPass.frameBuffer = device->createFramebuffer(attachments, offscreenPass.frameBufferFormat);
+        offscreenPass.width = window.widthFBO;
+        offscreenPass.height = window.heightFBO;
 
         RenderDevice::PipelineRasterizationDesc rasterizationDesc = {};
         rasterizationDesc.cullMode = PolygonCullMode::Back;
@@ -293,17 +295,17 @@ public:
         std::vector<uint8> vertexSpv(std::istreambuf_iterator<char>(vertexFile), {});
         std::vector<uint8> fragmentSpv(std::istreambuf_iterator<char>(fragmentFile), {});
 
-        std::vector<RenderDevice::ShaderDataDesc> descriptors(2);
+        RenderDevice::ProgramDesc programDesc;
+        programDesc.language = ShaderLanguage::SPIRV;
+        programDesc.shaders.resize(2);
 
-        descriptors[0].language = ShaderLanguage::SPIRV;
-        descriptors[0].type = ShaderType::Vertex;
-        descriptors[0].source = std::move(vertexSpv);
+        programDesc.shaders[0].type = ShaderType::Vertex;
+        programDesc.shaders[0].source = std::move(vertexSpv);
 
-        descriptors[1].language = ShaderLanguage::SPIRV;
-        descriptors[1].type = ShaderType::Fragment;
-        descriptors[1].source = std::move(fragmentSpv);
+        programDesc.shaders[1].type = ShaderType::Fragment;
+        programDesc.shaders[1].source = std::move(fragmentSpv);
 
-        id = device->createShaderProgram(descriptors);
+        id = device->createShaderProgram(programDesc);
     }
 
 
@@ -311,16 +313,16 @@ public:
         while (!glfwWindowShouldClose(window.handle)) {
             glfwPollEvents();
             glfwSwapBuffers(window.handle);
+            glfwGetFramebufferSize(window.handle, &window.widthFBO, &window.heightFBO);
 
             RenderDevice::Color color = {  { 0.1, 0.2, 0.3, 0.0 } };
             RenderDevice::Region region = { 0, 0, { (uint32) window.widthFBO, (uint32) window.heightFBO } };
+            RenderDevice::Region regionOffscreen = { 0, 0, { offscreenPass.width, offscreenPass.height } };
             std::vector<RenderDevice::Color> colors = { { { 0.0, 0.0, 0.0, 0.0 }} };
-
-            device->swapBuffers(surface);
 
             {
                 device->drawListBegin();
-                device->drawListBindFramebuffer(offscreenPass.frameBuffer, colors, 1.0f, 0, region);
+                device->drawListBindFramebuffer(offscreenPass.frameBuffer, colors, regionOffscreen);
                 device->drawListBindPipeline(offscreenPass.pipeline);
                 device->drawListBindVertexBuffer(offscreenPass.vertexBuffer, 0, 0);
                 device->drawListDraw(3, 1);
@@ -330,6 +332,10 @@ public:
                 device->drawListBindVertexBuffer(surfacePass.vertexBuffer, 0, 0);
                 device->drawListDraw(6, 1);
                 device->drawListEnd();
+
+                device->flush();
+                device->synchronize();
+                device->swapBuffers(surface);
             }
         }
     }

@@ -9,7 +9,7 @@
 #ifndef IGNIMBRITELIBRARY_VULKANUTILS_H
 #define IGNIMBRITELIBRARY_VULKANUTILS_H
 
-#include <VulkanContext.h>
+#include <VulkanObjects.h>
 #include <VulkanDefinitions.h>
 
 namespace ignimbrite {
@@ -18,53 +18,46 @@ namespace ignimbrite {
     public:
 
         static VkFormatProperties getDeviceFormatProperties(
-                VulkanContext &context,
                 VkFormat format
         );
 
         static VkFormat findSupportedFormat(
-                VulkanContext &context,
-                const VkFormat *candidates, uint32 candidatesCount,
+                const VkFormat *candidates,
+                uint32 candidatesCount,
                 VkImageTiling tiling,
                 VkFormatFeatureFlags features
         );
 
         static uint32 getMemoryTypeIndex(
-                VulkanContext &context,
                 uint32 memoryTypeBits,
                 VkFlags requirementsMask
         );
 
         static void createBuffer(
-                VulkanContext &context,
                 VkDeviceSize size,
                 VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
                 VkBuffer &outBuffer, VkDeviceMemory &outBufferMemory
         );
 
         static void createBufferLocal(
-                VulkanContext &context,
                 const void *data,
                 VkDeviceSize size, VkBufferUsageFlags usage,
                 VkBuffer &outBuffer, VkDeviceMemory &outBufferMemory
         );
 
         static void copyBuffer(
-                VulkanContext &context,
                 VkBuffer srcBuffer,
                 VkBuffer dstBuffer,
                 VkDeviceSize size
         );
 
         static void updateBufferMemory(
-                VulkanContext &context,
                 VkDeviceMemory bufferMemory,
                 VkDeviceSize offset, VkDeviceSize size,
                 const void *data
         );
 
         static void createTextureImage(
-                VulkanContext &context,
                 const void *imageData, uint32 imageDataSize,
                 uint32 width, uint32 height,
                 uint32 depth, uint32 mipLevels,
@@ -74,7 +67,6 @@ namespace ignimbrite {
         );
 
         static void createImage(
-                VulkanContext &context,
                 uint32 width, uint32 height,
                 uint32 depth, uint32 mipLevels,
                 VkImageType imageType, VkFormat format,
@@ -84,14 +76,12 @@ namespace ignimbrite {
         );
 
         static void copyBufferToImage(
-                VulkanContext &context,
                 VkBuffer buffer,
                 VkImage image,
                 uint32 width, uint32 height, uint32 depth
         );
 
         static void transitionImageLayout(
-                VulkanContext &context,
                 VkImage image,
                 VkImageLayout oldLayout,
                 VkImageLayout newLayout,
@@ -99,7 +89,6 @@ namespace ignimbrite {
         );
 
         static void createImageView(
-                VulkanContext &context,
                 VkImageView &outImageView,
                 VkImage image,
                 VkImageViewType viewType, VkFormat format,
@@ -107,43 +96,17 @@ namespace ignimbrite {
                 VkComponentMapping components = {}
         );
 
-        static void generateMipmaps(VulkanContext &context, VkImage image, VkFormat format, uint32 width, uint32 height,
-                                    uint32 mipLevels, VkImageLayout newLayout);
+        static void generateMipmaps(
+                VkImage image, VkFormat format,
+                uint32 width, uint32 height,
+                uint32 mipLevels,
+                VkImageLayout newLayout
+        );
 
         static void createDepthStencilBuffer(
-                VulkanContext &context, uint32 width, uint32 height, uint32 depth,
+                uint32 width, uint32 height, uint32 depth,
                 VkImageType imageType, VkFormat format, VkImage &outImage,
                 VkDeviceMemory &outImageMemory, VkImageUsageFlags usageFlags
-        );
-
-        static void getSurfaceProperties(
-                VkPhysicalDevice physicalDevice, VkSurfaceKHR surfaceKHR,
-                std::vector<VkSurfaceFormatKHR> &outSurfaceFormats,
-                std::vector<VkPresentModeKHR> &outPresentModes
-        );
-
-        static VkExtent2D getSwapChainExtent(
-                uint32 preferredWidth, uint32 preferredHeight,
-                const VkSurfaceCapabilitiesKHR &surfaceCapabilities
-        );
-
-        static VkCompositeAlphaFlagBitsKHR getAvailableCompositeAlpha(
-                const VkSurfaceCapabilitiesKHR &surfaceCapabilities
-        );
-
-        static void allocateDescriptorPool(
-                VulkanContext &context,
-                VulkanUniformLayout &layout
-        );
-
-        static VulkanDescriptorPool &getAvailableDescriptorPool(
-                VulkanContext &context,
-                VulkanUniformLayout &layout
-        );
-
-        static VkDescriptorSet getAvailableDescriptorSet(
-                VulkanContext& context,
-                VulkanUniformLayout &layout
         );
 
         static void createVertexInputState(
@@ -168,7 +131,7 @@ namespace ignimbrite {
         );
 
         static void createPipelineLayout(
-                VulkanContext &context,
+
                 const VulkanUniformLayout &uniformLayout,
                 VkPipelineLayout &pipelineLayout
         );
@@ -205,18 +168,25 @@ namespace ignimbrite {
         );
 
         static VkCommandPool createCommandPool(
-                VulkanContext &context,
-                VkCommandPoolCreateFlags flags, uint32_t queueFamilyIndex
+                VkCommandPoolCreateFlags flags,
+                uint32 queueFamilyIndex
         );
 
-        static VkCommandBuffer beginTempCommandBuffer(
-                VulkanContext &context, VkCommandPool commandPool
+        static VkCommandBuffer beginTmpCommandBuffer(
+                VkCommandPool commandPool
         );
 
-        static void endTempCommandBuffer(
-                VulkanContext &context, VkCommandBuffer commandBuffer,
-                VkQueue queue, VkCommandPool commandPool
+        static void endTmpCommandBuffer(
+                VkCommandBuffer commandBuffer,
+                VkQueue queue,
+                VkCommandPool commandPool
         );
+
+        static void destroyTmpComandBuffer(
+                VkCommandBuffer commandBuffer,
+                VkCommandPool commandPool
+        );
+
     };
 
 } // namespace ignimbrite

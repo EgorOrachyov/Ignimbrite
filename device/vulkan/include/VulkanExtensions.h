@@ -14,7 +14,7 @@
 #include <VulkanRenderDevice.h>
 
 #ifdef WITH_GLFW
-#   include "GLFW/glfw3.h"
+#   include <GLFW/glfw3.h>
 #endif
 
 #ifdef WITH_IGNIMBRITE_QT
@@ -30,9 +30,8 @@ namespace ignimbrite {
      */
     class VulkanExtensions {
     public:
-        typedef ObjectID ID;
-#ifdef WITH_GLFW
 
+#ifdef WITH_GLFW
         /**
          * Creates surface for specified GLFW window instance
          * @throw VulkanException if failed to create vulkan surface
@@ -45,16 +44,13 @@ namespace ignimbrite {
          * @param heightFramebuffer
          * @param name Required param to reference created window
          */
-        static ID createSurfaceGLFW(
+        static RenderDevice::ID createSurfaceGLFW(
                 VulkanRenderDevice &device,
                 GLFWwindow *handle,
-                uint32 width,
-                uint32 height,
                 uint32 widthFramebuffer,
                 uint32 heightFramebuffer,
                 const std::string &name
         );
-
 #endif
 
 #ifdef WITH_IGNIMBRITE_QT
@@ -101,16 +97,13 @@ namespace ignimbrite {
         /** Idle device and destroy surface with all its relative data */
         static void destroySurface(
                 VulkanRenderDevice &device,
-                ID surface,
-                bool destroySurfKhr = true
+                RenderDevice::ID surface
         );
 
     private:
-        static ID createSurfaceFromKHR(
+        static RenderDevice::ID createSurfaceFromKHR(
                 VulkanRenderDevice &device,
                 VkSurfaceKHR surfaceKhr,
-                uint32 width,
-                uint32 height,
                 uint32 widthFramebuffer,
                 uint32 heightFramebuffer,
                 const std::string &name

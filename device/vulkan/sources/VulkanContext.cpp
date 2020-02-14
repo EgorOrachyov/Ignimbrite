@@ -9,17 +9,10 @@
 #include <VulkanContext.h>
 #include <ignimbrite/Compilation.h>
 #include <ignimbrite/RenderDeviceDefinitions.h>
-#include <exception>
 #include <cstring>
 #include <set>
 #include <array>
 #include <VulkanUtils.h>
-
-#define VK_RESULT_ASSERT(result, message)                               \
-    do {                                                                \
-        if ((result) != VK_SUCCESS)                                     \
-            throw VulkanException(message);                             \
-    } while (false);
 
 namespace ignimbrite {
 
@@ -302,50 +295,6 @@ namespace ignimbrite {
         }
     }
 
-    void VulkanContext::findPresentsFamily(VulkanSurface &surface) {
-        uint32 queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
-
-        uint32 presentsFamily = 0xffffffff;
-        uint32 graphicsFamily = familyIndices.graphicsFamily.get();
-
-        VkBool32 supported = 0x0;
-        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, graphicsFamily, surface.surface, &supported);
-
-        if (supported) {
-            presentsFamily = graphicsFamily;
-        } else {
-            for (uint32 i = 0; i < queueFamilyCount; i++) {
-                vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface.surface, &supported);
-                if (supported) {
-                    presentsFamily = i;
-                }
-            }
-        }
-
-        if (presentsFamily == 0xffffffff) {
-            throw VulkanException("Surface does not support present queue mode");
-        }
-
-        if (presentsFamily == graphicsFamily) {
-            surface.presentsFamily = presentsFamily;
-            surface.presentQueue = graphicsQueue;
-        } else {
-            surface.presentsFamily = presentsFamily;
-            vkGetDeviceQueue(device, presentsFamily, 0, &surface.presentQueue);
-
-            if (surface.presentQueue == VK_NULL_HANDLE) {
-                throw VulkanException("Failed to get present queue");
-            }
-        }
-
-        surface.graphicsQueue = graphicsQueue;
-
-#ifdef MODE_DEBUG
-        printf("Found queue family [present: %u]\n", presentsFamily);
-#endif
-    }
-
     void VulkanContext::outDeviceInfoVerbose() {
         VkPhysicalDeviceProperties &properties = deviceProperties;
         VkPhysicalDeviceLimits &limits = properties.limits;
@@ -428,400 +377,18 @@ namespace ignimbrite {
         vkDestroyDevice(device, nullptr);
     }
 
-    void VulkanContext::createSwapChain(VulkanSurface &surface) {
-        uint32 width = surface.widthFramebuffer;
-        uint32 height = surface.heightFramebuffer;
-        uint32 swapChainMinImageCount = SWAPCHAIN_MIN_IMAGE_COUNT;
-        VkSurfaceKHR surfaceKHR = surface.surface;
-        VkSurfaceCapabilitiesKHR &surfaceCapabilities = surface.surfaceCapabilities;
-        VkSwapchainKHR swapChainKHR = VK_NULL_HANDLE;
-
-        VulkanSwapChain& swapChain = surface.swapChain;
-
-        std::vector<VkSurfaceFormatKHR> surfaceFormats;
-        std::vector<VkPresentModeKHR> presentModes;
-        VulkanUtils::getSurfaceProperties(physicalDevice, surfaceKHR, surfaceFormats, presentModes);
-
-        VkSurfaceFormatKHR chosenSurfaceFormat;
-        VkPresentModeKHR chosenPresentMode;
-
-        chosenSurfaceFormat.format = surfaceFormats[0].format;
-        chosenSurfaceFormat.colorSpace = surfaceFormats[0].colorSpace;
-
-        for (auto &surfaceFormat : surfaceFormats) {
-            if (surfaceFormat.format == PREFERRED_FORMAT && surfaceFormat.colorSpace == PREFERRED_COLOR_SPACE) {
-                chosenSurfaceFormat.format = surfaceFormat.format;
-                chosenSurfaceFormat.colorSpace = surfaceFormat.colorSpace;
-                break;
-            }
-        }
-
-        chosenPresentMode = presentModes[0];
-
-        for (auto &presentMode : presentModes) {
-            if (presentMode == PREFERRED_PRESENT_MODE) {
-                chosenPresentMode = PREFERRED_PRESENT_MODE;
-                break;
-            }
-        }
-
-        VkSwapchainCreateInfoKHR swapChainCreateInfo = {};
-        swapChainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        swapChainCreateInfo.pNext = NULL;
-        swapChainCreateInfo.surface = surfaceKHR;
-
-        swapChainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
-        swapChainCreateInfo.clipped = true;
-        swapChainCreateInfo.presentMode = chosenPresentMode;
-        swapChainCreateInfo.imageFormat = chosenSurfaceFormat.format;
-        swapChainCreateInfo.imageColorSpace = chosenSurfaceFormat.colorSpace;
-        swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-        std::array<uint32, 3> queueFamilyIndices = {
-                familyIndices.graphicsFamily.get(),
-                familyIndices.transferFamily.get(),
-                surface.presentsFamily
-        };
-
-        // check queues, if they are from same queue families
-        auto equals = true;
-        auto base = queueFamilyIndices[0];
-        for (auto i: queueFamilyIndices) {
-            if (i != base) {
-                equals = false;
-                break;
-            }
-        }
-
-        if (equals) {
-            swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-            swapChainCreateInfo.queueFamilyIndexCount = 0;
-            swapChainCreateInfo.pQueueFamilyIndices = NULL;
-        } else {
-            swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-            swapChainCreateInfo.queueFamilyIndexCount = queueFamilyIndices.size();
-            swapChainCreateInfo.pQueueFamilyIndices = queueFamilyIndices.data();
-        }
-
-        swapChainCreateInfo.imageExtent = VulkanUtils::getSwapChainExtent(width, height, surfaceCapabilities);
-        swapChainCreateInfo.compositeAlpha = VulkanUtils::getAvailableCompositeAlpha(surfaceCapabilities);
-
-        if (surfaceCapabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
-            swapChainCreateInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-        } else {
-            swapChainCreateInfo.preTransform = surfaceCapabilities.currentTransform;
-        }
-
-        if (!(swapChainMinImageCount <= surfaceCapabilities.maxImageCount || surfaceCapabilities.maxImageCount == 0)) {
-            throw VulkanException("Given swap chain min image count is not available on this surface and device");
-        }
-
-        if (surfaceCapabilities.minImageCount > swapChainMinImageCount) {
-            swapChainMinImageCount = surfaceCapabilities.minImageCount;
-        }
-
-        swapChainCreateInfo.minImageCount = swapChainMinImageCount;
-        swapChainCreateInfo.imageArrayLayers = 1;
-
-        VkResult result = vkCreateSwapchainKHR(device, &swapChainCreateInfo, nullptr, &swapChainKHR);
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Can't create swap chain");
-        }
-
-        uint32 swapChainImageCount;
-        result = vkGetSwapchainImagesKHR(device, swapChainKHR, &swapChainImageCount, nullptr);
-
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Can't get images from swap chain");
-        }
-
-        swapChain.images.resize(swapChainImageCount);
-        swapChain.imageViews.resize(swapChainImageCount);
-
-        result = vkGetSwapchainImagesKHR(device, swapChainKHR, &swapChainImageCount, swapChain.images.data());
-
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Can't get images from swap chain");
-        }
-
-        for (uint32 i = 0; i < swapChainImageCount; i++) {
-            VkImageViewCreateInfo viewInfo = {};
-            viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            viewInfo.pNext = nullptr;
-            viewInfo.flags = 0;
-
-            viewInfo.image = swapChain.images[i];
-            viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            viewInfo.format = chosenSurfaceFormat.format;
-            viewInfo.components.r = VK_COMPONENT_SWIZZLE_R;
-            viewInfo.components.g = VK_COMPONENT_SWIZZLE_G;
-            viewInfo.components.b = VK_COMPONENT_SWIZZLE_B;
-            viewInfo.components.a = VK_COMPONENT_SWIZZLE_A;
-            viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            viewInfo.subresourceRange.baseMipLevel = 0;
-            viewInfo.subresourceRange.levelCount = 1;
-            viewInfo.subresourceRange.baseArrayLayer = 0;
-            viewInfo.subresourceRange.layerCount = 1;
-
-            result = vkCreateImageView(device, &viewInfo, nullptr, &swapChain.imageViews[i]);
-
-            if (result != VK_SUCCESS) {
-                throw VulkanException("Can't create image view for swapchain");
-            }
-        }
-
-        // Setup depth stencil buffers for each swap chain image
-        swapChain.depthStencilImages.resize(swapChainImageCount);
-        swapChain.depthStencilImageViews.resize(swapChainImageCount);
-        swapChain.depthStencilImageMemory.resize(swapChainImageCount);
-
-        VkFormat depthFormats[] = { VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT };
-        VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL;
-        VkFormatFeatureFlags featureFlags = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        VkFormat depthFormat = VulkanUtils::findSupportedFormat(*this, depthFormats, 2, imageTiling, featureFlags);
-
-        swapChain.depthFormat = depthFormat;
-
-        for (uint32 i = 0; i < swapChainImageCount; i++) {
-            VulkanUtils::createImage(
-                    *this,
-                    width, height, 1, 1,
-                    VK_IMAGE_TYPE_2D, depthFormat,
-                    VK_IMAGE_TILING_OPTIMAL,
-                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    swapChain.depthStencilImages[i],
-                    swapChain.depthStencilImageMemory[i]
-             );
-
-            VkImageSubresourceRange subresourceRange = {};
-            subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-            subresourceRange.baseMipLevel = 0;
-            subresourceRange.levelCount = 1;
-            subresourceRange.baseArrayLayer = 0;
-            subresourceRange.layerCount = 1;
-
-            VkComponentMapping components = {
-                    VK_COMPONENT_SWIZZLE_IDENTITY,
-                    VK_COMPONENT_SWIZZLE_IDENTITY,
-                    VK_COMPONENT_SWIZZLE_IDENTITY,
-                    VK_COMPONENT_SWIZZLE_IDENTITY
-            };
-
-            VulkanUtils::createImageView(
-                    *this,
-                    swapChain.depthStencilImageViews[i],
-                    swapChain.depthStencilImages[i],
-                    VK_IMAGE_VIEW_TYPE_2D,
-                    depthFormat,
-                    subresourceRange,
-                    components
-            );
-        }
-
-        // create semaphores for each image
-        VkSemaphoreCreateInfo semaphoreInfo{};
-        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-        VkFenceCreateInfo fenceCreateInfo{};
-        fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-        surface.imageAvailableSemaphores.resize(surface.maxFramesInFlight);
-        surface.renderFinishedSemaphores.resize(surface.maxFramesInFlight);
-        surface.inFlightFences.resize(surface.maxFramesInFlight);
-        surface.imagesInFlight.resize(swapChainImageCount);
-
-        for (uint32 i = 0; i < surface.maxFramesInFlight; i++) {
-            result = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &surface.imageAvailableSemaphores[i]);
-            if (result != VK_SUCCESS) {
-                throw VulkanException("Can't create semaphore");
-            }
-
-            result = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &surface.renderFinishedSemaphores[i]);
-            if (result != VK_SUCCESS) {
-                throw VulkanException("Can't create semaphore");
-            }
-
-            result = vkCreateFence(device, &fenceCreateInfo, nullptr, &surface.inFlightFences[i]);
-            if (result != VK_SUCCESS) {
-                throw VulkanException("Can't create fence");
-            }
-        }
-
-        for (uint32 i = 0; i < swapChainImageCount; i++) {
-            surface.imagesInFlight[i] = VK_NULL_HANDLE;
-        }
-
-        surface.presentMode = chosenPresentMode;
-        surface.surfaceFormat = chosenSurfaceFormat;
-        swapChain.extent = swapChainCreateInfo.imageExtent;
-        swapChain.swapChainKHR = swapChainKHR;
-    }
-
-    void VulkanContext::destroySwapChain(VulkanSurface &surface) {
-        for (VkSemaphore &semaphore : surface.renderFinishedSemaphores) {
-            vkDestroySemaphore(device, semaphore, nullptr);
-        }
-
-        for (VkSemaphore &semaphore : surface.imageAvailableSemaphores) {
-            vkDestroySemaphore(device, semaphore, nullptr);
-        }
-
-        for (VkFence &fence : surface.inFlightFences) {
-            vkDestroyFence(device, fence, nullptr);
-        }
-
-        // Counts of images for all image related objects are equal
-        VulkanSwapChain& swapChain = surface.swapChain;
-        uint32 swapChainObjects = swapChain.images.size();
-
-        for (uint32 i = 0; i < swapChainObjects; i++) {
-            // destroy only image views, images will be destroyed with swap chain
-            vkDestroyImageView(device, swapChain.imageViews[i], nullptr);
-            // destroy manually created depth stencil buffers
-            vkDestroyImageView(device, swapChain.depthStencilImageViews[i], nullptr);
-            vkDestroyImage(device, swapChain.depthStencilImages[i], nullptr);
-            vkFreeMemory(device, swapChain.depthStencilImageMemory[i], nullptr);
-        }
-
-        vkDestroySwapchainKHR(device, swapChain.swapChainKHR, nullptr);
-    }
-
-    void VulkanContext::recreateSwapChain(VulkanSurface &surface) {
-        deviceWaitIdle();
-
-        destroyCommandBuffers(surface);
-        destroyFramebuffers(surface);
-        destroyFramebufferFormat(surface);
-        destroySwapChain(surface);
-
-        createSwapChain(surface);
-        createFramebufferFormat(surface);
-        createFramebuffers(surface);
-        createCommandBuffers(surface);
-    }
-
-    void VulkanContext::createFramebufferFormat(VulkanSurface &surface) {
-        VkAttachmentDescription descriptions[2] = {};
-
-        descriptions[0].flags = 0;
-        descriptions[0].format = surface.surfaceFormat.format;
-        descriptions[0].samples = VK_SAMPLE_COUNT_1_BIT;
-        descriptions[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        descriptions[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        descriptions[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        descriptions[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        descriptions[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        descriptions[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-        descriptions[1].flags = 0;
-        descriptions[1].format = surface.swapChain.depthFormat;
-        descriptions[1].samples = VK_SAMPLE_COUNT_1_BIT;
-        descriptions[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        descriptions[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        descriptions[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        descriptions[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
-        descriptions[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        descriptions[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        VkAttachmentReference references[2] = {};
-
-        references[0].attachment = 0;
-        references[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        references[1].attachment = 1;
-        references[1].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        VkSubpassDependency dependency = {};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.srcAccessMask = 0;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-        VkSubpassDescription subpass = {};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &references[0];
-        subpass.pDepthStencilAttachment = &references[1];
-
-        VkRenderPassCreateInfo renderPassInfo = {};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassInfo.attachmentCount = 2;
-        renderPassInfo.pAttachments = descriptions;
-        renderPassInfo.subpassCount = 1;
-        renderPassInfo.pSubpasses = &subpass;
-        renderPassInfo.dependencyCount = 1;
-        renderPassInfo.pDependencies = &dependency;
-
-        VkResult result;
-        VkRenderPass renderPass;
-
-        result = vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass);
-
-        VK_RESULT_ASSERT(result, "Failed to create render pass for surface");
-
-        auto &format = surface.swapChain.framebufferFormat;
-        format.renderPass = renderPass;
-        format.useDepthStencil = true;
-        format.numOfAttachments = 2;
-    }
-
-    void VulkanContext::destroyFramebufferFormat(VulkanSurface &surface) {
-        vkDestroyRenderPass(device, surface.swapChain.framebufferFormat.renderPass, nullptr);
-    }
-
-    void VulkanContext::createFramebuffers(VulkanSurface &surface) {
-        VkResult result;
-
-        auto &swapChain = surface.swapChain;
-        auto &framebuffers = swapChain.framebuffers;
-        framebuffers.resize(swapChain.imageViews.size());
-
-        for (size_t i = 0; i < framebuffers.size(); i++) {
-            VkImageView imageViews[2] = { swapChain.imageViews[i], swapChain.depthStencilImageViews[i] };
-
-            VkFramebufferCreateInfo framebufferInfo = {};
-            framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebufferInfo.pNext = nullptr;
-            framebufferInfo.flags = 0;
-            framebufferInfo.width = swapChain.extent.width;
-            framebufferInfo.height = swapChain.extent.height;
-            framebufferInfo.layers = 1;
-            framebufferInfo.attachmentCount = 2;
-            framebufferInfo.pAttachments = imageViews;
-            framebufferInfo.renderPass = swapChain.framebufferFormat.renderPass;
-
-            result = vkCreateFramebuffer(device, &framebufferInfo, nullptr, &framebuffers[i]);
-
-            VK_RESULT_ASSERT(result, "Filed to create framebuffer for surface");
-        }
-    }
-
-    void VulkanContext::destroyFramebuffers(VulkanSurface &surface) {
-        for (auto &framebuffer: surface.swapChain.framebuffers) {
-            vkDestroyFramebuffer(device, framebuffer, nullptr);
-        }
-    }
-
-    void VulkanContext::deviceWaitIdle() {
-        vkDeviceWaitIdle(device);
-    }
-
     void VulkanContext::createCommandPools() {
-        graphicsCommandPool = VulkanUtils::createCommandPool(*this,
+        graphicsCommandPool = VulkanUtils::createCommandPool(
                                                              VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
                                                              familyIndices.graphicsFamily.get());
-        transferCommandPool = VulkanUtils::createCommandPool(*this,
+        transferCommandPool = VulkanUtils::createCommandPool(
                                                              VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
                                                              familyIndices.transferFamily.get());
 
-        graphicsTempCommandPool = VulkanUtils::createCommandPool(*this,
+        graphicsTmpCommandPool = VulkanUtils::createCommandPool(
                                                                  VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
                                                                  familyIndices.graphicsFamily.get());
-        transferTempCommandPool = VulkanUtils::createCommandPool(*this,
+        transferTmpCommandPool = VulkanUtils::createCommandPool(
                                                                  VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
                                                                  familyIndices.transferFamily.get());
     }
@@ -829,30 +396,20 @@ namespace ignimbrite {
     void VulkanContext::destroyCommandPools() {
         vkDestroyCommandPool(device, graphicsCommandPool, nullptr);
         vkDestroyCommandPool(device, transferCommandPool, nullptr);
-        vkDestroyCommandPool(device, graphicsTempCommandPool, nullptr);
-        vkDestroyCommandPool(device, transferTempCommandPool, nullptr);
+        vkDestroyCommandPool(device, graphicsTmpCommandPool, nullptr);
+        vkDestroyCommandPool(device, transferTmpCommandPool, nullptr);
     }
 
-    void VulkanContext::createCommandBuffers(VulkanSurface &surface) {
-//    // create command buffers for each swapchain image
-//    std::vector<VkCommandBuffer> &cmdBuffers = surface.drawCmdBuffers;
-//    cmdBuffers.resize(surface.tripleBuffering ? 3 : 2);
-//
-//    VkCommandBufferAllocateInfo cmdBufferInfo {};
-//    cmdBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-//    cmdBufferInfo.commandPool = this->graphicsCommandPool;
-//    cmdBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-//    cmdBufferInfo.commandBufferCount = cmdBuffers.size();
-//
-//    VkResult r = vkAllocateCommandBuffers(device, &cmdBufferInfo, cmdBuffers.data());
-//
-//    if (r != VK_SUCCESS) {
-//        throw VulkanException("Can't allocate command buffers for swapchain");
-//    }
+    void VulkanContext::deviceWaitIdle() {
+        VkResult result = vkDeviceWaitIdle(device);
+        VK_RESULT_ASSERT(result, "Failed to wait idle on device")
     }
 
-    void VulkanContext::destroyCommandBuffers(VulkanSurface &surface) {
-//    vkFreeCommandBuffers(device, this->graphicsCommandPool, surface.drawCmdBuffers.size(), surface.drawCmdBuffers.data());
+    VulkanContext& VulkanContext::getInstance() {
+        static VulkanContext context;
+        return context;
     }
+
+
 
 } // namespace ignimbrite

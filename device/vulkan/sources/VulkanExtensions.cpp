@@ -13,19 +13,18 @@ namespace ignimbrite {
 
 #ifdef WITH_GLFW
 
-    VulkanExtensions::ID VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device, GLFWwindow *handle, uint32 width, uint32 height,
-                                        uint32 widthFramebuffer, uint32 heightFramebuffer, const std::string &name) {
-        VkResult result;
-        VkSurfaceKHR surface;
-        VulkanContext &context = device.context;
+    RenderDevice::ID VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device,
+                                                         GLFWwindow *handle,
+                                                         uint32 widthFramebuffer,
+                                                         uint32 heightFramebuffer,
+                                                         const std::string &name) {
+        VkSurfaceKHR surfaceKHR;
 
-        result = glfwCreateWindowSurface(context.instance, handle, nullptr, &surface);
+        auto &context = VulkanContext::getInstance();
+        auto result = glfwCreateWindowSurface(context.instance, handle, nullptr, &surfaceKHR);
+        VK_RESULT_ASSERT(result, "Failed to create window surface");
 
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Failed to create window surface");
-        }
-
-        return createSurfaceFromKHR(device, surface, width, height, widthFramebuffer, heightFramebuffer, name);
+        return createSurfaceFromKHR(device, surfaceKHR, widthFramebuffer, heightFramebuffer, name);
     }
 #endif
 
@@ -70,55 +69,37 @@ namespace ignimbrite {
         // create result from VkSurfaceKHR
         return VulkanExtensions::createSurfaceFromKHR(device, surfaceKhr,
                                                       width, height,
-                                                      width, height,
                                                       windowTitle);
     }
 #endif
 
-    VulkanExtensions::ID VulkanExtensions::createSurfaceFromKHR(VulkanRenderDevice &device, VkSurfaceKHR surfaceKhr, uint32 width,
-                                                                uint32 height, uint32 widthFramebuffer, uint32 heightFramebuffer,
-                                                                const std::string &name) {
-        VkResult result;
-        VulkanContext &context = device.context;
-
-        VulkanSurface window = {};
-        window.name = name;
-        window.width = width;
-        window.widthFramebuffer = widthFramebuffer;
-        window.heightFramebuffer = heightFramebuffer;
-        window.height = height;
-        window.surface = surfaceKhr;
-
-        result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.context.physicalDevice, surfaceKhr,
-                                                           &window.surfaceCapabilities);
-
-        if (result != VK_SUCCESS) {
-            throw VulkanException("Failed to get surface capabilities");
-        }
-
-        context.findPresentsFamily(window);
-        context.createSwapChain(window);
-        context.createFramebufferFormat(window);
-        context.createFramebuffers(window);
-
-        return device.mSurfaces.move(window);
-    }
-
-    void VulkanExtensions::destroySurface(VulkanRenderDevice &device, VulkanExtensions::ID surface, bool destroySurfKhr) {
-        VulkanSurface &vulkanSurface = device.mSurfaces.get(surface);
-        VulkanContext &context = device.context;
+    void VulkanExtensions::destroySurface(VulkanRenderDevice &device, RenderDevice::ID surface) {
+        auto &vulkanSurface = device.mSurfaces.get(surface);
+        auto &context = VulkanContext::getInstance();
 
         context.deviceWaitIdle();
-        context.destroyCommandBuffers(vulkanSurface);
-        context.destroyFramebuffers(vulkanSurface);
-        context.destroyFramebufferFormat(vulkanSurface);
-        context.destroySwapChain(vulkanSurface);
-
-        if (destroySurfKhr) {
-            vkDestroySurfaceKHR(context.instance, vulkanSurface.surface, nullptr);
-        }
+        vulkanSurface.destroyFramebuffers();
+        vulkanSurface.destroyFramebufferFormat();
+        vulkanSurface.destroySwapChain();
+        vkDestroySurfaceKHR(context.instance, vulkanSurface.surfaceKHR, nullptr);
 
         device.mSurfaces.remove(surface);
+    }
+
+    RenderDevice::ID
+    VulkanExtensions::createSurfaceFromKHR(VulkanRenderDevice &device, VkSurfaceKHR surfaceKhr,
+                                           uint32 widthFramebuffer, uint32 heightFramebuffer,
+                                           const std::string &name) {
+
+        VulkanSurface surface(widthFramebuffer, heightFramebuffer, name, surfaceKhr);
+        surface.findPresentsFamily();
+        surface.updateSurfaceCapabilities();
+        surface.createSwapChain();
+        surface.createFramebufferFormat();
+        surface.createFramebuffers();
+        surface.acquireFirstImage();
+
+        return device.mSurfaces.move(surface);
     }
 
 } // namespace ignimbrite

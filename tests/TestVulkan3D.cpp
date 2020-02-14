@@ -85,7 +85,6 @@ public:
 
             updateScene();
 
-            pDevice->swapBuffers(surface);
             pDevice->drawListBegin();
             {
                 pDevice->drawListBindSurface(surface, clearColor, area);
@@ -98,6 +97,10 @@ public:
                 pDevice->drawListDrawIndexed(mesh.indexCount, 1);
             }
             pDevice->drawListEnd();
+
+            pDevice->flush();
+            pDevice->synchronize();
+            pDevice->swapBuffers(surface);
         }
     }
 
@@ -111,8 +114,7 @@ private:
 
         // create surface
         surface = VulkanExtensions::createSurfaceGLFW(
-                *pDevice, window.glfwWindow, window.width, window.height,
-                window.widthFrameBuffer, window.heightFrameBuffer, name);
+                *pDevice, window.glfwWindow, window.widthFrameBuffer, window.heightFrameBuffer, name);
 
         // init vertex layout and load model
         initModel();
@@ -265,12 +267,13 @@ private:
     }
 
     ID loadShader(const char *vertSpirvPath, const char *fragSpirvPath) {
-        std::vector<RenderDevice::ShaderDataDesc> shaderDescs(2);
+        RenderDevice::ProgramDesc programDesc;
 
-        shaderDescs[0].language = ShaderLanguage::SPIRV;
-        shaderDescs[1].language = ShaderLanguage::SPIRV;
-        shaderDescs[0].type = ShaderType::Vertex;
-        shaderDescs[1].type = ShaderType::Fragment;
+        programDesc.language = ShaderLanguage::SPIRV;
+        programDesc.shaders.resize(2);
+
+        programDesc.shaders[0].type = ShaderType::Vertex;
+        programDesc.shaders[1].type = ShaderType::Fragment;
 
         std::ifstream vertFile(vertSpirvPath, std::ios::binary);
         std::ifstream fragFile(fragSpirvPath, std::ios::binary);
@@ -278,10 +281,10 @@ private:
         std::vector<uint8> vertSpv(std::istreambuf_iterator<char>(vertFile), {});
         std::vector<uint8> fragSpv(std::istreambuf_iterator<char>(fragFile), {});
 
-        shaderDescs[0].source = std::move(vertSpv);
-        shaderDescs[1].source = std::move(fragSpv);
+        programDesc.shaders[0].source = std::move(vertSpv);
+        programDesc.shaders[1].source = std::move(fragSpv);
 
-        return pDevice->createShaderProgram(shaderDescs);
+        return pDevice->createShaderProgram(programDesc);
     }
 
     void initUniformLayout() {
@@ -322,6 +325,7 @@ private:
         textureDesc.height = texHeight;
         textureDesc.width = texWidth;
         textureDesc.depth = 1;
+        textureDesc.size = texHeight * texWidth * 4;
         textureDesc.type = TextureType::Texture2D;
         textureDesc.usageFlags = (uint32)TextureUsageBit::ShaderSampling;
         textureDesc.format = DataFormat::R8G8B8A8_UNORM;
@@ -507,12 +511,12 @@ float Vulkan3DTest::prevy = 0;
 
 
 int main(int argc, char **argv) {
-    if (argc < 3 || (argc >= 2 && std::strcmp(argv[1], "--help") == 0)) {
+    /*if (argc < 3 || (argc >= 2 && std::strcmp(argv[1], "--help") == 0)) {
         printf("Arguments should be: <path to .obj mesh> <path to texture>\n");
         return 0;
-    }
+    }*/
     
-    Vulkan3DTest test(argv[1], argv[2]);
+    Vulkan3DTest test("assets/models/sphere.obj", "assets/textures/double.png");//argv[1], argv[2]);
     test.loop();
 }
 

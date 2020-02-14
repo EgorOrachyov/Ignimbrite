@@ -12,8 +12,9 @@
 #include <ignimbrite/ObjectIDBuffer.h>
 #include <VulkanObjects.h>
 #include <VulkanContext.h>
-#include <vulkan/vulkan.h>
-#include "VulkanUtils.h"
+#include <VulkanSurface.h>
+#include <VulkanUtils.h>
+#include <VulkanDrawList.h>
 
 namespace ignimbrite {
 
@@ -48,9 +49,6 @@ namespace ignimbrite {
         ID createTexture(const TextureDesc &textureDesc) override;
         void destroyTexture(ID texture) override;
 
-        ID getSurface(const std::string &surfaceName) override;
-        void getSurfaceSize(ID surface, uint32 &width, uint32 &height) override;
-
         ID createUniformSet(const UniformSetDesc &setDesc, ID uniformLayout) override;
         void destroyUniformSet(ID set) override;
 
@@ -61,7 +59,7 @@ namespace ignimbrite {
         void updateUniformBuffer(ID buffer, uint32 size, uint32 offset, const void *data) override;
         void destroyUniformBuffer(ID buffer) override;
 
-        ID createShaderProgram(const std::vector<ShaderDataDesc> &shaders) override;
+        ID createShaderProgram(const ProgramDesc &programDesc) override;
         void destroyShaderProgram(ID program) override;
 
         ID createGraphicsPipeline(PrimitiveTopology topology,
@@ -86,33 +84,42 @@ namespace ignimbrite {
         void drawListBindUniformSet(ID uniformLayout) override;
         void drawListBindVertexBuffer(ID vertexBuffer, uint32 binding, uint32 offset) override;
         void drawListBindIndexBuffer(ID indexBuffer, IndicesType indicesType, uint32 offset) override;
-        void drawListDraw(uint32 verticesCount, uint32 instancesCount) override;
 
+        void drawListDraw(uint32 verticesCount, uint32 instancesCount) override;
         void drawListDrawIndexed(uint32 indicesCount, uint32 instancesCount) override;
+
+        ID getSurface(const std::string &surfaceName) override;
+        void getSurfaceSize(ID surface, uint32 &width, uint32 &height) override;
         void swapBuffers(ID surfaceId) override;
+
+        void flush() override;
+        void synchronize() override;
 
     private:
         friend class VulkanExtensions;
         
-        template<typename T>
-        using Buffer = ObjectIDBuffer<T>;
+        using CommandBuffers = std::vector<VkCommandBuffer>;
+        using ClearValues = std::vector<VkClearValue>;
 
-        VulkanContext context;
-        VulkanDrawList drawList;
+        VulkanContext& mContext = VulkanContext::getInstance();
+        VulkanDrawListStateControl mDrawListState;
+        CommandBuffers mDrawQueue;
+        CommandBuffers mSyncQueue;
+        ClearValues mClearValues;
 
-        Buffer<VulkanSurface> mSurfaces;
-        Buffer<VulkanVertexLayout> mVertexLayouts;
-        Buffer<VulkanVertexBuffer> mVertexBuffers;
-        Buffer<VulkanIndexBuffer> mIndexBuffers;
-        Buffer<VulkanFrameBufferFormat> mFrameBufferFormats;
-        Buffer<VulkanFrameBuffer> mFrameBuffers;
-        Buffer<VkSampler> mSamplers;
-        Buffer<VulkanTextureObject> mTextureObjects;
-        Buffer<VulkanUniformBuffer> mUniformBuffers;
-        Buffer<VulkanUniformLayout> mUniformLayouts;
-        Buffer<VulkanUniformSet> mUniformSets;
-        Buffer<VulkanShaderProgram> mShaderPrograms;
-        Buffer<VulkanGraphicsPipeline> mGraphicsPipelines;
+        ObjectIDBuffer<VulkanSurface> mSurfaces;
+        ObjectIDBuffer<VulkanVertexLayout> mVertexLayouts;
+        ObjectIDBuffer<VulkanVertexBuffer> mVertexBuffers;
+        ObjectIDBuffer<VulkanIndexBuffer> mIndexBuffers;
+        ObjectIDBuffer<VulkanFrameBufferFormat> mFrameBufferFormats;
+        ObjectIDBuffer<VulkanFramebuffer> mFrameBuffers;
+        ObjectIDBuffer<VkSampler> mSamplers;
+        ObjectIDBuffer<VulkanTextureObject> mTextureObjects;
+        ObjectIDBuffer<VulkanUniformBuffer> mUniformBuffers;
+        ObjectIDBuffer<VulkanUniformLayout> mUniformLayouts;
+        ObjectIDBuffer<VulkanUniformSet> mUniformSets;
+        ObjectIDBuffer<VulkanShaderProgram> mShaderPrograms;
+        ObjectIDBuffer<VulkanGraphicsPipeline> mGraphicsPipelines;
     };
 
 } // namespace ignimbrite

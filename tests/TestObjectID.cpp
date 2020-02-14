@@ -107,13 +107,26 @@ struct TestObjectIDBuffer {
         }
     }
 
+    static void test5() {
+        ObjectIDBuffer<int32> ints;
+
+        auto i = ints.add(132);
+        printf("i = %i\n", ints.get(i));
+        ints.remove(i);
+
+        auto j = ints.add(137);
+        printf("j = %i\n", ints.get(j));
+        ints.remove(j);
+    }
+
 };
 
-int32 main(int32 argc, char** argv) {
+int32 main() {
     TestObjectIDBuffer::test1();
     TestObjectIDBuffer::test2();
     TestObjectIDBuffer::test3();
     TestObjectIDBuffer::test4();
+    TestObjectIDBuffer::test5();
 }
 
 #endif //IGNIMBRITELIBRARY_TESTOBJECTID_CPP
