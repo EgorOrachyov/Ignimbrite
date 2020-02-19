@@ -12,6 +12,8 @@
 #include <tiny_obj_loader.h>
 #include <stb_image.h>
 
+#include <algorithm>
+
 #include <fstream>
 
 using namespace ignimbrite;
