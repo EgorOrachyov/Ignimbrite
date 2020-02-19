@@ -12,6 +12,7 @@
 #include <ignimbrite/RenderDevice.h>
 #include <ignimbrite/Optional.h>
 #include <VulkanDescriptorAllocator.h>
+#include <vk_mem_alloc.h>
 
 namespace ignimbrite {
 
@@ -20,23 +21,29 @@ namespace ignimbrite {
         std::vector<VkVertexInputAttributeDescription> vkAttributes;
     };
 
+    struct VulkanAllocation {
+        VkDeviceMemory memory;
+        uint32 offset;
+        VmaAllocation vmaAllocation;
+    };
+
     struct VulkanVertexBuffer {
         BufferUsage usage;
         uint32 size;
         VkBuffer vkBuffer;
-        VkDeviceMemory vkDeviceMemory;
+        VulkanAllocation allocation;
     };
 
     struct VulkanIndexBuffer {
         BufferUsage usage;
         uint32 size;
         VkBuffer vkBuffer;
-        VkDeviceMemory vkDeviceMemory;
+        VulkanAllocation allocation;
     };
 
     struct VulkanTextureObject {
         VkImage image;
-        VkDeviceMemory imageMemory;
+        VulkanAllocation allocation;
         VkImageView imageView;
         VkImageType type;
         VkImageLayout layout;
@@ -52,7 +59,7 @@ namespace ignimbrite {
         BufferUsage usage;
         uint32 size;
         VkBuffer buffer;
-        VkDeviceMemory memory;
+        VulkanAllocation allocation;
     };
 
     struct VulkanUniformLayout {

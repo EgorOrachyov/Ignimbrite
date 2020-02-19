@@ -410,6 +410,18 @@ namespace ignimbrite {
         return context;
     }
 
+    void VulkanContext::createAllocator() {
+        VmaAllocatorCreateInfo allocatorInfo = {};
+        allocatorInfo.physicalDevice = physicalDevice;
+        allocatorInfo.device = device;
+
+        VkResult result = vmaCreateAllocator(&allocatorInfo, &vmAllocator);
+        VK_RESULT_ASSERT(result,"Failed to create Vulkan memory allocator");
+    }
+
+    void VulkanContext::destroyAllocator() {
+        vmaDestroyAllocator(vmAllocator);
+    }
 
 
 } // namespace ignimbrite

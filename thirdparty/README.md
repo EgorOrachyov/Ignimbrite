@@ -44,3 +44,9 @@ GitHub repository [link](https://github.com/syoyo/tinyobjloader).
 SDK for high-performance, industry-standard Vulkan graphics and compute API.
 Please, follow the instructions to install Vulkan SDK on the main repository
 [page](https://github.com/EgorOrachyov/Ignimbrite/blob/master/README.md).
+
+## VMA Allocator
+
+Vulkan memory allocation library.
+MIT License [link](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/blob/master/LICENSE.txt).
+GitHub repository [link](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator).

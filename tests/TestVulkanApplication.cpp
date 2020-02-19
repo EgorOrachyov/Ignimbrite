@@ -129,8 +129,8 @@ public:
     }
 
     void loadTestShader(VulkanRenderDevice &device) {
-        std::ifstream vertFile("shaders/vert.spv", std::ios::binary);
-        std::ifstream fragFile("shaders/frag.spv", std::ios::binary);
+        std::ifstream vertFile("shaders/spirv/vert.spv", std::ios::binary);
+        std::ifstream fragFile("shaders/spirv/frag.spv", std::ios::binary);
 
         if (!vertFile.is_open() || !fragFile.is_open()) {
             throw std::runtime_error("Failed to open spir-v files");
@@ -215,13 +215,13 @@ private:
     } transform;
 
     float32 vertices[9] = {
-            -0.5f, -0.5f, 0.0f,
+            0.0f, 0.5f, 0.0f,
             0.5f, -0.5f, 0.0f,
-            0.5f, 0.5f, 0.0f
+            -0.5f, -0.5f, 0.0f
     };
 
     uint16 indices[3] = {
-            2, 1, 0
+            0, 1, 2
     };
 
 };

@@ -342,7 +342,7 @@ public:
 
 private:
 
-    const std::string path = "./resources/shaders/spirv/";
+    const std::string path = "shaders/spirv/";
 
     VulkanRenderDevice* device;
     Window window;

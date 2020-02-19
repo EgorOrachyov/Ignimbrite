@@ -12,6 +12,7 @@
 #include <ignimbrite/Types.h>
 #include <VulkanFramebuffer.h>
 #include <VulkanFence.h>
+#include <VulkanObjects.h>
 #include <string>
 #include <vector>
 
@@ -30,7 +31,7 @@ namespace ignimbrite {
         /** Images and views for depth buffer (created by hand) */
         std::vector<VkImage> depthStencilImages;
         std::vector<VkImageView> depthStencilImageViews;
-        std::vector<VkDeviceMemory> depthStencilImageMemory;
+        std::vector<VulkanAllocation> depthStencilAllocation;
     };
 
     /** Represents window drawing area, created by native OS window system */

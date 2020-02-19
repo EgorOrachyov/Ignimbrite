@@ -369,6 +369,30 @@ namespace ignimbrite {
                     throw InvalidEnum();
             }
         }
+
+        static uint32 getFormatSize(DataFormat format) {
+            // returns size in bytes
+            switch (format) {
+                case DataFormat::R8G8B8_UNORM:
+                    return 3;
+                case DataFormat::R8G8B8A8_UNORM:
+                    return 4;
+                case DataFormat::R32_SFLOAT:
+                    return 4;
+                case DataFormat::R32G32_SFLOAT:
+                    return 8;
+                case DataFormat::R32G32B32_SFLOAT:
+                    return 12;
+                case DataFormat::R32G32B32A32_SFLOAT:
+                    return 16;
+                case DataFormat::D24_UNORM_S8_UINT:
+                    return 4;
+                case DataFormat::D32_SFLOAT_S8_UINT:
+                    return 8;
+                default:
+                    throw InvalidEnum();
+            }
+        }
     };
 
 } // namespace ignimbrite

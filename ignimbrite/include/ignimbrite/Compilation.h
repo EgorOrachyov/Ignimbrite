@@ -9,8 +9,8 @@
 #ifndef IGNIMBRITELIBRARY_COMPILATION_H
 #define IGNIMBRITELIBRARY_COMPILATION_H
 
-#ifndef MODE_DEBUG
-    #define MODE_DEBUG
-#endif
+//#ifndef MODE_DEBUG
+//    #define MODE_DEBUG
+//#endif
 
 #endif //IGNIMBRITELIBRARY_COMPILATION_H

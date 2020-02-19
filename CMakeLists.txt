@@ -28,6 +28,8 @@ endif ()
 ##################################################################
 ## Third-party setup
 
+include_directories(thirdparty/test_include)
+
 option(WITH_GLFW "GLFW Window system" NO)
 if (WITH_GLFW)
     message(STATUS "Add GLFW as window system API")
@@ -47,6 +49,9 @@ if (WITH_VULKAN)
     target_include_directories(Vulkan INTERFACE ${Vulkan_INCLUDE_DIRS})
     target_link_libraries(Vulkan INTERFACE ${Vulkan_LIBRARIES})
     add_subdirectory(device/vulkan)
+
+    message(STATUS "Add VMA allocator for memory management")
+    add_subdirectory(thirdparty/vma-allocator)
 endif()
 
 option(WITH_SPIRVCROSS "SPIR-V Cross" YES)
@@ -79,6 +84,14 @@ option(WITH_TINYOBJLOADER "Tiny OBJ loader for geometry and materials in .obj .m
 if (WITH_TINYOBJLOADER)
     message(STATUS "Add Tiny OBJ loader for loading .obj/.mtl data")
     add_subdirectory(thirdparty/tinyobjloader)
+endif()
+
+option(WITH_IGNIMBRITE_QT "Use QT to create surface for rendering" NO)
+if (WITH_IGNIMBRITE_QT)
+    message(STATUS "Add QT for surface creation")
+    find_package(Qt5 COMPONENTS Core Gui REQUIRED)
+    message(STATUS "Including QT5 directories: ${Qt5Core_INCLUDE_DIRS} ${Qt5Gui_INCLUDE_DIRS}")
+    include_directories(${Qt5Core_INCLUDE_DIRS} ${Qt5Gui_INCLUDE_DIRS})
 endif()
 
 ##################################################################

@@ -36,33 +36,35 @@ namespace ignimbrite {
         static void createBuffer(
                 VkDeviceSize size,
                 VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-                VkBuffer &outBuffer, VkDeviceMemory &outBufferMemory
+                VkBuffer &outBuffer, VulkanAllocation &outAllocation
         );
 
         static void createBufferLocal(
                 const void *data,
                 VkDeviceSize size, VkBufferUsageFlags usage,
-                VkBuffer &outBuffer, VkDeviceMemory &outBufferMemory
+                VkBuffer &outBuffer, VulkanAllocation &outAllocation
         );
 
         static void copyBuffer(
                 VkBuffer srcBuffer,
                 VkBuffer dstBuffer,
-                VkDeviceSize size
+                const VkBufferCopy *copyRegion
         );
 
         static void updateBufferMemory(
-                VkDeviceMemory bufferMemory,
+                const VulkanAllocation &allocation,
                 VkDeviceSize offset, VkDeviceSize size,
                 const void *data
         );
 
-        static void
-        createTextureImage(const void *imageData, uint32 dataSize, uint32 width, uint32 height, uint32 depth,
-                           uint32 mipLevels,
-                           VkImageType imageType, VkFormat format, VkImageTiling tiling, VkImage &outTextureImage,
-                           VkDeviceMemory &outTextureMemory,
-                           VkImageLayout textureLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        static void createTextureImage(
+                const void *imageData, uint32 imageDataSize,
+                uint32 width, uint32 height,
+                uint32 depth, uint32 mipLevels,
+                VkImageType imageType, VkFormat format, VkImageTiling tiling,
+                VkImage &outTextureImage, VulkanAllocation &outAllocation,
+                VkImageLayout textureLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        );
 
         static void createImage(
                 uint32 width, uint32 height,
@@ -70,7 +72,7 @@ namespace ignimbrite {
                 VkImageType imageType, VkFormat format,
                 VkImageTiling tiling, VkImageUsageFlags usage,
                 VkMemoryPropertyFlags properties,
-                VkImage &outImage, VkDeviceMemory &outImageMemory
+                VkImage &outImage, VulkanAllocation &outAllocation
         );
 
         static void copyBufferToImage(
@@ -104,7 +106,7 @@ namespace ignimbrite {
         static void createDepthStencilBuffer(
                 uint32 width, uint32 height, uint32 depth,
                 VkImageType imageType, VkFormat format, VkImage &outImage,
-                VkDeviceMemory &outImageMemory, VkImageUsageFlags usageFlags
+                VulkanAllocation &outAllocation, VkImageUsageFlags usageFlags
         );
 
         static void createVertexInputState(
@@ -185,6 +187,15 @@ namespace ignimbrite {
                 VkCommandPool commandPool
         );
 
+        static void destroyBuffer(
+                VkBuffer buffer,
+                VulkanAllocation &allocation
+        );
+
+        static void destroyImage(
+                VkImage image,
+                VulkanAllocation &allocation
+        );
     };
 
 } // namespace ignimbrite

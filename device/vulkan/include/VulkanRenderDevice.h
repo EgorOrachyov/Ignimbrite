@@ -96,9 +96,8 @@ namespace ignimbrite {
         void synchronize() override;
 
     private:
-
         friend class VulkanExtensions;
-
+        
         using CommandBuffers = std::vector<VkCommandBuffer>;
         using ClearValues = std::vector<VkClearValue>;
 
