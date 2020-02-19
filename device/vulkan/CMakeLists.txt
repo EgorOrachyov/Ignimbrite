@@ -37,6 +37,7 @@ target_include_directories(VulkanDevice PUBLIC include)
 
 target_link_libraries(VulkanDevice PUBLIC Ignimbrite)
 target_link_libraries(VulkanDevice PUBLIC Vulkan)
+target_link_libraries(VulkanDevice PUBLIC vma-alloc)
 
 if (WITH_GLFW)
     target_link_libraries(VulkanDevice PUBLIC glfw)

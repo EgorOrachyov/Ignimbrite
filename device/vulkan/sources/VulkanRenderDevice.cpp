@@ -21,12 +21,14 @@ namespace ignimbrite {
         mContext.setupDebugMessenger();
         mContext.pickPhysicalDevice();
         mContext.createLogicalDevice();
+        mContext.createAllocator();
         mContext.createCommandPools();
     }
 
     VulkanRenderDevice::~VulkanRenderDevice() {
         mContext.destroyCommandPools();
         mContext.destroyLogicalDevice();
+        mContext.destroyAllocator();
         mContext.destroyDebugMessenger();
         mContext.destroyInstance();
     }
@@ -77,16 +79,16 @@ namespace ignimbrite {
                                       usage,
                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                       vertexBuffer.vkBuffer,
-                                      vertexBuffer.vkDeviceMemory
+                                      vertexBuffer.allocation
             );
-            VulkanUtils::updateBufferMemory(vertexBuffer.vkDeviceMemory, 0, size, data);
+            VulkanUtils::updateBufferMemory(vertexBuffer.allocation, 0, size, data);
         } else {
             VulkanUtils::createBufferLocal(
                     data,
                     size,
                     usage,
                     vertexBuffer.vkBuffer,
-                    vertexBuffer.vkDeviceMemory
+                    vertexBuffer.allocation
             );
         }
 
@@ -105,12 +107,12 @@ namespace ignimbrite {
                                       usage,
                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                       indexBuffer.vkBuffer,
-                                      indexBuffer.vkDeviceMemory
+                                      indexBuffer.allocation
             );
-            VulkanUtils::updateBufferMemory(indexBuffer.vkDeviceMemory, 0, size, data);
+            VulkanUtils::updateBufferMemory(indexBuffer.allocation, 0, size, data);
         } else {
             VulkanUtils::createBufferLocal(data, size, usage, indexBuffer.vkBuffer,
-                                           indexBuffer.vkDeviceMemory);
+                                           indexBuffer.allocation);
         }
 
         return mIndexBuffers.move(indexBuffer);
@@ -118,7 +120,6 @@ namespace ignimbrite {
 
     void VulkanRenderDevice::updateVertexBuffer(RenderDevice::ID bufferId, uint32 size, uint32 offset, const void *data) {
         const VulkanVertexBuffer &buffer = mVertexBuffers.get(bufferId);
-        const VkDeviceMemory &memory = buffer.vkDeviceMemory;
 
         if (buffer.usage != BufferUsage::Dynamic) {
             throw VulkanException("Attempt to update static vertex buffer");
@@ -128,12 +129,11 @@ namespace ignimbrite {
             throw VulkanException("Attempt to update out-of-buffer memory region for vertex buffer");
         }
 
-        VulkanUtils::updateBufferMemory(memory, offset, size, data);
+        VulkanUtils::updateBufferMemory(buffer.allocation, offset, size, data);
     }
 
     void VulkanRenderDevice::updateIndexBuffer(RenderDevice::ID bufferId, uint32 size, uint32 offset, const void *data) {
         const VulkanIndexBuffer &buffer = mIndexBuffers.get(bufferId);
-        const VkDeviceMemory &memory = buffer.vkDeviceMemory;
 
         if (buffer.usage != BufferUsage::Dynamic) {
             throw VulkanException("Attempt to update static index buffer");
@@ -143,25 +143,19 @@ namespace ignimbrite {
             throw VulkanException("Attempt to update out-of-buffer memory region for index buffer");
         }
 
-        VulkanUtils::updateBufferMemory(memory, offset, size, data);
+        VulkanUtils::updateBufferMemory(buffer.allocation, offset, size, data);
     }
 
     void VulkanRenderDevice::destroyVertexBuffer(RenderDevice::ID bufferId) {
-        const VkDevice &device = mContext.device;
         VulkanVertexBuffer &buffer = mVertexBuffers.get(bufferId);
-
-        vkDestroyBuffer(device, buffer.vkBuffer, nullptr);
-        vkFreeMemory(device, buffer.vkDeviceMemory, nullptr);
+        VulkanUtils::destroyBuffer(buffer.vkBuffer, buffer.allocation);
 
         mVertexBuffers.remove(bufferId);
     }
 
     void VulkanRenderDevice::destroyIndexBuffer(RenderDevice::ID bufferId) {
-        const VkDevice &device = mContext.device;
         VulkanIndexBuffer &buffer = mIndexBuffers.get(bufferId);
-
-        vkDestroyBuffer(device, buffer.vkBuffer, nullptr);
-        vkFreeMemory(device, buffer.vkDeviceMemory, nullptr);
+        VulkanUtils::destroyBuffer(buffer.vkBuffer, buffer.allocation);
 
         mIndexBuffers.remove(bufferId);
     }
@@ -205,7 +199,7 @@ namespace ignimbrite {
                     1, imageType, format, VK_IMAGE_TILING_OPTIMAL,
                     usageFlags | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    texture.image, texture.imageMemory
+                    texture.image, texture.allocation
             );
 
             VkImageSubresourceRange subresourceRange;
@@ -232,7 +226,7 @@ namespace ignimbrite {
             VulkanUtils::createDepthStencilBuffer(
                     textureDesc.width, textureDesc.height, textureDesc.depth,
                     imageType, format, //viewType,
-                    texture.image, texture.imageMemory,
+                    texture.image, texture.allocation,
                     usageFlags | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
             );
 
@@ -265,7 +259,7 @@ namespace ignimbrite {
                     textureDesc.width, textureDesc.height, textureDesc.depth,
                     textureDesc.mipmaps,
                     imageType, format, VK_IMAGE_TILING_OPTIMAL,
-                    texture.image, texture.imageMemory, texture.layout
+                    texture.image, texture.allocation, texture.layout
             );
 
             VkImageSubresourceRange subresourceRange;
@@ -297,8 +291,7 @@ namespace ignimbrite {
         VulkanTextureObject &imo = mTextureObjects.get(textureId);
 
         vkDestroyImageView(device, imo.imageView, nullptr);
-        vkDestroyImage(device, imo.image, nullptr);
-        vkFreeMemory(device, imo.imageMemory, nullptr);
+        VulkanUtils::destroyImage(imo.image, imo.allocation);
 
         mTextureObjects.remove(textureId);
     }
@@ -644,13 +637,13 @@ namespace ignimbrite {
 
         if (usage == BufferUsage::Static) {
             VulkanUtils::createBufferLocal(data, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                           uniformBuffer.buffer, uniformBuffer.memory);
+                                           uniformBuffer.buffer, uniformBuffer.allocation);
         } else if (usage == BufferUsage::Dynamic) {
             VkMemoryPropertyFlags memoryPropertyFlags =
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
             VulkanUtils::createBuffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                      memoryPropertyFlags, uniformBuffer.buffer, uniformBuffer.memory);
-            VulkanUtils::updateBufferMemory(uniformBuffer.memory, 0, size, data);
+                                      memoryPropertyFlags, uniformBuffer.buffer, uniformBuffer.allocation);
+            VulkanUtils::updateBufferMemory(uniformBuffer.allocation, 0, size, data);
         } else {
             throw VulkanException("Undefined uniform buffer usage");
         }
@@ -669,14 +662,12 @@ namespace ignimbrite {
             throw VulkanException("Attempt to update out-of-buffer memory region for uniform buffer");
         }
 
-        VulkanUtils::updateBufferMemory(uniformBuffer.memory, offset, size, data);
+        VulkanUtils::updateBufferMemory(uniformBuffer.allocation, offset, size, data);
     }
 
     void VulkanRenderDevice::destroyUniformBuffer(RenderDevice::ID bufferId) {
         VulkanUniformBuffer &uniformBuffer = mUniformBuffers.get(bufferId);
-
-        vkDestroyBuffer(mContext.device, uniformBuffer.buffer, nullptr);
-        vkFreeMemory(mContext.device, uniformBuffer.memory, nullptr);
+        VulkanUtils::destroyBuffer(uniformBuffer.buffer, uniformBuffer.allocation);
 
         mUniformBuffers.remove(bufferId);
     }
@@ -1186,6 +1177,7 @@ namespace ignimbrite {
         auto result = vkQueuePresentKHR(surface.presentQueue, &presentInfo);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+            // TODO: handle minimization (width == height == 0)
             surface.resizeSurface();
         } else {
             VK_RESULT_ASSERT(result, "Failed to present image to the surface");

@@ -12,6 +12,7 @@
 #include <ignimbrite/Optional.h>
 #include <VulkanDefinitions.h>
 #include <vector>
+#include <vk_mem_alloc.h>
 
 namespace ignimbrite {
 
@@ -43,6 +44,9 @@ namespace ignimbrite {
 
         void createLogicalDevice();
         void destroyLogicalDevice();
+
+        void createAllocator();
+        void destroyAllocator();
 
         void checkSupportedExtensions();
         bool checkValidationLayers();
@@ -114,6 +118,8 @@ namespace ignimbrite {
         VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
         VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
         VkDevice device = VK_NULL_HANDLE;
+
+        VmaAllocator vmAllocator = VK_NULL_HANDLE;
 
         VulkanQueueFamilyIndices familyIndices = {};
 

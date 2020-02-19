@@ -63,80 +63,92 @@ namespace ignimbrite {
 
     void VulkanUtils::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                                    VkMemoryPropertyFlags properties,
-                                   VkBuffer &outBuffer, VkDeviceMemory &outBufferMemory) {
+                                   VkBuffer &outBuffer, VulkanAllocation &outAllocation) {
         auto& context = VulkanContext::getInstance();
 
         VkBufferCreateInfo bufferInfo = {};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.size = (VkDeviceSize) size;
         bufferInfo.usage = usage;
-        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        VkResult result = vkCreateBuffer(context.device, &bufferInfo, nullptr, &outBuffer);
-        VK_RESULT_ASSERT(result, "Can't create buffer for vertex data");
+        VmaAllocationCreateInfo allocInfo = {};
+        allocInfo.requiredFlags = properties;
 
-        VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(context.device, outBuffer, &memRequirements);
+        VmaAllocationInfo outAllocInfo;
+        VkResult r = vmaCreateBuffer(context.vmAllocator, &bufferInfo, &allocInfo, &outBuffer, &outAllocation.vmaAllocation, &outAllocInfo);
+        VK_RESULT_ASSERT(r, "Failed to create buffer with Vulkan memory allocator");
 
-        VkMemoryAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = getMemoryTypeIndex(memRequirements.memoryTypeBits, properties);
-
-        result = vkAllocateMemory(context.device, &allocInfo, nullptr, &outBufferMemory);
-        VK_RESULT_ASSERT(result, "Can't allocate memory for vertex buffer");
-
-        result = vkBindBufferMemory(context.device, outBuffer, outBufferMemory, 0);
-        VK_RESULT_ASSERT(result, "Can't bind buffer memory for vertex buffer");
+        outAllocation.memory = outAllocInfo.deviceMemory;
+        outAllocation.offset = outAllocInfo.offset;
     }
 
     void
     VulkanUtils::createBufferLocal(const void *data, VkDeviceSize size,
                                    VkBufferUsageFlags usage,
-                                   VkBuffer &outBuffer, VkDeviceMemory &outBufferMemory) {
+                                   VkBuffer &outBuffer, VulkanAllocation &outAllocation) {
         auto& context = VulkanContext::getInstance();
 
+        // create staging buffer
+        VkBufferCreateInfo stagingBufferInfo = {};
+        stagingBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        stagingBufferInfo.size = (VkDeviceSize) size;
+        stagingBufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+        VmaAllocationCreateInfo stagingAllocInfo = {};
+        stagingAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+        //stagingAllocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
         VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
+        VmaAllocationInfo outStagingAllocInfo;
+        VulkanAllocation stagingAllocation = {};
 
-        createBuffer(
-                     size,
-                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     stagingBuffer,
-                     stagingBufferMemory);
+        VkResult r = vmaCreateBuffer(context.vmAllocator, &stagingBufferInfo, &stagingAllocInfo,
+                &stagingBuffer, &stagingAllocation.vmaAllocation, &outStagingAllocInfo);
+        VK_RESULT_ASSERT(r, "Failed to create buffer with Vulkan memory allocator");
 
-        updateBufferMemory(stagingBufferMemory, 0, size, data);
+        // map and fill it
+        updateBufferMemory(stagingAllocation, 0, size, data);
 
-        createBuffer(
-                     size,
-                     usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                     outBuffer,
-                     outBufferMemory);
+        // create main buffer
+        VkBufferCreateInfo bufferInfo = {};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = (VkDeviceSize) size;
+        // also set it as copy destination
+        bufferInfo.usage = usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
-        copyBuffer(stagingBuffer, outBuffer, size);
+        VmaAllocationCreateInfo allocInfo = {};
+        // fastest access from gpu
+        allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+        //allocInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-        vkDestroyBuffer(context.device, stagingBuffer, nullptr);
-        vkFreeMemory(context.device, stagingBufferMemory, nullptr);
+        VmaAllocationInfo outAllocInfo;
+        r = vmaCreateBuffer(context.vmAllocator, &bufferInfo, &allocInfo, &outBuffer, &outAllocation.vmaAllocation, &outAllocInfo);
+        VK_RESULT_ASSERT(r, "Failed to create buffer");
+
+        outAllocation.memory = outAllocInfo.deviceMemory;
+        outAllocation.offset = outAllocInfo.offset;
+
+        // submit a transfer from staging to main
+        VkBufferCopy copyRegion = {};
+        copyRegion.size = size;
+        copyRegion.srcOffset = 0;
+        copyRegion.dstOffset = 0;
+
+        copyBuffer(stagingBuffer, outBuffer, &copyRegion);
+
+        destroyBuffer(stagingBuffer, stagingAllocation);
     }
 
-    void VulkanUtils::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+    void VulkanUtils::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, const VkBufferCopy *copyRegion) {
         auto& context = VulkanContext::getInstance();
 
         VkCommandBuffer commandBuffer = beginTmpCommandBuffer(context.transferTmpCommandPool);
-
-        VkBufferCopy copyRegion = {};
-        copyRegion.size = size;
-        copyRegion.dstOffset = 0;
-        copyRegion.srcOffset = 0;
-
-        vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+        vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, copyRegion);
 
         endTmpCommandBuffer(commandBuffer, context.transferQueue, context.transferTmpCommandPool);
     }
 
-    void VulkanUtils::updateBufferMemory(VkDeviceMemory bufferMemory, VkDeviceSize offset,
+    void VulkanUtils::updateBufferMemory(const VulkanAllocation &allocation, VkDeviceSize offset,
                                          VkDeviceSize size,
                                          const void *data) {
         if (data == nullptr) {
@@ -146,12 +158,11 @@ namespace ignimbrite {
         auto& context = VulkanContext::getInstance();
 
         void *mappedData;
-        VkResult result;
-        result = vkMapMemory(context.device, bufferMemory, offset, size, 0, &mappedData);
+        VkResult result = vmaMapMemory(context.vmAllocator, allocation.vmaAllocation, &mappedData);
         VK_RESULT_ASSERT(result, "Failed to map memory buffer");
 
-        std::memcpy(mappedData, data, (size_t) size);
-        vkUnmapMemory(context.device, bufferMemory);
+        std::memcpy((uint8*)mappedData + offset, data, (size_t) size);
+        vmaUnmapMemory(context.vmAllocator, allocation.vmaAllocation);
     }
 
     void
@@ -159,35 +170,31 @@ namespace ignimbrite {
                                     uint32 mipLevels,
                                     VkImageType imageType, VkFormat format, VkImageTiling tiling,
                                     VkImage &outTextureImage,
-                                    VkDeviceMemory &outTextureMemory, VkImageLayout textureLayout) {
-        auto& context = VulkanContext::getInstance();
-
+                                    VulkanAllocation &outAllocation, VkImageLayout textureLayout) {
         VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-        VkDeviceSize imageSize = dataSize;
+        VulkanAllocation stagingAllocation = {};
 
         // Create staging buffer to create image in device local memory
-        createBuffer(imageSize,
+        createBuffer(dataSize,
                      VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     stagingBuffer, stagingBufferMemory);
+                     stagingBuffer, stagingAllocation);
 
         if (imageData != nullptr) {
-            updateBufferMemory(stagingBufferMemory, 0, imageSize, imageData);
+            updateBufferMemory(stagingAllocation, 0, dataSize, imageData);
         }
 
         createImage(width, height, depth, mipLevels, imageType, format, tiling,
                     // for copying and sampling in shaders
                     VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    outTextureImage, outTextureMemory);
+                    outTextureImage, outAllocation);
 
         // Transition layout to copy data
         transitionImageLayout(outTextureImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
         copyBufferToImage(stagingBuffer, outTextureImage, width, height, depth);
 
-        vkDestroyBuffer(context.device, stagingBuffer, nullptr);
-        vkFreeMemory(context.device, stagingBufferMemory, nullptr);
+        destroyBuffer(stagingBuffer, stagingAllocation);
 
         if (mipLevels > 1) {
             // generate mipmaps and layout transition
@@ -203,7 +210,7 @@ namespace ignimbrite {
                                   uint32 depth, uint32 mipLevels,
                                   VkImageType imageType, VkFormat format, VkImageTiling tiling,
                                   VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
-                                  VkImage &outImage, VkDeviceMemory &outImageMemory) {
+                                  VkImage &outImage, VulkanAllocation &outAllocation) {
         auto& context = VulkanContext::getInstance();
 
         VkImageCreateInfo imageInfo = {};
@@ -221,22 +228,16 @@ namespace ignimbrite {
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        VkResult result = vkCreateImage(context.device, &imageInfo, nullptr, &outImage);
+        VmaAllocationCreateInfo allocInfo = {};
+        // allocInfo.usage = ;
+        allocInfo.requiredFlags = properties;
+
+        VmaAllocationInfo outAllocInfo;
+        VkResult result = vmaCreateImage(context.vmAllocator, &imageInfo, &allocInfo, &outImage, &outAllocation.vmaAllocation, &outAllocInfo);
         VK_RESULT_ASSERT(result, "Failed to create image");
 
-        VkMemoryRequirements memRequirements;
-        vkGetImageMemoryRequirements(context.device, outImage, &memRequirements);
-
-        VkMemoryAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = getMemoryTypeIndex(memRequirements.memoryTypeBits, properties);
-
-        result = vkAllocateMemory(context.device, &allocInfo, nullptr, &outImageMemory);
-        VK_RESULT_ASSERT(result, "Failed to allocate memory for image");
-
-        result = vkBindImageMemory(context.device, outImage, outImageMemory, 0);
-        VK_RESULT_ASSERT(result, "Failed to bind image memory");
+        outAllocation.offset = outAllocInfo.offset;
+        outAllocation.memory = outAllocInfo.deviceMemory;
     }
 
     void VulkanUtils::copyBufferToImage(VkBuffer buffer, VkImage image, uint32 width, uint32 height, uint32 depth) {
@@ -440,7 +441,7 @@ namespace ignimbrite {
 
     void VulkanUtils::createDepthStencilBuffer(uint32 width, uint32 height, uint32 depth,
                                                VkImageType imageType, VkFormat format, VkImage &outImage,
-                                               VkDeviceMemory &outImageMemory, VkImageUsageFlags usageFlags) {
+                                               VulkanAllocation &outAllocation, VkImageUsageFlags usageFlags) {
 
         // get properties of depth stencil format
         const VkFormatProperties &properties = getDeviceFormatProperties(format);
@@ -460,7 +461,7 @@ namespace ignimbrite {
                 // depth stencil buffer is device local
                 // TODO: make visible from cpu
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    outImage, outImageMemory
+                    outImage, outAllocation
         );
     }
 
@@ -679,6 +680,24 @@ namespace ignimbrite {
     void VulkanUtils::destroyTmpComandBuffer(VkCommandBuffer commandBuffer, VkCommandPool commandPool) {
         auto& context = VulkanContext::getInstance();
         vkFreeCommandBuffers(context.device, commandPool, 1, &commandBuffer);
+    }
+
+    void VulkanUtils::destroyBuffer(VkBuffer buffer, VulkanAllocation &allocation) {
+        auto& context = VulkanContext::getInstance();
+        vmaDestroyBuffer(context.vmAllocator, buffer, allocation.vmaAllocation);
+
+        allocation.vmaAllocation = VK_NULL_HANDLE;
+        allocation.memory = VK_NULL_HANDLE;
+        allocation.offset = 0;
+    }
+
+    void VulkanUtils::destroyImage(VkImage image, VulkanAllocation &allocation) {
+        auto& context = VulkanContext::getInstance();
+        vmaDestroyImage(context.vmAllocator, image, allocation.vmaAllocation);
+
+        allocation.vmaAllocation = VK_NULL_HANDLE;
+        allocation.memory = VK_NULL_HANDLE;
+        allocation.offset = 0;
     }
 
 } // namespace ignimbrite

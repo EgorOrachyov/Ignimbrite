@@ -49,6 +49,9 @@ if (WITH_VULKAN)
     target_include_directories(Vulkan INTERFACE ${Vulkan_INCLUDE_DIRS})
     target_link_libraries(Vulkan INTERFACE ${Vulkan_LIBRARIES})
     add_subdirectory(device/vulkan)
+
+    message(STATUS "Add VMA allocator for memory management")
+    add_subdirectory(thirdparty/vma-allocator)
 endif()
 
 option(WITH_SPIRVCROSS "SPIR-V Cross" YES)

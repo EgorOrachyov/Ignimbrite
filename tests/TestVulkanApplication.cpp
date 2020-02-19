@@ -215,13 +215,13 @@ private:
     } transform;
 
     float32 vertices[9] = {
-            -0.5f, -0.5f, 0.0f,
+            0.0f, 0.5f, 0.0f,
             0.5f, -0.5f, 0.0f,
-            0.5f, 0.5f, 0.0f
+            -0.5f, -0.5f, 0.0f
     };
 
     uint16 indices[3] = {
-            2, 1, 0
+            0, 1, 2
     };
 
 };

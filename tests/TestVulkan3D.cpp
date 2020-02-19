@@ -56,8 +56,8 @@ struct Material {
 struct Window {
     GLFWwindow* glfwWindow = nullptr;
     std::string name;
-    uint32 width = 0, height = 0;
-    uint32 widthFrameBuffer = 0, heightFrameBuffer = 0;
+    int32 width = 0, height = 0;
+    int32 widthFrameBuffer = 0, heightFrameBuffer = 0;
     uint32 extensionsCount = 0;
     const char* const* extensions = nullptr;
 };
@@ -76,12 +76,14 @@ public:
     }
 
     void loop() {
-        RenderDevice::Region area = { 0, 0, { window.width, window.height} };
         RenderDevice::Color clearColor = { { 1.0f, 1.0f, 1.0f, 0.0f} };
 
         while (!glfwWindowShouldClose(window.glfwWindow)) {
             glfwPollEvents();
             glfwSwapBuffers(window.glfwWindow);
+            glfwGetFramebufferSize(window.glfwWindow, &window.widthFrameBuffer, &window.height);
+
+            RenderDevice::Region area = { 0, 0, { (uint32)window.widthFrameBuffer, (uint32)window.heightFrameBuffer} };
 
             updateScene();
 
@@ -132,7 +134,7 @@ private:
 
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
         window.glfwWindow = glfwCreateWindow(window.width, window.height, name, nullptr, nullptr);
 
@@ -422,7 +424,7 @@ private:
 
 
     void updateScene() {
-        calculateMvp(window.width, window.height, fov, pitch, yaw, z,
+        calculateMvp(window.widthFrameBuffer, window.heightFrameBuffer, fov, pitch, yaw, z,
                 material.data.mvp, material.data.model);
 
         material.data.lightDir[0] = -1;
@@ -477,7 +479,7 @@ private:
         prevy = (float)y * sensitivity;
     }
 
-    static void scrollCallback(GLFWwindow *window, double x, double y) {
+    static void scrollCallback(GLFWwindow *, double, double y) {
         z += (float)y;
     }
 
@@ -511,12 +513,15 @@ float Vulkan3DTest::prevy = 0;
 
 
 int main(int argc, char **argv) {
-    /*if (argc < 3 || (argc >= 2 && std::strcmp(argv[1], "--help") == 0)) {
-        printf("Arguments should be: <path to .obj mesh> <path to texture>\n");
-        return 0;
-    }*/
+    const char *mesh = "assets/models/sphere.obj";
+    const char *texture = "assets/textures/double.png";
+
+    if (argc >= 3) {
+        mesh = argv[1];
+        texture = argv[2];
+    }
     
-    Vulkan3DTest test("assets/models/sphere.obj", "assets/textures/double.png");//argv[1], argv[2]);
+    Vulkan3DTest test(mesh, texture);
     test.loop();
 }
 

@@ -149,7 +149,7 @@ namespace ignimbrite {
         // Setup depth stencil buffers for each swap chain image
         swapChain.depthStencilImages.resize(swapChainImageCount);
         swapChain.depthStencilImageViews.resize(swapChainImageCount);
-        swapChain.depthStencilImageMemory.resize(swapChainImageCount);
+        swapChain.depthStencilAllocation.resize(swapChainImageCount);
 
         VkFormat depthFormats[] = { VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT };
         VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL;
@@ -166,7 +166,7 @@ namespace ignimbrite {
                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                     swapChain.depthStencilImages[i],
-                    swapChain.depthStencilImageMemory[i]
+                    swapChain.depthStencilAllocation[i]
             );
 
             VkImageSubresourceRange subresourceRange = {};
@@ -210,8 +210,8 @@ namespace ignimbrite {
             vkDestroyImageView(context.device, swapChain.imageViews[i], nullptr);
             // destroy manually created depth stencil buffers
             vkDestroyImageView(context.device, swapChain.depthStencilImageViews[i], nullptr);
-            vkDestroyImage(context.device, swapChain.depthStencilImages[i], nullptr);
-            vkFreeMemory(context.device, swapChain.depthStencilImageMemory[i], nullptr);
+
+            VulkanUtils::destroyImage(swapChain.depthStencilImages[i], swapChain.depthStencilAllocation[i]);
         }
 
         vkDestroySwapchainKHR(context.device, swapChain.swapChainKHR, nullptr);
