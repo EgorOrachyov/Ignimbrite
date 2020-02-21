@@ -27,8 +27,8 @@ namespace ignimbrite {
 
     VulkanRenderDevice::~VulkanRenderDevice() {
         mContext.destroyCommandPools();
-        mContext.destroyLogicalDevice();
         mContext.destroyAllocator();
+        mContext.destroyLogicalDevice();
         mContext.destroyDebugMessenger();
         mContext.destroyInstance();
     }
@@ -1177,7 +1177,6 @@ namespace ignimbrite {
         auto result = vkQueuePresentKHR(surface.presentQueue, &presentInfo);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-            // TODO: handle minimization (width == height == 0)
             surface.resizeSurface();
         } else {
             VK_RESULT_ASSERT(result, "Failed to present image to the surface");

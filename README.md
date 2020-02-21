@@ -1,4 +1,4 @@
-![Project logo](https://github.com/EgorOrachyov/Ignimbrite/blob/master/documents/pictures/Logo1020x240.png)
+![Project logo](https://github.com/EgorOrachyov/Ignimbrite/blob/master/docs/pictures/Logo1020x240.png)
 
 # Ignimbrite
 
@@ -80,15 +80,11 @@ $ cmake --build .
 We export some optional flags to configure cmake build and final
 library image. You can set the following options to get desired functionality:
 
-* WITH_GLFW=(YES/NO) - build glfw library to be able to create glfw based window applications.
-* WITH_SPIRVCROSS=(YES/NO) - build spirv-cross tools to automate shaders reflection.
-* WITH_VULKAN=(YES/NO) - build vulkan device to be able to use vulkan graphics backend.
-* WITH_STBIMAGE=(YES/NO) - use stb image utility to load image data for tests. 
-* WITH_GLM=(YES/NO) - use glm as math library for tests
-* WITH_TINYOBJLOADER=(YES/NO) - use tiny obj loader to import geometry for tests.
-* WITH_TESTS=(YES/NO) - build tests executables with samples and test examples.
+* IGNIMBRITE_WITH_GLFW=(YES/NO) - build glfw library to be able to create glfw based window applications.
+* IGNIMBRITE_WITH_VULKAN=(YES/NO) - build vulkan device to be able to use vulkan graphics backend.
+* IGNIMBRITE_WITH_TESTS=(YES/NO) - build tests executables with samples and test examples.
 
-By default all the options are set in 'YES', except Vulkan and GLFW usage, because
+By default all the options are set in 'NO', including Vulkan and GLFW, because
 they may require additional dependency setup process on you machine. 
 
 ### Dependencies setup

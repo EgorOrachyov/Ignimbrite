@@ -12,7 +12,7 @@ set(VulkanDevice_HEADERS
     include/VulkanDescriptorAllocator.h
     include/VulkanSurface.h
     include/VulkanFramebuffer.h
-        include/VulkanDrawList.h
+    include/VulkanDrawList.h
     include/VulkanFence.h
     include/VulkanSemaphore.h
 )
@@ -35,14 +35,14 @@ add_library(
 
 target_include_directories(VulkanDevice PUBLIC include)
 
-target_link_libraries(VulkanDevice PUBLIC Ignimbrite)
+target_link_libraries(VulkanDevice PRIVATE Ignimbrite)
 target_link_libraries(VulkanDevice PUBLIC Vulkan)
 target_link_libraries(VulkanDevice PUBLIC vma-alloc)
 
-if (WITH_GLFW)
-    target_link_libraries(VulkanDevice PUBLIC glfw)
+if (IGNIMBRITE_WITH_GLFW)
+    target_link_libraries(VulkanDevice PRIVATE glfw)
 endif()
 
-if (WITH_IGNIMBRITE_QT)
+if (IGNIMBRITE_WITH_QT)
     target_link_libraries(VulkanDevice PRIVATE Qt5::Core Qt5::Gui)
 endif()

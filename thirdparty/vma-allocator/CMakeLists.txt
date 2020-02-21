@@ -6,4 +6,4 @@ set(VmaAlloc_SOURCES sources/vk_mem_alloc.cpp)
 
 add_library(vma-alloc STATIC ${VmaAlloc_HEADERS} ${VmaAlloc_SOURCES})
 target_include_directories(vma-alloc PUBLIC include)
-target_link_libraries(vma-alloc PUBLIC Vulkan)
+target_link_libraries(vma-alloc PRIVATE Vulkan)

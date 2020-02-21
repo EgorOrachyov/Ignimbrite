@@ -355,8 +355,8 @@ namespace ignimbrite {
         barrier.subresourceRange.layerCount = 1;
         barrier.subresourceRange.levelCount = 1;
 
-        int32_t mipWidth = width;
-        int32_t mipHeight = height;
+        int32 mipWidth = width;
+        int32 mipHeight = height;
 
         // i=0 is original image
         for (uint32 i = 1; i < mipLevels; i++) {

@@ -13,14 +13,14 @@
 #include <stb_image.h>
 
 #include <algorithm>
-
 #include <fstream>
+#include <string>
 
 using namespace ignimbrite;
 typedef ignimbrite::ObjectID ID;
 
-#define MODEL3D_SHADER_PATH_VERT "shaders/spirv/vert3d.spv"
-#define MODEL3D_SHADER_PATH_FRAG "shaders/spirv/frag3d.spv"
+static const std::string MODEL3D_SHADER_PATH_VERT = "shaders/spirv/vert3d.spv";
+static const std::string MODEL3D_SHADER_PATH_FRAG = "shaders/spirv/frag3d.spv";
 
 struct Vertex
 {
@@ -265,8 +265,8 @@ private:
 
     void initShader() {
         material.shaderProgram = loadShader(
-                MODEL3D_SHADER_PATH_VERT,
-                MODEL3D_SHADER_PATH_FRAG
+                MODEL3D_SHADER_PATH_VERT.c_str(),
+                MODEL3D_SHADER_PATH_FRAG.c_str()
         );
     }
 

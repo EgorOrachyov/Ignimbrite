@@ -13,11 +13,11 @@
 #include <ignimbrite/Types.h>
 #include <VulkanRenderDevice.h>
 
-#ifdef WITH_GLFW
+#ifdef IGNIMBRITE_WITH_GLFW
 #   include <GLFW/glfw3.h>
 #endif
 
-#ifdef WITH_IGNIMBRITE_QT
+#ifdef IGNIMBRITE_WITH_QT
 #   include <QVulkanWindow>
 #   include <QVulkanInstance>
 #endif
@@ -31,7 +31,7 @@ namespace ignimbrite {
     class VulkanExtensions {
     public:
 
-#ifdef WITH_GLFW
+#ifdef IGNIMBRITE_WITH_GLFW
         /**
          * Creates surface for specified GLFW window instance
          * @throw VulkanException if failed to create vulkan surface
@@ -53,7 +53,7 @@ namespace ignimbrite {
         );
 #endif
 
-#ifdef WITH_IGNIMBRITE_QT
+#ifdef IGNIMBRITE_WITH_QT
         /**
          * Create Ignimbrite surface for specified QWindow
          * @throw VulkanException if failed to create vulkan surface

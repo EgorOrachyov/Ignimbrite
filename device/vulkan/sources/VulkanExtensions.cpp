@@ -11,7 +11,7 @@
 
 namespace ignimbrite {
 
-#ifdef WITH_GLFW
+#ifdef IGNIMBRITE_WITH_GLFW
 
     RenderDevice::ID VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device,
                                                          GLFWwindow *handle,
@@ -28,7 +28,7 @@ namespace ignimbrite {
     }
 #endif
 
-#ifdef WITH_IGNIMBRITE_QT
+#ifdef IGNIMBRITE_WITH_QT
 
     VulkanExtensions::ID VulkanExtensions::createSurfaceQtWindow(VulkanRenderDevice &device, QVulkanInstance *qvkInstance, QWindow *qwindow) {
 
