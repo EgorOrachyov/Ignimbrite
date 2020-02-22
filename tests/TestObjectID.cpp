@@ -6,8 +6,8 @@
 /* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
 /**********************************************************************************/
 
-#ifndef IGNIMBRITELIBRARY_TESTOBJECTID_CPP
-#define IGNIMBRITELIBRARY_TESTOBJECTID_CPP
+#ifndef IGNIMBRITE_TESTOBJECTID_CPP
+#define IGNIMBRITE_TESTOBJECTID_CPP
 
 #include <ignimbrite/ObjectIDBuffer.h>
 #include <ignimbrite/FileUtils.h>
@@ -129,4 +129,4 @@ int32 main() {
     TestObjectIDBuffer::test5();
 }
 
-#endif //IGNIMBRITELIBRARY_TESTOBJECTID_CPP
+#endif //IGNIMBRITE_TESTOBJECTID_CPP

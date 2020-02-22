@@ -2,16 +2,13 @@
 ## Overall project setup
 
 cmake_minimum_required(VERSION 3.11)
-project(IgnimbriteLibrary VERSION 1.0)
+project(Ignimbrite VERSION 1.0)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -g")
-set(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/cmake)
-
-message(STATUS "${CMAKE_PREFIX_PATH}")
 
 ##################################################################
 ## Compiler specific setup
@@ -28,7 +25,7 @@ endif ()
 ##################################################################
 ## Third-party setup
 
-include_directories(thirdparty/test_include)
+include_directories(code/thirdparty/test_include)
 
 option(IGNIMBRITE_WITH_GLFW "GLFW Window system" NO)
 if (IGNIMBRITE_WITH_GLFW)
@@ -37,7 +34,7 @@ if (IGNIMBRITE_WITH_GLFW)
     set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
     set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
     set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
-    add_subdirectory(thirdparty/glfw)
+    add_subdirectory(code/thirdparty/glfw)
 endif()
 
 option(IGNIMBRITE_WITH_VULKAN "Vulkan rendering API" NO)
@@ -48,10 +45,10 @@ if (IGNIMBRITE_WITH_VULKAN)
     add_library(Vulkan INTERFACE)
     target_include_directories(Vulkan INTERFACE ${Vulkan_INCLUDE_DIRS})
     target_link_libraries(Vulkan INTERFACE ${Vulkan_LIBRARIES})
-    add_subdirectory(device/vulkan)
+    add_subdirectory(code/devices/vulkan)
 
     message(STATUS "Add VMA allocator for memory management")
-    add_subdirectory(thirdparty/vma-allocator)
+    add_subdirectory(code/thirdparty/vma-allocator)
 endif()
 
 option(IGNIMBRITE_WITH_SPIRVCROSS "SPIR-V Cross" YES)
@@ -65,25 +62,25 @@ if (IGNIMBRITE_WITH_SPIRVCROSS)
     set(SPIRV_CROSS_ENABLE_HLSL OFF CACHE BOOL "" FORCE)
     set(SPIRV_CROSS_ENABLE_MSL OFF CACHE BOOL "" FORCE)
     set(SPIRV_CROSS_ENABLE_C_API OFF CACHE BOOL "" FORCE)
-    add_subdirectory(thirdparty/spirv-cross)
+    add_subdirectory(code/thirdparty/spirv-cross)
 endif()
 
 option(IGNIMBRITE_WITH_GLM "GLM math header library" YES)
 if (IGNIMBRITE_WITH_GLM)
     message(STATUS "Add GLM as math library")
-    add_subdirectory(thirdparty/glm)
+    add_subdirectory(code/thirdparty/glm)
 endif()
 
 option(IGNIMBRITE_WITH_STBIMAGE "STB Image utility to load image files" YES)
 if (IGNIMBRITE_WITH_STBIMAGE)
     message(STATUS "Add STB Image utility to load image files")
-    add_subdirectory(thirdparty/stb-image)
+    add_subdirectory(code/thirdparty/stb-image)
 endif()
 
 option(IGNIMBRITE_WITH_TINYOBJLOADER "Tiny OBJ loader for geometry and materials in .obj .mtl formats" YES)
 if (IGNIMBRITE_WITH_TINYOBJLOADER)
     message(STATUS "Add Tiny OBJ loader for loading .obj/.mtl data")
-    add_subdirectory(thirdparty/tinyobjloader)
+    add_subdirectory(code/thirdparty/tinyobjloader)
 endif()
 
 option(IGNIMBRITE_WITH_QT "Use QT to create surface for rendering" NO)
@@ -97,15 +94,15 @@ endif()
 ## Configure project options
 
 configure_file(
-    ${PROJECT_SOURCE_DIR}/ignimbrite/include/ignimbrite/Options.h.in
-    ${PROJECT_SOURCE_DIR}/ignimbrite/include/ignimbrite/Options.h
+    ${PROJECT_SOURCE_DIR}/code/engine/include/ignimbrite/Options.h.in
+    ${PROJECT_SOURCE_DIR}/code/engine/include/ignimbrite/Options.h
 )
 
 ##################################################################
 ## Include actual sub directories
 
 message(STATUS "Add Ignimbrite main sub directory")
-add_subdirectory(ignimbrite)
+add_subdirectory(code/engine)
 
 option(IGNIMBRITE_WITH_TESTS "Compile tests and examples for library" OFF)
 if (IGNIMBRITE_WITH_TESTS)

@@ -6,8 +6,8 @@
 /* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
 /**********************************************************************************/
 
-#ifndef IGNIMBRITELIBRARY_VULKANAPPLICATIONTEST_H
-#define IGNIMBRITELIBRARY_VULKANAPPLICATIONTEST_H
+#ifndef IGNIMBRITE_VULKANAPPLICATIONTEST_H
+#define IGNIMBRITE_VULKANAPPLICATIONTEST_H
 
 #include <VulkanRenderDevice.h>
 #include <VulkanExtensions.h>
@@ -231,4 +231,4 @@ int32 main() {
     application.loop();
 }
 
-#endif //IGNIMBRITELIBRARY_VULKANAPPLICATIONTEST_H
+#endif //IGNIMBRITE_VULKANAPPLICATIONTEST_H

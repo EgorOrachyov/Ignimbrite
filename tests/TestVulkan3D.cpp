@@ -1,5 +1,5 @@
-#ifndef IGNIMBRITELIBRARY_VULKAN3DTEST_H
-#define IGNIMBRITELIBRARY_VULKAN3DTEST_H
+#ifndef IGNIMBRITE_VULKAN3DTEST_H
+#define IGNIMBRITE_VULKAN3DTEST_H
 
 #include <VulkanRenderDevice.h>
 #include <VulkanExtensions.h>
@@ -527,4 +527,4 @@ int main(int argc, char **argv) {
     test.loop();
 }
 
-#endif //IGNIMBRITELIBRARY_VULKAN3DTEST_H
+#endif //IGNIMBRITE_VULKAN3DTEST_H

@@ -42,11 +42,25 @@ or another data in real-time with high level of customization.
 
 ## Third-party projects
 * [Vulkan SDK](https://vulkan.lunarg.com)
+* [Vulkan Memory Allocator](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator)
 * [GLFW](https://github.com/glfw/glfw) 
 * [SPIRV-Cross](https://github.com/KhronosGroup/SPIRV-Cross)
 * [GLM](https://github.com/g-truc/glm)
 * [Tiny .obj loader](https://github.com/syoyo/tinyobjloader)
 * [STB Image](https://github.com/nothings/stb)
+
+## Directory structure
+
+* assets - various geometry and image data for testing
+* code - actual library sources with depenencies
+  * devices - backends for various graphics API
+  * engine - library core 
+  * modules - optional library modules
+  * thirdparty - project code dependencies 
+* docs - documents, text files and data for development/info
+* shaders - shaders source files and compiled SPIR-V shaders
+* test - contains test applications for various lib code testing
+* CMakeLists.txt - root cmake file, add it as sub directory to your project for this project usage
 
 ## Get and build 
 
@@ -71,7 +85,7 @@ $ cmake --build .
 Build with all enabled options (see cmake options below):
 
 ```
-$ cmake .. -DCMAKE_BUILD_MODE=Debug -DWITH_GLFW=ON -DWITH_VULKAN=ON -DWITH_TESTS=ON 
+$ cmake .. -DCMAKE_BUILD_MODE=Debug -DIGNIMBRITE_WITH_GLFW=ON -DIGNIMBRITE_WITH_VULKAN=ON -DIGNIMBRITE_WITH_TESTS=ON 
 $ cmake --build .
 ```
 
