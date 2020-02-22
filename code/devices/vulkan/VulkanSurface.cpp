@@ -350,20 +350,27 @@ namespace ignimbrite {
 
     void VulkanSurface::acquireNextImage() {
         auto& context = VulkanContext::getInstance();
-        auto result = vkAcquireNextImageKHR(
-                context.device,
-                swapChain.swapChainKHR,
-                UINT64_MAX,
-                VK_NULL_HANDLE,
-                imageAvailable.get(),
-                &currentImageIndex
-        );
+        bool acquire = false;
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-            resizeSurface();
-        }
-        else  {
-            VK_RESULT_ASSERT(result, "Failed to acquire next image index");
+        while (!acquire) {
+            auto result = vkAcquireNextImageKHR(
+                    context.device,
+                    swapChain.swapChainKHR,
+                    UINT64_MAX,
+                    VK_NULL_HANDLE,
+                    imageAvailable.get(),
+                    &currentImageIndex
+            );
+
+            if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+                resizeSurface();
+                continue;
+            }
+            else  {
+                VK_RESULT_ASSERT(result, "Failed to acquire next image index");
+            }
+
+            acquire = true;
         }
 
         imageAvailable.wait();
