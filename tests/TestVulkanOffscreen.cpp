@@ -320,6 +320,11 @@ public:
             RenderDevice::Region regionOffscreen = { 0, 0, { offscreenPass.width, offscreenPass.height } };
             std::vector<RenderDevice::Color> colors = { { { 0.0, 0.0, 0.0, 0.0 }} };
 
+            if (region.extent.x == 0|| region.extent.y == 0)
+            {
+                continue;
+            }
+
             {
                 device->drawListBegin();
                 device->drawListBindFramebuffer(offscreenPass.frameBuffer, colors, regionOffscreen);

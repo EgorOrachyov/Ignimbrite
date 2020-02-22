@@ -338,6 +338,7 @@ namespace ignimbrite {
 
             if (width == 0 || height == 0) {
                 canPresentImages = false;
+                return;
             }
 
             destroyFramebuffers();

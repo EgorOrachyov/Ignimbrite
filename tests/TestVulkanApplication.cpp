@@ -156,11 +156,17 @@ public:
         auto &device = *pDevice;
 
         RenderDevice::Color clearColor = { {0.1f, 0.4f, 0.7f, 0.0f} };
-        RenderDevice::Region area = {};
-        area.extent = { widthFrameBuffer, heightFrameBuffer };
 
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
+            glfwGetFramebufferSize(window, &widthFrameBuffer, &heightFrameBuffer);
+
+            RenderDevice::Region area = { 0, 0, { (uint32) widthFrameBuffer, (uint32) heightFrameBuffer } };
+
+            if (area.extent.x == 0 || area.extent.y == 0)
+            {
+                continue;
+            }
 
             device.drawListBegin();
             device.drawListBindSurface(surface, clearColor, area);
@@ -187,10 +193,10 @@ private:
 
     ID surface;
     GLFWwindow *window = nullptr;
-    uint32 width = 640;
-    uint32 height = 480;
-    uint32 widthFrameBuffer = 0;
-    uint32 heightFrameBuffer = 0;
+    int32 width = 640;
+    int32 height = 480;
+    int32 widthFrameBuffer = 0;
+    int32 heightFrameBuffer = 0;
     uint32 extensionsCount = 0;
     const char *const *extensions = nullptr;
 

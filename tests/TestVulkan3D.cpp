@@ -87,6 +87,11 @@ public:
 
             RenderDevice::Region area = { 0, 0, { (uint32)window.widthFrameBuffer, (uint32)window.heightFrameBuffer} };
 
+            if (area.extent.x == 0|| area.extent.y == 0)
+            {
+                continue;
+            }
+
             updateScene();
 
             pDevice->drawListBegin();
