@@ -336,10 +336,16 @@ namespace ignimbrite {
             width = extent.width;
             height = extent.height;
 
+            if (width == 0 || height == 0) {
+                canPresentImages = false;
+            }
+
             destroyFramebuffers();
             destroySwapChain();
             createSwapChain();
             createFramebuffers();
+
+            canPresentImages = true;
         }
     }
 
@@ -364,6 +370,13 @@ namespace ignimbrite {
 
             if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
                 resizeSurface();
+
+                if (!canPresentImages) {
+                    // if a window minimized
+                    // go out and disallow rendering to the window
+                    return;
+                }
+
                 continue;
             }
             else  {

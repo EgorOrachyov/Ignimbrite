@@ -70,6 +70,7 @@ namespace ignimbrite {
         uint32 width;
         uint32 height;
         uint32 presentsFamily = 0xffffffff;
+        bool canPresentImages = true;
         VkQueue presentQueue = VK_NULL_HANDLE;
         /** Surface created via extension for specific WSI */
         VkSurfaceKHR surfaceKHR = VK_NULL_HANDLE;

@@ -1176,12 +1176,15 @@ namespace ignimbrite {
         auto result = vkQueuePresentKHR(surface.presentQueue, &presentInfo);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+            // Gen new surface properties
             surface.resizeSurface();
         } else {
             VK_RESULT_ASSERT(result, "Failed to present image to the surface");
         }
 
-        surface.acquireNextImage();
+        if (surface.canPresentImages) {
+            surface.acquireNextImage();
+        }
     }
 
 

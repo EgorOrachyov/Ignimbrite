@@ -6,18 +6,18 @@
 /* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
 /**********************************************************************************/
 
-#ifndef IGNIMBRITE_SHADERREFLECTION_H
-#define IGNIMBRITE_SHADERREFLECTION_H
+#ifndef IGNIMBRITE_CACHEITEM_H
+#define IGNIMBRITE_CACHEITEM_H
 
-#include <ignimbrite/Shader.h>
+#include <ignimbrite/Types.h>
 
 namespace ignimbrite {
 
-    class ShaderReflection {
+    class CacheItem {
     public:
-        ShaderReflection(Shader& shader);
+        virtual ~CacheItem() = default;
     };
 
 }
 
-#endif //IGNIMBRITE_SHADERREFLECTION_H
+#endif //IGNIMBRITE_CACHEITEM_H
