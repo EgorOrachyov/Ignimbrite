@@ -1041,23 +1041,22 @@ namespace ignimbrite {
 
         uint32 colorValuesCount = (uint32) colors.size();
         uint32 clearValuesCount = colorValuesCount + 1;
+        mClearValues.clear();
         mClearValues.reserve(colorValuesCount);
 
         for (size_t i = 0; i < colorValuesCount; i++) {
-            VkClearColorValue colorValue;
-            auto color = colors[i];
+            VkClearValue colorClearValue = {};
+            colorClearValue.color.float32[0] = colors[i].components[0];
+            colorClearValue.color.float32[1] = colors[i].components[1];
+            colorClearValue.color.float32[2] = colors[i].components[2];
+            colorClearValue.color.float32[3] = colors[i].components[3];
 
-            colorValue.float32[0] = color.components[0];
-            colorValue.float32[1] = color.components[1];
-            colorValue.float32[2] = color.components[2];
-            colorValue.float32[3] = color.components[3];
-
-            mClearValues[i].color = colorValue;
+            mClearValues.push_back(colorClearValue);
         }
 
         VkClearValue depthStencilClearValues = {};
         depthStencilClearValues.depthStencil = {clearDepth, clearStencil};
-        mClearValues[colorValuesCount] = depthStencilClearValues;
+        mClearValues.push_back(depthStencilClearValues);
 
         VkRenderPassBeginInfo renderPassBeginInfo = {};
         renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
