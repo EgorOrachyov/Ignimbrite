@@ -3,6 +3,7 @@
 
 #include <VulkanRenderDevice.h>
 #include <VulkanExtensions.h>
+#include <ignimbrite/Shader.h>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -44,8 +45,8 @@ struct ShaderUniformBuffer {
 };
 
 struct Material {
+    Shader *shader = nullptr;
     ID<RenderDevice::UniformLayout> uniformLayout;
-    ID<RenderDevice::ShaderProgram> shaderProgram;
     ID<RenderDevice::GraphicsPipeline> graphicsPipeline;
     ID<RenderDevice::UniformSet> uniformSet;
     ID<RenderDevice::UniformBuffer> uniformBuffer;
@@ -118,7 +119,7 @@ private:
         initWindow();
 
         // create render device
-        pDevice = new VulkanRenderDevice(window.extensionsCount, window.extensions);
+        pDevice = std::make_shared<VulkanRenderDevice>(window.extensionsCount, window.extensions);
 
         // create surface
         surface = VulkanExtensions::createSurfaceGLFW(
@@ -268,31 +269,14 @@ private:
     }
 
     void initShader() {
-        material.shaderProgram = loadShader(
-                MODEL3D_SHADER_PATH_VERT.c_str(),
-                MODEL3D_SHADER_PATH_FRAG.c_str()
-        );
-    }
-
-    ID<RenderDevice::ShaderProgram> loadShader(const char *vertSpirvPath, const char *fragSpirvPath) {
-        RenderDevice::ProgramDesc programDesc;
-
-        programDesc.language = ShaderLanguage::SPIRV;
-        programDesc.shaders.resize(2);
-
-        programDesc.shaders[0].type = ShaderType::Vertex;
-        programDesc.shaders[1].type = ShaderType::Fragment;
-
-        std::ifstream vertFile(vertSpirvPath, std::ios::binary);
-        std::ifstream fragFile(fragSpirvPath, std::ios::binary);
+        std::ifstream vertFile(MODEL3D_SHADER_PATH_VERT.c_str(), std::ios::binary);
+        std::ifstream fragFile(MODEL3D_SHADER_PATH_FRAG.c_str(), std::ios::binary);
 
         std::vector<uint8> vertSpv(std::istreambuf_iterator<char>(vertFile), {});
         std::vector<uint8> fragSpv(std::istreambuf_iterator<char>(fragFile), {});
 
-        programDesc.shaders[0].source = std::move(vertSpv);
-        programDesc.shaders[1].source = std::move(fragSpv);
-
-        return pDevice->createShaderProgram(programDesc);
+        material.shader = new Shader(pDevice, ShaderLanguage::SPIRV, vertSpv, fragSpv);
+        material.shader->create();
     }
 
     void initUniformLayout() {
@@ -401,7 +385,7 @@ private:
 
         material.graphicsPipeline = pDevice->createGraphicsPipeline(
                 surface, PrimitiveTopology::TriangleList,
-                material.shaderProgram, mesh.vertexLayout,  material.uniformLayout,
+                material.shader->getHandle(), mesh.vertexLayout,  material.uniformLayout,
                 rasterizationDesc, blendStateDesc, depthStencilStateDesc
         );
     }
@@ -419,13 +403,11 @@ private:
         pDevice->destroySampler(material.textureSampler);
 
         pDevice->destroyGraphicsPipeline(material.graphicsPipeline);
-        pDevice->destroyShaderProgram(material.shaderProgram);
+        delete material.shader;
 
         ignimbrite::VulkanExtensions::destroySurface(*pDevice, surface);
         glfwDestroyWindow(window.glfwWindow);
         glfwTerminate();
-
-        delete pDevice;
     }
 
 
@@ -492,7 +474,7 @@ private:
 private:
     const char          *name = "Textured 3D model";
 
-    VulkanRenderDevice  *pDevice = nullptr;
+    std::shared_ptr<VulkanRenderDevice> pDevice;
 
     ID<RenderDevice::Surface> surface;
     Window   window;
