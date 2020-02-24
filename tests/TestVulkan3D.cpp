@@ -338,7 +338,7 @@ private:
         textureDesc.usageFlags = (uint32)TextureUsageBit::ShaderSampling;
         textureDesc.format = DataFormat::R8G8B8A8_UNORM;
         textureDesc.data = pixels;
-        textureDesc.dataSize = texWidth * texHeight * texChannels;
+        textureDesc.size = texWidth * texHeight * texChannels;
         textureDesc.mipmaps = mipmapCount;
 
         material.texture = pDevice->createTexture(textureDesc);

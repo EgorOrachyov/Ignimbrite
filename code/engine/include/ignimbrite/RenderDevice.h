@@ -179,7 +179,6 @@ namespace ignimbrite {
             uint32 depth = 1;
             uint32 size = 0;
             void *data = nullptr;
-            uint32 dataSize = 0;
         };
 
         virtual ID<Texture> createTexture(const TextureDesc &textureDesc) = 0;

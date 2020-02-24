@@ -50,6 +50,14 @@ namespace ignimbrite {
             return mGeneration;
         }
 
+        inline bool isNull() const {
+            return mIndex == 0 && mGeneration == 0;
+        }
+
+        inline bool isNotNull() const {
+            return mIndex != 0 || mGeneration != 0;
+        }
+
     private:
         uint32 mIndex = 0;
         uint32 mGeneration = 0;
