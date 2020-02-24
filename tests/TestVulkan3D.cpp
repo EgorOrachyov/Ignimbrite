@@ -45,7 +45,7 @@ struct ShaderUniformBuffer {
 };
 
 struct Material {
-    Shader *shader = nullptr;
+    std::shared_ptr<Shader> shader;
     ID<RenderDevice::UniformLayout> uniformLayout;
     ID<RenderDevice::GraphicsPipeline> graphicsPipeline;
     ID<RenderDevice::UniformSet> uniformSet;
@@ -275,8 +275,10 @@ private:
         std::vector<uint8> vertSpv(std::istreambuf_iterator<char>(vertFile), {});
         std::vector<uint8> fragSpv(std::istreambuf_iterator<char>(fragFile), {});
 
-        material.shader = new Shader(pDevice, ShaderLanguage::SPIRV, vertSpv, fragSpv);
-        material.shader->create();
+        material.shader = std::make_shared<Shader>(pDevice);
+        material.shader->fromSources(ShaderLanguage::SPIRV, vertSpv, fragSpv);
+        material.shader->reflectData();
+
     }
 
     void initUniformLayout() {
@@ -403,7 +405,7 @@ private:
         pDevice->destroySampler(material.textureSampler);
 
         pDevice->destroyGraphicsPipeline(material.graphicsPipeline);
-        delete material.shader;
+        material.shader = nullptr; // or material.shader->releaseHandle();
 
         ignimbrite::VulkanExtensions::destroySurface(*pDevice, surface);
         glfwDestroyWindow(window.glfwWindow);

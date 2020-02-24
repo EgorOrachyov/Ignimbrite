@@ -20,8 +20,6 @@
 namespace ignimbrite {
 
     class Shader : public CacheItem {
-        friend class ShaderReflection;
-
     public:
 
         enum class DataType {
@@ -49,64 +47,55 @@ namespace ignimbrite {
         };
 
         struct AttributeInfo {
-            std::string     name;
-            uint32          location;
-            DataType        type;
+            std::string name;
+            uint32      location;
+            DataType    type;
         };
 
         struct ParameterInfo {
-            uint32              binding;
-            uint32              offset;
-            uint32              blockSize;
-            DataType            type;
-            ShaderStageFlags    stageFlags;
+            uint32           binding;
+            uint32           offset;
+            uint32           blockSize;
+            DataType         type;
+            ShaderStageFlags stageFlags;
         };
 
         struct UniformBufferInfo {
-            uint32                      binding;
-            uint32                      size;
-            ShaderStageFlags            stageFlags;
-            std::vector<std::string>    members;
+            uint32                   binding;
+            uint32                   size;
+            ShaderStageFlags         stageFlags;
+            std::vector<std::string> members;
         };
 
     public:
-        Shader(
-                const std::shared_ptr<RenderDevice> &renderDevice,
-                ignimbrite::ShaderLanguage language);
-
-        Shader(
-                const std::shared_ptr<RenderDevice> &renderDevice,
-                ignimbrite::ShaderLanguage language,
-                const std::vector<uint8> &vertSourceCode,
-                const std::vector<uint8> &fragSourceCode);
-
+        explicit Shader(std::shared_ptr<RenderDevice> device);
         ~Shader() override;
 
-        void addModule(ShaderType moduleType, const std::vector<uint8> &moduleSourceCode);
-        void create();
+        void fromSources(ShaderLanguage language, const std::vector<uint8> &vertex, const std::vector<uint8> &fragment);
+        void reflectData();
+        void releaseHandle();
 
+        ShaderLanguage getLanguage() const;
         ID<RenderDevice::ShaderProgram> getHandle() const;
+        const std::vector<RenderDevice::ShaderDesc> &getShaders() const;
+        const ParameterInfo& getParameterInfo(const std::string &name) const;
+        const UniformBufferInfo& getBufferInfo(const std::string &name) const;
 
     private:
-
-        /** Program descritor with this shader's modules*/
-        RenderDevice::ProgramDesc mProgramDesc;
-
-        /** Actual program handle */
-        ID<RenderDevice::ShaderProgram> mHandle;
-
+        friend class ShaderReflection;
         // TODO
         std::vector<AttributeInfo> mVertexShaderInputs;
         std::vector<AttributeInfo> mFragmentShaderOutputs;
-
         /** Program variables (samplers, and uniform blocks variables) */
         std::unordered_map<std::string, ParameterInfo> mVariables;
-
         /** Program uniform blocks info */
         std::unordered_map<std::string, UniformBufferInfo> mBuffers;
-
+        /** Program descriptor with this shader's modules*/
+        RenderDevice::ProgramDesc mProgramDesc;
+        /** Actual program handle */
+        ID<RenderDevice::ShaderProgram> mHandle;
         /** Render device, which is used for that shader creation */
-        std::shared_ptr<RenderDevice> mRenderDevice;
+        std::shared_ptr<RenderDevice> mDevice;
 
     };
 

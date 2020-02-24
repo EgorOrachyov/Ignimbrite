@@ -12,10 +12,15 @@
 #include <ignimbrite/Shader.h>
 
 namespace ignimbrite {
+
     class ShaderReflection {
     public:
-        static void reflect(Shader& shader);
+        explicit ShaderReflection(Shader& shader);
+        void reflect();
+    private:
+        Shader& mShader;
     };
+
 }
 
 #endif //IGNIMBRITE_SHADERREFLECTION_H

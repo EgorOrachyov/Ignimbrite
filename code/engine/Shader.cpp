@@ -9,52 +9,66 @@
 #include <ignimbrite/Shader.h>
 #include <ignimbrite/ShaderReflection.h>
 
-using namespace ignimbrite;
+namespace ignimbrite {
 
-void Shader::addModule(ShaderType moduleType, const std::vector<uint8> &moduleSourceCode)
-{
-#ifndef NDEBUG
-    for (const auto &m : mProgramDesc.shaders)
-    {
-        if (m.type == moduleType)
-        {
-            throw std::runtime_error("Attempt to add module with type which is already present");
+    Shader::Shader(std::shared_ptr<RenderDevice> device)
+        : mDevice(std::move(device)) {
+
+    }
+
+    Shader::~Shader() {
+        releaseHandle();
+    }
+
+    void Shader::fromSources(ignimbrite::ShaderLanguage language, const std::vector<ignimbrite::uint8> &vertex,
+                             const std::vector<ignimbrite::uint8> &fragment) {
+        if (mHandle.isNotNull()) return;
+
+        mProgramDesc.language = language;
+        mProgramDesc.shaders.resize(2);
+        mProgramDesc.shaders[0].type = ShaderType::Vertex;
+        mProgramDesc.shaders[0].source = vertex;
+        mProgramDesc.shaders[1].type = ShaderType::Fragment;
+        mProgramDesc.shaders[1].source = fragment;
+
+        mHandle = mDevice->createShaderProgram(mProgramDesc);
+
+        if (mHandle.isNull()) {
+            // todo: do something
         }
     }
-#endif
 
-    mProgramDesc.shaders.push_back({});
-    mProgramDesc.shaders.back().type = moduleType;
-    mProgramDesc.shaders.back().source = moduleSourceCode;
-}
+    void Shader::reflectData() {
+        ShaderReflection reflection(*this);
+        reflection.reflect();
+    }
 
-Shader::Shader(const std::shared_ptr<RenderDevice> &renderDevice, ignimbrite::ShaderLanguage language) {
-    mRenderDevice = renderDevice;
-    mProgramDesc.language = language;
-}
+    void Shader::releaseHandle() {
+        if (mHandle.isNotNull()) {
+            mDevice->destroyShaderProgram(mHandle);
+            mHandle = ID<RenderDevice::ShaderProgram>();
+        }
+    }
 
-Shader::Shader(const std::shared_ptr<RenderDevice> &renderDevice,
-               ignimbrite::ShaderLanguage language,
-               const std::vector<uint8> &vertSourceCode,
-               const std::vector<uint8> &fragSourceCode) : Shader(renderDevice, language) {
+    ShaderLanguage Shader::getLanguage() const {
+        return mProgramDesc.language;
+    }
 
-    addModule(ShaderType::Vertex, vertSourceCode);
-    addModule(ShaderType::Fragment, fragSourceCode);
-}
+    ID<RenderDevice::ShaderProgram> Shader::getHandle() const {
+        return mHandle;
+    }
 
-void Shader::create() {
-    // get shader info
-    ShaderReflection::reflect(*this);
+    const std::vector<RenderDevice::ShaderDesc>& Shader::getShaders() const {
+        return mProgramDesc.shaders;
+    }
 
-    // create shader in render device
-    mHandle = mRenderDevice->createShaderProgram(mProgramDesc);
-}
+    const Shader::ParameterInfo& Shader::getParameterInfo(const std::string &name) const {
+        return mVariables.at(name);
+    }
 
-ID<RenderDevice::ShaderProgram> Shader::getHandle() const
-{
-    return mHandle;
-}
+    const Shader::UniformBufferInfo& Shader::getBufferInfo(const std::string &name) const {
+        return mBuffers.at(name);
+    }
 
-Shader::~Shader() {
-    mRenderDevice->destroyShaderProgram(mHandle);
+
 }
