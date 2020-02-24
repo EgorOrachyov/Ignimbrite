@@ -24,7 +24,6 @@ set(Ignimbrite_HEADERS
 set(Ignimbrite_SOURCES
     RenderDevice.cpp
     FileUtils.cpp
-    CacheItem.cpp
     Shader.cpp
     ShaderReflection.cpp
         )

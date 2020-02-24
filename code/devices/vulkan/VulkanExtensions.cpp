@@ -13,7 +13,7 @@ namespace ignimbrite {
 
 #ifdef IGNIMBRITE_WITH_GLFW
 
-    RenderDevice::ID VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device,
+    ID<RenderDevice::Surface> VulkanExtensions::createSurfaceGLFW(VulkanRenderDevice &device,
                                                          GLFWwindow *handle,
                                                          uint32 widthFramebuffer,
                                                          uint32 heightFramebuffer,
@@ -73,7 +73,7 @@ namespace ignimbrite {
     }
 #endif
 
-    void VulkanExtensions::destroySurface(VulkanRenderDevice &device, RenderDevice::ID surface) {
+    void VulkanExtensions::destroySurface(VulkanRenderDevice &device, ID<RenderDevice::Surface> surface) {
         auto &vulkanSurface = device.mSurfaces.get(surface);
         auto &context = VulkanContext::getInstance();
 
@@ -86,8 +86,7 @@ namespace ignimbrite {
         device.mSurfaces.remove(surface);
     }
 
-    RenderDevice::ID
-    VulkanExtensions::createSurfaceFromKHR(VulkanRenderDevice &device, VkSurfaceKHR surfaceKhr,
+    ID<RenderDevice::Surface> VulkanExtensions::createSurfaceFromKHR(VulkanRenderDevice &device, VkSurfaceKHR surfaceKhr,
                                            uint32 widthFramebuffer, uint32 heightFramebuffer,
                                            const std::string &name) {
 

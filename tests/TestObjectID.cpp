@@ -20,7 +20,6 @@ struct TestObjectIDBuffer {
     static void test1() {
         ObjectIDBuffer<std::string> strings;
 
-
         auto s1id = strings.add("hello");
         auto s2id = strings.add("world");
 
@@ -49,7 +48,7 @@ struct TestObjectIDBuffer {
         const uint32 count = 1000;
         const uint32 remove = 100;
 
-        ObjectID ids[count];
+        ID<DummyObject> ids[count];
         ObjectIDBuffer<std::string> strings;
 
         for (uint32 i = 0; i < count; i++) {
@@ -84,7 +83,7 @@ struct TestObjectIDBuffer {
         uint32 remove[] { 1, 2, 3, 4, 5, 6 };
         int64 data[] = { 12312, 232, 12312, 213, 123, 77777, 100000 };
 
-        ObjectID ids[sizeof(data)/ sizeof(int64)];
+        ID<DummyObject> ids[sizeof(data)/ sizeof(int64)];
 
         for (uint32 i = 0; i < sizeof(data)/sizeof(int64); i++) {
             ids[i] = buffer.add(data[i]);

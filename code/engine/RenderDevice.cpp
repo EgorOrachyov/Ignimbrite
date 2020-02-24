@@ -10,8 +10,6 @@
 
 namespace ignimbrite {
 
-    const ObjectID RenderDevice::INVALID = ObjectID(0, 0);
-
     const std::string &RenderDevice::getDeviceName() const {
         static const std::string device = "Default Device";
         return device;

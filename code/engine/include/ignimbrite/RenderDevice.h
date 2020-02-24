@@ -32,8 +32,20 @@ namespace ignimbrite {
      */
     class RenderDevice {
     public:
-        typedef ObjectID ID;
-        static const ID INVALID;
+
+        class VertexLayout;
+        class VertexBuffer;
+        class IndexBuffer;
+        class UniformBuffer;
+        class UniformLayout;
+        class UniformSet;
+        class ShaderProgram;
+        class GraphicsPipeline;
+        class FramebufferFormat;
+        class Framebuffer;
+        class Surface;
+        class Texture;
+        class Sampler;
 
         virtual ~RenderDevice() = default;
 
@@ -61,31 +73,31 @@ namespace ignimbrite {
          * Layout for all vertex buffers, bound to vertex shader.
          * @note Each buffer automatically will get binding num as index in that array
          */
-        virtual ID createVertexLayout(const std::vector<VertexBufferLayoutDesc> &vertexBuffersDesc) = 0;
+        virtual ID<VertexLayout> createVertexLayout(const std::vector<VertexBufferLayoutDesc> &vertexBuffersDesc) = 0;
 
-        virtual void destroyVertexLayout(ID layout) = 0;
+        virtual void destroyVertexLayout(ID<VertexLayout> layout) = 0;
 
-        virtual ID createVertexBuffer(BufferUsage usage, uint32 size, const void *data) = 0;
+        virtual ID<VertexBuffer> createVertexBuffer(BufferUsage usage, uint32 size, const void *data) = 0;
 
-        virtual void updateVertexBuffer(ID buffer, uint32 size, uint32 offset, const void *data) = 0;
+        virtual void updateVertexBuffer(ID<VertexBuffer> buffer, uint32 size, uint32 offset, const void *data) = 0;
 
-        virtual void destroyVertexBuffer(ID buffer) = 0;
+        virtual void destroyVertexBuffer(ID<VertexBuffer> buffer) = 0;
 
-        virtual ID createIndexBuffer(BufferUsage usage, uint32 size, const void *data) = 0;
+        virtual ID<IndexBuffer> createIndexBuffer(BufferUsage usage, uint32 size, const void *data) = 0;
 
-        virtual void updateIndexBuffer(ID buffer, uint32 size, uint32 offset, const void *data) = 0;
+        virtual void updateIndexBuffer(ID<IndexBuffer> buffer, uint32 size, uint32 offset, const void *data) = 0;
 
-        virtual void destroyIndexBuffer(ID buffer) = 0;
+        virtual void destroyIndexBuffer(ID<IndexBuffer> buffer) = 0;
 
         struct UniformTextureDesc {
             /** Where this texture will be used */
-            ShaderStageFlags stageFlags;
+            ShaderStageFlags stageFlags = 0;
             /** Binding of the texture in the shader */
             uint32 binding = -1;
             /** Actual texture with data */
-            ID texture = INVALID;
+            ID<Texture> texture;
             /** Specific sampler for data access in the shader */
-            ID sampler = INVALID;
+            ID<Sampler> sampler;
         };
 
         struct UniformBufferDesc {
@@ -96,7 +108,7 @@ namespace ignimbrite {
             /** Actual data range to map into shader uniform buffer */
             uint32 range = 0;
             /** Uniform buffer with actual data */
-            ID buffer = INVALID;
+            ID<UniformBuffer> buffer;
         };
 
         struct UniformSetDesc {
@@ -105,9 +117,9 @@ namespace ignimbrite {
         };
 
 
-        virtual ID createUniformSet(const UniformSetDesc &setDesc, ID uniformLayout) = 0;
+        virtual ID<UniformSet> createUniformSet(const UniformSetDesc &setDesc, ID<UniformLayout> uniformLayout) = 0;
 
-        virtual void destroyUniformSet(ID set) = 0;
+        virtual void destroyUniformSet(ID<UniformSet> set) = 0;
 
         struct UniformLayoutBufferDesc {
             /** Shader stages, which uses this uniform buffer */
@@ -128,15 +140,15 @@ namespace ignimbrite {
             std::vector<UniformLayoutBufferDesc> buffers;
         };
 
-        virtual ID createUniformLayout(const UniformLayoutDesc &layoutDesc) = 0;
+        virtual ID<UniformLayout> createUniformLayout(const UniformLayoutDesc &layoutDesc) = 0;
 
-        virtual void destroyUniformLayout(ID layout) = 0;
+        virtual void destroyUniformLayout(ID<UniformLayout> layout) = 0;
 
-        virtual ID createUniformBuffer(BufferUsage usage, uint32 size, const void *data) = 0;
+        virtual ID<UniformBuffer> createUniformBuffer(BufferUsage usage, uint32 size, const void *data) = 0;
 
-        virtual void updateUniformBuffer(ID buffer, uint32 size, uint32 offset, const void *data) = 0;
+        virtual void updateUniformBuffer(ID<UniformBuffer> buffer, uint32 size, uint32 offset, const void *data) = 0;
 
-        virtual void destroyUniformBuffer(ID buffer) = 0;
+        virtual void destroyUniformBuffer(ID<UniformBuffer> buffer) = 0;
 
         struct SamplerDesc {
             SamplerFilter min = SamplerFilter::Nearest;
@@ -153,9 +165,9 @@ namespace ignimbrite {
             float32 mipLodBias = 0.0f;
         };
 
-        virtual ID createSampler(const SamplerDesc &samplerDesc) = 0;
+        virtual ID<Sampler> createSampler(const SamplerDesc &samplerDesc) = 0;
 
-        virtual void destroySampler(ID sampler) = 0;
+        virtual void destroySampler(ID<Sampler> sampler) = 0;
 
         struct TextureDesc {
             TextureType type = TextureType::Texture2D;
@@ -170,9 +182,9 @@ namespace ignimbrite {
             uint32 dataSize = 0;
         };
 
-        virtual ID createTexture(const TextureDesc &textureDesc) = 0;
+        virtual ID<Texture> createTexture(const TextureDesc &textureDesc) = 0;
 
-        virtual void destroyTexture(ID texture) = 0;
+        virtual void destroyTexture(ID<Texture> texture) = 0;
 
         struct ShaderDesc {
             ShaderType type;
@@ -184,9 +196,9 @@ namespace ignimbrite {
             std::vector<ShaderDesc> shaders;
         };
 
-        virtual ID createShaderProgram(const ProgramDesc &programDesc) = 0;
+        virtual ID<ShaderProgram> createShaderProgram(const ProgramDesc &programDesc) = 0;
 
-        virtual void destroyShaderProgram(ID program) = 0;
+        virtual void destroyShaderProgram(ID<ShaderProgram> program) = 0;
 
         struct FramebufferAttachmentDesc {
             AttachmentType type = AttachmentType::Color;
@@ -194,13 +206,13 @@ namespace ignimbrite {
             TextureSamples samples = TextureSamples::Samples1;
         };
 
-        virtual ID createFramebufferFormat(const std::vector<FramebufferAttachmentDesc> &attachments) = 0;
+        virtual ID<FramebufferFormat> createFramebufferFormat(const std::vector<FramebufferAttachmentDesc> &attachments) = 0;
 
-        virtual void destroyFramebufferFormat(ID framebufferFormat) = 0;
+        virtual void destroyFramebufferFormat(ID<FramebufferFormat> framebufferFormat) = 0;
 
-        virtual ID createFramebuffer(const std::vector<ID> &attachments, ID framebufferFormat) = 0;
+        virtual ID<Framebuffer> createFramebuffer(const std::vector<ID<Texture>> &attachments, ID<FramebufferFormat> framebufferFormat) = 0;
 
-        virtual void destroyFramebuffer(ID framebuffer) = 0;
+        virtual void destroyFramebuffer(ID<Framebuffer> framebuffer) = 0;
 
         struct PipelineRasterizationDesc {
             PolygonMode mode = PolygonMode::Fill;
@@ -274,8 +286,11 @@ namespace ignimbrite {
             StencilOpStateDesc back;
         };
 
-        virtual ID createGraphicsPipeline(PrimitiveTopology topology,
-                                          ID program, ID vertexLayout, ID uniformLayout, ID framebufferFormat,
+        virtual ID<GraphicsPipeline> createGraphicsPipeline(PrimitiveTopology topology,
+                                          ID<ShaderProgram> program,
+                                          ID<VertexLayout> vertexLayout,
+                                          ID<UniformLayout> uniformLayout,
+                                          ID<FramebufferFormat> framebufferFormat,
                                           const PipelineRasterizationDesc &rasterizationDesc,
                                           const PipelineBlendStateDesc &blendStateDesc,
                                           const PipelineDepthStencilStateDesc &depthStencilStateDesc) = 0;
@@ -302,9 +317,11 @@ namespace ignimbrite {
          *
          * @return ID of the created graphics pipeline
          */
-        virtual ID createGraphicsPipeline(ID surface,
+        virtual ID<GraphicsPipeline> createGraphicsPipeline(ID<Surface> surface,
                                           PrimitiveTopology topology,
-                                          ID program, ID vertexLayout, ID uniformLayout,
+                                          ID<ShaderProgram> program,
+                                          ID<VertexLayout> vertexLayout,
+                                          ID<UniformLayout> uniformLayout,
                                           const PipelineRasterizationDesc &rasterizationDesc,
                                           const PipelineSurfaceBlendStateDesc &blendStateDesc,
                                           const PipelineDepthStencilStateDesc &depthStateDesc) = 0;
@@ -314,7 +331,7 @@ namespace ignimbrite {
          * @error Does not allows to destroy object, if other objects depend on that or have some references to that
          * @param pipeline ID of the pipeline to be destroyed
          */
-        virtual void destroyGraphicsPipeline(ID pipeline) = 0;
+        virtual void destroyGraphicsPipeline(ID<GraphicsPipeline> pipeline) = 0;
 
         struct Color {
             float32 components[4];
@@ -353,24 +370,24 @@ namespace ignimbrite {
          */
         virtual void drawListEnd() = 0;
 
-        virtual void drawListBindSurface(ID surface, const Color &color, const Region &area) = 0;
+        virtual void drawListBindSurface(ID<Surface> surface, const Color &color, const Region &area) = 0;
 
-        virtual void drawListBindFramebuffer(ID framebuffer,
+        virtual void drawListBindFramebuffer(ID<Framebuffer> framebuffer,
                                              const std::vector<Color> &colors,
                                              const Region &area) = 0;
 
-        virtual void drawListBindFramebuffer(ID framebuffer,
+        virtual void drawListBindFramebuffer(ID<Framebuffer> framebuffer,
                                              const std::vector<Color> &colors,
                                              float32 depth, uint32 stencil,
                                              const Region &area) = 0;
 
-        virtual void drawListBindPipeline(ID graphicsPipeline) = 0;
+        virtual void drawListBindPipeline(ID<GraphicsPipeline> graphicsPipeline) = 0;
 
-        virtual void drawListBindUniformSet(ID uniformLayout) = 0;
+        virtual void drawListBindUniformSet(ID<UniformSet> uniformSet) = 0;
 
-        virtual void drawListBindVertexBuffer(ID vertexBuffer, uint32 binding, uint32 offset) = 0;
+        virtual void drawListBindVertexBuffer(ID<VertexBuffer> vertexBuffer, uint32 binding, uint32 offset) = 0;
 
-        virtual void drawListBindIndexBuffer(ID indexBuffer, IndicesType indicesType, uint32 offset) = 0;
+        virtual void drawListBindIndexBuffer(ID<IndexBuffer> indexBuffer, IndicesType indicesType, uint32 offset) = 0;
 
         virtual void drawListDraw(uint32 verticesCount, uint32 instancesCount) = 0;
 
@@ -386,7 +403,7 @@ namespace ignimbrite {
          * @throw Exception if surface with specified name not found
          * @return ID of the surface if found
          */
-        virtual ID getSurface(const std::string &surfaceName) = 0;
+        virtual ID<Surface> getSurface(const std::string &surfaceName) = 0;
 
         /**
          * @brief Get surface size
@@ -395,7 +412,7 @@ namespace ignimbrite {
          * @param width[out] Surface framebuffer width
          * @param height[out] Surface framebuffer height
          */
-        virtual void getSurfaceSize(ID surface, uint32 &width, uint32 &height) = 0;
+        virtual void getSurfaceSize(ID<Surface> surface, uint32 &width, uint32 &height) = 0;
 
         /**
          * @brief Swap buffers
@@ -411,7 +428,7 @@ namespace ignimbrite {
          *
          * @param surface ID of the surface to swap buffers to present final image
          */
-        virtual void swapBuffers(ID surface) = 0;
+        virtual void swapBuffers(ID<Surface> surface) = 0;
 
         /**
          * @brief Flushes draw lists

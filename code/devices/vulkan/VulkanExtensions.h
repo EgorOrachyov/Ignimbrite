@@ -44,7 +44,7 @@ namespace ignimbrite {
          * @param heightFramebuffer
          * @param name Required param to reference created window
          */
-        static RenderDevice::ID createSurfaceGLFW(
+        static ID<RenderDevice::Surface> createSurfaceGLFW(
                 VulkanRenderDevice &device,
                 GLFWwindow *handle,
                 uint32 widthFramebuffer,
@@ -97,11 +97,11 @@ namespace ignimbrite {
         /** Idle device and destroy surface with all its relative data */
         static void destroySurface(
                 VulkanRenderDevice &device,
-                RenderDevice::ID surface
+                ID<RenderDevice::Surface> surface
         );
 
     private:
-        static RenderDevice::ID createSurfaceFromKHR(
+        static ID<RenderDevice::Surface> createSurfaceFromKHR(
                 VulkanRenderDevice &device,
                 VkSurfaceKHR surfaceKhr,
                 uint32 widthFramebuffer,

@@ -13,11 +13,17 @@
 
 namespace ignimbrite {
 
+    /** Dummy placeholder for ObjectID */
+    class DummyObject;
+
     /**
-     * Unique id represented by index of the object
-     * (index in array for robust access) and generation
-     * value to know, whether ID was removed or not.
+     * Unique id represented by index of the object  (index in array for robust access)
+     * and generation value to know, whether ID was removed or not.
+     *
+     * ID is parametrised by type for type safe access
+     * @tparam T type of the handle
      */
+    template <typename T = DummyObject>
     struct ObjectID {
     public:
         ObjectID() = default;
@@ -48,6 +54,9 @@ namespace ignimbrite {
         uint32 mIndex = 0;
         uint32 mGeneration = 0;
     };
+
+    template <typename T = DummyObject>
+    using ID = ObjectID<T>;
 
 } // namespace ignimbrite
 

@@ -187,11 +187,9 @@ public:
 
 private:
 
-    typedef ObjectID ID;
-
     std::string name = "Test";
 
-    ID surface;
+    ID<RenderDevice::Surface> surface;
     GLFWwindow *window = nullptr;
     int32 width = 640;
     int32 height = 480;
@@ -202,14 +200,14 @@ private:
 
     VulkanRenderDevice *pDevice;
 
-    ID vertexLayout;
-    ID vertexBuffer;
-    ID indexBuffer;
-    ID uniformBuffer;
-    ID uniformLayout;
-    ID uniformSet;
-    ID shaderProgram;
-    ID graphicsPipeline;
+    ID<RenderDevice::VertexLayout> vertexLayout;
+    ID<RenderDevice::VertexBuffer> vertexBuffer;
+    ID<RenderDevice::IndexBuffer> indexBuffer;
+    ID<RenderDevice::UniformBuffer> uniformBuffer;
+    ID<RenderDevice::UniformLayout> uniformLayout;
+    ID<RenderDevice::UniformSet> uniformSet;
+    ID<RenderDevice::ShaderProgram> shaderProgram;
+    ID<RenderDevice::GraphicsPipeline> graphicsPipeline;
 
     struct Transform {
         float32 values[16] = {

@@ -17,7 +17,6 @@
 #include <string>
 
 using namespace ignimbrite;
-typedef ignimbrite::ObjectID ID;
 
 static const std::string MODEL3D_SHADER_PATH_VERT = "shaders/spirv/vert3d.spv";
 static const std::string MODEL3D_SHADER_PATH_FRAG = "shaders/spirv/frag3d.spv";
@@ -31,9 +30,9 @@ struct Vertex
 };
 
 struct Mesh {
-    ID vertexLayout;
-    ID vertexBuffer;
-    ID indexBuffer;
+    ID<RenderDevice::VertexLayout> vertexLayout;
+    ID<RenderDevice::VertexBuffer> vertexBuffer;
+    ID<RenderDevice::IndexBuffer> indexBuffer;
     uint32 indexCount = 0;
 };
 
@@ -45,14 +44,14 @@ struct ShaderUniformBuffer {
 };
 
 struct Material {
-    ID uniformLayout;
-    ID shaderProgram;
-    ID graphicsPipeline;
-    ID uniformSet;
-    ID uniformBuffer;
+    ID<RenderDevice::UniformLayout> uniformLayout;
+    ID<RenderDevice::ShaderProgram> shaderProgram;
+    ID<RenderDevice::GraphicsPipeline> graphicsPipeline;
+    ID<RenderDevice::UniformSet> uniformSet;
+    ID<RenderDevice::UniformBuffer> uniformBuffer;
     ShaderUniformBuffer data;
-    ID texture;
-    ID textureSampler;
+    ID<RenderDevice::Texture> texture;
+    ID<RenderDevice::Sampler> textureSampler;
 };
 
 struct Window {
@@ -275,7 +274,7 @@ private:
         );
     }
 
-    ID loadShader(const char *vertSpirvPath, const char *fragSpirvPath) {
+    ID<RenderDevice::ShaderProgram> loadShader(const char *vertSpirvPath, const char *fragSpirvPath) {
         RenderDevice::ProgramDesc programDesc;
 
         programDesc.language = ShaderLanguage::SPIRV;
@@ -495,13 +494,13 @@ private:
 
     VulkanRenderDevice  *pDevice = nullptr;
 
-    Window              window;
-    ID                  surface;
-    Mesh                mesh;
-    Material            material;
+    ID<RenderDevice::Surface> surface;
+    Window   window;
+    Mesh     mesh;
+    Material material;
 
-    std::string         objMeshPath;
-    std::string         texturePath;
+    std::string objMeshPath;
+    std::string texturePath;
 
     static float pitch;
     static float yaw;

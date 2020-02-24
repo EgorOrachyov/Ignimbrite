@@ -33,25 +33,25 @@ struct Window {
 };
 
 struct SurfacePass {
-    ObjectID vertexLayout;
-    ObjectID uniformLayout;
-    ObjectID uniformSet;
-    ObjectID vertexBuffer;
-    ObjectID shader;
-    ObjectID pipeline;
-    ObjectID sampler;
+    ID<RenderDevice::VertexLayout> vertexLayout;
+    ID<RenderDevice::UniformLayout> uniformLayout;
+    ID<RenderDevice::UniformSet> uniformSet;
+    ID<RenderDevice::VertexBuffer> vertexBuffer;
+    ID<RenderDevice::ShaderProgram> shader;
+    ID<RenderDevice::GraphicsPipeline> pipeline;
+    ID<RenderDevice::Sampler> sampler;
 };
 
 struct OffscreenPass {
-    ObjectID vertexLayout;
-    ObjectID uniformLayout;
-    ObjectID vertexBuffer;
-    ObjectID shader;
-    ObjectID pipeline;
-    ObjectID frameBufferFormat;
-    ObjectID frameBuffer;
-    ObjectID colorTexture;
-    ObjectID depthTexture;
+    ID<RenderDevice::VertexLayout> vertexLayout;
+    ID<RenderDevice::UniformLayout> uniformLayout;
+    ID<RenderDevice::VertexBuffer> vertexBuffer;
+    ID<RenderDevice::ShaderProgram> shader;
+    ID<RenderDevice::GraphicsPipeline> pipeline;
+    ID<RenderDevice::FramebufferFormat> frameBufferFormat;
+    ID<RenderDevice::Framebuffer> frameBuffer;
+    ID<RenderDevice::Texture> colorTexture;
+    ID<RenderDevice::Texture> depthTexture;
     uint32 width = 0, height = 0;
 };
 
@@ -156,7 +156,7 @@ public:
 
         offscreenPass.depthTexture = device->createTexture(depthTextureDesc);
 
-        std::vector<ObjectID> attachments = { offscreenPass.colorTexture, offscreenPass.depthTexture };
+        std::vector<ID<RenderDevice::Texture>> attachments = { offscreenPass.colorTexture, offscreenPass.depthTexture };
 
         offscreenPass.frameBuffer = device->createFramebuffer(attachments, offscreenPass.frameBufferFormat);
         offscreenPass.width = window.widthFBO;
@@ -284,7 +284,7 @@ public:
 
     }
 
-    void loadShader(const std::string &vertexName, const std::string &fragmentName, ObjectID& id) {
+    void loadShader(const std::string &vertexName, const std::string &fragmentName, ID<RenderDevice::ShaderProgram>& id) {
         std::ifstream vertexFile(vertexName, std::ios::binary);
         std::ifstream fragmentFile(fragmentName, std::ios::binary);
 
@@ -351,7 +351,7 @@ private:
 
     VulkanRenderDevice* device;
     Window window;
-    ObjectID surface;
+    ID<RenderDevice::Surface> surface;
     OffscreenPass offscreenPass;
     SurfacePass surfacePass;
 

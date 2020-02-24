@@ -9,9 +9,8 @@
 #ifndef IGNIMBRITE_VULKANFRAMEBUFFER_H
 #define IGNIMBRITE_VULKANFRAMEBUFFER_H
 
-#include <ignimbrite/ObjectID.h>
+#include <ignimbrite/RenderDevice.h>
 #include <vulkan/vulkan.h>
-#include <vector>
 
 namespace ignimbrite {
 
@@ -32,7 +31,7 @@ namespace ignimbrite {
     struct VulkanFramebuffer {
         uint32 width = 0;
         uint32 height = 0;
-        ObjectID framebufferFormatId;
+        ID<RenderDevice::FramebufferFormat> framebufferFormatId;
         VkFramebuffer framebuffer = VK_NULL_HANDLE;
     };
 

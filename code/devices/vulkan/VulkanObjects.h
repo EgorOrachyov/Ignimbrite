@@ -68,7 +68,7 @@ namespace ignimbrite {
     };
 
     struct VulkanUniformSet {
-        RenderDevice::ID uniformLayout;
+        ID<RenderDevice::UniformLayout> uniformLayout;
         VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
     };
 

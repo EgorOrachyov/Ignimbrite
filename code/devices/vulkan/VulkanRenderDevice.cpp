@@ -15,6 +15,20 @@
 
 namespace ignimbrite {
 
+    using VertexLayout = RenderDevice::VertexLayout;
+    using VertexBuffer = RenderDevice::VertexBuffer;
+    using IndexBuffer = RenderDevice::IndexBuffer;
+    using UniformBuffer = RenderDevice::UniformBuffer;
+    using UniformLayout = RenderDevice::UniformLayout;
+    using UniformSet = RenderDevice::UniformSet;
+    using ShaderProgram = RenderDevice::ShaderProgram;
+    using GraphicsPipeline = RenderDevice::GraphicsPipeline;
+    using FramebufferFormat = RenderDevice::FramebufferFormat;
+    using Framebuffer = RenderDevice::Framebuffer;
+    using Surface = RenderDevice::Surface;
+    using Texture = RenderDevice::Texture;
+    using Sampler = RenderDevice::Sampler;
+
     VulkanRenderDevice::VulkanRenderDevice(uint32 extensionsCount, const char *const *extensions) {
         mContext.fillRequiredExt(extensionsCount, extensions);
         mContext.createInstance();
@@ -33,7 +47,7 @@ namespace ignimbrite {
         mContext.destroyInstance();
     }
 
-    RenderDevice::ID VulkanRenderDevice::createVertexLayout(const std::vector<VertexBufferLayoutDesc> &vertexBuffersDesc) {
+    ID<VertexLayout> VulkanRenderDevice::createVertexLayout(const std::vector<VertexBufferLayoutDesc> &vertexBuffersDesc) {
         VulkanVertexLayout layout;
 
         auto &vertBindings = layout.vkBindings;
@@ -63,11 +77,11 @@ namespace ignimbrite {
         return mVertexLayouts.move(layout);
     }
 
-    void VulkanRenderDevice::destroyVertexLayout(RenderDevice::ID layout) {
+    void VulkanRenderDevice::destroyVertexLayout(ID<VertexLayout> layout) {
         mVertexLayouts.remove(layout);
     }
 
-    RenderDevice::ID VulkanRenderDevice::createVertexBuffer(BufferUsage type, uint32 size, const void *data) {
+    ID<VertexBuffer> VulkanRenderDevice::createVertexBuffer(BufferUsage type, uint32 size, const void *data) {
         VulkanVertexBuffer vertexBuffer = {};
         vertexBuffer.size = size;
         vertexBuffer.usage = type;
@@ -95,7 +109,7 @@ namespace ignimbrite {
         return mVertexBuffers.move(vertexBuffer);
     }
 
-    RenderDevice::ID VulkanRenderDevice::createIndexBuffer(BufferUsage type, uint32 size, const void *data) {
+    ID<IndexBuffer> VulkanRenderDevice::createIndexBuffer(BufferUsage type, uint32 size, const void *data) {
         VulkanIndexBuffer indexBuffer = {};
         indexBuffer.size = size;
         indexBuffer.usage = type;
@@ -118,7 +132,7 @@ namespace ignimbrite {
         return mIndexBuffers.move(indexBuffer);
     }
 
-    void VulkanRenderDevice::updateVertexBuffer(RenderDevice::ID bufferId, uint32 size, uint32 offset, const void *data) {
+    void VulkanRenderDevice::updateVertexBuffer(ID<VertexBuffer> bufferId, uint32 size, uint32 offset, const void *data) {
         const VulkanVertexBuffer &buffer = mVertexBuffers.get(bufferId);
 
         if (buffer.usage != BufferUsage::Dynamic) {
@@ -132,7 +146,7 @@ namespace ignimbrite {
         VulkanUtils::updateBufferMemory(buffer.allocation, offset, size, data);
     }
 
-    void VulkanRenderDevice::updateIndexBuffer(RenderDevice::ID bufferId, uint32 size, uint32 offset, const void *data) {
+    void VulkanRenderDevice::updateIndexBuffer(ID<IndexBuffer> bufferId, uint32 size, uint32 offset, const void *data) {
         const VulkanIndexBuffer &buffer = mIndexBuffers.get(bufferId);
 
         if (buffer.usage != BufferUsage::Dynamic) {
@@ -146,21 +160,21 @@ namespace ignimbrite {
         VulkanUtils::updateBufferMemory(buffer.allocation, offset, size, data);
     }
 
-    void VulkanRenderDevice::destroyVertexBuffer(RenderDevice::ID bufferId) {
+    void VulkanRenderDevice::destroyVertexBuffer(ID<VertexBuffer> bufferId) {
         VulkanVertexBuffer &buffer = mVertexBuffers.get(bufferId);
         VulkanUtils::destroyBuffer(buffer.vkBuffer, buffer.allocation);
 
         mVertexBuffers.remove(bufferId);
     }
 
-    void VulkanRenderDevice::destroyIndexBuffer(RenderDevice::ID bufferId) {
+    void VulkanRenderDevice::destroyIndexBuffer(ID<IndexBuffer> bufferId) {
         VulkanIndexBuffer &buffer = mIndexBuffers.get(bufferId);
         VulkanUtils::destroyBuffer(buffer.vkBuffer, buffer.allocation);
 
         mIndexBuffers.remove(bufferId);
     }
 
-    RenderDevice::ID VulkanRenderDevice::createTexture(const RenderDevice::TextureDesc &textureDesc) {
+    ID<Texture> VulkanRenderDevice::createTexture(const RenderDevice::TextureDesc &textureDesc) {
         VkFormat format = VulkanDefinitions::dataFormat(textureDesc.format);
         VkImageType imageType = VulkanDefinitions::imageType(textureDesc.type);
         VkImageViewType viewType = VulkanDefinitions::imageViewType(textureDesc.type);
@@ -286,7 +300,7 @@ namespace ignimbrite {
         return mTextureObjects.move(texture);
     }
 
-    void VulkanRenderDevice::destroyTexture(RenderDevice::ID textureId) {
+    void VulkanRenderDevice::destroyTexture(ID<Texture> textureId) {
         auto &device = mContext.device;
         VulkanTextureObject &imo = mTextureObjects.get(textureId);
 
@@ -296,7 +310,7 @@ namespace ignimbrite {
         mTextureObjects.remove(textureId);
     }
 
-    RenderDevice::ID VulkanRenderDevice::createSampler(const RenderDevice::SamplerDesc &samplerDesc) {
+    ID<Sampler> VulkanRenderDevice::createSampler(const RenderDevice::SamplerDesc &samplerDesc) {
         VkSamplerCreateInfo samplerInfo = {};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         samplerInfo.minFilter = VulkanDefinitions::filter(samplerDesc.min);
@@ -322,12 +336,12 @@ namespace ignimbrite {
         return mSamplers.add(sampler);
     }
 
-    void VulkanRenderDevice::destroySampler(RenderDevice::ID samplerId) {
+    void VulkanRenderDevice::destroySampler(ID<Sampler> samplerId) {
         vkDestroySampler(mContext.device, mSamplers.get(samplerId), nullptr);
         mSamplers.remove(samplerId);
     }
 
-    RenderDevice::ID VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::FramebufferAttachmentDesc> &attachments) {
+    ID<FramebufferFormat> VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::FramebufferAttachmentDesc> &attachments) {
         std::vector<VkAttachmentDescription> attachmentDescriptions;
         attachmentDescriptions.reserve(attachments.size());
 
@@ -416,15 +430,15 @@ namespace ignimbrite {
         return mFrameBufferFormats.move(format);
     }
 
-    void VulkanRenderDevice::destroyFramebufferFormat(RenderDevice::ID framebufferFormat) {
+    void VulkanRenderDevice::destroyFramebufferFormat(ID<FramebufferFormat> framebufferFormat) {
         auto &format = mFrameBufferFormats.get(framebufferFormat);
         vkDestroyRenderPass(mContext.device, format.renderPass, nullptr);
 
         mFrameBufferFormats.remove(framebufferFormat);
     }
 
-    RenderDevice::ID VulkanRenderDevice::createFramebuffer(const std::vector<RenderDevice::ID> &attachmentIds,
-                                                           RenderDevice::ID framebufferFormatId) {
+    ID<Framebuffer> VulkanRenderDevice::createFramebuffer(const std::vector<ID<Texture>> &attachmentIds,
+                                                           ID<FramebufferFormat> framebufferFormatId) {
         if (attachmentIds.empty()) {
             throw VulkanException("An attempt to create empty frame buffer");
         }
@@ -475,14 +489,14 @@ namespace ignimbrite {
         return mFrameBuffers.move(vkFramebuffer);
     }
 
-    void VulkanRenderDevice::destroyFramebuffer(RenderDevice::ID framebufferId) {
+    void VulkanRenderDevice::destroyFramebuffer(ID<Framebuffer> framebufferId) {
         VulkanFramebuffer fbo = mFrameBuffers.get(framebufferId);
         vkDestroyFramebuffer(mContext.device, fbo.framebuffer, nullptr);
 
         mFrameBuffers.remove(framebufferId);
     }
 
-    RenderDevice::ID VulkanRenderDevice::createUniformSet(const UniformSetDesc &setDesc, ID uniformLayout) {
+    ID<UniformSet> VulkanRenderDevice::createUniformSet(const UniformSetDesc &setDesc, ID<UniformLayout> uniformLayout) {
         auto &layout = mUniformLayouts.get(uniformLayout);
 
         const auto &uniformBuffers = setDesc.buffers;
@@ -563,7 +577,7 @@ namespace ignimbrite {
         return mUniformSets.move(uniformSet);
     }
 
-    void VulkanRenderDevice::destroyUniformSet(RenderDevice::ID setId) {
+    void VulkanRenderDevice::destroyUniformSet(ID<UniformSet> setId) {
         auto &uniformSet = mUniformSets.get(setId);
         auto &layout = mUniformLayouts.get(uniformSet.uniformLayout);
 
@@ -571,7 +585,7 @@ namespace ignimbrite {
         mUniformSets.remove(setId);
     }
 
-    RenderDevice::ID VulkanRenderDevice::createUniformLayout(const RenderDevice::UniformLayoutDesc &layoutDesc) {
+    ID<UniformLayout> VulkanRenderDevice::createUniformLayout(const RenderDevice::UniformLayoutDesc &layoutDesc) {
         VkResult result;
         VkDescriptorSetLayout descriptorSetLayout;
 
@@ -622,7 +636,7 @@ namespace ignimbrite {
         return mUniformLayouts.move(uniformLayout);
     }
 
-    void VulkanRenderDevice::destroyUniformLayout(RenderDevice::ID layout) {
+    void VulkanRenderDevice::destroyUniformLayout(ID<UniformLayout> layout) {
         auto &uniformLayout = mUniformLayouts.get(layout);
         auto &properties = uniformLayout.properties;
 
@@ -630,7 +644,7 @@ namespace ignimbrite {
         mUniformLayouts.remove(layout);
     }
 
-    RenderDevice::ID VulkanRenderDevice::createUniformBuffer(BufferUsage usage, uint32 size, const void *data) {
+    ID<UniformBuffer> VulkanRenderDevice::createUniformBuffer(BufferUsage usage, uint32 size, const void *data) {
         VulkanUniformBuffer uniformBuffer = {};
         uniformBuffer.usage = usage;
         uniformBuffer.size = size;
@@ -651,7 +665,7 @@ namespace ignimbrite {
         return mUniformBuffers.move(uniformBuffer);
     }
 
-    void VulkanRenderDevice::updateUniformBuffer(RenderDevice::ID buffer, uint32 size, uint32 offset, const void *data) {
+    void VulkanRenderDevice::updateUniformBuffer(ID<UniformBuffer> buffer, uint32 size, uint32 offset, const void *data) {
         const VulkanUniformBuffer &uniformBuffer = mUniformBuffers.get(buffer);
 
         if (uniformBuffer.usage != BufferUsage::Dynamic) {
@@ -665,14 +679,14 @@ namespace ignimbrite {
         VulkanUtils::updateBufferMemory(uniformBuffer.allocation, offset, size, data);
     }
 
-    void VulkanRenderDevice::destroyUniformBuffer(RenderDevice::ID bufferId) {
+    void VulkanRenderDevice::destroyUniformBuffer(ID<UniformBuffer> bufferId) {
         VulkanUniformBuffer &uniformBuffer = mUniformBuffers.get(bufferId);
         VulkanUtils::destroyBuffer(uniformBuffer.buffer, uniformBuffer.allocation);
 
         mUniformBuffers.remove(bufferId);
     }
 
-    RenderDevice::ID VulkanRenderDevice::createShaderProgram(const ProgramDesc &programDesc) {
+    ID<ShaderProgram> VulkanRenderDevice::createShaderProgram(const ProgramDesc &programDesc) {
         VulkanShaderProgram program = {};
         program.shaders.reserve(programDesc.shaders.size());
 
@@ -699,7 +713,7 @@ namespace ignimbrite {
         return mShaderPrograms.move(program);
     }
 
-    void VulkanRenderDevice::destroyShaderProgram(RenderDevice::ID program) {
+    void VulkanRenderDevice::destroyShaderProgram(ID<ShaderProgram> program) {
         auto &vulkanProgram = mShaderPrograms.get(program);
 
         for (auto &shader: vulkanProgram.shaders) {
@@ -709,13 +723,14 @@ namespace ignimbrite {
         mShaderPrograms.remove(program);
     }
 
-    RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(PrimitiveTopology topology, RenderDevice::ID program,
-                                                                RenderDevice::ID vertexLayout,
-                                                                RenderDevice::ID uniformLayout,
-                                                                RenderDevice::ID framebufferFormat,
-                                                                const RenderDevice::PipelineRasterizationDesc &rasterizationDesc,
-                                                                const RenderDevice::PipelineBlendStateDesc &blendStateDesc,
-                                                                const RenderDevice::PipelineDepthStencilStateDesc &depthStencilStateDesc) {
+    ID<GraphicsPipeline> VulkanRenderDevice::createGraphicsPipeline(PrimitiveTopology topology,
+            ID<ShaderProgram> program,
+            ID<VertexLayout> vertexLayout,
+            ID<UniformLayout> uniformLayout,
+            ID<FramebufferFormat> framebufferFormat,
+            const RenderDevice::PipelineRasterizationDesc &rasterizationDesc,
+            const RenderDevice::PipelineBlendStateDesc &blendStateDesc,
+            const RenderDevice::PipelineDepthStencilStateDesc &depthStencilStateDesc) {
         const auto &vkProgram = mShaderPrograms.get(program);
         const auto &vkUniformLayout = mUniformLayouts.get(uniformLayout);
         const auto &vkVertexLayout = mVertexLayouts.get(vertexLayout);
@@ -827,12 +842,15 @@ namespace ignimbrite {
         return mGraphicsPipelines.move(graphicsPipeline);
     }
 
-    RenderDevice::ID VulkanRenderDevice::createGraphicsPipeline(ID surface,
-                                                                PrimitiveTopology topology,
-                                                                ID program, ID vertexLayout, ID uniformLayout,
-                                                                const PipelineRasterizationDesc &rasterizationDesc,
-                                                                const PipelineSurfaceBlendStateDesc &blendStateDesc,
-                                                                const PipelineDepthStencilStateDesc &depthStencilStateDesc) {
+    ID<GraphicsPipeline> VulkanRenderDevice::createGraphicsPipeline(
+            ID<Surface> surface,
+            PrimitiveTopology topology,
+            ID<ShaderProgram> program,
+            ID<VertexLayout> vertexLayout,
+            ID<UniformLayout> uniformLayout,
+            const PipelineRasterizationDesc &rasterizationDesc,
+            const PipelineSurfaceBlendStateDesc &blendStateDesc,
+            const PipelineDepthStencilStateDesc &depthStencilStateDesc) {
         const auto &vkProgram = mShaderPrograms.get(program);
         const auto &vkUniformLayout = mUniformLayouts.get(uniformLayout);
         const auto &vkVertexLayout = mVertexLayouts.get(vertexLayout);
@@ -935,7 +953,7 @@ namespace ignimbrite {
         return mGraphicsPipelines.move(graphicsPipeline);
     }
 
-    void VulkanRenderDevice::destroyGraphicsPipeline(RenderDevice::ID pipeline) {
+    void VulkanRenderDevice::destroyGraphicsPipeline(ID<GraphicsPipeline> pipeline) {
         auto &vulkanPipeline = mGraphicsPipelines.get(pipeline);
 
         vkDestroyPipeline(mContext.device, vulkanPipeline.pipeline, nullptr);
@@ -956,8 +974,10 @@ namespace ignimbrite {
         mDrawQueue.push_back(commandBuffer);
     }
 
-    void VulkanRenderDevice::drawListBindSurface(RenderDevice::ID surfaceId, const RenderDevice::Color &color,
-                                                 const RenderDevice::Region &area) {
+    void VulkanRenderDevice::drawListBindSurface(
+            ID<Surface> surfaceId,
+            const RenderDevice::Color &color,
+            const RenderDevice::Region &area) {
         // End previous render pass, if exists
         if (mDrawListState.frameBufferAttached) {
             vkCmdEndRenderPass(mDrawListState.commandBuffer);
@@ -1019,9 +1039,11 @@ namespace ignimbrite {
         mDrawListState.frameBufferAttached = true;
     }
 
-    void VulkanRenderDevice::drawListBindFramebuffer(RenderDevice::ID framebufferId, const std::vector<Color> &colors,
-                                                     float32 clearDepth, uint32 clearStencil,
-                                                     const RenderDevice::Region &area) {
+    void VulkanRenderDevice::drawListBindFramebuffer(
+            ID<Framebuffer> framebufferId,
+            const std::vector<Color> &colors,
+            float32 clearDepth, uint32 clearStencil,
+            const RenderDevice::Region &area) {
         // End previous render pass, if exists
         if (mDrawListState.frameBufferAttached) {
             vkCmdEndRenderPass(mDrawListState.commandBuffer);
@@ -1091,12 +1113,14 @@ namespace ignimbrite {
         mDrawListState.frameBufferAttached = true;
     }
 
-    void VulkanRenderDevice::drawListBindFramebuffer(RenderDevice::ID framebufferId, const std::vector<Color> &colors,
-                                                     const RenderDevice::Region &area) {
+    void VulkanRenderDevice::drawListBindFramebuffer(
+            ID<Framebuffer> framebufferId,
+            const std::vector<Color> &colors,
+            const RenderDevice::Region &area) {
         drawListBindFramebuffer(framebufferId, colors, 1.0f, 0, area);
     }
 
-    void VulkanRenderDevice::drawListBindPipeline(RenderDevice::ID graphicsPipelineId) {
+    void VulkanRenderDevice::drawListBindPipeline(ID<GraphicsPipeline> graphicsPipelineId) {
         VK_TRUE_ASSERT(mDrawListState.frameBufferAttached, "No framebuffer attached");
         const auto &graphicsPipeline = mGraphicsPipelines.get(graphicsPipelineId);
         vkCmdBindPipeline(mDrawListState.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.pipeline);
@@ -1104,7 +1128,7 @@ namespace ignimbrite {
         mDrawListState.pipelineAttached = true;
     }
 
-    void VulkanRenderDevice::drawListBindUniformSet(RenderDevice::ID uniformSetId) {
+    void VulkanRenderDevice::drawListBindUniformSet(ID<UniformSet> uniformSetId) {
         VK_TRUE_ASSERT(mDrawListState.pipelineAttached, "No pipeline attached");
         const auto &uniformSet = mUniformSets.get(uniformSetId);
         vkCmdBindDescriptorSets(mDrawListState.commandBuffer,
@@ -1115,14 +1139,14 @@ namespace ignimbrite {
                                 0, nullptr);
     }
 
-    void VulkanRenderDevice::drawListBindIndexBuffer(RenderDevice::ID indexBufferId, IndicesType indicesType, uint32 offset) {
+    void VulkanRenderDevice::drawListBindIndexBuffer(ID<IndexBuffer> indexBufferId, IndicesType indicesType, uint32 offset) {
         VK_TRUE_ASSERT(mDrawListState.frameBufferAttached, "No pipeline attached");
         const auto &indexBuffer = mIndexBuffers.get(indexBufferId);
         vkCmdBindIndexBuffer(mDrawListState.commandBuffer, indexBuffer.vkBuffer, offset, VulkanDefinitions::indexType(indicesType));
         mDrawListState.indexBufferAttached = true;
     }
 
-    void VulkanRenderDevice::drawListBindVertexBuffer(RenderDevice::ID vertexBufferId, uint32 binding, uint32 offset) {
+    void VulkanRenderDevice::drawListBindVertexBuffer(ID<VertexBuffer> vertexBufferId, uint32 binding, uint32 offset) {
         VK_TRUE_ASSERT(mDrawListState.frameBufferAttached, "No pipeline attached");
         const auto &vertexBuffer = mVertexBuffers.get(vertexBufferId);
         VkDeviceSize offsets[1] = { offset };
@@ -1141,23 +1165,23 @@ namespace ignimbrite {
         vkCmdDrawIndexed(mDrawListState.commandBuffer, indicesCount, instancesCount, 0, 0, 0);
     }
 
-    RenderDevice::ID VulkanRenderDevice::getSurface(const std::string &surfaceName) {
+    ID<Surface> VulkanRenderDevice::getSurface(const std::string &surfaceName) {
         for (auto i = mSurfaces.begin(); i != mSurfaces.end(); ++i) {
             auto &window = *i;
             if (window.name == surfaceName) {
                 return i.getID();
             }
         }
-        return INVALID;
+        return ID<Surface>();
     }
 
-    void VulkanRenderDevice::getSurfaceSize(RenderDevice::ID surface, uint32 &width, uint32 &height) {
+    void VulkanRenderDevice::getSurfaceSize(ID<Surface> surface, uint32 &width, uint32 &height) {
         auto &window = mSurfaces.get(surface);
         width = window.width;
         height = window.height;
     }
 
-    void VulkanRenderDevice::swapBuffers(RenderDevice::ID surfaceId) {
+    void VulkanRenderDevice::swapBuffers(ID<Surface> surfaceId) {
         VK_TRUE_ASSERT(mSyncQueue.empty(), "Device must be explicitly synchronized before swap buffers call");
 
         auto &surface = mSurfaces.get(surfaceId);
@@ -1216,6 +1240,11 @@ namespace ignimbrite {
         }
 
         mSyncQueue.clear();
+    }
+
+    const std::string &VulkanRenderDevice::getDeviceName() const {
+        static std::string mDeviceName = "VulkanDevice";
+        return mDeviceName;
     }
 
 } // namespace ignimbrite

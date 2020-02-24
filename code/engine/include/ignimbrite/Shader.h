@@ -12,9 +12,10 @@
 #include <ignimbrite/CacheItem.h>
 #include <ignimbrite/RenderDevice.h>
 #include <ignimbrite/RenderDeviceDefinitions.h>
-#include <string>
 #include <unordered_map>
+#include <string>
 #include <vector>
+#include <memory>
 
 namespace ignimbrite {
 
@@ -45,6 +46,12 @@ namespace ignimbrite {
             SamplerCubemap
         };
 
+        struct AttributeInfo {
+            std::string name;
+            uint32      binding;
+            DataType    type;
+        };
+
         struct ParameterInfo {
             uint32           binding;
             uint32           offset;
@@ -64,8 +71,21 @@ namespace ignimbrite {
         // todo: program handle
         // todo: source code
         //
+
+        /** Actual program handle */
+        ID<RenderDevice::ShaderProgram> mHandle;
+
+        std::vector<AttributeInfo> mVertexShaderInputs;
+        std::vector<AttributeInfo> mFragmentShaderOutputs;
+
+        /** Program variables (samplers, and uniform blocks variables) */
         std::unordered_map<std::string, ParameterInfo> mVariables;
-        std::unordered_map<std::string, UniformBufferInfo> mBuffer;
+
+        /** Program uniform blocks info */
+        std::unordered_map<std::string, UniformBufferInfo> mBuffers;
+
+        /** Render device, which is used for that shader creation */
+        std::shared_ptr<RenderDevice> mRenderDevice;
 
     };
 
