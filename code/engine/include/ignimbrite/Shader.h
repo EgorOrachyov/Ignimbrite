@@ -20,6 +20,8 @@
 namespace ignimbrite {
 
     class Shader : public CacheItem {
+        friend class ShaderReflection;
+
     public:
 
         enum class DataType {
@@ -47,34 +49,53 @@ namespace ignimbrite {
         };
 
         struct AttributeInfo {
-            std::string name;
-            uint32      binding;
-            DataType    type;
+            std::string     name;
+            uint32          location;
+            DataType        type;
         };
 
         struct ParameterInfo {
-            uint32           binding;
-            uint32           offset;
-            uint32           blockSize;
-            DataType         type;
-            ShaderStageFlags stageFlags;
+            uint32              binding;
+            uint32              offset;
+            uint32              blockSize;
+            DataType            type;
+            ShaderStageFlags    stageFlags;
         };
 
         struct UniformBufferInfo {
-            uint32 size;
-            std::vector<std::string> members;
+            uint32                      binding;
+            uint32                      size;
+            ShaderStageFlags            stageFlags;
+            std::vector<std::string>    members;
         };
 
-        ~Shader() override = default;
+    public:
+        Shader(
+                const std::shared_ptr<RenderDevice> &renderDevice,
+                ignimbrite::ShaderLanguage language);
+
+        Shader(
+                const std::shared_ptr<RenderDevice> &renderDevice,
+                ignimbrite::ShaderLanguage language,
+                const std::vector<uint8> &vertSourceCode,
+                const std::vector<uint8> &fragSourceCode);
+
+        ~Shader() override;
+
+        void addModule(ShaderType moduleType, const std::vector<uint8> &moduleSourceCode);
+        void create();
+
+        ID<RenderDevice::ShaderProgram> getHandle() const;
 
     private:
-        // todo: program handle
-        // todo: source code
-        //
+
+        /** Program descritor with this shader's modules*/
+        RenderDevice::ProgramDesc mProgramDesc;
 
         /** Actual program handle */
         ID<RenderDevice::ShaderProgram> mHandle;
 
+        // TODO
         std::vector<AttributeInfo> mVertexShaderInputs;
         std::vector<AttributeInfo> mFragmentShaderOutputs;
 

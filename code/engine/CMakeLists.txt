@@ -33,3 +33,5 @@ add_library(Ignimbrite STATIC ${Ignimbrite_SOURCES})
 target_include_directories(Ignimbrite PUBLIC include)
 # For private includes
 target_include_directories(Ignimbrite PRIVATE .)
+
+target_link_libraries(Ignimbrite PUBLIC spirv-cross-core)
