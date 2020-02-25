@@ -26,7 +26,7 @@ set(Ignimbrite_SOURCES
     Texture.cpp
     Sampler.cpp
     UniformBuffer.cpp
-        )
+        Cache.cpp Cache.h CacheItem.cpp)
 
 add_library(Ignimbrite STATIC ${Ignimbrite_SOURCES})
 

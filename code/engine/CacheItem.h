@@ -18,7 +18,14 @@ namespace ignimbrite {
     class CacheItem {
     public:
         virtual ~CacheItem() = default;
-        const std::string& getCachedName() const { return mCachedName; }
+        /** @return True, if this item in cache */
+        bool isCached();
+        /** Remove this item from cache */
+        void removeFromCache();
+        /** Renames item, updates its name in cache if needed */
+        void setCachedName(const std::string& name);
+        /** @return Name of item, used to cache resource */
+        const std::string& getCachedName() const;
     protected:
         std::string mCachedName;
     };
