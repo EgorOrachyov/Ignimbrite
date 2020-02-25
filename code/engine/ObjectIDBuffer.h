@@ -9,8 +9,8 @@
 #ifndef IGNIMBRITE_OBJECTIDBUFFER_H
 #define IGNIMBRITE_OBJECTIDBUFFER_H
 
-#include <ignimbrite/ObjectID.h>
-#include <ignimbrite/Compilation.h>
+#include <ObjectID.h>
+#include <Compilation.h>
 #include <vector>
 #include <iostream>
 #include <new>

@@ -9,8 +9,8 @@
 #ifndef IGNIMBRITE_TESTOBJECTID_CPP
 #define IGNIMBRITE_TESTOBJECTID_CPP
 
-#include <ignimbrite/ObjectIDBuffer.h>
-#include <ignimbrite/FileUtils.h>
+#include <ObjectIDBuffer.h>
+#include <FileUtils.h>
 #include <string>
 
 using namespace ignimbrite;

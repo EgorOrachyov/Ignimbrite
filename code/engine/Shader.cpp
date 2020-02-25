@@ -6,8 +6,8 @@
 /* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
 /**********************************************************************************/
 
-#include <ignimbrite/Shader.h>
-#include <ignimbrite/ShaderReflection.h>
+#include <Shader.h>
+#include <ShaderReflection.h>
 
 namespace ignimbrite {
 
@@ -54,7 +54,7 @@ namespace ignimbrite {
         return mProgramDesc.language;
     }
 
-    ID<RenderDevice::ShaderProgram> Shader::getHandle() const {
+    const ID<RenderDevice::ShaderProgram> &Shader::getHandle() const {
         return mHandle;
     }
 

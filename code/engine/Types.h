@@ -10,7 +10,7 @@
 #define IGNIMBRITE_TYPES_H
 
 #include <inttypes.h>
-#include <ignimbrite/Platform.h>
+#include <Platform.h>
 
 namespace ignimbrite {
 

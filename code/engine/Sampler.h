@@ -9,8 +9,8 @@
 #ifndef IGNIMBRITE_SAMPLER_H
 #define IGNIMBRITE_SAMPLER_H
 
-#include <ignimbrite/RenderDevice.h>
-#include <ignimbrite/CacheItem.h>
+#include <RenderDevice.h>
+#include <CacheItem.h>
 #include <memory>
 
 namespace ignimbrite {

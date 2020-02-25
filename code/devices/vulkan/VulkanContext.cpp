@@ -7,8 +7,8 @@
 /**********************************************************************************/
 
 #include <VulkanContext.h>
-#include <ignimbrite/Compilation.h>
-#include <ignimbrite/RenderDeviceDefinitions.h>
+#include <Compilation.h>
+#include <RenderDeviceDefinitions.h>
 #include <cstring>
 #include <set>
 #include <array>

@@ -6,7 +6,7 @@
 /* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
 /**********************************************************************************/
 
-#include <ignimbrite/Texture.h>
+#include <Texture.h>
 
 namespace ignimbrite {
 

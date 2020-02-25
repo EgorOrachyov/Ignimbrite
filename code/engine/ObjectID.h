@@ -9,7 +9,7 @@
 #ifndef IGNIMBRITE_OBJECTID_H
 #define IGNIMBRITE_OBJECTID_H
 
-#include <ignimbrite/Types.h>
+#include <Types.h>
 
 namespace ignimbrite {
 

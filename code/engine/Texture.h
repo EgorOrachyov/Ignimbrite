@@ -9,7 +9,7 @@
 #ifndef IGNIMBRITE_TEXTURE_H
 #define IGNIMBRITE_TEXTURE_H
 
-#include <ignimbrite/Sampler.h>
+#include <Sampler.h>
 #include <vector>
 
 namespace ignimbrite {

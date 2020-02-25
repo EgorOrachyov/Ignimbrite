@@ -9,8 +9,8 @@
 #ifndef IGNIMBRITE_RENDERDEVICE_H
 #define IGNIMBRITE_RENDERDEVICE_H
 
-#include <ignimbrite/ObjectID.h>
-#include <ignimbrite/RenderDeviceDefinitions.h>
+#include <ObjectID.h>
+#include <RenderDeviceDefinitions.h>
 #include <string>
 #include <vector>
 

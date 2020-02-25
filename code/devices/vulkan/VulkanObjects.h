@@ -9,8 +9,8 @@
 #ifndef IGNIMBRITE_VULKANOBJECTS_H
 #define IGNIMBRITE_VULKANOBJECTS_H
 
-#include <ignimbrite/RenderDevice.h>
-#include <ignimbrite/Optional.h>
+#include <RenderDevice.h>
+#include <Optional.h>
 #include <VulkanDescriptorAllocator.h>
 #include <vk_mem_alloc.h>
 

@@ -9,7 +9,7 @@
 #ifndef IGNIMBRITE_OPTIONAL_H
 #define IGNIMBRITE_OPTIONAL_H
 
-#include <ignimbrite/Types.h>
+#include <Types.h>
 #include <new>
 #include <memory>
 

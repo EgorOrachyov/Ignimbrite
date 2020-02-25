@@ -9,9 +9,9 @@
 #ifndef IGNIMBRITE_SHADER_H
 #define IGNIMBRITE_SHADER_H
 
-#include <ignimbrite/CacheItem.h>
-#include <ignimbrite/RenderDevice.h>
-#include <ignimbrite/RenderDeviceDefinitions.h>
+#include <CacheItem.h>
+#include <RenderDevice.h>
+#include <RenderDeviceDefinitions.h>
 #include <unordered_map>
 #include <string>
 #include <vector>
@@ -76,7 +76,7 @@ namespace ignimbrite {
         void releaseHandle();
 
         ShaderLanguage getLanguage() const;
-        ID<RenderDevice::ShaderProgram> getHandle() const;
+        const ID<RenderDevice::ShaderProgram> &getHandle() const;
         const std::vector<RenderDevice::ShaderDesc> &getShaders() const;
         const ParameterInfo& getParameterInfo(const std::string &name) const;
         const UniformBufferInfo& getBufferInfo(const std::string &name) const;

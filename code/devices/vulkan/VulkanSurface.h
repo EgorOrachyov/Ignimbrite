@@ -9,7 +9,7 @@
 #ifndef IGNIMBRITE_VULKANSURFACE_H
 #define IGNIMBRITE_VULKANSURFACE_H
 
-#include <ignimbrite/Types.h>
+#include <Types.h>
 #include <VulkanFramebuffer.h>
 #include <VulkanFence.h>
 #include <VulkanObjects.h>

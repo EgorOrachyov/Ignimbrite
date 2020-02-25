@@ -9,7 +9,7 @@
 #ifndef IGNIMBRITE_VULKANCONTEXT_H
 #define IGNIMBRITE_VULKANCONTEXT_H
 
-#include <ignimbrite/Optional.h>
+#include <Optional.h>
 #include <VulkanDefinitions.h>
 #include <vector>
 #include <vk_mem_alloc.h>

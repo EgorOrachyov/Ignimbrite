@@ -9,7 +9,7 @@
 #ifndef IGNIMBRITE_RENDERDEVICEDEFINITIONS_H
 #define IGNIMBRITE_RENDERDEVICEDEFINITIONS_H
 
-#include <ignimbrite/Types.h>
+#include <Types.h>
 #define BIT_SHIFT(x) (1u << x)
 
 namespace ignimbrite {

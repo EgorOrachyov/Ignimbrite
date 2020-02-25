@@ -96,8 +96,8 @@ endif()
 ## Configure project options
 
 configure_file(
-    ${PROJECT_SOURCE_DIR}/code/engine/include/ignimbrite/Options.h.in
-    ${PROJECT_SOURCE_DIR}/code/engine/include/ignimbrite/Options.h
+        code/engine/Options.h.in
+        code/engine/Options.h
 )
 
 ##################################################################

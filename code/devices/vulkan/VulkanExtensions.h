@@ -9,8 +9,8 @@
 #ifndef IGNIMBRITE_VULKANEXTENSIONS_H
 #define IGNIMBRITE_VULKANEXTENSIONS_H
 
-#include <ignimbrite/Options.h>
-#include <ignimbrite/Types.h>
+#include <Options.h>
+#include <Types.h>
 #include <VulkanRenderDevice.h>
 
 #ifdef IGNIMBRITE_WITH_GLFW

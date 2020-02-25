@@ -9,7 +9,7 @@
 #ifndef IGNIMBRITE_VULKANRENDERDEVICE_H
 #define IGNIMBRITE_VULKANRENDERDEVICE_H
 
-#include <ignimbrite/ObjectIDBuffer.h>
+#include <ObjectIDBuffer.h>
 #include <VulkanObjects.h>
 #include <VulkanContext.h>
 #include <VulkanSurface.h>

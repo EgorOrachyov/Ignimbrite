@@ -6,23 +6,21 @@
 /* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
 /**********************************************************************************/
 
-#ifndef IGNIMBRITE_CACHEITEM_H
-#define IGNIMBRITE_CACHEITEM_H
+#ifndef IGNIMBRITE_SHADERREFLECTION_H
+#define IGNIMBRITE_SHADERREFLECTION_H
 
-#include <ignimbrite/Types.h>
-#include <string>
+#include <Shader.h>
 
 namespace ignimbrite {
 
-    /** Something, what can be placed in cache and accessed via simple name */
-    class CacheItem {
+    class ShaderReflection {
     public:
-        virtual ~CacheItem() = default;
-        const std::string& getCachedName() const { return mCachedName; }
-    protected:
-        std::string mCachedName;
+        explicit ShaderReflection(Shader& shader);
+        void reflect();
+    private:
+        Shader& mShader;
     };
 
 }
 
-#endif //IGNIMBRITE_CACHEITEM_H
+#endif //IGNIMBRITE_SHADERREFLECTION_H

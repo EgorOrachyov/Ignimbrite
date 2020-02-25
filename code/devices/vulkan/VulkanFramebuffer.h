@@ -9,7 +9,7 @@
 #ifndef IGNIMBRITE_VULKANFRAMEBUFFER_H
 #define IGNIMBRITE_VULKANFRAMEBUFFER_H
 
-#include <ignimbrite/RenderDevice.h>
+#include <RenderDevice.h>
 #include <vulkan/vulkan.h>
 
 namespace ignimbrite {

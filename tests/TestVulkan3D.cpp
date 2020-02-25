@@ -3,7 +3,8 @@
 
 #include <VulkanRenderDevice.h>
 #include <VulkanExtensions.h>
-#include <ignimbrite/Shader.h>
+#include <Shader.h>
+#include <UniformBuffer.h>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -19,8 +20,8 @@
 
 using namespace ignimbrite;
 
-static const std::string MODEL3D_SHADER_PATH_VERT = "shaders/spirv/vert3d.spv";
-static const std::string MODEL3D_SHADER_PATH_FRAG = "shaders/spirv/frag3d.spv";
+const std::string MODEL3D_SHADER_PATH_VERT = "shaders/spirv/vert3d.spv";
+const std::string MODEL3D_SHADER_PATH_FRAG = "shaders/spirv/frag3d.spv";
 
 struct Vertex
 {
@@ -49,7 +50,7 @@ struct Material {
     ID<RenderDevice::UniformLayout> uniformLayout;
     ID<RenderDevice::GraphicsPipeline> graphicsPipeline;
     ID<RenderDevice::UniformSet> uniformSet;
-    ID<RenderDevice::UniformBuffer> uniformBuffer;
+    std::shared_ptr<UniformBuffer> uniformBuffer;
     ShaderUniformBuffer data;
     ID<RenderDevice::Texture> texture;
     ID<RenderDevice::Sampler> textureSampler;
@@ -297,8 +298,8 @@ private:
     }
 
     void initUniformBuffers() {
-        material.uniformBuffer = pDevice->createUniformBuffer(
-                BufferUsage::Dynamic, sizeof(ShaderUniformBuffer), nullptr);
+        material.uniformBuffer = std::make_shared<UniformBuffer>(pDevice);
+        material.uniformBuffer->createBuffer(sizeof(ShaderUniformBuffer));
     }
 
     void initTextures() {
@@ -351,7 +352,7 @@ private:
         uniformBufferDesc.binding = 0;
         uniformBufferDesc.offset = 0;
         uniformBufferDesc.range = sizeof(ShaderUniformBuffer);
-        uniformBufferDesc.buffer = material.uniformBuffer;
+        uniformBufferDesc.buffer = material.uniformBuffer->getHandle();
         RenderDevice::UniformTextureDesc uniformTextureDesc = {};
         uniformTextureDesc.binding = 1;
         uniformTextureDesc.texture = material.texture;
@@ -398,7 +399,6 @@ private:
         pDevice->destroyIndexBuffer(mesh.indexBuffer);
 
         pDevice->destroyUniformSet(material.uniformSet);
-        pDevice->destroyUniformBuffer(material.uniformBuffer);
         pDevice->destroyUniformLayout(material.uniformLayout);
 
         pDevice->destroyTexture(material.texture);
@@ -406,8 +406,11 @@ private:
 
         pDevice->destroyGraphicsPipeline(material.graphicsPipeline);
         material.shader = nullptr; // or material.shader->releaseHandle();
+        material.uniformBuffer = nullptr;
 
         ignimbrite::VulkanExtensions::destroySurface(*pDevice, surface);
+        pDevice = nullptr;
+
         glfwDestroyWindow(window.glfwWindow);
         glfwTerminate();
     }
@@ -424,7 +427,7 @@ private:
         material.data.ambient[1] = 0.1f;
         material.data.ambient[2] = 0.1f;
 
-        pDevice->updateUniformBuffer(material.uniformBuffer, sizeof(ShaderUniformBuffer), 0, &material.data);
+        material.uniformBuffer->updateData(sizeof(ShaderUniformBuffer), 0, (uint8*)&material.data);
     }
 
     static void calculateMvp(float viewWidth, float viewHeight,

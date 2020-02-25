@@ -6,7 +6,7 @@
 /* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
 /**********************************************************************************/
 
-#include <ignimbrite/Types.h>
+#include <Types.h>
 #include <GLFW/glfw3.h>
 
 using namespace ignimbrite;
