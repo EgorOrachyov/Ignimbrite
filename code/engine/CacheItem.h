@@ -10,7 +10,7 @@
 #define IGNIMBRITE_CACHEITEM_H
 
 #include <Types.h>
-#include <string>
+#include <StdIncludes.h>
 
 namespace ignimbrite {
 

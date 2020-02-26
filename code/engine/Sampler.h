@@ -11,7 +11,7 @@
 
 #include <RenderDevice.h>
 #include <CacheItem.h>
-#include <memory>
+#include <StdIncludes.h>
 
 namespace ignimbrite {
 

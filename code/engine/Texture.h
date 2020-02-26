@@ -10,7 +10,7 @@
 #define IGNIMBRITE_TEXTURE_H
 
 #include <Sampler.h>
-#include <vector>
+#include <StdIncludes.h>
 
 namespace ignimbrite {
 

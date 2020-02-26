@@ -3,6 +3,7 @@ project(Ignimbrite)
 
 # Library sources
 set(Ignimbrite_SOURCES
+    StdIncludes.h
     Compilation.h
     RenderDeviceDefinitions.h
     RenderDevice.h
@@ -11,9 +12,9 @@ set(Ignimbrite_SOURCES
     ObjectIDBuffer.h
     Optional.h
     Platform.h
+    AABB.h
     Types.h
     ShaderReflection.h
-    CacheItem.h
     Shader.h
     ShaderReflection.h
     Texture.h
@@ -21,12 +22,20 @@ set(Ignimbrite_SOURCES
     UniformBuffer.h
     RenderDevice.cpp
     FileUtils.cpp
+    Cache.cpp
+    Cache.h
+    CacheItem.cpp
+    CacheItem.h
     Shader.cpp
     ShaderReflection.cpp
     Texture.cpp
     Sampler.cpp
     UniformBuffer.cpp
-        Cache.cpp Cache.h CacheItem.cpp)
+    Material.cpp
+    Material.h
+    IRenderable.cpp
+    IRenderable.h
+        )
 
 add_library(Ignimbrite STATIC ${Ignimbrite_SOURCES})
 

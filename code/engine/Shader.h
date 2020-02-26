@@ -9,13 +9,10 @@
 #ifndef IGNIMBRITE_SHADER_H
 #define IGNIMBRITE_SHADER_H
 
+#include <StdIncludes.h>
 #include <CacheItem.h>
 #include <RenderDevice.h>
 #include <RenderDeviceDefinitions.h>
-#include <unordered_map>
-#include <string>
-#include <vector>
-#include <memory>
 
 namespace ignimbrite {
 

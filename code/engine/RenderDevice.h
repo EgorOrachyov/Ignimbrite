@@ -10,9 +10,8 @@
 #define IGNIMBRITE_RENDERDEVICE_H
 
 #include <ObjectID.h>
+#include <StdIncludes.h>
 #include <RenderDeviceDefinitions.h>
-#include <string>
-#include <vector>
 
 namespace ignimbrite {
 
