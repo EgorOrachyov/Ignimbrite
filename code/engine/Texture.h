@@ -3,23 +3,24 @@
 /* https://github.com/EgorOrachyov/Ignimbrite                                     */
 /**********************************************************************************/
 /* Licensed under MIT License                                                     */
-/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/* Copyright (c) 2019 - 2020 Egor Orachyov                                        */
+/* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
 #ifndef IGNIMBRITE_TEXTURE_H
 #define IGNIMBRITE_TEXTURE_H
 
 #include <Sampler.h>
-#include <StdIncludes.h>
+#include <IncludeStd.h>
 
 namespace ignimbrite {
 
     class Texture : public CacheItem {
     public:
-        explicit Texture(std::shared_ptr<RenderDevice> device);
+        explicit Texture(RefCounted<RenderDevice> device);
         ~Texture() override;
 
-        void setSampler(std::shared_ptr<Sampler> sampler);
+        void setSampler(RefCounted<Sampler> sampler);
         void setDataAsRGBA8(uint32 width, uint32 height, const uint8 *data);
         void releaseHandle();
         bool isValidHandle();
@@ -30,7 +31,7 @@ namespace ignimbrite {
         uint32 getSize() const { return mStride * mHeight; }
         DataFormat getDataFormat() const { return mDataFormat; }
         const std::vector<uint8> &getData() const { return mData; }
-        const std::shared_ptr<Sampler> &getSampler() const { return mSampler; }
+        const RefCounted<Sampler> &getSampler() const { return mSampler; }
 
     private:
         /** In pixels */
@@ -44,11 +45,11 @@ namespace ignimbrite {
         /** Texture data on CPU (duplicate for some reason) */
         std::vector<uint8> mData;
         /** Sampler, for filtering this texture */
-        std::shared_ptr<Sampler> mSampler;
+        RefCounted<Sampler> mSampler;
         /** Actual texture resource */
         ID<RenderDevice::Texture> mHandle;
         /** Render device for lower API access */
-        std::shared_ptr<RenderDevice> mDevice;
+        RefCounted<RenderDevice> mDevice;
     };
 
 }

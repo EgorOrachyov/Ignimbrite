@@ -3,14 +3,15 @@
 /* https://github.com/EgorOrachyov/Ignimbrite                                     */
 /**********************************************************************************/
 /* Licensed under MIT License                                                     */
-/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/* Copyright (c) 2019 - 2020 Egor Orachyov                                        */
+/* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
 #include <Sampler.h>
 
 namespace ignimbrite {
 
-    Sampler::Sampler(std::shared_ptr<RenderDevice> device)
+    Sampler::Sampler(RefCounted<RenderDevice> device)
         : mDevice(std::move(device)) {
         mFilter = SamplerFilter::Linear;
         mMipmapFilter = SamplerFilter::Linear;

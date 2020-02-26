@@ -3,14 +3,15 @@
 /* https://github.com/EgorOrachyov/Ignimbrite                                     */
 /**********************************************************************************/
 /* Licensed under MIT License                                                     */
-/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/* Copyright (c) 2019 - 2020 Egor Orachyov                                        */
+/* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
 #ifndef IGNIMBRITE_CACHEITEM_H
 #define IGNIMBRITE_CACHEITEM_H
 
 #include <Types.h>
-#include <StdIncludes.h>
+#include <IncludeStd.h>
 
 namespace ignimbrite {
 
@@ -23,11 +24,11 @@ namespace ignimbrite {
         /** Remove this item from cache */
         void removeFromCache();
         /** Renames item, updates its name in cache if needed */
-        void setCachedName(const std::string& name);
+        void setCachedName(const String& name);
         /** @return Name of item, used to cache resource */
-        const std::string& getCachedName() const;
-    protected:
-        std::string mCachedName;
+        const String& getCachedName() const;
+    private:
+        String mCachedName;
     };
 
 }

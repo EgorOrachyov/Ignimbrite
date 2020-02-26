@@ -3,7 +3,8 @@
 /* https://github.com/EgorOrachyov/Ignimbrite                                     */
 /**********************************************************************************/
 /* Licensed under MIT License                                                     */
-/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/* Copyright (c) 2019 - 2020 Egor Orachyov                                        */
+/* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
 #include <ShaderReflection.h>
@@ -119,7 +120,7 @@ namespace ignimbrite {
         throw std::runtime_error("Unexpected error in getDimType");
     }
 
-    Shader::DataType getSamplerType(const spirv_cross::SPIRType &type, const std::string &samplerName) {
+    Shader::DataType getSamplerType(const spirv_cross::SPIRType &type, const String &samplerName) {
         using namespace spirv_cross;
 
         if (type.basetype == SPIRType::SampledImage) {
@@ -132,16 +133,16 @@ namespace ignimbrite {
                     return Shader::DataType::SamplerCubemap;
 
                 default:
-                    throw std::runtime_error(std::string("Expected sampled image 2D or Cube: ") + samplerName);
+                    throw std::runtime_error(String("Expected sampled image 2D or Cube: ") + samplerName);
             }
 
         } else {
-            throw std::runtime_error(std::string("Expected sampled image type: ") + samplerName);
+            throw std::runtime_error(String("Expected sampled image type: ") + samplerName);
         }
     }
 
     Shader::DataType getType(const spirv_cross::Compiler &comp,
-                             const spirv_cross::SPIRType &type, const std::string &memberName) {
+                             const spirv_cross::SPIRType &type, const String &memberName) {
         using namespace spirv_cross;
 
         Shader::DataType baseType;
@@ -180,10 +181,10 @@ namespace ignimbrite {
         }*/
     }
 
-    void parseSpirvStruct(std::unordered_map<std::string, Shader::ParameterInfo> &params,
-                          std::vector<std::string> &membersList,
+    void parseSpirvStruct(std::unordered_map<String, Shader::ParameterInfo> &params,
+                          std::vector<String> &membersList,
                           ShaderStageFlags flags, const spirv_cross::Compiler &comp,
-                          const spirv_cross::SPIRType &spirType, const std::string &baseName,
+                          const spirv_cross::SPIRType &spirType, const String &baseName,
                           uint32 baseBinding, ignimbrite::uint32 baseOffset) {
 
         using namespace spirv_cross;
@@ -194,7 +195,7 @@ namespace ignimbrite {
         for (uint32 i = 0; i < memberCount; i++) {
 
             const SPIRType &memberType = comp.get_type(spirType.member_types[i]);
-            std::string memberName = comp.get_member_name(spirType.self, i);
+            String memberName = comp.get_member_name(spirType.self, i);
 
             Shader::ParameterInfo info = {};
             info.stageFlags = flags;
@@ -209,7 +210,7 @@ namespace ignimbrite {
 
             info.type = getType(comp, memberType, memberName);
 
-            std::string paramName = baseName;
+            String paramName = baseName;
             paramName += '.';
             paramName += memberName;
 
@@ -219,8 +220,8 @@ namespace ignimbrite {
 
     void getSpirvParams(
             const spirv_cross::Compiler &comp, const spirv_cross::ShaderResources &resources,
-            std::unordered_map<std::string, Shader::ParameterInfo> &params,
-            std::unordered_map<std::string, Shader::UniformBufferInfo> &uniforms,
+            std::unordered_map<String, Shader::ParameterInfo> &params,
+            std::unordered_map<String, Shader::UniformBufferInfo> &uniforms,
             ShaderStageFlags stageFlags) {
         using namespace spirv_cross;
 

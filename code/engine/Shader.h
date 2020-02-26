@@ -3,13 +3,14 @@
 /* https://github.com/EgorOrachyov/Ignimbrite                                     */
 /**********************************************************************************/
 /* Licensed under MIT License                                                     */
-/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/* Copyright (c) 2019 - 2020 Egor Orachyov                                        */
+/* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
 #ifndef IGNIMBRITE_SHADER_H
 #define IGNIMBRITE_SHADER_H
 
-#include <StdIncludes.h>
+#include <IncludeStd.h>
 #include <CacheItem.h>
 #include <RenderDevice.h>
 #include <RenderDeviceDefinitions.h>
@@ -44,7 +45,7 @@ namespace ignimbrite {
         };
 
         struct AttributeInfo {
-            std::string name;
+            String name;
             uint32      location;
             DataType    type;
         };
@@ -58,14 +59,13 @@ namespace ignimbrite {
         };
 
         struct UniformBufferInfo {
-            uint32                   binding;
-            uint32                   size;
-            ShaderStageFlags         stageFlags;
-            std::vector<std::string> members;
+            uint32              binding;
+            uint32              size;
+            ShaderStageFlags    stageFlags;
+            std::vector<String> members;
         };
 
-    public:
-        explicit Shader(std::shared_ptr<RenderDevice> device);
+        explicit Shader(RefCounted<RenderDevice> device);
         ~Shader() override;
 
         void fromSources(ShaderLanguage language, const std::vector<uint8> &vertex, const std::vector<uint8> &fragment);
@@ -75,24 +75,25 @@ namespace ignimbrite {
         ShaderLanguage getLanguage() const;
         const ID<RenderDevice::ShaderProgram> &getHandle() const;
         const std::vector<RenderDevice::ShaderDesc> &getShaders() const;
-        const ParameterInfo& getParameterInfo(const std::string &name) const;
-        const UniformBufferInfo& getBufferInfo(const std::string &name) const;
+        const ParameterInfo& getParameterInfo(const String &name) const;
+        const UniformBufferInfo& getBufferInfo(const String &name) const;
 
     private:
         friend class ShaderReflection;
-        // TODO
+        /** Input attributes of the vertex program (as main entry for graphics shader)*/
         std::vector<AttributeInfo> mVertexShaderInputs;
+        /** Input attributes of the fragment program */
         std::vector<AttributeInfo> mFragmentShaderOutputs;
         /** Program variables (samplers, and uniform blocks variables) */
-        std::unordered_map<std::string, ParameterInfo> mVariables;
+        std::unordered_map<String, ParameterInfo> mVariables;
         /** Program uniform blocks info */
-        std::unordered_map<std::string, UniformBufferInfo> mBuffers;
+        std::unordered_map<String, UniformBufferInfo> mBuffers;
         /** Program descriptor with this shader's modules*/
         RenderDevice::ProgramDesc mProgramDesc;
         /** Actual program handle */
         ID<RenderDevice::ShaderProgram> mHandle;
         /** Render device, which is used for that shader creation */
-        std::shared_ptr<RenderDevice> mDevice;
+        RefCounted<RenderDevice> mDevice;
 
     };
 

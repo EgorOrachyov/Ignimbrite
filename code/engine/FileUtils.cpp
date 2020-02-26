@@ -3,7 +3,8 @@
 /* https://github.com/EgorOrachyov/Ignimbrite                                     */
 /**********************************************************************************/
 /* Licensed under MIT License                                                     */
-/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/* Copyright (c) 2019 - 2020 Egor Orachyov                                        */
+/* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
 #include <FileUtils.h>
@@ -11,7 +12,7 @@
 
 namespace ignimbrite {
 
-    void FileUtils::loadData(const std::string &filename, std::vector<char> &data) {
+    void FileUtils::loadData(const String &filename, std::vector<char> &data) {
         std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
         if (!file.is_open()) {

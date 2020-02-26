@@ -3,7 +3,8 @@
 /* https://github.com/EgorOrachyov/Ignimbrite                                     */
 /**********************************************************************************/
 /* Licensed under MIT License                                                     */
-/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/* Copyright (c) 2019 - 2020 Egor Orachyov                                        */
+/* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
 #include <Shader.h>
@@ -11,7 +12,7 @@
 
 namespace ignimbrite {
 
-    Shader::Shader(std::shared_ptr<RenderDevice> device)
+    Shader::Shader(RefCounted<RenderDevice> device)
         : mDevice(std::move(device)) {
 
     }
@@ -62,11 +63,11 @@ namespace ignimbrite {
         return mProgramDesc.shaders;
     }
 
-    const Shader::ParameterInfo& Shader::getParameterInfo(const std::string &name) const {
+    const Shader::ParameterInfo& Shader::getParameterInfo(const String &name) const {
         return mVariables.at(name);
     }
 
-    const Shader::UniformBufferInfo& Shader::getBufferInfo(const std::string &name) const {
+    const Shader::UniformBufferInfo& Shader::getBufferInfo(const String &name) const {
         return mBuffers.at(name);
     }
 

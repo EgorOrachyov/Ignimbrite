@@ -3,25 +3,26 @@
 /* https://github.com/EgorOrachyov/Ignimbrite                                     */
 /**********************************************************************************/
 /* Licensed under MIT License                                                     */
-/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/* Copyright (c) 2019 - 2020 Egor Orachyov                                        */
+/* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
 #include <Cache.h>
 
 namespace ignimbrite {
 
-    std::unordered_map<std::string, std::shared_ptr<CacheItem>> Cache::mCached;
+    std::unordered_map<String, RefCounted<CacheItem>> Cache::mCached;
 
-    void Cache::removeItem(const std::string &name) {
+    void Cache::removeItem(const String &name) {
         mCached.erase(name);
     }
 
-    bool Cache::contains(const std::string &name) {
+    bool Cache::contains(const String &name) {
         auto found = mCached.find(name);
         return found != mCached.end();
     }
 
-    bool Cache::addItem(std::shared_ptr<ignimbrite::CacheItem> item) {
+    bool Cache::addItem(RefCounted<ignimbrite::CacheItem> item) {
         auto found = mCached.find(item->getCachedName());
         if (found == mCached.end()) {
             mCached[item->getCachedName()] = std::move(item);
@@ -31,11 +32,11 @@ namespace ignimbrite {
         return false;
     }
 
-    const std::shared_ptr<CacheItem>& Cache::getItem(const std::string &name) {
+    const RefCounted<CacheItem>& Cache::getItem(const String &name) {
         return mCached.at(name);
     }
 
-    void Cache::renameItem(const std::string &name, const std::string &newName) {
+    void Cache::renameItem(const String &name, const String &newName) {
         if (contains(name)) {
             auto item = mCached[name];
             mCached.erase(name);

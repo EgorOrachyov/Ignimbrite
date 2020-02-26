@@ -3,7 +3,8 @@
 /* https://github.com/EgorOrachyov/Ignimbrite                                     */
 /**********************************************************************************/
 /* Licensed under MIT License                                                     */
-/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/* Copyright (c) 2019 - 2020 Egor Orachyov                                        */
+/* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
 #include <CacheItem.h>
@@ -21,7 +22,7 @@ namespace ignimbrite {
         }
     }
 
-    void CacheItem::setCachedName(const std::string &name) {
+    void CacheItem::setCachedName(const String &name) {
         if (isCached()) {
             Cache::renameItem(mCachedName, name);
         }
@@ -30,7 +31,7 @@ namespace ignimbrite {
         }
     }
 
-    const std::string& CacheItem::getCachedName() const {
+    const String& CacheItem::getCachedName() const {
         return mCachedName;
     }
 

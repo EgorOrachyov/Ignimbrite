@@ -3,14 +3,15 @@
 /* https://github.com/EgorOrachyov/Ignimbrite                                     */
 /**********************************************************************************/
 /* Licensed under MIT License                                                     */
-/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/* Copyright (c) 2019 - 2020 Egor Orachyov                                        */
+/* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
 #include <Texture.h>
 
 namespace ignimbrite {
 
-    Texture::Texture(std::shared_ptr<ignimbrite::RenderDevice> device)
+    Texture::Texture(RefCounted<ignimbrite::RenderDevice> device)
         : mDevice(std::move(device)) {
 
     }
@@ -19,7 +20,7 @@ namespace ignimbrite {
         releaseHandle();
     }
 
-    void Texture::setSampler(std::shared_ptr<Sampler> sampler) {
+    void Texture::setSampler(RefCounted<Sampler> sampler) {
         mSampler = std::move(sampler);
     }
 

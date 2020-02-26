@@ -3,27 +3,28 @@
 /* https://github.com/EgorOrachyov/Ignimbrite                                     */
 /**********************************************************************************/
 /* Licensed under MIT License                                                     */
-/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/* Copyright (c) 2019 - 2020 Egor Orachyov                                        */
+/* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
 #ifndef IGNIMBRITE_CACHE_H
 #define IGNIMBRITE_CACHE_H
 
 #include <CacheItem.h>
-#include <StdIncludes.h>
+#include <IncludeStd.h>
 
 namespace ignimbrite {
 
     class Cache {
     public:
-        static void removeItem(const std::string& name);
-        static bool contains(const std::string& name);
-        static bool addItem(std::shared_ptr<CacheItem> item);
-        static const std::shared_ptr<CacheItem> &getItem(const std::string& name);
+        static void removeItem(const String& name);
+        static bool contains(const String& name);
+        static bool addItem(RefCounted<CacheItem> item);
+        static const RefCounted<CacheItem> &getItem(const String& name);
     private:
         friend class CacheItem;
-        static void renameItem(const std::string& name, const std::string& newName);
-        static std::unordered_map<std::string, std::shared_ptr<CacheItem>> mCached;
+        static void renameItem(const String& name, const String& newName);
+        static std::unordered_map<String, RefCounted<CacheItem>> mCached;
     };
 
 }

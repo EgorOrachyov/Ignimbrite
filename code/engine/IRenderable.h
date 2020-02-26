@@ -3,14 +3,15 @@
 /* https://github.com/EgorOrachyov/Ignimbrite                                     */
 /**********************************************************************************/
 /* Licensed under MIT License                                                     */
-/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/* Copyright (c) 2019 - 2020 Egor Orachyov                                        */
+/* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
 #ifndef IGNIMBRITE_IRENDERABLE_H
 #define IGNIMBRITE_IRENDERABLE_H
 
 #include <Types.h>
-#include <AABB.h>
+#include <IncludeMath.h>
 
 namespace ignimbrite {
 
@@ -41,6 +42,10 @@ namespace ignimbrite {
         virtual void onRenderQueueEntered(/* todo: pass useful info */) = 0;
         /** Called once to draw this render node */
         virtual void onRender(/* todo: pass useful info */) = 0;
+        /** @return Object world position for culling */
+        virtual Vec3f getWorldPosition() const = 0;
+        /** @return Object world bounds */
+        virtual AABB getWorldBoundingBox() const = 0;
 
         void setVisible(bool set = true) { mIsVisible = set; }
         void setCanApplyCulling(bool set = true) { mCanApplyCulling = set; }

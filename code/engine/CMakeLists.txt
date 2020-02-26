@@ -3,7 +3,8 @@ project(Ignimbrite)
 
 # Library sources
 set(Ignimbrite_SOURCES
-    StdIncludes.h
+    IncludeStd.h
+    IncludeMath.h
     Compilation.h
     RenderDeviceDefinitions.h
     RenderDevice.h
@@ -41,3 +42,4 @@ add_library(Ignimbrite STATIC ${Ignimbrite_SOURCES})
 
 target_include_directories(Ignimbrite PUBLIC .)
 target_link_libraries(Ignimbrite PRIVATE spirv-cross-core)
+target_link_libraries(Ignimbrite PUBLIC glm)

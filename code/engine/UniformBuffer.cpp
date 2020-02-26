@@ -3,14 +3,15 @@
 /* https://github.com/EgorOrachyov/Ignimbrite                                     */
 /**********************************************************************************/
 /* Licensed under MIT License                                                     */
-/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/* Copyright (c) 2019 - 2020 Egor Orachyov                                        */
+/* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
 #include <UniformBuffer.h>
 
 namespace ignimbrite {
 
-    UniformBuffer::UniformBuffer(std::shared_ptr<ignimbrite::RenderDevice> device)
+    UniformBuffer::UniformBuffer(RefCounted<ignimbrite::RenderDevice> device)
          : mDevice(std::move(device)) {
 
     }
@@ -31,7 +32,7 @@ namespace ignimbrite {
 
     void UniformBuffer::updateData(ignimbrite::uint32 size, ignimbrite::uint32 offset, const ignimbrite::uint8 *data) {
         updateDataOnCPU(size, offset, data);
-        updateGPUBuffer();
+        updateDataOnGPU();
     }
 
     void UniformBuffer::updateDataOnCPU(uint32 size, uint32 offset, const uint8 *data) {
@@ -43,7 +44,7 @@ namespace ignimbrite {
         }
     }
 
-    void UniformBuffer::updateGPUBuffer() {
+    void UniformBuffer::updateDataOnGPU() {
         if (mHandle.isNotNull()) {
             mDevice->updateUniformBuffer(mHandle, getBufferSize(), 0, mBuffer.data());
         }

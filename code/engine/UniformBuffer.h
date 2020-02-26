@@ -3,7 +3,8 @@
 /* https://github.com/EgorOrachyov/Ignimbrite                                     */
 /**********************************************************************************/
 /* Licensed under MIT License                                                     */
-/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/* Copyright (c) 2019 - 2020 Egor Orachyov                                        */
+/* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
 #ifndef IGNIMBRITE_UNIFORMBUFFER_H
@@ -18,13 +19,13 @@ namespace ignimbrite {
 
     class UniformBuffer : public CacheItem {
     public:
-        explicit UniformBuffer(std::shared_ptr<RenderDevice> device);
+        explicit UniformBuffer(RefCounted<RenderDevice> device);
         ~UniformBuffer() override;
 
         void createBuffer(uint32 size);
         void updateData(uint32 size, uint32 offset, const uint8* data);
         void updateDataOnCPU(uint32 size, uint32 offset, const uint8* data);
-        void updateGPUBuffer();
+        void updateDataOnGPU();
         void releaseHandle();
 
         uint32 getBufferSize() const { return (uint32)mBuffer.size(); }
@@ -36,7 +37,7 @@ namespace ignimbrite {
         /** GPU resource */
         ID<RenderDevice::UniformBuffer> mHandle;
         /** Device for GPU communication */
-        std::shared_ptr<RenderDevice> mDevice;
+        RefCounted<RenderDevice> mDevice;
     };
 
 }

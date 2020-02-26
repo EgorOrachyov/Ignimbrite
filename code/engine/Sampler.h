@@ -3,7 +3,8 @@
 /* https://github.com/EgorOrachyov/Ignimbrite                                     */
 /**********************************************************************************/
 /* Licensed under MIT License                                                     */
-/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/* Copyright (c) 2019 - 2020 Egor Orachyov                                        */
+/* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
 #ifndef IGNIMBRITE_SAMPLER_H
@@ -11,13 +12,13 @@
 
 #include <RenderDevice.h>
 #include <CacheItem.h>
-#include <StdIncludes.h>
+#include <IncludeStd.h>
 
 namespace ignimbrite {
 
     class Sampler : public CacheItem {
     public:
-        explicit Sampler(std::shared_ptr<RenderDevice> device);
+        explicit Sampler(RefCounted<RenderDevice> device);
         ~Sampler() override;
 
         void setHighQualityFiltering();
@@ -38,7 +39,7 @@ namespace ignimbrite {
         /** Actual resource */
         ID<RenderDevice::Sampler> mHandle;
         /** Render device for lower API access */
-        std::shared_ptr<RenderDevice> mDevice;
+        RefCounted<RenderDevice> mDevice;
     };
 
 }

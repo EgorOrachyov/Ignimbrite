@@ -3,14 +3,15 @@
 /* https://github.com/EgorOrachyov/Ignimbrite                                     */
 /**********************************************************************************/
 /* Licensed under MIT License                                                     */
-/* Copyright (c) 2019 - 2020 Egor Orachyov, Sultim Tsyrendashiev                  */
+/* Copyright (c) 2019 - 2020 Egor Orachyov                                        */
+/* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
 #ifndef IGNIMBRITE_RENDERDEVICE_H
 #define IGNIMBRITE_RENDERDEVICE_H
 
 #include <ObjectID.h>
-#include <StdIncludes.h>
+#include <IncludeStd.h>
 #include <RenderDeviceDefinitions.h>
 
 namespace ignimbrite {
@@ -401,7 +402,7 @@ namespace ignimbrite {
          * @throw Exception if surface with specified name not found
          * @return ID of the surface if found
          */
-        virtual ID<Surface> getSurface(const std::string &surfaceName) = 0;
+        virtual ID<Surface> getSurface(const String &surfaceName) = 0;
 
         /**
          * @brief Get surface size
@@ -454,10 +455,10 @@ namespace ignimbrite {
         virtual void synchronize() = 0;
 
         /** @return Readable hardware API name */
-        virtual const std::string &getDeviceName() const;
+        virtual const String &getDeviceName() const;
 
         /** @return Video card vendor name */
-        virtual const std::string &getVendorName() const;
+        virtual const String &getVendorName() const;
     };
 
 } // namespace ignimbrite
