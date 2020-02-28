@@ -11,76 +11,65 @@
 #ifndef IGNIMBRITE_MESH_H
 #define IGNIMBRITE_MESH_H
 
-#include <AABB.h>
-#include <IncludeStd.h>
+#include <CacheItem.h>
 
 namespace ignimbrite {
 
     /**
-     * @class Mesh class that holds list of its attributes,
-     * and packed vertex data, i.e. array of vertices
+     * @brief Mesh 3d geometry
+     * Holds list of its attributes and packed vertex data, i.e. array of vertices
      */
-    class Mesh {
+    class Mesh : public CacheItem {
+    public:
+
+        enum BasicAttributes : uint32 {
+            Pos3f       = 1u << 0u,
+            Norm3f      = 1u << 1u,
+            TexCoords2f = 1u << 2u
+        };
+
+        enum class VertexFormat : uint32 {
+            P = Pos3f,
+            PN = Pos3f | Norm3f,
+            PNT = Pos3f | Norm3f | TexCoords2f,
+        };
+
+        Mesh(VertexFormat format, uint32 vertexCount, uint32 indexCount);
+        ~Mesh() override = default;
+
+        /**
+         * Update vertex data of the mesh
+         * @param offset Number of first vertices to skip before write
+         * @param vertexCount Number of vertices to write
+         * @param data Data to be written
+         * @return True on success
+         */
+        bool updateVertexData(uint32 offset, uint32 vertexCount, const uint8* data);
+        /**
+         * Update index buffer of the mesh
+         * @param offset Number of the first indices to skip before write
+         * @param indexCount Number of the indices to be written
+         * @param data Data to be written
+         * @return True on success
+         */
+        bool updateIndexData(uint32 offset, uint32 indexCount, const uint32* data);
+
+        VertexFormat getVertexFormat() const { return mVertexFormat; }
+        const uint8 *getVertexData() const { return mVertexData.data(); }
+        const uint32 *getIndexData() const { return mIndexData.data(); }
+        uint32 getVertexCount() const { return mVertexCount; }
+        uint32 getIndexCount() const { return mIndexData.size(); }
+
+        static uint32 getSizeOfStride(VertexFormat format);
+        static uint32 getNumberOfAttributes(VertexFormat format);
+
+    private:
         friend class MeshLoader;
-
-    public:
-
-        // Base type for attribute
-        enum class AttributeBaseType {
-            Float,
-            Int,
-            UInt
-        };
-
-        // Size of base type in bytes
-        static const uint32             AttributeBaseTypeSize = 4;
-
-        // Mesh uses its own vertex attribute description
-        // as it shouldn't be tied to render device
-        struct VertexAttribute {
-            AttributeBaseType           baseType;
-            uint32                      dim;
-        };
-
-    public:
-
-        /**
-         * @param attrAlignment alignment for attributes in each vertex.
-         */
-        Mesh(uint32 attrAlignment = AttributeBaseTypeSize);
-
-        /**
-         * Get vertex data prepared for rendering
-         */
-        const uint8                     *getVertexData() const;
-        uint32                          getVertexCount() const;
-        /**
-         * Get index data prepared for rendering
-         */
-        const uint32                    *getIndexData() const;
-        uint32                          getIndexCount() const;
-
-    private:
-        void init(uint32 vertStride, uint32 vertCount, uint32 indexCount);
-        void addAttribute(const VertexAttribute &attr);
-        void setVertex(uint32 i, const uint8 *data);
-        void setIndex(uint32 i, uint32 value);
-
-    private:
-        // alignment in bytes for attributes
-        uint32                          alignment;
-
-        // attributes in order as they appear in 'vertexData'
-        std::vector<VertexAttribute>    attributes;
-
-        // size of vertex in bytes
-        uint32                          stride;
-
-        // raw vertex data
-        std::vector<uint8>              vertexData;
-        uint32                          vertexCount;
-
-        std::vector<uint32>             indexData;
+        VertexFormat        mVertexFormat;
+        uint32              mStride;
+        uint32              mVertexCount;
+        std::vector<uint8>  mVertexData;
+        std::vector<uint32> mIndexData;
     };
 
 }

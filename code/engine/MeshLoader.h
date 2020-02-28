@@ -17,11 +17,10 @@ namespace ignimbrite {
 
     class MeshLoader {
     public:
-        MeshLoader(const String &filePath);
-        void importMesh(Mesh &outMesh);
-
+        explicit MeshLoader(String filePath);
+        RefCounted<Mesh> importMesh(Mesh::VertexFormat preferredFormat);
     private:
-        String                  filePath;
+        String mFilePath;
     };
 
 }

@@ -13,48 +13,54 @@
 
 namespace ignimbrite {
 
-    Mesh::Mesh(uint32 attrAlignment) : alignment(attrAlignment) { }
-
-    const uint8 *Mesh::getVertexData() const {
-        return vertexData.data();
+    Mesh::Mesh(Mesh::VertexFormat format, uint32 vertexCount, uint32 indexCount) {
+        mVertexFormat = format;
+        mStride = getSizeOfStride(format);
+        mVertexCount = vertexCount;
+        mVertexData.resize(mStride * vertexCount);
+        mIndexData.resize(indexCount);
     }
-
-    const uint32 *Mesh::getIndexData() const {
-        return indexData.data();
-    }
-
-    uint32 Mesh::getVertexCount() const {
-        return vertexCount;
-    }
-
-    uint32 Mesh::getIndexCount() const {
-        return indexData.size();
-    }
-
-    void Mesh::init(uint32 vertStride, uint32 vertCount, uint32 indexCount) {
-        stride = vertStride;
-        vertexCount = vertCount;
-        vertexData.resize(vertStride * vertCount);
-        indexData.resize(indexCount);
-    }
-
-    void Mesh::setVertex(uint32 i, const uint8 *data) {
-        if (i >= vertexCount) {
-            throw std::runtime_error("Setting vertex with i that is not in [0..vertexCount-1]");
+    
+    bool Mesh::updateVertexData(uint32 offset, uint32 vertexCount, const uint8 *data) {
+        if ((offset + vertexCount) * mStride <= mVertexData.size()) {
+            memcpy(mVertexData.data() + offset * mStride, data, vertexCount * mStride);
+            return true;
         }
 
-        memcpy(&vertexData[i * stride], data, stride);
+        return false;
     }
-
-    void Mesh::addAttribute(const Mesh::VertexAttribute &attr) {
-        attributes.push_back(attr);
-    }
-
-    void Mesh::setIndex(uint32 i, uint32 value) {
-        if (i >= indexData.size()) {
-            throw std::runtime_error("Setting index with i that is not in [0..indexCount-1]");
+    
+    bool Mesh::updateIndexData(uint32 offset, uint32 indexCount, const uint32 *data) {
+        if (offset + indexCount <= mIndexData.size()) {
+            memcpy(mIndexData.data() + offset, data, indexCount * sizeof(uint32));
+            return true;
         }
 
-        indexData[i] = value;
+        return false;
     }
+    
+    uint32 Mesh::getNumberOfAttributes(Mesh::VertexFormat format) {
+        switch (format) {
+            case VertexFormat::P:
+                return 1;
+            case VertexFormat::PN:
+                return 2;
+            case VertexFormat::PNT:
+                return 3;
+            default:
+                return 0;
+        }
+    }
+    
+    uint32 Mesh::getSizeOfStride(Mesh::VertexFormat format) {
+        uint32 size = 0;
+        uint32 mask = (uint32) format;
+
+        if (mask & Pos3f) size += sizeof(float32) * 3;
+        if (mask & Norm3f) size += sizeof(float32) * 3;
+        if (mask & TexCoords2f) size += sizeof(float32) * 2;
+
+        return size;
+    }
+    
 }

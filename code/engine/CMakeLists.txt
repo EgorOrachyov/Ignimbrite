@@ -39,7 +39,7 @@ set(Ignimbrite_SOURCES
     Mesh.cpp
     Mesh.h
     MeshLoader.cpp
-    MeshLoader.h AABB.cpp)
+    MeshLoader.h)
 
 add_library(Ignimbrite STATIC ${Ignimbrite_SOURCES})
 

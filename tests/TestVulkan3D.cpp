@@ -20,15 +20,10 @@
 
 using namespace ignimbrite;
 
-const std::string MODEL3D_SHADER_PATH_VERT = "shaders/spirv/vert3d.spv";
-const std::string MODEL3D_SHADER_PATH_FRAG = "shaders/spirv/frag3d.spv";
-
-struct Vertex
-{
-    float Position[4];
-    float Color[4];
-    float Normal[3];
-    float UV[2];
+struct Vertex {
+    float32 Position[3];
+    float32 Normal[3];
+    float32 UV[2];
 };
 
 struct RenderableMesh {
@@ -144,7 +139,7 @@ private:
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-        window.glfwWindow = glfwCreateWindow(window.width, window.height, name, nullptr, nullptr);
+        window.glfwWindow = glfwCreateWindow(window.width, window.height, name.c_str(), nullptr, nullptr);
 
         glfwGetFramebufferSize(window.glfwWindow,
                 (int*) &window.widthFrameBuffer, (int*) &window.heightFrameBuffer);
@@ -167,23 +162,19 @@ private:
         RenderDevice::VertexBufferLayoutDesc vertexBufferLayoutDesc = {};
 
         std::vector<RenderDevice::VertexAttributeDesc> &attrs = vertexBufferLayoutDesc.attributes;
-        attrs.resize(4);
+        attrs.resize(3);
 
         attrs[0].location = 0;
-        attrs[0].format = DataFormat::R32G32B32A32_SFLOAT;
+        attrs[0].format = DataFormat::R32G32B32_SFLOAT;
         attrs[0].offset = offsetof(Vertex, Position);
 
         attrs[1].location = 1;
-        attrs[1].format = DataFormat::R32G32B32A32_SFLOAT;
-        attrs[1].offset = offsetof(Vertex, Color);
+        attrs[1].format = DataFormat::R32G32B32_SFLOAT;
+        attrs[1].offset = offsetof(Vertex, Normal);
 
         attrs[2].location = 2;
-        attrs[2].format = DataFormat::R32G32B32_SFLOAT;
-        attrs[2].offset = offsetof(Vertex, Normal);
-
-        attrs[3].location = 3;
-        attrs[3].format = DataFormat::R32G32_SFLOAT;
-        attrs[3].offset = offsetof(Vertex, UV);
+        attrs[2].format = DataFormat::R32G32_SFLOAT;
+        attrs[2].offset = offsetof(Vertex, UV);
 
         vertexBufferLayoutDesc.stride = sizeof(Vertex);
         vertexBufferLayoutDesc.usage = VertexUsage::PerVertex;
@@ -193,14 +184,13 @@ private:
 
     void loadObjModel(const char *path) {
         MeshLoader meshLoader(path);
-        meshLoader.importMesh(cmesh);
+        cmesh = meshLoader.importMesh(Mesh::VertexFormat::PNT);
 
         rmesh.vertexBuffer = pDevice->createVertexBuffer(BufferUsage::Dynamic,
-                cmesh.getVertexCount() * sizeof(Vertex), cmesh.getVertexData());
-
-        rmesh.indexCount = cmesh.getIndexCount();
+                cmesh->getVertexCount() * sizeof(Vertex), cmesh->getVertexData());
+        rmesh.indexCount = cmesh->getIndexCount();
         rmesh.indexBuffer = pDevice->createIndexBuffer(BufferUsage::Static,
-                rmesh.indexCount * sizeof(uint32), cmesh.getIndexData());
+                rmesh.indexCount * sizeof(uint32), cmesh->getIndexData());
     }
 
     void initMaterial() {
@@ -357,6 +347,7 @@ private:
 
         ignimbrite::VulkanExtensions::destroySurface(*pDevice, surface);
         pDevice = nullptr;
+        cmesh = nullptr;
 
         glfwDestroyWindow(window.glfwWindow);
         glfwTerminate();
@@ -424,18 +415,20 @@ private:
     }
 
 private:
-    const char          *name = "Textured 3D model";
 
     std::shared_ptr<VulkanRenderDevice> pDevice;
-
     ID<RenderDevice::Surface> surface;
-    Window          window;
-    Mesh            cmesh;
-    RenderableMesh  rmesh;
-    Material        material;
+    Window           window;
+    RefCounted<Mesh> cmesh;
+    RenderableMesh   rmesh;
+    Material         material;
 
-    std::string     objMeshPath;
-    std::string     texturePath;
+    String name = "Textured 3D model";
+    String objMeshPath;
+    String texturePath;
+
+    String MODEL3D_SHADER_PATH_VERT = "shaders/spirv/vert3d.spv";
+    String MODEL3D_SHADER_PATH_FRAG = "shaders/spirv/frag3d.spv";
 
     static float pitch;
     static float yaw;
@@ -451,7 +444,6 @@ float Vulkan3DTest::fov = 70;
 float Vulkan3DTest::z = -80;
 float Vulkan3DTest::prevx = 0;
 float Vulkan3DTest::prevy = 0;
-
 
 int main(int argc, char **argv) {
     const char *mesh = "assets/models/sphere.obj";
