@@ -5,13 +5,13 @@
 #include <VulkanExtensions.h>
 #include <Shader.h>
 #include <UniformBuffer.h>
+#include <MeshLoader.h>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <tiny_obj_loader.h>
 #include <stb_image.h>
 
 #include <algorithm>
@@ -31,7 +31,7 @@ struct Vertex
     float UV[2];
 };
 
-struct Mesh {
+struct RenderableMesh {
     ID<RenderDevice::VertexLayout> vertexLayout;
     ID<RenderDevice::VertexBuffer> vertexBuffer;
     ID<RenderDevice::IndexBuffer> indexBuffer;
@@ -101,10 +101,10 @@ public:
                 pDevice->drawListBindPipeline(material.graphicsPipeline);
 
                 pDevice->drawListBindUniformSet(material.uniformSet);
-                pDevice->drawListBindVertexBuffer(mesh.vertexBuffer, 0, 0);
-                pDevice->drawListBindIndexBuffer(mesh.indexBuffer, ignimbrite::IndicesType::Uint32, 0);
+                pDevice->drawListBindVertexBuffer(rmesh.vertexBuffer, 0, 0);
+                pDevice->drawListBindIndexBuffer(rmesh.indexBuffer, ignimbrite::IndicesType::Uint32, 0);
 
-                pDevice->drawListDrawIndexed(mesh.indexCount, 1);
+                pDevice->drawListDrawIndexed(rmesh.indexCount, 1);
             }
             pDevice->drawListEnd();
 
@@ -188,72 +188,19 @@ private:
         vertexBufferLayoutDesc.stride = sizeof(Vertex);
         vertexBufferLayoutDesc.usage = VertexUsage::PerVertex;
 
-        mesh.vertexLayout = pDevice->createVertexLayout({ vertexBufferLayoutDesc });
+        rmesh.vertexLayout = pDevice->createVertexLayout({ vertexBufferLayoutDesc });
     }
 
     void loadObjModel(const char *path) {
-        std::vector<Vertex> outVertices;
-        std::vector<uint32> outIndices;
+        MeshLoader meshLoader(path);
+        meshLoader.importMesh(cmesh);
 
-        tinyobj::attrib_t attrib;
-        std::vector<tinyobj::shape_t> shapes;
-        std::vector<tinyobj::material_t> materials;
-        std::string warn, err;
+        rmesh.vertexBuffer = pDevice->createVertexBuffer(BufferUsage::Dynamic,
+                cmesh.getVertexCount() * sizeof(Vertex), cmesh.getVertexData());
 
-        bool loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path);
-
-        if (!loaded) {
-            throw std::runtime_error(std::string("Can't load .obj mesh at: ") + path);
-        }
-
-        bool useUv = !attrib.texcoords.empty();
-
-        uint32 i = 0;
-        for (const auto& shape : shapes)
-        {
-            for (const auto& index : shape.mesh.indices)
-            {
-                Vertex vertex = {};
-
-                vertex.Position[0] = attrib.vertices[3 * index.vertex_index + 0];
-                vertex.Position[1] = attrib.vertices[3 * index.vertex_index + 1];
-                vertex.Position[2] = attrib.vertices[3 * index.vertex_index + 2];
-                vertex.Position[3] = 1.0f;
-
-                if (!attrib.normals.empty())
-                {
-                    vertex.Normal[0] = attrib.normals[3 * index.normal_index + 0];
-                    vertex.Normal[1] = attrib.normals[3 * index.normal_index + 1];
-                    vertex.Normal[2] = attrib.normals[3 * index.normal_index + 2];
-                }
-                else
-                {
-                    vertex.Normal[0] = 0.0f;
-                    vertex.Normal[1] = 1.0f;
-                    vertex.Normal[2] = 0.0f;
-                }
-
-                if (useUv) {
-                    vertex.UV[0] = attrib.texcoords[2 * index.texcoord_index + 0];
-                    vertex.UV[1] = 1.0f - attrib.texcoords[2 * index.texcoord_index + 1];
-                }
-
-                vertex.Color[0] = 1.0f;
-                vertex.Color[1] = 1.0f;
-                vertex.Color[2] = 1.0f;
-                vertex.Color[3] = 1.0f;
-
-                outVertices.push_back(vertex);
-                outIndices.push_back(i++);
-            }
-        }
-
-        mesh.vertexBuffer = pDevice->createVertexBuffer(BufferUsage::Dynamic,
-                                                        outVertices.size() * sizeof(Vertex), outVertices.data());
-
-        mesh.indexCount = outIndices.size();
-        mesh.indexBuffer = pDevice->createIndexBuffer(BufferUsage::Static,
-                                                      mesh.indexCount * sizeof(uint32), outIndices.data());
+        rmesh.indexCount = cmesh.getIndexCount();
+        rmesh.indexBuffer = pDevice->createIndexBuffer(BufferUsage::Static,
+                rmesh.indexCount * sizeof(uint32), cmesh.getIndexData());
     }
 
     void initMaterial() {
@@ -388,15 +335,15 @@ private:
 
         material.graphicsPipeline = pDevice->createGraphicsPipeline(
                 surface, PrimitiveTopology::TriangleList,
-                material.shader->getHandle(), mesh.vertexLayout,  material.uniformLayout,
+                material.shader->getHandle(), rmesh.vertexLayout,  material.uniformLayout,
                 rasterizationDesc, blendStateDesc, depthStencilStateDesc
         );
     }
 
     void destroy() {
-        pDevice->destroyVertexBuffer(mesh.vertexBuffer);
-        pDevice->destroyVertexLayout(mesh.vertexLayout);
-        pDevice->destroyIndexBuffer(mesh.indexBuffer);
+        pDevice->destroyVertexBuffer(rmesh.vertexBuffer);
+        pDevice->destroyVertexLayout(rmesh.vertexLayout);
+        pDevice->destroyIndexBuffer(rmesh.indexBuffer);
 
         pDevice->destroyUniformSet(material.uniformSet);
         pDevice->destroyUniformLayout(material.uniformLayout);
@@ -482,12 +429,13 @@ private:
     std::shared_ptr<VulkanRenderDevice> pDevice;
 
     ID<RenderDevice::Surface> surface;
-    Window   window;
-    Mesh     mesh;
-    Material material;
+    Window          window;
+    Mesh            cmesh;
+    RenderableMesh  rmesh;
+    Material        material;
 
-    std::string objMeshPath;
-    std::string texturePath;
+    std::string     objMeshPath;
+    std::string     texturePath;
 
     static float pitch;
     static float yaw;

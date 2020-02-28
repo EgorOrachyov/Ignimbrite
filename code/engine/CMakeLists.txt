@@ -36,10 +36,14 @@ set(Ignimbrite_SOURCES
     Material.h
     IRenderable.cpp
     IRenderable.h
-        )
+    Mesh.cpp
+    Mesh.h
+    MeshLoader.cpp
+    MeshLoader.h AABB.cpp)
 
 add_library(Ignimbrite STATIC ${Ignimbrite_SOURCES})
 
 target_include_directories(Ignimbrite PUBLIC .)
 target_link_libraries(Ignimbrite PRIVATE spirv-cross-core)
 target_link_libraries(Ignimbrite PUBLIC glm)
+target_link_libraries(Ignimbrite PUBLIC tinyobjloader)

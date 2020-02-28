@@ -40,7 +40,7 @@ namespace ignimbrite {
 
         if (size + offset <= bufferSize) {
             auto memory = mBuffer.data();
-            std::memcpy(memory + offset, data, sizeof(uint8) * size);
+            memcpy(memory + offset, data, sizeof(uint8) * size);
         }
     }
 
