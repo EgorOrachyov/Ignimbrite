@@ -43,7 +43,7 @@ namespace ignimbrite {
     class Material : public CacheItem {
     public:
 
-        explicit Material(RefCounted<RenderDevice> device);
+        explicit Material(RefCounted<IRenderDevice> device);
         ~Material() override;
 
         void create(RefCounted<Shader> shader /** todo: pipeline, layout, etc. */);
@@ -87,11 +87,11 @@ namespace ignimbrite {
             /** Destroy all the GPU resources */
             void release();
 
-            ID<RenderDevice::GraphicsPipeline> pipeline;
-            ID<RenderDevice::UniformLayout>    uniformLayout;
-            ID<RenderDevice::VertexLayout>     vertexLayout;
+            ID<IRenderDevice::GraphicsPipeline> pipeline;
+            ID<IRenderDevice::UniformLayout>    uniformLayout;
+            ID<IRenderDevice::VertexLayout>     vertexLayout;
             RefCounted<Shader>                 shader;
-            RefCounted<RenderDevice>           device;
+            RefCounted<IRenderDevice>           device;
         };
 
         bool mUniformBuffersWereModified = false;
@@ -100,7 +100,7 @@ namespace ignimbrite {
         /** Material data shared among several instances */
         RefCounted<SharedData> mData;
         /** Data, specific for concrete material */
-        ID<RenderDevice::UniformSet> mUniformSet;
+        ID<IRenderDevice::UniformSet> mUniformSet;
         std::unordered_map<uint32, UniformBuffer> mUniformBuffers;
         std::unordered_map<uint32, RefCounted<Texture>> mTextures;
     };

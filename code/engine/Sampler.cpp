@@ -11,7 +11,7 @@
 
 namespace ignimbrite {
 
-    Sampler::Sampler(RefCounted<RenderDevice> device)
+    Sampler::Sampler(RefCounted<IRenderDevice> device)
         : mDevice(std::move(device)) {
         mFilter = SamplerFilter::Linear;
         mMipmapFilter = SamplerFilter::Linear;
@@ -31,7 +31,7 @@ namespace ignimbrite {
         mRepeatMode = SamplerRepeatMode::Repeat;
         mBorderColor = SamplerBorderColor::Black;
 
-        RenderDevice::SamplerDesc samplerDesc{};
+        IRenderDevice::SamplerDesc samplerDesc{};
         samplerDesc.u = mRepeatMode;
         samplerDesc.v = mRepeatMode;
         samplerDesc.w = mRepeatMode;
@@ -55,7 +55,7 @@ namespace ignimbrite {
     void Sampler::releaseHandle() {
         if (mHandle.isNotNull()) {
             mDevice->destroySampler(mHandle);
-            mHandle = ID<RenderDevice::Sampler>();
+            mHandle = ID<IRenderDevice::Sampler>();
         }
     }
 

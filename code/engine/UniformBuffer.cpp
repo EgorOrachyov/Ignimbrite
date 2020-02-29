@@ -11,7 +11,7 @@
 
 namespace ignimbrite {
 
-    UniformBuffer::UniformBuffer(RefCounted<ignimbrite::RenderDevice> device)
+    UniformBuffer::UniformBuffer(RefCounted<ignimbrite::IRenderDevice> device)
          : mDevice(std::move(device)) {
 
     }
@@ -53,7 +53,7 @@ namespace ignimbrite {
     void UniformBuffer::releaseHandle() {
         if (mHandle.isNotNull()) {
             mDevice->destroyUniformBuffer(mHandle);
-            mHandle = ID<RenderDevice::UniformBuffer>();
+            mHandle = ID<IRenderDevice::UniformBuffer>();
         }
     }
 

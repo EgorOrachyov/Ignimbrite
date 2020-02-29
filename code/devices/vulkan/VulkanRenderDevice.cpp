@@ -16,19 +16,19 @@
 
 namespace ignimbrite {
 
-    using VertexLayout = RenderDevice::VertexLayout;
-    using VertexBuffer = RenderDevice::VertexBuffer;
-    using IndexBuffer = RenderDevice::IndexBuffer;
-    using UniformBuffer = RenderDevice::UniformBuffer;
-    using UniformLayout = RenderDevice::UniformLayout;
-    using UniformSet = RenderDevice::UniformSet;
-    using ShaderProgram = RenderDevice::ShaderProgram;
-    using GraphicsPipeline = RenderDevice::GraphicsPipeline;
-    using FramebufferFormat = RenderDevice::FramebufferFormat;
-    using Framebuffer = RenderDevice::Framebuffer;
-    using Surface = RenderDevice::Surface;
-    using Texture = RenderDevice::Texture;
-    using Sampler = RenderDevice::Sampler;
+    using VertexLayout = IRenderDevice::VertexLayout;
+    using VertexBuffer = IRenderDevice::VertexBuffer;
+    using IndexBuffer = IRenderDevice::IndexBuffer;
+    using UniformBuffer = IRenderDevice::UniformBuffer;
+    using UniformLayout = IRenderDevice::UniformLayout;
+    using UniformSet = IRenderDevice::UniformSet;
+    using ShaderProgram = IRenderDevice::ShaderProgram;
+    using GraphicsPipeline = IRenderDevice::GraphicsPipeline;
+    using FramebufferFormat = IRenderDevice::FramebufferFormat;
+    using Framebuffer = IRenderDevice::Framebuffer;
+    using Surface = IRenderDevice::Surface;
+    using Texture = IRenderDevice::Texture;
+    using Sampler = IRenderDevice::Sampler;
 
     VulkanRenderDevice::VulkanRenderDevice(uint32 extensionsCount, const char *const *extensions) {
         mContext.fillRequiredExt(extensionsCount, extensions);
@@ -175,7 +175,7 @@ namespace ignimbrite {
         mIndexBuffers.remove(bufferId);
     }
 
-    ID<Texture> VulkanRenderDevice::createTexture(const RenderDevice::TextureDesc &textureDesc) {
+    ID<Texture> VulkanRenderDevice::createTexture(const IRenderDevice::TextureDesc &textureDesc) {
         VkFormat format = VulkanDefinitions::dataFormat(textureDesc.format);
         VkImageType imageType = VulkanDefinitions::imageType(textureDesc.type);
         VkImageViewType viewType = VulkanDefinitions::imageViewType(textureDesc.type);
@@ -311,7 +311,7 @@ namespace ignimbrite {
         mTextureObjects.remove(textureId);
     }
 
-    ID<Sampler> VulkanRenderDevice::createSampler(const RenderDevice::SamplerDesc &samplerDesc) {
+    ID<Sampler> VulkanRenderDevice::createSampler(const IRenderDevice::SamplerDesc &samplerDesc) {
         VkSamplerCreateInfo samplerInfo = {};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         samplerInfo.minFilter = VulkanDefinitions::filter(samplerDesc.min);
@@ -342,7 +342,7 @@ namespace ignimbrite {
         mSamplers.remove(samplerId);
     }
 
-    ID<FramebufferFormat> VulkanRenderDevice::createFramebufferFormat(const std::vector<RenderDevice::FramebufferAttachmentDesc> &attachments) {
+    ID<FramebufferFormat> VulkanRenderDevice::createFramebufferFormat(const std::vector<IRenderDevice::FramebufferAttachmentDesc> &attachments) {
         std::vector<VkAttachmentDescription> attachmentDescriptions;
         attachmentDescriptions.reserve(attachments.size());
 
@@ -586,7 +586,7 @@ namespace ignimbrite {
         mUniformSets.remove(setId);
     }
 
-    ID<UniformLayout> VulkanRenderDevice::createUniformLayout(const RenderDevice::UniformLayoutDesc &layoutDesc) {
+    ID<UniformLayout> VulkanRenderDevice::createUniformLayout(const IRenderDevice::UniformLayoutDesc &layoutDesc) {
         VkResult result;
         VkDescriptorSetLayout descriptorSetLayout;
 
@@ -729,9 +729,9 @@ namespace ignimbrite {
             ID<VertexLayout> vertexLayout,
             ID<UniformLayout> uniformLayout,
             ID<FramebufferFormat> framebufferFormat,
-            const RenderDevice::PipelineRasterizationDesc &rasterizationDesc,
-            const RenderDevice::PipelineBlendStateDesc &blendStateDesc,
-            const RenderDevice::PipelineDepthStencilStateDesc &depthStencilStateDesc) {
+            const IRenderDevice::PipelineRasterizationDesc &rasterizationDesc,
+            const IRenderDevice::PipelineBlendStateDesc &blendStateDesc,
+            const IRenderDevice::PipelineDepthStencilStateDesc &depthStencilStateDesc) {
         const auto &vkProgram = mShaderPrograms.get(program);
         const auto &vkUniformLayout = mUniformLayouts.get(uniformLayout);
         const auto &vkVertexLayout = mVertexLayouts.get(vertexLayout);
@@ -977,8 +977,8 @@ namespace ignimbrite {
 
     void VulkanRenderDevice::drawListBindSurface(
             ID<Surface> surfaceId,
-            const RenderDevice::Color &color,
-            const RenderDevice::Region &area) {
+            const IRenderDevice::Color &color,
+            const IRenderDevice::Region &area) {
         // End previous render pass, if exists
         if (mDrawListState.frameBufferAttached) {
             vkCmdEndRenderPass(mDrawListState.commandBuffer);
@@ -1044,7 +1044,7 @@ namespace ignimbrite {
             ID<Framebuffer> framebufferId,
             const std::vector<Color> &colors,
             float32 clearDepth, uint32 clearStencil,
-            const RenderDevice::Region &area) {
+            const IRenderDevice::Region &area) {
         // End previous render pass, if exists
         if (mDrawListState.frameBufferAttached) {
             vkCmdEndRenderPass(mDrawListState.commandBuffer);
@@ -1117,7 +1117,7 @@ namespace ignimbrite {
     void VulkanRenderDevice::drawListBindFramebuffer(
             ID<Framebuffer> framebufferId,
             const std::vector<Color> &colors,
-            const RenderDevice::Region &area) {
+            const IRenderDevice::Region &area) {
         drawListBindFramebuffer(framebufferId, colors, 1.0f, 0, area);
     }
 

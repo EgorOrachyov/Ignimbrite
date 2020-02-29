@@ -87,6 +87,12 @@ namespace ignimbrite {
             return true;
         }
 
+        /** Expands box to contain specified point */
+        void expandToContain(const glm::vec3& point) {
+            minBounds = glm::min(minBounds, point);
+            maxBounds = glm::max(maxBounds, point);
+        }
+
         // TODO: plane intersections
     private:
         glm::vec3 minBounds = glm::vec3(0.0f);

@@ -11,7 +11,7 @@
 #define IGNIMBRITE_VULKANDEFINITIONS_H
 
 #include <vulkan/vulkan.h>
-#include <RenderDeviceDefinitions.h>
+#include <IRenderDeviceDefinitions.h>
 #include <VulkanErrors.h>
 
 namespace ignimbrite {

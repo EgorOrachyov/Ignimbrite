@@ -503,7 +503,7 @@ namespace ignimbrite {
         state.pScissors = &scissor;
     }
 
-    void VulkanUtils::createRasterizationState(const RenderDevice::PipelineRasterizationDesc &rasterizationDesc,
+    void VulkanUtils::createRasterizationState(const IRenderDevice::PipelineRasterizationDesc &rasterizationDesc,
                                                VkPipelineRasterizationStateCreateInfo &rasterizer) {
         rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         rasterizer.depthClampEnable = VK_FALSE;
@@ -545,7 +545,7 @@ namespace ignimbrite {
         state.alphaToOneEnable = VK_FALSE; // Optional
     }
 
-    void VulkanUtils::createColorBlendAttachmentState(const RenderDevice::BlendAttachmentDesc &attachmentDesc,
+    void VulkanUtils::createColorBlendAttachmentState(const IRenderDevice::BlendAttachmentDesc &attachmentDesc,
                                                       VkPipelineColorBlendAttachmentState &state) {
         state.colorWriteMask = VulkanDefinitions::colorComponentFlags(
                 attachmentDesc.writeR,
@@ -563,7 +563,7 @@ namespace ignimbrite {
     }
 
     void
-    VulkanUtils::createColorBlendState(const RenderDevice::PipelineBlendStateDesc &stateDesc, uint32 attachmentsCount,
+    VulkanUtils::createColorBlendState(const IRenderDevice::PipelineBlendStateDesc &stateDesc, uint32 attachmentsCount,
                                        const VkPipelineColorBlendAttachmentState *attachments,
                                        VkPipelineColorBlendStateCreateInfo &stateCreateInfo) {
         stateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -577,7 +577,7 @@ namespace ignimbrite {
         stateCreateInfo.blendConstants[3] = stateDesc.blendConstants[3];
     }
 
-    void VulkanUtils::createSurfaceColorBlendState(const RenderDevice::PipelineSurfaceBlendStateDesc &stateDesc,
+    void VulkanUtils::createSurfaceColorBlendState(const IRenderDevice::PipelineSurfaceBlendStateDesc &stateDesc,
                                                    const VkPipelineColorBlendAttachmentState *attachment,
                                                    VkPipelineColorBlendStateCreateInfo &stateCreateInfo) {
         stateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -591,7 +591,7 @@ namespace ignimbrite {
         stateCreateInfo.blendConstants[3] = stateDesc.blendConstants[3];
     }
 
-    void VulkanUtils::createDepthStencilState(const RenderDevice::PipelineDepthStencilStateDesc &desc,
+    void VulkanUtils::createDepthStencilState(const IRenderDevice::PipelineDepthStencilStateDesc &desc,
                                               VkPipelineDepthStencilStateCreateInfo &stateCreateInfo) {
         stateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
         stateCreateInfo.pNext = nullptr;
@@ -606,7 +606,7 @@ namespace ignimbrite {
         stateCreateInfo.back = createStencilOperationState(desc.back);
     }
 
-    VkStencilOpState VulkanUtils::createStencilOperationState(const RenderDevice::StencilOpStateDesc &desc) {
+    VkStencilOpState VulkanUtils::createStencilOperationState(const IRenderDevice::StencilOpStateDesc &desc) {
         VkStencilOpState state = {};
         state.compareMask = desc.compareMask;
         state.reference = desc.reference;

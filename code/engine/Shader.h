@@ -12,8 +12,8 @@
 
 #include <IncludeStd.h>
 #include <CacheItem.h>
-#include <RenderDevice.h>
-#include <RenderDeviceDefinitions.h>
+#include <IRenderDevice.h>
+#include <IRenderDeviceDefinitions.h>
 
 namespace ignimbrite {
 
@@ -65,7 +65,7 @@ namespace ignimbrite {
             std::vector<String> members;
         };
 
-        explicit Shader(RefCounted<RenderDevice> device);
+        explicit Shader(RefCounted<IRenderDevice> device);
         ~Shader() override;
 
         void fromSources(ShaderLanguage language, const std::vector<uint8> &vertex, const std::vector<uint8> &fragment);
@@ -73,8 +73,8 @@ namespace ignimbrite {
         void releaseHandle();
 
         ShaderLanguage getLanguage() const;
-        const ID<RenderDevice::ShaderProgram> &getHandle() const;
-        const std::vector<RenderDevice::ShaderDesc> &getShaders() const;
+        const ID<IRenderDevice::ShaderProgram> &getHandle() const;
+        const std::vector<IRenderDevice::ShaderDesc> &getShaders() const;
         const ParameterInfo& getParameterInfo(const String &name) const;
         const UniformBufferInfo& getBufferInfo(const String &name) const;
 
@@ -89,11 +89,11 @@ namespace ignimbrite {
         /** Program uniform blocks info */
         std::unordered_map<String, UniformBufferInfo> mBuffers;
         /** Program descriptor with this shader's modules*/
-        RenderDevice::ProgramDesc mProgramDesc;
+        IRenderDevice::ProgramDesc mProgramDesc;
         /** Actual program handle */
-        ID<RenderDevice::ShaderProgram> mHandle;
+        ID<IRenderDevice::ShaderProgram> mHandle;
         /** Render device, which is used for that shader creation */
-        RefCounted<RenderDevice> mDevice;
+        RefCounted<IRenderDevice> mDevice;
 
     };
 

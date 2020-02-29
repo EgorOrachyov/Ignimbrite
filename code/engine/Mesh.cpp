@@ -3,8 +3,8 @@
 /* https://github.com/EgorOrachyov/Ignimbrite                                     */
 /**********************************************************************************/
 /* Licensed under MIT License                                                     */
-/* Copyright (c) 2019 - 2020 Egor Orachyov                                       */
-/* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                */
+/* Copyright (c) 2019 - 2020 Egor Orachyov                                        */
+/* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
 
@@ -38,7 +38,18 @@ namespace ignimbrite {
 
         return false;
     }
-    
+
+    void Mesh::updateBoundingVolume() {
+        uint32 offset = 0;
+        mBoundingBox = AABB();
+        const uint8* data = getVertexData();
+        for (uint32 i = 0; i < mVertexCount; i++) {
+            const Vec3f* pos = (Vec3f*)(data + offset);
+            mBoundingBox.expandToContain(*pos);
+            offset += getStride();
+        }
+    }
+
     uint32 Mesh::getNumberOfAttributes(Mesh::VertexFormat format) {
         switch (format) {
             case VertexFormat::P:

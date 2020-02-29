@@ -17,7 +17,7 @@ namespace ignimbrite {
 
     class Texture : public CacheItem {
     public:
-        explicit Texture(RefCounted<RenderDevice> device);
+        explicit Texture(RefCounted<IRenderDevice> device);
         ~Texture() override;
 
         void setSampler(RefCounted<Sampler> sampler);
@@ -47,9 +47,9 @@ namespace ignimbrite {
         /** Sampler, for filtering this texture */
         RefCounted<Sampler> mSampler;
         /** Actual texture resource */
-        ID<RenderDevice::Texture> mHandle;
+        ID<IRenderDevice::Texture> mHandle;
         /** Render device for lower API access */
-        RefCounted<RenderDevice> mDevice;
+        RefCounted<IRenderDevice> mDevice;
     };
 
 }

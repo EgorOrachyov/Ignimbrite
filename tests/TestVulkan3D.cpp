@@ -27,9 +27,9 @@ struct Vertex {
 };
 
 struct RenderableMesh {
-    ID<RenderDevice::VertexLayout> vertexLayout;
-    ID<RenderDevice::VertexBuffer> vertexBuffer;
-    ID<RenderDevice::IndexBuffer> indexBuffer;
+    ID<IRenderDevice::VertexLayout> vertexLayout;
+    ID<IRenderDevice::VertexBuffer> vertexBuffer;
+    ID<IRenderDevice::IndexBuffer> indexBuffer;
     uint32 indexCount = 0;
 };
 
@@ -42,13 +42,13 @@ struct ShaderUniformBuffer {
 
 struct Material {
     std::shared_ptr<Shader> shader;
-    ID<RenderDevice::UniformLayout> uniformLayout;
-    ID<RenderDevice::GraphicsPipeline> graphicsPipeline;
-    ID<RenderDevice::UniformSet> uniformSet;
+    ID<IRenderDevice::UniformLayout> uniformLayout;
+    ID<IRenderDevice::GraphicsPipeline> graphicsPipeline;
+    ID<IRenderDevice::UniformSet> uniformSet;
     std::shared_ptr<UniformBuffer> uniformBuffer;
     ShaderUniformBuffer data;
-    ID<RenderDevice::Texture> texture;
-    ID<RenderDevice::Sampler> textureSampler;
+    ID<IRenderDevice::Texture> texture;
+    ID<IRenderDevice::Sampler> textureSampler;
 };
 
 struct Window {
@@ -74,14 +74,14 @@ public:
     }
 
     void loop() {
-        RenderDevice::Color clearColor = { { 1.0f, 1.0f, 1.0f, 0.0f} };
+        IRenderDevice::Color clearColor = { { 1.0f, 1.0f, 1.0f, 0.0f} };
 
         while (!glfwWindowShouldClose(window.glfwWindow)) {
             glfwPollEvents();
             glfwSwapBuffers(window.glfwWindow);
             glfwGetFramebufferSize(window.glfwWindow, &window.widthFrameBuffer, &window.height);
 
-            RenderDevice::Region area = { 0, 0, { (uint32)window.widthFrameBuffer, (uint32)window.heightFrameBuffer} };
+            IRenderDevice::Region area = { 0, 0, { (uint32)window.widthFrameBuffer, (uint32)window.heightFrameBuffer} };
 
             if (area.extent.x == 0|| area.extent.y == 0)
             {
@@ -159,9 +159,9 @@ private:
     }
 
     void initVertexLayout() {
-        RenderDevice::VertexBufferLayoutDesc vertexBufferLayoutDesc = {};
+        IRenderDevice::VertexBufferLayoutDesc vertexBufferLayoutDesc = {};
 
-        std::vector<RenderDevice::VertexAttributeDesc> &attrs = vertexBufferLayoutDesc.attributes;
+        std::vector<IRenderDevice::VertexAttributeDesc> &attrs = vertexBufferLayoutDesc.attributes;
         attrs.resize(3);
 
         attrs[0].location = 0;
@@ -220,14 +220,14 @@ private:
     }
 
     void initUniformLayout() {
-        RenderDevice::UniformLayoutBufferDesc uniformLayoutBufferDesc = {};
+        IRenderDevice::UniformLayoutBufferDesc uniformLayoutBufferDesc = {};
         uniformLayoutBufferDesc.binding = 0;
         uniformLayoutBufferDesc.flags = (uint32) ShaderStageFlagBits::VertexBit;
-        RenderDevice::UniformLayoutTextureDesc uniformLayoutTextureDesc = {};
+        IRenderDevice::UniformLayoutTextureDesc uniformLayoutTextureDesc = {};
         uniformLayoutTextureDesc.binding = 1;
         uniformLayoutTextureDesc.flags = (ShaderStageFlags) ShaderStageFlagBits::FragmentBit;
 
-        RenderDevice::UniformLayoutDesc uniformLayoutDesc = {};
+        IRenderDevice::UniformLayoutDesc uniformLayoutDesc = {};
         uniformLayoutDesc.buffers.push_back(uniformLayoutBufferDesc);
         uniformLayoutDesc.textures.push_back(uniformLayoutTextureDesc);
 
@@ -253,7 +253,7 @@ private:
 
         uint32 mipmapCount = (uint32)std::floor(std::log2(std::max(texWidth, texHeight))) + 1;
 
-        RenderDevice::TextureDesc textureDesc = {};
+        IRenderDevice::TextureDesc textureDesc = {};
         textureDesc.height = texHeight;
         textureDesc.width = texWidth;
         textureDesc.depth = 1;
@@ -269,7 +269,7 @@ private:
 
         stbi_image_free(pixels);
 
-        RenderDevice::SamplerDesc samplerDesc = {};
+        IRenderDevice::SamplerDesc samplerDesc = {};
         samplerDesc.mag = SamplerFilter::Linear;
         samplerDesc.min = SamplerFilter::Linear;
         samplerDesc.u = samplerDesc.v = samplerDesc.w = SamplerRepeatMode::Repeat;
@@ -285,18 +285,18 @@ private:
     }
 
     void initUniformSet() {
-        RenderDevice::UniformBufferDesc uniformBufferDesc = {};
+        IRenderDevice::UniformBufferDesc uniformBufferDesc = {};
         uniformBufferDesc.binding = 0;
         uniformBufferDesc.offset = 0;
         uniformBufferDesc.range = sizeof(ShaderUniformBuffer);
         uniformBufferDesc.buffer = material.uniformBuffer->getHandle();
-        RenderDevice::UniformTextureDesc uniformTextureDesc = {};
+        IRenderDevice::UniformTextureDesc uniformTextureDesc = {};
         uniformTextureDesc.binding = 1;
         uniformTextureDesc.texture = material.texture;
         uniformTextureDesc.sampler = material.textureSampler;
         uniformTextureDesc.stageFlags = (ShaderStageFlags)ShaderStageFlagBits::FragmentBit;
 
-        RenderDevice::UniformSetDesc uniformSetDesc = {};
+        IRenderDevice::UniformSetDesc uniformSetDesc = {};
         uniformSetDesc.buffers.push_back(uniformBufferDesc);
         uniformSetDesc.textures.push_back(uniformTextureDesc);
 
@@ -304,20 +304,20 @@ private:
     }
 
     void initGraphicsPipeline() {
-        RenderDevice::PipelineRasterizationDesc rasterizationDesc = {};
+        IRenderDevice::PipelineRasterizationDesc rasterizationDesc = {};
         rasterizationDesc.cullMode = PolygonCullMode::Back;
         rasterizationDesc.frontFace = PolygonFrontFace::FrontCounterClockwise;
         rasterizationDesc.lineWidth = 1.0f;
         rasterizationDesc.mode = PolygonMode::Fill;
 
-        RenderDevice::BlendAttachmentDesc blendAttachmentDesc = {};
+        IRenderDevice::BlendAttachmentDesc blendAttachmentDesc = {};
         blendAttachmentDesc.blendEnable = false;
-        RenderDevice::PipelineSurfaceBlendStateDesc blendStateDesc = {};
+        IRenderDevice::PipelineSurfaceBlendStateDesc blendStateDesc = {};
         blendStateDesc.attachment = blendAttachmentDesc;
         blendStateDesc.logicOpEnable = false;
         blendStateDesc.logicOp = LogicOperation::NoOp;
 
-        RenderDevice::PipelineDepthStencilStateDesc depthStencilStateDesc = {};
+        IRenderDevice::PipelineDepthStencilStateDesc depthStencilStateDesc = {};
         depthStencilStateDesc.depthCompareOp = CompareOperation::Less;
         depthStencilStateDesc.depthWriteEnable = true;
         depthStencilStateDesc.depthTestEnable = true;
@@ -417,7 +417,7 @@ private:
 private:
 
     std::shared_ptr<VulkanRenderDevice> pDevice;
-    ID<RenderDevice::Surface> surface;
+    ID<IRenderDevice::Surface> surface;
     Window           window;
     RefCounted<Mesh> cmesh;
     RenderableMesh   rmesh;

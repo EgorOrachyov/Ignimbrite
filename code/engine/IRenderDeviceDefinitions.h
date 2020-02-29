@@ -7,8 +7,8 @@
 /* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
-#ifndef IGNIMBRITE_RENDERDEVICEDEFINITIONS_H
-#define IGNIMBRITE_RENDERDEVICEDEFINITIONS_H
+#ifndef IGNIMBRITE_IRENDERDEVICEDEFINITIONS_H
+#define IGNIMBRITE_IRENDERDEVICEDEFINITIONS_H
 
 #include <Types.h>
 #define BIT_SHIFT(x) (1u << x)
@@ -220,4 +220,4 @@ namespace ignimbrite {
 
 #undef BIT_SHIFT
 
-#endif //IGNIMBRITE_RENDERDEVICEDEFINITIONS_H
+#endif //IGNIMBRITE_IRENDERDEVICEDEFINITIONS_H

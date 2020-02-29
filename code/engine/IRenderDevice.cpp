@@ -7,16 +7,16 @@
 /* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
-#include <RenderDevice.h>
+#include <IRenderDevice.h>
 
 namespace ignimbrite {
 
-    const String &RenderDevice::getDeviceName() const {
+    const String &IRenderDevice::getDeviceName() const {
         static const String device = "Default Device";
         return device;
     }
 
-    const String &RenderDevice::getVendorName() const {
+    const String &IRenderDevice::getVendorName() const {
         static const String device = "Default Vendor";
         return device;
     }

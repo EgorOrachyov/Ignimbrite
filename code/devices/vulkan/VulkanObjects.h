@@ -10,7 +10,7 @@
 #ifndef IGNIMBRITE_VULKANOBJECTS_H
 #define IGNIMBRITE_VULKANOBJECTS_H
 
-#include <RenderDevice.h>
+#include <IRenderDevice.h>
 #include <Optional.h>
 #include <VulkanDescriptorAllocator.h>
 #include <vk_mem_alloc.h>
@@ -69,7 +69,7 @@ namespace ignimbrite {
     };
 
     struct VulkanUniformSet {
-        ID<RenderDevice::UniformLayout> uniformLayout;
+        ID<IRenderDevice::UniformLayout> uniformLayout;
         VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
     };
 

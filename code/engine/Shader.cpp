@@ -12,7 +12,7 @@
 
 namespace ignimbrite {
 
-    Shader::Shader(RefCounted<RenderDevice> device)
+    Shader::Shader(RefCounted<IRenderDevice> device)
         : mDevice(std::move(device)) {
 
     }
@@ -47,7 +47,7 @@ namespace ignimbrite {
     void Shader::releaseHandle() {
         if (mHandle.isNotNull()) {
             mDevice->destroyShaderProgram(mHandle);
-            mHandle = ID<RenderDevice::ShaderProgram>();
+            mHandle = ID<IRenderDevice::ShaderProgram>();
         }
     }
 
@@ -55,11 +55,11 @@ namespace ignimbrite {
         return mProgramDesc.language;
     }
 
-    const ID<RenderDevice::ShaderProgram> &Shader::getHandle() const {
+    const ID<IRenderDevice::ShaderProgram> &Shader::getHandle() const {
         return mHandle;
     }
 
-    const std::vector<RenderDevice::ShaderDesc>& Shader::getShaders() const {
+    const std::vector<IRenderDevice::ShaderDesc>& Shader::getShaders() const {
         return mProgramDesc.shaders;
     }
 

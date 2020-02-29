@@ -11,7 +11,7 @@
 #define IGNIMBRITE_UNIFORMBUFFER_H
 
 #include <CacheItem.h>
-#include <RenderDevice.h>
+#include <IRenderDevice.h>
 #include <vector>
 #include <memory>
 
@@ -19,7 +19,7 @@ namespace ignimbrite {
 
     class UniformBuffer : public CacheItem {
     public:
-        explicit UniformBuffer(RefCounted<RenderDevice> device);
+        explicit UniformBuffer(RefCounted<IRenderDevice> device);
         ~UniformBuffer() override;
 
         void createBuffer(uint32 size);
@@ -30,14 +30,14 @@ namespace ignimbrite {
 
         uint32 getBufferSize() const { return (uint32)mBuffer.size(); }
         const std::vector<uint8> &getData() const { return mBuffer; }
-        const ID<RenderDevice::UniformBuffer> &getHandle() const { return mHandle; }
+        const ID<IRenderDevice::UniformBuffer> &getHandle() const { return mHandle; }
     private:
         /** Data cached on CPU */
         std::vector<uint8> mBuffer;
         /** GPU resource */
-        ID<RenderDevice::UniformBuffer> mHandle;
+        ID<IRenderDevice::UniformBuffer> mHandle;
         /** Device for GPU communication */
-        RefCounted<RenderDevice> mDevice;
+        RefCounted<IRenderDevice> mDevice;
     };
 
 }

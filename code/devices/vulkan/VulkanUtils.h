@@ -127,7 +127,7 @@ namespace ignimbrite {
         );
 
         static void createRasterizationState(
-                const RenderDevice::PipelineRasterizationDesc &rasterizationDesc,
+                const IRenderDevice::PipelineRasterizationDesc &rasterizationDesc,
                 VkPipelineRasterizationStateCreateInfo &rasterizer
         );
 
@@ -142,30 +142,30 @@ namespace ignimbrite {
         );
 
         static void createColorBlendAttachmentState(
-                const RenderDevice::BlendAttachmentDesc &attachmentDesc,
+                const IRenderDevice::BlendAttachmentDesc &attachmentDesc,
                 VkPipelineColorBlendAttachmentState &state
         );
 
         static void createColorBlendState(
-                const RenderDevice::PipelineBlendStateDesc &stateDesc,
+                const IRenderDevice::PipelineBlendStateDesc &stateDesc,
                 uint32 attachmentsCount,
                 const VkPipelineColorBlendAttachmentState *attachments,
                 VkPipelineColorBlendStateCreateInfo &stateCreateInfo
         );
 
         static void createSurfaceColorBlendState(
-                const RenderDevice::PipelineSurfaceBlendStateDesc &stateDesc,
+                const IRenderDevice::PipelineSurfaceBlendStateDesc &stateDesc,
                 const VkPipelineColorBlendAttachmentState *attachment,
                 VkPipelineColorBlendStateCreateInfo &stateCreateInfo
         );
 
         static void createDepthStencilState(
-                const RenderDevice::PipelineDepthStencilStateDesc &desc,
+                const IRenderDevice::PipelineDepthStencilStateDesc &desc,
                 VkPipelineDepthStencilStateCreateInfo &stateCreateInfo
         );
 
         static VkStencilOpState createStencilOperationState(
-                const RenderDevice::StencilOpStateDesc &desc
+                const IRenderDevice::StencilOpStateDesc &desc
         );
 
         static VkCommandPool createCommandPool(
