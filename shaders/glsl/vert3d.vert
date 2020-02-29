@@ -15,7 +15,7 @@ layout (location = 1) out vec2 outTexCoord;
 
 void main() {
 	vec3 lightDir = normalize(vec3(-1, -1, 0));
-	float light = max(0.0, dot(vtNormal, lightDir)) + 0.3;
+	float light = max(0.3, dot(vtNormal, lightDir));
 
 	outColor = vec4(vec3(light), 1.0f);
 	outTexCoord = vtTexCoord;
