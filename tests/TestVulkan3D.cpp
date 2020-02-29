@@ -5,13 +5,13 @@
 #include <VulkanExtensions.h>
 #include <Shader.h>
 #include <UniformBuffer.h>
+#include <MeshLoader.h>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <tiny_obj_loader.h>
 #include <stb_image.h>
 
 #include <algorithm>
@@ -20,40 +20,34 @@
 
 using namespace ignimbrite;
 
-const std::string MODEL3D_SHADER_PATH_VERT = "shaders/spirv/vert3d.spv";
-const std::string MODEL3D_SHADER_PATH_FRAG = "shaders/spirv/frag3d.spv";
-
-struct Vertex
-{
-    float Position[4];
-    float Color[4];
-    float Normal[3];
-    float UV[2];
+struct Vertex {
+    float32 Position[3];
+    float32 Normal[3];
+    float32 UV[2];
 };
 
-struct Mesh {
-    ID<RenderDevice::VertexLayout> vertexLayout;
-    ID<RenderDevice::VertexBuffer> vertexBuffer;
-    ID<RenderDevice::IndexBuffer> indexBuffer;
+struct RenderableMesh {
+    ID<IRenderDevice::VertexLayout> vertexLayout;
+    ID<IRenderDevice::VertexBuffer> vertexBuffer;
+    ID<IRenderDevice::IndexBuffer> indexBuffer;
     uint32 indexCount = 0;
 };
 
 struct ShaderUniformBuffer {
-    float mvp[16] = {};
-    float model[16] = {};
-    float lightDir[3] = {};
-    float ambient[3] = {};
+    float32 mvp[16] = {};
+    float32 model[16] = {};
+    float32 lightDir[3] = {};
+    float32 ambient[3] = {};
 };
 
 struct Material {
     std::shared_ptr<Shader> shader;
-    ID<RenderDevice::UniformLayout> uniformLayout;
-    ID<RenderDevice::GraphicsPipeline> graphicsPipeline;
-    ID<RenderDevice::UniformSet> uniformSet;
+    ID<IRenderDevice::GraphicsPipeline> graphicsPipeline;
+    ID<IRenderDevice::UniformSet> uniformSet;
     std::shared_ptr<UniformBuffer> uniformBuffer;
     ShaderUniformBuffer data;
-    ID<RenderDevice::Texture> texture;
-    ID<RenderDevice::Sampler> textureSampler;
+    ID<IRenderDevice::Texture> texture;
+    ID<IRenderDevice::Sampler> textureSampler;
 };
 
 struct Window {
@@ -79,14 +73,14 @@ public:
     }
 
     void loop() {
-        RenderDevice::Color clearColor = { { 1.0f, 1.0f, 1.0f, 0.0f} };
+        IRenderDevice::Color clearColor = { { 1.0f, 1.0f, 1.0f, 0.0f} };
 
         while (!glfwWindowShouldClose(window.glfwWindow)) {
             glfwPollEvents();
             glfwSwapBuffers(window.glfwWindow);
             glfwGetFramebufferSize(window.glfwWindow, &window.widthFrameBuffer, &window.height);
 
-            RenderDevice::Region area = { 0, 0, { (uint32)window.widthFrameBuffer, (uint32)window.heightFrameBuffer} };
+            IRenderDevice::Region area = { 0, 0, { (uint32)window.widthFrameBuffer, (uint32)window.heightFrameBuffer} };
 
             if (area.extent.x == 0|| area.extent.y == 0)
             {
@@ -101,10 +95,10 @@ public:
                 pDevice->drawListBindPipeline(material.graphicsPipeline);
 
                 pDevice->drawListBindUniformSet(material.uniformSet);
-                pDevice->drawListBindVertexBuffer(mesh.vertexBuffer, 0, 0);
-                pDevice->drawListBindIndexBuffer(mesh.indexBuffer, ignimbrite::IndicesType::Uint32, 0);
+                pDevice->drawListBindVertexBuffer(rmesh.vertexBuffer, 0, 0);
+                pDevice->drawListBindIndexBuffer(rmesh.indexBuffer, ignimbrite::IndicesType::Uint32, 0);
 
-                pDevice->drawListDrawIndexed(mesh.indexCount, 1);
+                pDevice->drawListDrawIndexed(rmesh.indexCount, 1);
             }
             pDevice->drawListEnd();
 
@@ -144,7 +138,7 @@ private:
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-        window.glfwWindow = glfwCreateWindow(window.width, window.height, name, nullptr, nullptr);
+        window.glfwWindow = glfwCreateWindow(window.width, window.height, name.c_str(), nullptr, nullptr);
 
         glfwGetFramebufferSize(window.glfwWindow,
                 (int*) &window.widthFrameBuffer, (int*) &window.heightFrameBuffer);
@@ -164,102 +158,43 @@ private:
     }
 
     void initVertexLayout() {
-        RenderDevice::VertexBufferLayoutDesc vertexBufferLayoutDesc = {};
+        IRenderDevice::VertexBufferLayoutDesc vertexBufferLayoutDesc = {};
 
-        std::vector<RenderDevice::VertexAttributeDesc> &attrs = vertexBufferLayoutDesc.attributes;
-        attrs.resize(4);
+        std::vector<IRenderDevice::VertexAttributeDesc> &attrs = vertexBufferLayoutDesc.attributes;
+        attrs.resize(3);
 
         attrs[0].location = 0;
-        attrs[0].format = DataFormat::R32G32B32A32_SFLOAT;
+        attrs[0].format = DataFormat::R32G32B32_SFLOAT;
         attrs[0].offset = offsetof(Vertex, Position);
 
         attrs[1].location = 1;
-        attrs[1].format = DataFormat::R32G32B32A32_SFLOAT;
-        attrs[1].offset = offsetof(Vertex, Color);
+        attrs[1].format = DataFormat::R32G32B32_SFLOAT;
+        attrs[1].offset = offsetof(Vertex, Normal);
 
         attrs[2].location = 2;
-        attrs[2].format = DataFormat::R32G32B32_SFLOAT;
-        attrs[2].offset = offsetof(Vertex, Normal);
-
-        attrs[3].location = 3;
-        attrs[3].format = DataFormat::R32G32_SFLOAT;
-        attrs[3].offset = offsetof(Vertex, UV);
+        attrs[2].format = DataFormat::R32G32_SFLOAT;
+        attrs[2].offset = offsetof(Vertex, UV);
 
         vertexBufferLayoutDesc.stride = sizeof(Vertex);
         vertexBufferLayoutDesc.usage = VertexUsage::PerVertex;
 
-        mesh.vertexLayout = pDevice->createVertexLayout({ vertexBufferLayoutDesc });
+        rmesh.vertexLayout = pDevice->createVertexLayout({ vertexBufferLayoutDesc });
     }
 
     void loadObjModel(const char *path) {
-        std::vector<Vertex> outVertices;
-        std::vector<uint32> outIndices;
+        MeshLoader meshLoader(path);
+        cmesh = meshLoader.importMesh(Mesh::VertexFormat::PNT);
 
-        tinyobj::attrib_t attrib;
-        std::vector<tinyobj::shape_t> shapes;
-        std::vector<tinyobj::material_t> materials;
-        std::string warn, err;
-
-        bool loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path);
-
-        if (!loaded) {
-            throw std::runtime_error(std::string("Can't load .obj mesh at: ") + path);
-        }
-
-        bool useUv = !attrib.texcoords.empty();
-
-        uint32 i = 0;
-        for (const auto& shape : shapes)
-        {
-            for (const auto& index : shape.mesh.indices)
-            {
-                Vertex vertex = {};
-
-                vertex.Position[0] = attrib.vertices[3 * index.vertex_index + 0];
-                vertex.Position[1] = attrib.vertices[3 * index.vertex_index + 1];
-                vertex.Position[2] = attrib.vertices[3 * index.vertex_index + 2];
-                vertex.Position[3] = 1.0f;
-
-                if (!attrib.normals.empty())
-                {
-                    vertex.Normal[0] = attrib.normals[3 * index.normal_index + 0];
-                    vertex.Normal[1] = attrib.normals[3 * index.normal_index + 1];
-                    vertex.Normal[2] = attrib.normals[3 * index.normal_index + 2];
-                }
-                else
-                {
-                    vertex.Normal[0] = 0.0f;
-                    vertex.Normal[1] = 1.0f;
-                    vertex.Normal[2] = 0.0f;
-                }
-
-                if (useUv) {
-                    vertex.UV[0] = attrib.texcoords[2 * index.texcoord_index + 0];
-                    vertex.UV[1] = 1.0f - attrib.texcoords[2 * index.texcoord_index + 1];
-                }
-
-                vertex.Color[0] = 1.0f;
-                vertex.Color[1] = 1.0f;
-                vertex.Color[2] = 1.0f;
-                vertex.Color[3] = 1.0f;
-
-                outVertices.push_back(vertex);
-                outIndices.push_back(i++);
-            }
-        }
-
-        mesh.vertexBuffer = pDevice->createVertexBuffer(BufferUsage::Dynamic,
-                                                        outVertices.size() * sizeof(Vertex), outVertices.data());
-
-        mesh.indexCount = outIndices.size();
-        mesh.indexBuffer = pDevice->createIndexBuffer(BufferUsage::Static,
-                                                      mesh.indexCount * sizeof(uint32), outIndices.data());
+        rmesh.vertexBuffer = pDevice->createVertexBuffer(BufferUsage::Dynamic,
+                cmesh->getVertexCount() * sizeof(Vertex), cmesh->getVertexData());
+        rmesh.indexCount = cmesh->getIndexCount();
+        rmesh.indexBuffer = pDevice->createIndexBuffer(BufferUsage::Static,
+                rmesh.indexCount * sizeof(uint32), cmesh->getIndexData());
     }
 
     void initMaterial() {
         // load shader, init its uniform layout
         initShader();
-        initUniformLayout();
 
         // prepare buffers and textures for material
         initUniformBuffers();
@@ -279,22 +214,7 @@ private:
         material.shader = std::make_shared<Shader>(pDevice);
         material.shader->fromSources(ShaderLanguage::SPIRV, vertSpv, fragSpv);
         material.shader->reflectData();
-
-    }
-
-    void initUniformLayout() {
-        RenderDevice::UniformLayoutBufferDesc uniformLayoutBufferDesc = {};
-        uniformLayoutBufferDesc.binding = 0;
-        uniformLayoutBufferDesc.flags = (uint32) ShaderStageFlagBits::VertexBit;
-        RenderDevice::UniformLayoutTextureDesc uniformLayoutTextureDesc = {};
-        uniformLayoutTextureDesc.binding = 1;
-        uniformLayoutTextureDesc.flags = (ShaderStageFlags) ShaderStageFlagBits::FragmentBit;
-
-        RenderDevice::UniformLayoutDesc uniformLayoutDesc = {};
-        uniformLayoutDesc.buffers.push_back(uniformLayoutBufferDesc);
-        uniformLayoutDesc.textures.push_back(uniformLayoutTextureDesc);
-
-        material.uniformLayout = pDevice->createUniformLayout(uniformLayoutDesc);
+        material.shader->generateUniformLayout();
     }
 
     void initUniformBuffers() {
@@ -316,7 +236,7 @@ private:
 
         uint32 mipmapCount = (uint32)std::floor(std::log2(std::max(texWidth, texHeight))) + 1;
 
-        RenderDevice::TextureDesc textureDesc = {};
+        IRenderDevice::TextureDesc textureDesc = {};
         textureDesc.height = texHeight;
         textureDesc.width = texWidth;
         textureDesc.depth = 1;
@@ -332,7 +252,7 @@ private:
 
         stbi_image_free(pixels);
 
-        RenderDevice::SamplerDesc samplerDesc = {};
+        IRenderDevice::SamplerDesc samplerDesc = {};
         samplerDesc.mag = SamplerFilter::Linear;
         samplerDesc.min = SamplerFilter::Linear;
         samplerDesc.u = samplerDesc.v = samplerDesc.w = SamplerRepeatMode::Repeat;
@@ -348,68 +268,73 @@ private:
     }
 
     void initUniformSet() {
-        RenderDevice::UniformBufferDesc uniformBufferDesc = {};
+        IRenderDevice::UniformBufferDesc uniformBufferDesc = {};
         uniformBufferDesc.binding = 0;
         uniformBufferDesc.offset = 0;
         uniformBufferDesc.range = sizeof(ShaderUniformBuffer);
         uniformBufferDesc.buffer = material.uniformBuffer->getHandle();
-        RenderDevice::UniformTextureDesc uniformTextureDesc = {};
+        IRenderDevice::UniformTextureDesc uniformTextureDesc = {};
         uniformTextureDesc.binding = 1;
         uniformTextureDesc.texture = material.texture;
         uniformTextureDesc.sampler = material.textureSampler;
         uniformTextureDesc.stageFlags = (ShaderStageFlags)ShaderStageFlagBits::FragmentBit;
 
-        RenderDevice::UniformSetDesc uniformSetDesc = {};
+        IRenderDevice::UniformSetDesc uniformSetDesc = {};
         uniformSetDesc.buffers.push_back(uniformBufferDesc);
         uniformSetDesc.textures.push_back(uniformTextureDesc);
 
-        material.uniformSet = pDevice->createUniformSet(uniformSetDesc, material.uniformLayout);
+        material.uniformSet = pDevice->createUniformSet(uniformSetDesc, material.shader->getLayout());
     }
 
     void initGraphicsPipeline() {
-        RenderDevice::PipelineRasterizationDesc rasterizationDesc = {};
+        IRenderDevice::PipelineRasterizationDesc rasterizationDesc = {};
         rasterizationDesc.cullMode = PolygonCullMode::Back;
         rasterizationDesc.frontFace = PolygonFrontFace::FrontCounterClockwise;
         rasterizationDesc.lineWidth = 1.0f;
         rasterizationDesc.mode = PolygonMode::Fill;
 
-        RenderDevice::BlendAttachmentDesc blendAttachmentDesc = {};
+        IRenderDevice::BlendAttachmentDesc blendAttachmentDesc = {};
         blendAttachmentDesc.blendEnable = false;
-        RenderDevice::PipelineSurfaceBlendStateDesc blendStateDesc = {};
+        IRenderDevice::PipelineSurfaceBlendStateDesc blendStateDesc = {};
         blendStateDesc.attachment = blendAttachmentDesc;
         blendStateDesc.logicOpEnable = false;
         blendStateDesc.logicOp = LogicOperation::NoOp;
 
-        RenderDevice::PipelineDepthStencilStateDesc depthStencilStateDesc = {};
+        IRenderDevice::PipelineDepthStencilStateDesc depthStencilStateDesc = {};
         depthStencilStateDesc.depthCompareOp = CompareOperation::Less;
         depthStencilStateDesc.depthWriteEnable = true;
         depthStencilStateDesc.depthTestEnable = true;
         depthStencilStateDesc.stencilTestEnable = false;
 
         material.graphicsPipeline = pDevice->createGraphicsPipeline(
-                surface, PrimitiveTopology::TriangleList,
-                material.shader->getHandle(), mesh.vertexLayout,  material.uniformLayout,
-                rasterizationDesc, blendStateDesc, depthStencilStateDesc
+                surface,
+                PrimitiveTopology::TriangleList,
+                material.shader->getHandle(),
+                rmesh.vertexLayout,
+                material.shader->getLayout(),
+                rasterizationDesc,
+                blendStateDesc,
+                depthStencilStateDesc
         );
     }
 
     void destroy() {
-        pDevice->destroyVertexBuffer(mesh.vertexBuffer);
-        pDevice->destroyVertexLayout(mesh.vertexLayout);
-        pDevice->destroyIndexBuffer(mesh.indexBuffer);
+        pDevice->destroyVertexBuffer(rmesh.vertexBuffer);
+        pDevice->destroyVertexLayout(rmesh.vertexLayout);
+        pDevice->destroyIndexBuffer(rmesh.indexBuffer);
 
         pDevice->destroyUniformSet(material.uniformSet);
-        pDevice->destroyUniformLayout(material.uniformLayout);
 
         pDevice->destroyTexture(material.texture);
         pDevice->destroySampler(material.textureSampler);
 
         pDevice->destroyGraphicsPipeline(material.graphicsPipeline);
-        material.shader = nullptr; // or material.shader->releaseHandle();
+        material.shader = nullptr;
         material.uniformBuffer = nullptr;
 
         ignimbrite::VulkanExtensions::destroySurface(*pDevice, surface);
         pDevice = nullptr;
+        cmesh = nullptr;
 
         glfwDestroyWindow(window.glfwWindow);
         glfwTerminate();
@@ -430,9 +355,9 @@ private:
         material.uniformBuffer->updateData(sizeof(ShaderUniformBuffer), 0, (uint8*)&material.data);
     }
 
-    static void calculateMvp(float viewWidth, float viewHeight,
-                             float fovDegrees, float apitch, float ayaw, float cz,
-                             float *outMat4, float *outModelMat4) {
+    static void calculateMvp(float32 viewWidth, float32 viewHeight,
+                             float32 fovDegrees, float32 apitch, float32 ayaw, float32 cz,
+                             float32 *outMat4, float32 *outModelMat4) {
         auto projection = glm::perspective(fovDegrees, viewWidth / viewHeight, 0.1f, 100.0f);
 
         auto view = glm::lookAt(
@@ -460,50 +385,56 @@ private:
         }
     }
 
-    static void mouseCallback(GLFWwindow *window, double x, double y) {
-        const float sensitivity = 0.01f;
+    static void mouseCallback(GLFWwindow *window, float64 x, float64 y) {
+        const float32 sensitivity = 0.01f;
 
         if (glfwGetMouseButton(window, 0) == GLFW_PRESS) {
-            yaw += (float)x * sensitivity - prevx;
-            pitch -= (float)y * sensitivity - prevy;
+            yaw += (float32)x * sensitivity - prevx;
+            pitch -= (float32)y * sensitivity - prevy;
         }
 
-        prevx = (float)x * sensitivity;
-        prevy = (float)y * sensitivity;
+        prevx = (float32)x * sensitivity;
+        prevy = (float32)y * sensitivity;
     }
 
-    static void scrollCallback(GLFWwindow *, double, double y) {
-        z += (float)y;
+    static void scrollCallback(GLFWwindow *, float64 x, float64 y) {
+        z += (float32)y;
+
+        // Clamp to prevent reverse scroll
+        if (z < 5.0f)
+            z = 5.0f;
     }
 
 private:
-    const char          *name = "Textured 3D model";
 
     std::shared_ptr<VulkanRenderDevice> pDevice;
+    ID<IRenderDevice::Surface> surface;
+    Window           window;
+    RefCounted<Mesh> cmesh;
+    RenderableMesh   rmesh;
+    Material         material;
 
-    ID<RenderDevice::Surface> surface;
-    Window   window;
-    Mesh     mesh;
-    Material material;
+    String name = "Textured 3D model";
+    String objMeshPath;
+    String texturePath;
 
-    std::string objMeshPath;
-    std::string texturePath;
+    String MODEL3D_SHADER_PATH_VERT = "shaders/spirv/vert3d.spv";
+    String MODEL3D_SHADER_PATH_FRAG = "shaders/spirv/frag3d.spv";
 
-    static float pitch;
-    static float yaw;
-    static float fov;
-    static float z;
-    static float prevx;
-    static float prevy;
+    static float32 pitch;
+    static float32 yaw;
+    static float32 fov;
+    static float32 z;
+    static float32 prevx;
+    static float32 prevy;
 };
 
-float Vulkan3DTest::pitch = 0;
-float Vulkan3DTest::yaw = 0;
-float Vulkan3DTest::fov = 70;
-float Vulkan3DTest::z = -80;
-float Vulkan3DTest::prevx = 0;
-float Vulkan3DTest::prevy = 0;
-
+float32 Vulkan3DTest::pitch = 0;
+float32 Vulkan3DTest::yaw = 0;
+float32 Vulkan3DTest::fov = 70;
+float32 Vulkan3DTest::z = 40;
+float32 Vulkan3DTest::prevx = 0;
+float32 Vulkan3DTest::prevy = 0;
 
 int main(int argc, char **argv) {
     const char *mesh = "assets/models/sphere.obj";

@@ -33,25 +33,25 @@ struct Window {
 };
 
 struct SurfacePass {
-    ID<RenderDevice::VertexLayout> vertexLayout;
-    ID<RenderDevice::UniformLayout> uniformLayout;
-    ID<RenderDevice::UniformSet> uniformSet;
-    ID<RenderDevice::VertexBuffer> vertexBuffer;
-    ID<RenderDevice::ShaderProgram> shader;
-    ID<RenderDevice::GraphicsPipeline> pipeline;
-    ID<RenderDevice::Sampler> sampler;
+    ID<IRenderDevice::VertexLayout> vertexLayout;
+    ID<IRenderDevice::UniformLayout> uniformLayout;
+    ID<IRenderDevice::UniformSet> uniformSet;
+    ID<IRenderDevice::VertexBuffer> vertexBuffer;
+    ID<IRenderDevice::ShaderProgram> shader;
+    ID<IRenderDevice::GraphicsPipeline> pipeline;
+    ID<IRenderDevice::Sampler> sampler;
 };
 
 struct OffscreenPass {
-    ID<RenderDevice::VertexLayout> vertexLayout;
-    ID<RenderDevice::UniformLayout> uniformLayout;
-    ID<RenderDevice::VertexBuffer> vertexBuffer;
-    ID<RenderDevice::ShaderProgram> shader;
-    ID<RenderDevice::GraphicsPipeline> pipeline;
-    ID<RenderDevice::FramebufferFormat> frameBufferFormat;
-    ID<RenderDevice::Framebuffer> frameBuffer;
-    ID<RenderDevice::Texture> colorTexture;
-    ID<RenderDevice::Texture> depthTexture;
+    ID<IRenderDevice::VertexLayout> vertexLayout;
+    ID<IRenderDevice::UniformLayout> uniformLayout;
+    ID<IRenderDevice::VertexBuffer> vertexBuffer;
+    ID<IRenderDevice::ShaderProgram> shader;
+    ID<IRenderDevice::GraphicsPipeline> pipeline;
+    ID<IRenderDevice::FramebufferFormat> frameBufferFormat;
+    ID<IRenderDevice::Framebuffer> frameBuffer;
+    ID<IRenderDevice::Texture> colorTexture;
+    ID<IRenderDevice::Texture> depthTexture;
     uint32 width = 0, height = 0;
 };
 
@@ -107,7 +107,7 @@ public:
     void createOffscreenPass() {
         loadShader(path + "gradient.vert.spv", path + "gradient.frag.spv", offscreenPass.shader);
 
-        RenderDevice::VertexBufferLayoutDesc vertexLayoutDesc = {};
+        IRenderDevice::VertexBufferLayoutDesc vertexLayoutDesc = {};
         vertexLayoutDesc.stride = sizeof(float) * 6;
         vertexLayoutDesc.usage = VertexUsage::PerVertex;
         vertexLayoutDesc.attributes.resize(2);
@@ -124,11 +124,11 @@ public:
 
         offscreenPass.vertexBuffer = device->createVertexBuffer(BufferUsage::Static, sizeof(geometry), geometry);
 
-        RenderDevice::UniformLayoutDesc uniformLayoutDesc = {};
+        IRenderDevice::UniformLayoutDesc uniformLayoutDesc = {};
 
         offscreenPass.uniformLayout = device->createUniformLayout(uniformLayoutDesc);
 
-        std::vector<RenderDevice::FramebufferAttachmentDesc> attachmentsDesc(2);
+        std::vector<IRenderDevice::FramebufferAttachmentDesc> attachmentsDesc(2);
         attachmentsDesc[0].format = DataFormat::R8G8B8A8_UNORM;
         attachmentsDesc[0].samples = TextureSamples::Samples1;
         attachmentsDesc[0].type = AttachmentType::Color;
@@ -138,7 +138,7 @@ public:
 
         offscreenPass.frameBufferFormat = device->createFramebufferFormat(attachmentsDesc);
 
-        RenderDevice::TextureDesc colorTextureDesc = {};
+        IRenderDevice::TextureDesc colorTextureDesc = {};
         colorTextureDesc.format = DataFormat::R8G8B8A8_UNORM;
         colorTextureDesc.width = window.widthFBO;
         colorTextureDesc.height = window.heightFBO;
@@ -147,7 +147,7 @@ public:
 
         offscreenPass.colorTexture = device->createTexture(colorTextureDesc);
 
-        RenderDevice::TextureDesc depthTextureDesc = {};
+        IRenderDevice::TextureDesc depthTextureDesc = {};
         depthTextureDesc.format = DataFormat::D32_SFLOAT_S8_UINT;
         depthTextureDesc.width = window.widthFBO;
         depthTextureDesc.height = window.heightFBO;
@@ -156,13 +156,13 @@ public:
 
         offscreenPass.depthTexture = device->createTexture(depthTextureDesc);
 
-        std::vector<ID<RenderDevice::Texture>> attachments = { offscreenPass.colorTexture, offscreenPass.depthTexture };
+        std::vector<ID<IRenderDevice::Texture>> attachments = { offscreenPass.colorTexture, offscreenPass.depthTexture };
 
         offscreenPass.frameBuffer = device->createFramebuffer(attachments, offscreenPass.frameBufferFormat);
         offscreenPass.width = window.widthFBO;
         offscreenPass.height = window.heightFBO;
 
-        RenderDevice::PipelineRasterizationDesc rasterizationDesc = {};
+        IRenderDevice::PipelineRasterizationDesc rasterizationDesc = {};
         rasterizationDesc.cullMode = PolygonCullMode::Back;
         rasterizationDesc.frontFace = PolygonFrontFace::FrontCounterClockwise;
         rasterizationDesc.lineWidth = 1.0f;
@@ -170,15 +170,15 @@ public:
 
         PrimitiveTopology topology = PrimitiveTopology::TriangleList;
 
-        RenderDevice::BlendAttachmentDesc blendAttachmentDesc = {};
+        IRenderDevice::BlendAttachmentDesc blendAttachmentDesc = {};
         blendAttachmentDesc.blendEnable = false;
 
-        RenderDevice::PipelineBlendStateDesc blendStateDesc = {};
+        IRenderDevice::PipelineBlendStateDesc blendStateDesc = {};
         blendStateDesc.attachments.push_back(blendAttachmentDesc);
         blendStateDesc.logicOpEnable = false;
         blendStateDesc.logicOp = LogicOperation::Copy;
 
-        RenderDevice::PipelineDepthStencilStateDesc depthStencilStateDesc = {};
+        IRenderDevice::PipelineDepthStencilStateDesc depthStencilStateDesc = {};
         depthStencilStateDesc.depthTestEnable = true;
         depthStencilStateDesc.depthCompareOp = CompareOperation::Less;
         depthStencilStateDesc.depthWriteEnable = true;
@@ -199,7 +199,7 @@ public:
     void createSurfacePass() {
         loadShader(path + "fullscreen.vert.spv", path + "fullscreen.frag.spv", surfacePass.shader);
 
-        RenderDevice::VertexBufferLayoutDesc vertexLayoutDesc = {};
+        IRenderDevice::VertexBufferLayoutDesc vertexLayoutDesc = {};
         vertexLayoutDesc.stride = sizeof(float) * 3;
         vertexLayoutDesc.usage = VertexUsage::PerVertex;
         vertexLayoutDesc.attributes.resize(1);
@@ -213,16 +213,16 @@ public:
 
         surfacePass.vertexBuffer = device->createVertexBuffer(BufferUsage::Static, sizeof(quad), quad);
 
-        RenderDevice::UniformLayoutTextureDesc textureDesc = {};
+        IRenderDevice::UniformLayoutTextureDesc textureDesc = {};
         textureDesc.binding = 0;
         textureDesc.flags = (uint32) ShaderStageFlagBits::FragmentBit;
 
-        RenderDevice::UniformLayoutDesc uniformLayoutDesc = {};
+        IRenderDevice::UniformLayoutDesc uniformLayoutDesc = {};
         uniformLayoutDesc.textures.push_back(textureDesc);
 
         surfacePass.uniformLayout = device->createUniformLayout(uniformLayoutDesc);
 
-        RenderDevice::SamplerDesc samplerDesc = {};
+        IRenderDevice::SamplerDesc samplerDesc = {};
         samplerDesc.min = SamplerFilter::Linear;
         samplerDesc.mag = SamplerFilter::Linear;
         samplerDesc.minLod = 0.0f;
@@ -238,18 +238,18 @@ public:
 
         surfacePass.sampler = device->createSampler(samplerDesc);
 
-        RenderDevice::UniformTextureDesc uniformTextureDesc = {};
+        IRenderDevice::UniformTextureDesc uniformTextureDesc = {};
         uniformTextureDesc.binding = 0;
         uniformTextureDesc.sampler = surfacePass.sampler;
         uniformTextureDesc.stageFlags = (uint32) ShaderStageFlagBits::FragmentBit;
         uniformTextureDesc.texture = offscreenPass.colorTexture;
 
-        RenderDevice::UniformSetDesc uniformSetDesc = {};
+        IRenderDevice::UniformSetDesc uniformSetDesc = {};
         uniformSetDesc.textures.push_back(uniformTextureDesc);
 
         surfacePass.uniformSet = device->createUniformSet(uniformSetDesc, surfacePass.uniformLayout);
 
-        RenderDevice::PipelineRasterizationDesc rasterizationDesc = {};
+        IRenderDevice::PipelineRasterizationDesc rasterizationDesc = {};
         rasterizationDesc.cullMode = PolygonCullMode::Back;
         rasterizationDesc.frontFace = PolygonFrontFace::FrontCounterClockwise;
         rasterizationDesc.lineWidth = 1.0f;
@@ -257,15 +257,15 @@ public:
 
         PrimitiveTopology topology = PrimitiveTopology::TriangleList;
 
-        RenderDevice::BlendAttachmentDesc blendAttachmentDesc = {};
+        IRenderDevice::BlendAttachmentDesc blendAttachmentDesc = {};
         blendAttachmentDesc.blendEnable = false;
 
-        RenderDevice::PipelineSurfaceBlendStateDesc blendStateDesc = {};
+        IRenderDevice::PipelineSurfaceBlendStateDesc blendStateDesc = {};
         blendStateDesc.attachment = blendAttachmentDesc;
         blendStateDesc.logicOpEnable = false;
         blendStateDesc.logicOp = LogicOperation::Copy;
 
-        RenderDevice::PipelineDepthStencilStateDesc depthStencilStateDesc = {};
+        IRenderDevice::PipelineDepthStencilStateDesc depthStencilStateDesc = {};
         depthStencilStateDesc.depthTestEnable = false;
         depthStencilStateDesc.depthCompareOp = CompareOperation::Less;
         depthStencilStateDesc.depthWriteEnable = false;
@@ -284,7 +284,7 @@ public:
 
     }
 
-    void loadShader(const std::string &vertexName, const std::string &fragmentName, ID<RenderDevice::ShaderProgram>& id) {
+    void loadShader(const std::string &vertexName, const std::string &fragmentName, ID<IRenderDevice::ShaderProgram>& id) {
         std::ifstream vertexFile(vertexName, std::ios::binary);
         std::ifstream fragmentFile(fragmentName, std::ios::binary);
 
@@ -295,7 +295,7 @@ public:
         std::vector<uint8> vertexSpv(std::istreambuf_iterator<char>(vertexFile), {});
         std::vector<uint8> fragmentSpv(std::istreambuf_iterator<char>(fragmentFile), {});
 
-        RenderDevice::ProgramDesc programDesc;
+        IRenderDevice::ProgramDesc programDesc;
         programDesc.language = ShaderLanguage::SPIRV;
         programDesc.shaders.resize(2);
 
@@ -315,10 +315,10 @@ public:
             glfwSwapBuffers(window.handle);
             glfwGetFramebufferSize(window.handle, &window.widthFBO, &window.heightFBO);
 
-            RenderDevice::Color color = {  { 0.1, 0.2, 0.3, 0.0 } };
-            RenderDevice::Region region = { 0, 0, { (uint32) window.widthFBO, (uint32) window.heightFBO } };
-            RenderDevice::Region regionOffscreen = { 0, 0, { offscreenPass.width, offscreenPass.height } };
-            std::vector<RenderDevice::Color> colors = { { { 0.0, 0.0, 0.0, 0.0 }} };
+            IRenderDevice::Color color = {  { 0.1, 0.2, 0.3, 0.0 } };
+            IRenderDevice::Region region = { 0, 0, { (uint32) window.widthFBO, (uint32) window.heightFBO } };
+            IRenderDevice::Region regionOffscreen = { 0, 0, { offscreenPass.width, offscreenPass.height } };
+            std::vector<IRenderDevice::Color> colors = { { { 0.0, 0.0, 0.0, 0.0 }} };
 
             if (region.extent.x == 0|| region.extent.y == 0)
             {
@@ -351,7 +351,7 @@ private:
 
     VulkanRenderDevice* device;
     Window window;
-    ID<RenderDevice::Surface> surface;
+    ID<IRenderDevice::Surface> surface;
     OffscreenPass offscreenPass;
     SurfacePass surfacePass;
 

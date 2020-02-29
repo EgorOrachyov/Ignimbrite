@@ -10,7 +10,7 @@
 #ifndef IGNIMBRITE_SAMPLER_H
 #define IGNIMBRITE_SAMPLER_H
 
-#include <RenderDevice.h>
+#include <IRenderDevice.h>
 #include <CacheItem.h>
 #include <IncludeStd.h>
 
@@ -18,7 +18,7 @@ namespace ignimbrite {
 
     class Sampler : public CacheItem {
     public:
-        explicit Sampler(RefCounted<RenderDevice> device);
+        explicit Sampler(RefCounted<IRenderDevice> device);
         ~Sampler() override;
 
         void setHighQualityFiltering();
@@ -37,9 +37,9 @@ namespace ignimbrite {
         SamplerBorderColor mBorderColor;
         SamplerRepeatMode mRepeatMode;
         /** Actual resource */
-        ID<RenderDevice::Sampler> mHandle;
+        ID<IRenderDevice::Sampler> mHandle;
         /** Render device for lower API access */
-        RefCounted<RenderDevice> mDevice;
+        RefCounted<IRenderDevice> mDevice;
     };
 
 }

@@ -11,7 +11,7 @@
 
 namespace ignimbrite {
 
-    Texture::Texture(RefCounted<ignimbrite::RenderDevice> device)
+    Texture::Texture(RefCounted<ignimbrite::IRenderDevice> device)
         : mDevice(std::move(device)) {
 
     }
@@ -37,7 +37,7 @@ namespace ignimbrite {
             mData.push_back(data[i]);
         }
 
-        RenderDevice::TextureDesc textureDesc{};
+        IRenderDevice::TextureDesc textureDesc{};
         textureDesc.data = mData.data();
         textureDesc.format = mDataFormat;
         textureDesc.width = mWidth;
@@ -56,7 +56,7 @@ namespace ignimbrite {
     void Texture::releaseHandle() {
         if (mHandle.isNotNull()) {
             mDevice->destroyTexture(mHandle);
-            mHandle = ID<RenderDevice::Texture>();
+            mHandle = ID<IRenderDevice::Texture>();
         }
     }
 

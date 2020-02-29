@@ -9,7 +9,7 @@
 
 #include <VulkanContext.h>
 #include <Compilation.h>
-#include <RenderDeviceDefinitions.h>
+#include <IRenderDeviceDefinitions.h>
 #include <cstring>
 #include <set>
 #include <array>

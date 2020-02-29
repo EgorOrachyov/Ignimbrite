@@ -18,20 +18,20 @@ namespace ignimbrite {
     void Material::SharedData::release() {
         if (pipeline.isNotNull()) {
             device->destroyGraphicsPipeline(pipeline);
-            pipeline = ID<RenderDevice::GraphicsPipeline>();
+            pipeline = ID<IRenderDevice::GraphicsPipeline>();
         }
         if (uniformLayout.isNotNull()) {
             device->destroyUniformLayout(uniformLayout);
-            uniformLayout = ID<RenderDevice::UniformLayout>();
+            uniformLayout = ID<IRenderDevice::UniformLayout>();
         }
         if (vertexLayout.isNotNull()) {
             device->destroyVertexLayout(vertexLayout);
-            vertexLayout = ID<RenderDevice::VertexLayout>();
+            vertexLayout = ID<IRenderDevice::VertexLayout>();
         }
         shader = nullptr;
     }
 
-    Material::Material(RefCounted<RenderDevice> device) {
+    Material::Material(RefCounted<IRenderDevice> device) {
         mData = std::make_shared<SharedData>();
         mData->device = std::move(device);
     }

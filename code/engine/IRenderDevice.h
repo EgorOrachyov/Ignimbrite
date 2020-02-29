@@ -7,12 +7,12 @@
 /* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
-#ifndef IGNIMBRITE_RENDERDEVICE_H
-#define IGNIMBRITE_RENDERDEVICE_H
+#ifndef IGNIMBRITE_IRENDERDEVICE_H
+#define IGNIMBRITE_IRENDERDEVICE_H
 
 #include <ObjectID.h>
 #include <IncludeStd.h>
-#include <RenderDeviceDefinitions.h>
+#include <IRenderDeviceDefinitions.h>
 
 namespace ignimbrite {
 
@@ -30,7 +30,7 @@ namespace ignimbrite {
      * If you add your own object and meta-structures, please,
      * follow the above mentioned notation.
      */
-    class RenderDevice {
+    class IRenderDevice {
     public:
 
         class VertexLayout;
@@ -47,7 +47,7 @@ namespace ignimbrite {
         class Texture;
         class Sampler;
 
-        virtual ~RenderDevice() = default;
+        virtual ~IRenderDevice() = default;
 
         /** Single vertex shader input value description */
         struct VertexAttributeDesc {
@@ -463,4 +463,4 @@ namespace ignimbrite {
 
 } // namespace ignimbrite
 
-#endif //IGNIMBRITE_RENDERDEVICE_H
+#endif //IGNIMBRITE_IRENDERDEVICE_H

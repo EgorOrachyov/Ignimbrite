@@ -6,8 +6,9 @@ set(Ignimbrite_SOURCES
     IncludeStd.h
     IncludeMath.h
     Compilation.h
-    RenderDeviceDefinitions.h
-    RenderDevice.h
+    IRenderDevice.cpp
+    IRenderDevice.h
+    IRenderDeviceDefinitions.h
     FileUtils.h
     ObjectID.h
     ObjectIDBuffer.h
@@ -21,7 +22,6 @@ set(Ignimbrite_SOURCES
     Texture.h
     Sampler.h
     UniformBuffer.h
-    RenderDevice.cpp
     FileUtils.cpp
     Cache.cpp
     Cache.h
@@ -36,10 +36,14 @@ set(Ignimbrite_SOURCES
     Material.h
     IRenderable.cpp
     IRenderable.h
-        )
+    Mesh.cpp
+    Mesh.h
+    MeshLoader.cpp
+    MeshLoader.h)
 
 add_library(Ignimbrite STATIC ${Ignimbrite_SOURCES})
 
 target_include_directories(Ignimbrite PUBLIC .)
 target_link_libraries(Ignimbrite PRIVATE spirv-cross-core)
 target_link_libraries(Ignimbrite PUBLIC glm)
+target_link_libraries(Ignimbrite PUBLIC tinyobjloader)

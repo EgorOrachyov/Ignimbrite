@@ -7,18 +7,22 @@
 /* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
-#include <RenderDevice.h>
+
+#ifndef IGNIMBRITE_MESHLOADER_H
+#define IGNIMBRITE_MESHLOADER_H
+
+#include <Mesh.h>
 
 namespace ignimbrite {
 
-    const String &RenderDevice::getDeviceName() const {
-        static const String device = "Default Device";
-        return device;
-    }
+    class MeshLoader {
+    public:
+        explicit MeshLoader(String filePath);
+        RefCounted<Mesh> importMesh(Mesh::VertexFormat preferredFormat);
+    private:
+        String mFilePath;
+    };
 
-    const String &RenderDevice::getVendorName() const {
-        static const String device = "Default Vendor";
-        return device;
-    }
+}
 
-} // namespace ignimbrite
+#endif //IGNIMBRITE_MESHLOADER_H

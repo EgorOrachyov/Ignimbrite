@@ -11,7 +11,7 @@
 
 namespace ignimbrite {
 
-    UniformBuffer::UniformBuffer(RefCounted<ignimbrite::RenderDevice> device)
+    UniformBuffer::UniformBuffer(RefCounted<ignimbrite::IRenderDevice> device)
          : mDevice(std::move(device)) {
 
     }
@@ -40,7 +40,7 @@ namespace ignimbrite {
 
         if (size + offset <= bufferSize) {
             auto memory = mBuffer.data();
-            std::memcpy(memory + offset, data, sizeof(uint8) * size);
+            memcpy(memory + offset, data, sizeof(uint8) * size);
         }
     }
 
@@ -53,7 +53,7 @@ namespace ignimbrite {
     void UniformBuffer::releaseHandle() {
         if (mHandle.isNotNull()) {
             mDevice->destroyUniformBuffer(mHandle);
-            mHandle = ID<RenderDevice::UniformBuffer>();
+            mHandle = ID<IRenderDevice::UniformBuffer>();
         }
     }
 

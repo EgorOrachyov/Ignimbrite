@@ -20,7 +20,7 @@
 namespace ignimbrite {
 
     /** Vulkan implementation for Render Device interface */
-    class VulkanRenderDevice : public RenderDevice {
+    class VulkanRenderDevice : public IRenderDevice {
     public:
 
         VulkanRenderDevice(uint32 extensionsCount, const char *const *extensions);
@@ -110,19 +110,19 @@ namespace ignimbrite {
         using CommandBuffers = std::vector<VkCommandBuffer>;
         using ClearValues = std::vector<VkClearValue>;
 
-        using RenderDevice::VertexLayout;
-        using RenderDevice::VertexBuffer;
-        using RenderDevice::IndexBuffer;
-        using RenderDevice::UniformBuffer;
-        using RenderDevice::UniformLayout;
-        using RenderDevice::UniformSet;
-        using RenderDevice::ShaderProgram;
-        using RenderDevice::GraphicsPipeline;
-        using RenderDevice::FramebufferFormat;
-        using RenderDevice::Framebuffer;
-        using RenderDevice::Surface;
-        using RenderDevice::Texture;
-        using RenderDevice::Sampler;
+        using IRenderDevice::VertexLayout;
+        using IRenderDevice::VertexBuffer;
+        using IRenderDevice::IndexBuffer;
+        using IRenderDevice::UniformBuffer;
+        using IRenderDevice::UniformLayout;
+        using IRenderDevice::UniformSet;
+        using IRenderDevice::ShaderProgram;
+        using IRenderDevice::GraphicsPipeline;
+        using IRenderDevice::FramebufferFormat;
+        using IRenderDevice::Framebuffer;
+        using IRenderDevice::Surface;
+        using IRenderDevice::Texture;
+        using IRenderDevice::Sampler;
 
         VulkanDrawListStateControl mDrawListState;
         VulkanContext&  mContext = VulkanContext::getInstance();
