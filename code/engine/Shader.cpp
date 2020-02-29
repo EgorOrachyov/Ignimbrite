@@ -19,6 +19,7 @@ namespace ignimbrite {
 
     Shader::~Shader() {
         releaseHandle();
+        releaseLayout();
     }
 
     void Shader::fromSources(ignimbrite::ShaderLanguage language, const std::vector<ignimbrite::uint8> &vertex,
@@ -44,10 +45,47 @@ namespace ignimbrite {
         reflection.reflect();
     }
 
+    void Shader::generateUniformLayout() {
+        if (mLayout.isNotNull()) return;
+
+        IRenderDevice::UniformLayoutDesc uniformLayoutDesc{};
+
+        for (const auto& pair: mVariables) {
+            const auto& variable = pair.second;
+            if (variable.type == DataType::Sampler2D || variable.type == DataType::SamplerCubemap) {
+                IRenderDevice::UniformLayoutTextureDesc textureDesc{};
+                textureDesc.binding = variable.binding;
+                textureDesc.flags = variable.stageFlags;
+                uniformLayoutDesc.textures.push_back(textureDesc);
+            }
+        }
+
+        for (const auto& pair: mBuffers) {
+            const auto& buffer = pair.second;
+            IRenderDevice::UniformLayoutBufferDesc bufferDesc{};
+            bufferDesc.binding = buffer.binding;
+            bufferDesc.flags = buffer.stageFlags;
+            uniformLayoutDesc.buffers.push_back(bufferDesc);
+        }
+
+        mLayout = mDevice->createUniformLayout(uniformLayoutDesc);
+
+        if (mLayout.isNull()) {
+            // todo: do something
+        }
+    }
+
     void Shader::releaseHandle() {
         if (mHandle.isNotNull()) {
             mDevice->destroyShaderProgram(mHandle);
             mHandle = ID<IRenderDevice::ShaderProgram>();
+        }
+    }
+
+    void Shader::releaseLayout() {
+        if (mLayout.isNotNull()) {
+            mDevice->destroyUniformLayout(mLayout);
+            mLayout = ID<IRenderDevice::UniformLayout>();
         }
     }
 
@@ -57,6 +95,10 @@ namespace ignimbrite {
 
     const ID<IRenderDevice::ShaderProgram> &Shader::getHandle() const {
         return mHandle;
+    }
+
+    const ID<ignimbrite::IRenderDevice::UniformLayout> & Shader::getLayout() const {
+        return mLayout;
     }
 
     const std::vector<IRenderDevice::ShaderDesc>& Shader::getShaders() const {

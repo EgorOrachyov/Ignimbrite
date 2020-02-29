@@ -70,10 +70,13 @@ namespace ignimbrite {
 
         void fromSources(ShaderLanguage language, const std::vector<uint8> &vertex, const std::vector<uint8> &fragment);
         void reflectData();
+        void generateUniformLayout();
         void releaseHandle();
+        void releaseLayout();
 
         ShaderLanguage getLanguage() const;
         const ID<IRenderDevice::ShaderProgram> &getHandle() const;
+        const ID<IRenderDevice::UniformLayout> &getLayout() const;
         const std::vector<IRenderDevice::ShaderDesc> &getShaders() const;
         const ParameterInfo& getParameterInfo(const String &name) const;
         const UniformBufferInfo& getBufferInfo(const String &name) const;
@@ -92,6 +95,8 @@ namespace ignimbrite {
         IRenderDevice::ProgramDesc mProgramDesc;
         /** Actual program handle */
         ID<IRenderDevice::ShaderProgram> mHandle;
+        /** Uniform layout */
+        ID<IRenderDevice::UniformLayout> mLayout;
         /** Render device, which is used for that shader creation */
         RefCounted<IRenderDevice> mDevice;
 

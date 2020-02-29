@@ -34,15 +34,14 @@ struct RenderableMesh {
 };
 
 struct ShaderUniformBuffer {
-    float mvp[16] = {};
-    float model[16] = {};
-    float lightDir[3] = {};
-    float ambient[3] = {};
+    float32 mvp[16] = {};
+    float32 model[16] = {};
+    float32 lightDir[3] = {};
+    float32 ambient[3] = {};
 };
 
 struct Material {
     std::shared_ptr<Shader> shader;
-    ID<IRenderDevice::UniformLayout> uniformLayout;
     ID<IRenderDevice::GraphicsPipeline> graphicsPipeline;
     ID<IRenderDevice::UniformSet> uniformSet;
     std::shared_ptr<UniformBuffer> uniformBuffer;
@@ -196,7 +195,6 @@ private:
     void initMaterial() {
         // load shader, init its uniform layout
         initShader();
-        initUniformLayout();
 
         // prepare buffers and textures for material
         initUniformBuffers();
@@ -216,22 +214,7 @@ private:
         material.shader = std::make_shared<Shader>(pDevice);
         material.shader->fromSources(ShaderLanguage::SPIRV, vertSpv, fragSpv);
         material.shader->reflectData();
-
-    }
-
-    void initUniformLayout() {
-        IRenderDevice::UniformLayoutBufferDesc uniformLayoutBufferDesc = {};
-        uniformLayoutBufferDesc.binding = 0;
-        uniformLayoutBufferDesc.flags = (uint32) ShaderStageFlagBits::VertexBit;
-        IRenderDevice::UniformLayoutTextureDesc uniformLayoutTextureDesc = {};
-        uniformLayoutTextureDesc.binding = 1;
-        uniformLayoutTextureDesc.flags = (ShaderStageFlags) ShaderStageFlagBits::FragmentBit;
-
-        IRenderDevice::UniformLayoutDesc uniformLayoutDesc = {};
-        uniformLayoutDesc.buffers.push_back(uniformLayoutBufferDesc);
-        uniformLayoutDesc.textures.push_back(uniformLayoutTextureDesc);
-
-        material.uniformLayout = pDevice->createUniformLayout(uniformLayoutDesc);
+        material.shader->generateUniformLayout();
     }
 
     void initUniformBuffers() {
@@ -300,7 +283,7 @@ private:
         uniformSetDesc.buffers.push_back(uniformBufferDesc);
         uniformSetDesc.textures.push_back(uniformTextureDesc);
 
-        material.uniformSet = pDevice->createUniformSet(uniformSetDesc, material.uniformLayout);
+        material.uniformSet = pDevice->createUniformSet(uniformSetDesc, material.shader->getLayout());
     }
 
     void initGraphicsPipeline() {
@@ -324,9 +307,14 @@ private:
         depthStencilStateDesc.stencilTestEnable = false;
 
         material.graphicsPipeline = pDevice->createGraphicsPipeline(
-                surface, PrimitiveTopology::TriangleList,
-                material.shader->getHandle(), rmesh.vertexLayout,  material.uniformLayout,
-                rasterizationDesc, blendStateDesc, depthStencilStateDesc
+                surface,
+                PrimitiveTopology::TriangleList,
+                material.shader->getHandle(),
+                rmesh.vertexLayout,
+                material.shader->getLayout(),
+                rasterizationDesc,
+                blendStateDesc,
+                depthStencilStateDesc
         );
     }
 
@@ -336,13 +324,12 @@ private:
         pDevice->destroyIndexBuffer(rmesh.indexBuffer);
 
         pDevice->destroyUniformSet(material.uniformSet);
-        pDevice->destroyUniformLayout(material.uniformLayout);
 
         pDevice->destroyTexture(material.texture);
         pDevice->destroySampler(material.textureSampler);
 
         pDevice->destroyGraphicsPipeline(material.graphicsPipeline);
-        material.shader = nullptr; // or material.shader->releaseHandle();
+        material.shader = nullptr;
         material.uniformBuffer = nullptr;
 
         ignimbrite::VulkanExtensions::destroySurface(*pDevice, surface);
@@ -368,9 +355,9 @@ private:
         material.uniformBuffer->updateData(sizeof(ShaderUniformBuffer), 0, (uint8*)&material.data);
     }
 
-    static void calculateMvp(float viewWidth, float viewHeight,
-                             float fovDegrees, float apitch, float ayaw, float cz,
-                             float *outMat4, float *outModelMat4) {
+    static void calculateMvp(float32 viewWidth, float32 viewHeight,
+                             float32 fovDegrees, float32 apitch, float32 ayaw, float32 cz,
+                             float32 *outMat4, float32 *outModelMat4) {
         auto projection = glm::perspective(fovDegrees, viewWidth / viewHeight, 0.1f, 100.0f);
 
         auto view = glm::lookAt(
@@ -398,20 +385,24 @@ private:
         }
     }
 
-    static void mouseCallback(GLFWwindow *window, double x, double y) {
-        const float sensitivity = 0.01f;
+    static void mouseCallback(GLFWwindow *window, float64 x, float64 y) {
+        const float32 sensitivity = 0.01f;
 
         if (glfwGetMouseButton(window, 0) == GLFW_PRESS) {
-            yaw += (float)x * sensitivity - prevx;
-            pitch -= (float)y * sensitivity - prevy;
+            yaw += (float32)x * sensitivity - prevx;
+            pitch -= (float32)y * sensitivity - prevy;
         }
 
-        prevx = (float)x * sensitivity;
-        prevy = (float)y * sensitivity;
+        prevx = (float32)x * sensitivity;
+        prevy = (float32)y * sensitivity;
     }
 
-    static void scrollCallback(GLFWwindow *, double, double y) {
-        z += (float)y;
+    static void scrollCallback(GLFWwindow *, float64 x, float64 y) {
+        z += (float32)y;
+
+        // Clamp to prevent reverse scroll
+        if (z < 5.0f)
+            z = 5.0f;
     }
 
 private:
@@ -430,20 +421,20 @@ private:
     String MODEL3D_SHADER_PATH_VERT = "shaders/spirv/vert3d.spv";
     String MODEL3D_SHADER_PATH_FRAG = "shaders/spirv/frag3d.spv";
 
-    static float pitch;
-    static float yaw;
-    static float fov;
-    static float z;
-    static float prevx;
-    static float prevy;
+    static float32 pitch;
+    static float32 yaw;
+    static float32 fov;
+    static float32 z;
+    static float32 prevx;
+    static float32 prevy;
 };
 
-float Vulkan3DTest::pitch = 0;
-float Vulkan3DTest::yaw = 0;
-float Vulkan3DTest::fov = 70;
-float Vulkan3DTest::z = -80;
-float Vulkan3DTest::prevx = 0;
-float Vulkan3DTest::prevy = 0;
+float32 Vulkan3DTest::pitch = 0;
+float32 Vulkan3DTest::yaw = 0;
+float32 Vulkan3DTest::fov = 70;
+float32 Vulkan3DTest::z = 40;
+float32 Vulkan3DTest::prevx = 0;
+float32 Vulkan3DTest::prevy = 0;
 
 int main(int argc, char **argv) {
     const char *mesh = "assets/models/sphere.obj";

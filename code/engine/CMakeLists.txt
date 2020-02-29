@@ -6,8 +6,9 @@ set(Ignimbrite_SOURCES
     IncludeStd.h
     IncludeMath.h
     Compilation.h
-        IRenderDeviceDefinitions.h
-        IRenderDevice.h
+    IRenderDevice.cpp
+    IRenderDevice.h
+    IRenderDeviceDefinitions.h
     FileUtils.h
     ObjectID.h
     ObjectIDBuffer.h
@@ -21,7 +22,6 @@ set(Ignimbrite_SOURCES
     Texture.h
     Sampler.h
     UniformBuffer.h
-        IRenderDevice.cpp
     FileUtils.cpp
     Cache.cpp
     Cache.h
