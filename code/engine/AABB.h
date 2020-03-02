@@ -27,7 +27,8 @@ namespace ignimbrite {
         /** Create bounding box Min=-vec, Max=vec */
         AABB(const glm::vec3 &vec) {
             for (int i = 0; i < 3; i++) {
-                minBounds[i] = maxBounds[i] = vec[i];
+                minBounds[i] = -vec[i];
+                maxBounds[i] = vec[i];
             }
         }
 
@@ -91,6 +92,14 @@ namespace ignimbrite {
         void expandToContain(const glm::vec3& point) {
             minBounds = glm::min(minBounds, point);
             maxBounds = glm::max(maxBounds, point);
+        }
+
+        glm::vec3 getCenter() const {
+            return (minBounds + maxBounds) / 2.0f;
+        }
+
+        glm::vec3 getExtent() const {
+            return maxBounds - getCenter();
         }
 
         // TODO: plane intersections
