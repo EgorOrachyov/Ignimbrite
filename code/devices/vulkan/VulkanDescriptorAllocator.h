@@ -18,9 +18,9 @@ namespace ignimbrite {
     struct VulkanDescriptorProperties {
         /** VK layout */
         VkDescriptorSetLayout layout = VK_NULL_HANDLE;
-        /** Combined image sampler */
+        /** Combined image samplers per descriptor set */
         uint32 samplersCount = 0;
-        /** Uniform buffers */
+        /** Uniform buffers per descriptor set */
         uint32 uniformBuffersCount = 0;
     };
 
