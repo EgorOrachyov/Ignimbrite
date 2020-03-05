@@ -78,7 +78,7 @@ public:
         while (!glfwWindowShouldClose(window.glfwWindow)) {
             glfwPollEvents();
             glfwSwapBuffers(window.glfwWindow);
-            glfwGetFramebufferSize(window.glfwWindow, &window.widthFrameBuffer, &window.height);
+            glfwGetFramebufferSize(window.glfwWindow, &window.widthFrameBuffer, &window.heightFrameBuffer);
 
             IRenderDevice::Region area = { 0, 0, { (uint32)window.widthFrameBuffer, (uint32)window.heightFrameBuffer} };
 

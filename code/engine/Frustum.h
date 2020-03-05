@@ -18,13 +18,20 @@ namespace ignimbrite
     class Frustum
     {
     public:
+        Frustum() :
+            mForward(glm::vec3(0,0,1)),
+            mUp(glm::vec3(0,1,0)),
+            mRight(glm::vec3(1,0,0)),
+            mAspect(1.0f), mFovVertical(90.0f),
+            mNear(0.1f), mFar(100.0f), planes{} {}
+
         /**
          * Set field of view of this frustum
          * @param fovy vertical fov in degrees
          */
         Frustum &setFov(float fovy)
         {
-            mFovy = fovy;
+            mFovVertical = fovy;
             return *this;
         }
 
@@ -50,9 +57,19 @@ namespace ignimbrite
             return *this;
         }
 
-        Frustum &setTransform(const glm::mat4x4 &transform) {
-            mTransform = transform;
+        Frustum &setVectors(const glm::vec3 &forward, const glm::vec3 &right, const glm::vec3 &up) {
+            mForward = glm::normalize(forward);
+            mRight = glm::normalize(right);
+            mUp = glm::normalize(up);
             return *this;
+        }
+
+        const glm::vec3 *getNearVerts() const {
+            return mNearVerts;
+        }
+
+        const glm::vec3 *getFarVerts() const {
+            return mFarVerts;
         }
 
         /**
@@ -60,7 +77,7 @@ namespace ignimbrite
          */
         Frustum &build() {
             
-            float fovRad = mFovy * M_PI / 180.0f;
+            float fovRad = mFovVertical * M_PI / 180.0f;
             float tanfov = tanf(fovRad * 0.5f);
 
             float nearHHeight = tanfov * mNear;
@@ -69,37 +86,24 @@ namespace ignimbrite
             float farHHeight = tanfov * mFar;
             float farHWidth = farHHeight * mAspect;
 
-            // calculate vertices of frustum in local space
-            glm::vec4 localNearVerts[4];
-            glm::vec4 localFarVerts[4];
+            mNearVerts[0] = nearHWidth * mRight + nearHHeight * mUp + mNear * mForward;
+            mNearVerts[1] = -nearHWidth * mRight + nearHHeight * mUp + mNear * mForward;
+            mNearVerts[2] = -nearHWidth * mRight - nearHHeight * mUp + mNear * mForward;
+            mNearVerts[3] = nearHWidth * mRight - nearHHeight * mUp + mNear * mForward;
 
-            localNearVerts[0] = glm::vec4(nearHWidth, nearHHeight, mNear, 0.0f);
-            localNearVerts[1] = glm::vec4(-nearHWidth, nearHHeight, mNear, 0.0f);
-            localNearVerts[2] = glm::vec4(-nearHWidth, -nearHHeight, mNear, 0.0f);
-            localNearVerts[3] = glm::vec4(nearHWidth, -nearHHeight, mNear, 0.0f);
+            mFarVerts[0] = farHWidth * mRight + farHHeight * mUp + mFar * mForward;
+            mFarVerts[1] = -farHWidth * mRight + farHHeight * mUp + mFar * mForward;
+            mFarVerts[2] = -farHWidth * mRight - farHHeight * mUp + mFar * mForward;
+            mFarVerts[3] = farHWidth * mRight - farHHeight * mUp + mFar * mForward;
 
-            localFarVerts[0] = glm::vec4(farHWidth, farHHeight, mFar, 0.0f);
-            localFarVerts[1] = glm::vec4(-farHWidth, farHHeight, mFar, 0.0f);
-            localFarVerts[2] = glm::vec4(-farHWidth, -farHHeight, mFar, 0.0f);
-            localFarVerts[3] = glm::vec4(farHWidth, -farHHeight, mFar, 0.0f);
+            planes[(int)FrustumPlane::Near]     = Plane(mNearVerts[0], mNearVerts[1],mNearVerts[2]);
+            planes[(int)FrustumPlane::Far]      = Plane(mFarVerts[2], mFarVerts[1],mFarVerts[0]);
 
-            // transform to world space
-            for (int i = 0; i < 4; i++) {
-                mNearVerts[i] = glm::vec3(mTransform * localNearVerts[i]);
-            }
+            planes[(int)FrustumPlane::Top]      = Plane(mNearVerts[1], mNearVerts[0], mFarVerts[0]);
+            planes[(int)FrustumPlane::Bottom]   = Plane(mNearVerts[3], mNearVerts[2], mFarVerts[2]);
 
-            for (int i = 0; i < 4; i++) {
-                mFarVerts[i] = glm::vec3(mTransform * localFarVerts[i]);
-            }
-
-            planes[(int)FrustumPlane::Near].fromPoints(mNearVerts[0], mNearVerts[1],mNearVerts[2]);
-            planes[(int)FrustumPlane::Far].fromPoints(mFarVerts[2], mFarVerts[1],mFarVerts[0]);
-
-            planes[(int)FrustumPlane::Top].fromPoints(mNearVerts[1], mNearVerts[0], mFarVerts[0]);
-            planes[(int)FrustumPlane::Bottom].fromPoints(mNearVerts[3], mNearVerts[2], mFarVerts[2]);
-
-            planes[(int)FrustumPlane::Left].fromPoints(mNearVerts[2], mNearVerts[1], mFarVerts[1]);
-            planes[(int)FrustumPlane::Right].fromPoints(mFarVerts[3], mFarVerts[0], mNearVerts[0]);
+            planes[(int)FrustumPlane::Left]     = Plane(mNearVerts[2], mNearVerts[1], mFarVerts[1]);
+            planes[(int)FrustumPlane::Right]    = Plane(mFarVerts[3], mFarVerts[0], mNearVerts[0]);
 
             return *this;
         }
@@ -125,10 +129,11 @@ namespace ignimbrite
             glm::vec3   normal;
             float       d;
 
+            Plane() : normal(0,1,0), d(0) {}
+
             /** Create plane from 3 points in counter clockwise order*/
-            void fromPoints(const glm::vec3 &p1, const glm::vec3 &p2, const glm::vec3 &p3) {
-                normal = glm::cross(p3 - p2, p2 - p1);
-                normal = glm::normalize(normal);
+            Plane(const glm::vec3 &p1, const glm::vec3 &p2, const glm::vec3 &p3) {
+                normal = glm::normalize(glm::cross(p3 - p2, p2 - p1));
                 d = -glm::dot(normal, p1);
             }
 
@@ -153,8 +158,7 @@ namespace ignimbrite
             }
         };
 
-        enum class FrustumPlane
-        {
+        enum class FrustumPlane {
             Near, Far,
             Left, Right,
             Top, Bottom
@@ -173,10 +177,11 @@ namespace ignimbrite
          * First vertex is upper right*/
         glm::vec3 mFarVerts[4];
 
-        /** Transformation matrix of this frustum */
-        glm::mat4x4 mTransform;
+        glm::vec3 mForward;
+        glm::vec3 mRight;
+        glm::vec3 mUp;
 
-        float mFovy;
+        float mFovVertical;
         float mAspect;
         float mNear;
         float mFar;

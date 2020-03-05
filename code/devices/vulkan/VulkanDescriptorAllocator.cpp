@@ -85,13 +85,13 @@ namespace ignimbrite {
         uint32 poolSizesCount = 0;
 
         if (mProperties.uniformBuffersCount > 0) {
-            poolSizes[poolSizesCount].descriptorCount = mProperties.uniformBuffersCount;
+            poolSizes[poolSizesCount].descriptorCount = mProperties.uniformBuffersCount * descriptorsCount;
             poolSizes[poolSizesCount].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             poolSizesCount += 1;
         }
 
         if (mProperties.samplersCount > 0) {
-            poolSizes[poolSizesCount].descriptorCount = mProperties.samplersCount;
+            poolSizes[poolSizesCount].descriptorCount = mProperties.samplersCount * descriptorsCount;
             poolSizes[poolSizesCount].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             poolSizesCount += 1;
         }
