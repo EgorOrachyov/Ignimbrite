@@ -21,6 +21,8 @@ namespace ignimbrite {
         ~Texture() override;
 
         void setSampler(RefCounted<Sampler> sampler);
+        void setAsRGBA8(uint32 width, uint32 height);
+        void setAsD32S8(uint32 width, uint32 height);
         void setDataAsRGBA8(uint32 width, uint32 height, const uint8 *data);
         void releaseHandle();
         bool isValidHandle();
@@ -32,6 +34,7 @@ namespace ignimbrite {
         DataFormat getDataFormat() const { return mDataFormat; }
         const std::vector<uint8> &getData() const { return mData; }
         const RefCounted<Sampler> &getSampler() const { return mSampler; }
+        const ID<IRenderDevice::Texture> &getHandle() const { return mHandle; }
 
     private:
         /** In pixels */

@@ -24,27 +24,59 @@ namespace ignimbrite {
         mSampler = std::move(sampler);
     }
 
+    void Texture::setAsRGBA8(ignimbrite::uint32 width, ignimbrite::uint32 height) {
+        Texture::setDataAsRGBA8(width, height, nullptr);
+    }
+
+    void Texture::setAsD32S8(ignimbrite::uint32 width, ignimbrite::uint32 height) {
+        if (mHandle.isNotNull())
+            return;
+
+        mWidth = width;
+        mHeight = height;
+        mStride = 4 * width;
+        mDataFormat = DataFormat::D32_SFLOAT_S8_UINT;
+
+        IRenderDevice::TextureDesc textureDesc{};
+        textureDesc.data = nullptr;
+        textureDesc.format = mDataFormat;
+        textureDesc.width = mWidth;
+        textureDesc.height = mHeight;
+        textureDesc.size = mStride * mWidth;
+        textureDesc.type = TextureType::Texture2D;
+        textureDesc.usageFlags = (uint32) TextureUsageBit::ShaderSampling | (uint32) TextureUsageBit::DepthStencilAttachment;
+
+        mHandle = mDevice->createTexture(textureDesc);
+
+        if (mHandle.isNull())
+            throw std::runtime_error("Failed to create texture object");
+    }
+
     void Texture::setDataAsRGBA8(uint32 width, uint32 height, const uint8* data) {
-        releaseHandle();
+        if (mHandle.isNotNull()) {
+            return;
+        }
 
         mWidth = width;
         mHeight = height;
         mStride = 4 * width;
         mDataFormat = DataFormat::R8G8B8A8_UNORM;
 
-        mData.reserve(getSize());
-        for (uint32 i = 0; i < getSize(); i++) {
-            mData.push_back(data[i]);
+        if (data != nullptr) {
+            mData.reserve(getSize());
+            for (uint32 i = 0; i < getSize(); i++) {
+                mData.push_back(data[i]);
+            }
         }
 
         IRenderDevice::TextureDesc textureDesc{};
-        textureDesc.data = mData.data();
+        textureDesc.data = data;
         textureDesc.format = mDataFormat;
         textureDesc.width = mWidth;
-        textureDesc.height = height;
+        textureDesc.height = mHeight;
         textureDesc.size = mStride * mWidth;
         textureDesc.type = TextureType::Texture2D;
-        textureDesc.usageFlags = (uint32) TextureUsageBit::ShaderSampling;
+        textureDesc.usageFlags = (uint32) TextureUsageBit::ShaderSampling | (uint32) TextureUsageBit::ColorAttachment;
 
         mHandle = mDevice->createTexture(textureDesc);
 

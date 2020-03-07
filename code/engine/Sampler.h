@@ -30,6 +30,7 @@ namespace ignimbrite {
         SamplerFilter getMipmapFilter() const { return mMipmapFilter; }
         SamplerBorderColor getBorderColor() const { return mBorderColor; }
         SamplerRepeatMode getRepeatMode() const { return mRepeatMode; }
+        const ID<IRenderDevice::Sampler> &getHandle() const { return mHandle; }
 
     private:
         SamplerFilter mFilter;
