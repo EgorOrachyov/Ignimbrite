@@ -197,7 +197,7 @@ private:
         rasterizationDesc.mode = PolygonMode::Fill;
 
         IRenderDevice::BlendAttachmentDesc blendAttachmentDesc = {};
-        blendAttachmentDesc.blendEnable = true;
+        blendAttachmentDesc.blendEnable = false;
         IRenderDevice::PipelineSurfaceBlendStateDesc blendStateDesc = {};
         blendStateDesc.attachment = blendAttachmentDesc;
         blendStateDesc.logicOpEnable = false;
@@ -361,7 +361,7 @@ private:
         processInput(window.glfwWindow);
 
         auto view = glm::lookAt(scene.camera.position, scene.camera.position + scene.camera.direction, scene.camera.up);
-        auto proj = glm::perspective(90.0f, (float)window.widthFrameBuffer / window.heightFrameBuffer, 0.1f, 1000.0f);
+        auto proj = glm::perspective(1.5f, (float)window.widthFrameBuffer / window.heightFrameBuffer, 0.1f, 1000.0f);
 
         auto clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
                               0.0f, -1.0f, 0.0f, 0.0f,
@@ -420,22 +420,6 @@ private:
         glfwTerminate();
     }
 
-//    static void mouseCallback(GLFWwindow *window, float64 x, float64 y) {
-//        const float32 sensitivity = 0.01f;
-//
-//        if (glfwGetMouseButton(window, 0) == GLFW_PRESS) {
-//            yaw += (float32)x * sensitivity - prevx;
-//            pitch -= (float32)y * sensitivity - prevy;
-//        }
-//
-//        prevx = (float32)x * sensitivity;
-//        prevy = (float32)y * sensitivity;
-//    }
-//
-//    static void scrollCallback(GLFWwindow *, float64 x, float64 y) {
-//        z += (float32)y;
-//    }
-
     void processInput(GLFWwindow *window) {
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             glfwSetWindowShouldClose(window, true);
@@ -450,10 +434,14 @@ private:
             scene.camera.position -= glm::normalize(glm::cross(scene.camera.direction, scene.camera.up)) * cameraSpeed;
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
             scene.camera.position += glm::normalize(glm::cross(scene.camera.direction, scene.camera.up)) * cameraSpeed;
+        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+            scene.camera.position -= glm::normalize(scene.camera.up) * cameraSpeed;
+        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+            scene.camera.position += glm::normalize(scene.camera.up) * cameraSpeed;
         if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-            scene.camera.direction = glm::rotate(scene.camera.direction, -cameraRotationSpeed, glm::vec3(0,1,0));
-        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
             scene.camera.direction = glm::rotate(scene.camera.direction, cameraRotationSpeed, glm::vec3(0,1,0));
+        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+            scene.camera.direction = glm::rotate(scene.camera.direction, -cameraRotationSpeed, glm::vec3(0,1,0));
     }
 
 private:
@@ -471,14 +459,6 @@ private:
     String          name                = "Frustum Test";
     String          vertShaderPath      = "shaders/spirv/TestFrustumVert.spv";
     String          fragShaderPath      = "shaders/spirv/TestFrustumFrag.spv";
-//
-//    static float32 pitch;
-//    static float32 yaw;
-//    static float32 fov;
-//    static float32 x, y;
-//    static float32 z;
-//    static float32 prevx;
-//    static float32 prevy;
 };
 
 int main() {
@@ -488,10 +468,11 @@ int main() {
         .setVectors(glm::vec3(0,0,1),glm::vec3(1,0,0), glm::vec3(0,1,0))
         .build();
 
-    const float range = 4;
+    /*const float range = 4;
     const int amount = 10;
     const float delta = range * 2 / amount;
-    AABB aabbs[amount * amount * amount];
+    const int count = amount * amount * amount;
+    AABB aabbs[count];
 
     for (int i = 0; i < amount; i++) {
         for (int j = 0; j < amount; j++) {
@@ -502,9 +483,18 @@ int main() {
                 aabbs[i * amount * amount + j * amount + k] = AABB(s, e);
             }
         }
-    }
+    }*/
 
-    auto *testFrustum = new TestFrustum(f, aabbs, amount * amount * amount);
+    const int count = 5;
+    AABB aabbs[count];
+
+    aabbs[0] = AABB(glm::vec3(-8,-0.5f,-0.5f), glm::vec3(-7,0.5f,0.5f));
+    aabbs[1] = AABB(glm::vec3(-0.5f,-0.5f,5), glm::vec3(0.5f,0.5f,6));
+    aabbs[2] = AABB(glm::vec3(-0.5f,-5.5f,5), glm::vec3(0.5f,-6.5f,6));
+    aabbs[3] = AABB(glm::vec3(-0.5f,-7.5f,5), glm::vec3(0.5f,-8.5f,6));
+    aabbs[4] = AABB(glm::vec3(4,-0.5f,2), glm::vec3(5,0.5f,3));
+
+    auto *testFrustum = new TestFrustum(f, aabbs, count);
     testFrustum->loop();
 
     delete testFrustum;
