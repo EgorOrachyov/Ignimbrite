@@ -463,12 +463,11 @@ private:
 
 int main() {
     Frustum f = {};
-    f.setFov(90).setAspect(16.0f/9.0f)
-        .setNear(0.1f).setFar(100.0f)
-        .setVectors(glm::vec3(0,0,1),glm::vec3(1,0,0), glm::vec3(0,1,0))
-        .build();
+    f.setPosition(glm::vec3(0, 0, 1));
+    f.setVectors(glm::vec3(0,0,1),glm::vec3(1,0,0), glm::vec3(0,1,0));
+    f.createPerspective(M_PI / 4.0f, 16.0f/9.0f, 0.1f, 20.0f);
 
-    /*const float range = 4;
+    const float range = 4;
     const int amount = 10;
     const float delta = range * 2 / amount;
     const int count = amount * amount * amount;
@@ -478,21 +477,21 @@ int main() {
         for (int j = 0; j < amount; j++) {
             for (int k = 0; k < amount; k++) {
                 glm::vec3 s(-range + i * delta, -range + j * delta, -range + k * delta);
-                glm::vec3 e = s + glm::vec3(delta);
+                glm::vec3 e = s + glm::vec3(delta / 2);
 
                 aabbs[i * amount * amount + j * amount + k] = AABB(s, e);
             }
         }
-    }*/
+    }
 
-    const int count = 5;
+    /*const int count = 5;
     AABB aabbs[count];
 
     aabbs[0] = AABB(glm::vec3(-8,-0.5f,-0.5f), glm::vec3(-7,0.5f,0.5f));
     aabbs[1] = AABB(glm::vec3(-0.5f,-0.5f,5), glm::vec3(0.5f,0.5f,6));
     aabbs[2] = AABB(glm::vec3(-0.5f,-5.5f,5), glm::vec3(0.5f,-6.5f,6));
     aabbs[3] = AABB(glm::vec3(-0.5f,-7.5f,5), glm::vec3(0.5f,-8.5f,6));
-    aabbs[4] = AABB(glm::vec3(4,-0.5f,2), glm::vec3(5,0.5f,3));
+    aabbs[4] = AABB(glm::vec3(4,-0.5f,2), glm::vec3(5,0.5f,3));*/
 
     auto *testFrustum = new TestFrustum(f, aabbs, count);
     testFrustum->loop();

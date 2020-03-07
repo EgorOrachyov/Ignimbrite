@@ -21,47 +21,18 @@ namespace ignimbrite
         Frustum() :
             mForward(glm::vec3(0,0,1)),
             mUp(glm::vec3(0,1,0)),
-            mRight(glm::vec3(1,0,0)),
-            mAspect(1.0f), mFovVertical(90.0f),
-            mNear(0.1f), mFar(100.0f), planes{} {}
+            mRight(glm::vec3(1,0,0)) {}
 
-        /**
-         * Set field of view of this frustum
-         * @param fovy vertical fov in degrees
-         */
-        Frustum &setFov(float fovy)
-        {
-            mFovVertical = fovy;
-            return *this;
-        }
-
-        /**
-         * Set aspect ratio (width/height) of this frustum
-         * @param aspect width/height
-         */
-        Frustum &setAspect(float aspect)
-        {
-            mAspect = aspect;
-            return *this;
-        }
-
-        Frustum &setNear(float znear)
-        {
-            mNear = znear;
-            return *this;
-        }
-
-        Frustum &setFar(float zfar)
-        {
-            mFar = zfar;
-            return *this;
-        }
-
-        Frustum &setVectors(const glm::vec3 &forward, const glm::vec3 &right, const glm::vec3 &up) {
+        /** Set vectors to define orientation */
+        void setVectors(const glm::vec3 &forward, const glm::vec3 &right, const glm::vec3 &up) {
             mForward = glm::normalize(forward);
             mRight = glm::normalize(right);
             mUp = glm::normalize(up);
-            return *this;
+        }
+
+        /** Set world space position of this frustum */
+        void setPosition(const glm::vec3 &position) {
+            mPosition = position;
         }
 
         const glm::vec3 *getNearVerts() const {
@@ -73,37 +44,29 @@ namespace ignimbrite
         }
 
         /**
-         * Calculate planes and near, far vertices
+         * Calculate planes and near, far vertices for orthographic projection
+         * @note to set offset use setPosition(..)
          */
-        Frustum &build() {
-            
-            float fovRad = mFovVertical * M_PI / 180.0f;
+        Frustum &createOrtho(float width, float height, float nearPlane, float farPlane) {
+            recalcualte(width / 2.0f, width / 2.0f, height / 2.0f, height / 2.0f, nearPlane, farPlane);
+            return *this;
+        }
+
+        /**
+         * Calculate planes and near, far vertices for perspective projection
+         * @param fovRad vertical field of view in radians
+         * @param aspect aspect ratio (width/height) of this frustum
+         */
+        Frustum &createPerspective(float fovRad, float aspect, float nearPlane, float farPlane) {
             float tanfov = tanf(fovRad * 0.5f);
 
-            float nearHHeight = tanfov * mNear;
-            float nearHWidth = nearHHeight * mAspect;
+            float nearHHeight = tanfov * nearPlane;
+            float nearHWidth = nearHHeight * aspect;
 
-            float farHHeight = tanfov * mFar;
-            float farHWidth = farHHeight * mAspect;
+            float farHHeight = tanfov * farPlane;
+            float farHWidth = farHHeight * aspect;
 
-            mNearVerts[0] = nearHWidth * mRight + nearHHeight * mUp + mNear * mForward;
-            mNearVerts[1] = -nearHWidth * mRight + nearHHeight * mUp + mNear * mForward;
-            mNearVerts[2] = -nearHWidth * mRight - nearHHeight * mUp + mNear * mForward;
-            mNearVerts[3] = nearHWidth * mRight - nearHHeight * mUp + mNear * mForward;
-
-            mFarVerts[0] = farHWidth * mRight + farHHeight * mUp + mFar * mForward;
-            mFarVerts[1] = -farHWidth * mRight + farHHeight * mUp + mFar * mForward;
-            mFarVerts[2] = -farHWidth * mRight - farHHeight * mUp + mFar * mForward;
-            mFarVerts[3] = farHWidth * mRight - farHHeight * mUp + mFar * mForward;
-
-            planes[(int)FrustumPlane::Near]     = Plane(mNearVerts[0], mNearVerts[1],mNearVerts[2]);
-            planes[(int)FrustumPlane::Far]      = Plane(mFarVerts[2], mFarVerts[1],mFarVerts[0]);
-
-            planes[(int)FrustumPlane::Top]      = Plane(mNearVerts[1], mNearVerts[0], mFarVerts[0]);
-            planes[(int)FrustumPlane::Bottom]   = Plane(mNearVerts[3], mNearVerts[2], mFarVerts[2]);
-
-            planes[(int)FrustumPlane::Left]     = Plane(mNearVerts[2], mNearVerts[1], mFarVerts[1]);
-            planes[(int)FrustumPlane::Right]    = Plane(mFarVerts[3], mFarVerts[0], mNearVerts[0]);
+            recalcualte(nearHWidth, farHWidth, nearHHeight, farHHeight, nearPlane, farPlane);
 
             return *this;
         }
@@ -121,6 +84,35 @@ namespace ignimbrite
             }
 
             return true;
+        }
+
+    private:
+        void recalcualte(float nearHWidth, float farHWidth,
+                float nearHHeight, float farHHeight,
+                float nearPlane, float farPlane) {
+            mNearVerts[0] = nearHWidth * mRight + nearHHeight * mUp + nearPlane * mForward;
+            mNearVerts[1] = -nearHWidth * mRight + nearHHeight * mUp + nearPlane * mForward;
+            mNearVerts[2] = -nearHWidth * mRight - nearHHeight * mUp + nearPlane * mForward;
+            mNearVerts[3] = nearHWidth * mRight - nearHHeight * mUp + nearPlane * mForward;
+
+            mFarVerts[0] = farHWidth * mRight + farHHeight * mUp + farPlane * mForward;
+            mFarVerts[1] = -farHWidth * mRight + farHHeight * mUp + farPlane * mForward;
+            mFarVerts[2] = -farHWidth * mRight - farHHeight * mUp + farPlane * mForward;
+            mFarVerts[3] = farHWidth * mRight - farHHeight * mUp + farPlane * mForward;
+
+            for (int i = 0; i < 4; i++) {
+                mNearVerts[i] += mPosition;
+                mFarVerts[i] += mPosition;
+            }
+
+            planes[(int)FrustumPlane::Near]     = Plane(mNearVerts[0], mNearVerts[1],mNearVerts[2]);
+            planes[(int)FrustumPlane::Far]      = Plane(mFarVerts[2], mFarVerts[1],mFarVerts[0]);
+
+            planes[(int)FrustumPlane::Top]      = Plane(mNearVerts[1], mNearVerts[0], mFarVerts[0]);
+            planes[(int)FrustumPlane::Bottom]   = Plane(mNearVerts[3], mNearVerts[2], mFarVerts[2]);
+
+            planes[(int)FrustumPlane::Left]     = Plane(mNearVerts[2], mNearVerts[1], mFarVerts[1]);
+            planes[(int)FrustumPlane::Right]    = Plane(mFarVerts[3], mFarVerts[0], mNearVerts[0]);
         }
 
     private:
@@ -181,10 +173,7 @@ namespace ignimbrite
         glm::vec3 mRight;
         glm::vec3 mUp;
 
-        float mFovVertical;
-        float mAspect;
-        float mNear;
-        float mFar;
+        glm::vec3 mPosition;
     };
 
 }
