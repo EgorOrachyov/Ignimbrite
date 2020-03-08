@@ -48,5 +48,5 @@ add_library(Ignimbrite STATIC ${Ignimbrite_SOURCES})
 
 target_include_directories(Ignimbrite PUBLIC .)
 target_link_libraries(Ignimbrite PRIVATE spirv-cross-core)
+target_link_libraries(Ignimbrite PRIVATE tinyobjloader)
 target_link_libraries(Ignimbrite PUBLIC glm)
-target_link_libraries(Ignimbrite PUBLIC tinyobjloader)

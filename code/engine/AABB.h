@@ -40,11 +40,11 @@ namespace ignimbrite {
             }
         }
 
-        /** Create bounding box of two arbitary vectors */
+        /** Create bounding box of two arbitrary vectors */
         AABB(const glm::vec3 &vec1, const glm::vec3 &vec2) {
             for (int i = 0; i < 3; i++) {
-                minBounds[i] = vec1[i] < vec2[i] ? vec1[i] : vec2[i];
-                maxBounds[i] = vec1[i] > vec2[i] ? vec1[i] : vec2[i];
+                minBounds[i] = glm::min(vec1[i], vec2[i]);
+                maxBounds[i] = glm::max(vec1[i], vec2[i]);
             }
         }
 
@@ -95,14 +95,16 @@ namespace ignimbrite {
         }
 
         glm::vec3 getCenter() const {
-            return (minBounds + maxBounds) / 2.0f;
+            return (minBounds + maxBounds) * 0.5f;
         }
 
         glm::vec3 getExtent() const {
-            return maxBounds - getCenter();
+            return (maxBounds - minBounds) * 0.5f;
         }
 
-        // TODO: plane intersections
+        const glm::vec3 &getMinBounds() const { return minBounds; }
+        const glm::vec3 &getMaxBounds() const { return maxBounds; }
+
     private:
         glm::vec3 minBounds = glm::vec3(0.0f);
         glm::vec3 maxBounds = glm::vec3(0.0f);

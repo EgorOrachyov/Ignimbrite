@@ -12,44 +12,44 @@
 
 #include <AABB.h>
 
-namespace ignimbrite
-{
+namespace ignimbrite {
 
-    class Frustum
-    {
+    /**
+     * @brief View frustum space
+     *
+     * Frustum class represents view volume of some virtual camera in 3D space.
+     * Allows to construct perspective frustum of ortho frustum (as a special case).
+     *
+     * Frustum class uses right-handed coordinate system, since it meets the
+     * convention of world-space 3D transformation for graphics API.
+     *
+     *          y+
+     *          |
+     *          |
+     *          |
+     *          |_______x+
+     *         /
+     *        /
+     *       /
+     *      z+
+     */
+    class Frustum {
     public:
-        Frustum() :
-            mForward(glm::vec3(0,0,1)),
-            mUp(glm::vec3(0,1,0)),
-            mRight(glm::vec3(1,0,0)) {}
 
         /** Set vectors to define orientation */
-        void setVectors(const glm::vec3 &forward, const glm::vec3 &right, const glm::vec3 &up) {
-            mForward = glm::normalize(forward);
-            mRight = glm::normalize(right);
-            mUp = glm::normalize(up);
-        }
-
-        /** Set world space position of this frustum */
-        void setPosition(const glm::vec3 &position) {
+        void setViewProperties(const glm::vec3 &position, const glm::vec3 &forward, const glm::vec3 &up) {
             mPosition = position;
-        }
-
-        const glm::vec3 *getNearVerts() const {
-            return mNearVerts;
-        }
-
-        const glm::vec3 *getFarVerts() const {
-            return mFarVerts;
+            mUp = glm::normalize(up);
+            mForward = glm::normalize(forward);
+            mRight = glm::cross(mForward, mUp);
         }
 
         /**
          * Calculate planes and near, far vertices for orthographic projection
          * @note to set offset use setPosition(..)
          */
-        Frustum &createOrtho(float width, float height, float nearPlane, float farPlane) {
-            recalcualte(width / 2.0f, width / 2.0f, height / 2.0f, height / 2.0f, nearPlane, farPlane);
-            return *this;
+        void createOrthographic(float32 width, float32 height, float32 nearPlane, float32 farPlane) {
+            recalculate(width / 2.0f, width / 2.0f, height / 2.0f, height / 2.0f, nearPlane, farPlane);
         }
 
         /**
@@ -57,28 +57,22 @@ namespace ignimbrite
          * @param fovRad vertical field of view in radians
          * @param aspect aspect ratio (width/height) of this frustum
          */
-        Frustum &createPerspective(float fovRad, float aspect, float nearPlane, float farPlane) {
-            float tanfov = tanf(fovRad * 0.5f);
+        void createPerspective(float32 fovRad, float32 aspect, float32 nearPlane, float32 farPlane) {
+            float32 tanfov = tanf(fovRad * 0.5f);
 
-            float nearHHeight = tanfov * nearPlane;
-            float nearHWidth = nearHHeight * aspect;
+            float32 nearHeight = tanfov * nearPlane;
+            float32 nearWidth = nearHeight * aspect;
 
-            float farHHeight = tanfov * farPlane;
-            float farHWidth = farHHeight * aspect;
+            float32 farHeight = tanfov * farPlane;
+            float32 farWidth = farHeight * aspect;
 
-            recalcualte(nearHWidth, farHWidth, nearHHeight, farHHeight, nearPlane, farPlane);
-
-            return *this;
+            recalculate(nearWidth, farWidth, nearHeight, farHeight, nearPlane, farPlane);
         }
 
-        /**
-         * Does this frustum contain or intersect specified AABB?
-         */
+        /** Does this frustum contain or intersect specified AABB? */
         bool isInside(const AABB &aabb) const {
-            for (int i = 0; i < 6; i++) {
-                // if AABB doesn't intersect with negative halfspace of each plane,
-                // then it's not inside frustum
-                if (!planes[i].intersect(aabb)) {
+            for (const auto &p: planes) {
+                if (!p.onPositiveSideOrIntersects(aabb)) {
                     return false;
                 }
             }
@@ -86,42 +80,79 @@ namespace ignimbrite
             return true;
         }
 
+        const glm::vec3 &getUp() const { return mUp; }
+        const glm::vec3 &getRight() const { return mRight; }
+        const glm::vec3 &getForward() const { return mForward; }
+        const glm::vec3 &getPosition() const { return mPosition; }
+
+        const glm::vec3 *getNearVertices() const { return mNearVertices; }
+        const glm::vec3 *getFarVertices() const { return mFarVertices; }
+
     private:
-        void recalcualte(float nearHWidth, float farHWidth,
-                float nearHHeight, float farHHeight,
-                float nearPlane, float farPlane) {
-            mNearVerts[0] = nearHWidth * mRight + nearHHeight * mUp + nearPlane * mForward;
-            mNearVerts[1] = -nearHWidth * mRight + nearHHeight * mUp + nearPlane * mForward;
-            mNearVerts[2] = -nearHWidth * mRight - nearHHeight * mUp + nearPlane * mForward;
-            mNearVerts[3] = nearHWidth * mRight - nearHHeight * mUp + nearPlane * mForward;
 
-            mFarVerts[0] = farHWidth * mRight + farHHeight * mUp + farPlane * mForward;
-            mFarVerts[1] = -farHWidth * mRight + farHHeight * mUp + farPlane * mForward;
-            mFarVerts[2] = -farHWidth * mRight - farHHeight * mUp + farPlane * mForward;
-            mFarVerts[3] = farHWidth * mRight - farHHeight * mUp + farPlane * mForward;
+        void recalculate(float32 nearWidth,  float32 farWidth,
+                         float32 nearHeight, float32 farHeight,
+                         float32 nearPlane,  float32 farPlane) {
 
-            for (int i = 0; i < 4; i++) {
-                mNearVerts[i] += mPosition;
-                mFarVerts[i] += mPosition;
+            mNearVertices[VertexIndex::UpperRight] = nearWidth * mRight + nearHeight * mUp + nearPlane * mForward;
+            mNearVertices[VertexIndex::UpperLeft] = -nearWidth * mRight + nearHeight * mUp + nearPlane * mForward;
+            mNearVertices[VertexIndex::LowerLeft] = -nearWidth * mRight - nearHeight * mUp + nearPlane * mForward;
+            mNearVertices[VertexIndex::LowerRight] = nearWidth * mRight - nearHeight * mUp + nearPlane * mForward;
+
+            mFarVertices[VertexIndex::UpperRight] = farWidth * mRight + farHeight * mUp + farPlane * mForward;
+            mFarVertices[VertexIndex::UpperLeft] = -farWidth * mRight + farHeight * mUp + farPlane * mForward;
+            mFarVertices[VertexIndex::LowerLeft] = -farWidth * mRight - farHeight * mUp + farPlane * mForward;
+            mFarVertices[VertexIndex::LowerRight] = farWidth * mRight - farHeight * mUp + farPlane * mForward;
+
+            for (uint32 i = 0; i < 4; i++) {
+                mNearVertices[i] += mPosition;
+                mFarVertices[i] += mPosition;
             }
 
-            planes[(int)FrustumPlane::Near]     = Plane(mNearVerts[0], mNearVerts[1],mNearVerts[2]);
-            planes[(int)FrustumPlane::Far]      = Plane(mFarVerts[2], mFarVerts[1],mFarVerts[0]);
+            planes[PlaneIndex::Near] = Plane(
+                    mNearVertices[VertexIndex::UpperRight],
+                    mNearVertices[VertexIndex::UpperLeft],
+                    mNearVertices[VertexIndex::LowerLeft]
+            );
 
-            planes[(int)FrustumPlane::Top]      = Plane(mNearVerts[1], mNearVerts[0], mFarVerts[0]);
-            planes[(int)FrustumPlane::Bottom]   = Plane(mNearVerts[3], mNearVerts[2], mFarVerts[2]);
+            planes[PlaneIndex::Far] = Plane(
+                    mFarVertices[VertexIndex::LowerLeft],
+                    mFarVertices[VertexIndex::UpperLeft],
+                    mFarVertices[VertexIndex::UpperRight]
+            );
 
-            planes[(int)FrustumPlane::Left]     = Plane(mNearVerts[2], mNearVerts[1], mFarVerts[1]);
-            planes[(int)FrustumPlane::Right]    = Plane(mFarVerts[3], mFarVerts[0], mNearVerts[0]);
+            planes[PlaneIndex::Top] = Plane(
+                    mNearVertices[VertexIndex::UpperLeft],
+                    mNearVertices[VertexIndex::UpperRight],
+                    mFarVertices[VertexIndex::UpperRight]
+            );
+
+            planes[PlaneIndex::Bottom] = Plane(
+                    mNearVertices[VertexIndex::LowerRight],
+                    mNearVertices[VertexIndex::LowerLeft],
+                    mFarVertices[VertexIndex::LowerLeft]
+            );
+
+            planes[PlaneIndex::Left] = Plane(
+                    mNearVertices[VertexIndex::LowerLeft],
+                    mNearVertices[VertexIndex::UpperLeft],
+                    mFarVertices[VertexIndex::UpperLeft]
+            );
+
+            planes[PlaneIndex::Right] = Plane(
+                    mFarVertices[VertexIndex::LowerRight],
+                    mFarVertices[VertexIndex::UpperRight],
+                    mNearVertices[VertexIndex::UpperRight]
+            );
         }
 
     private:
 
         struct Plane {
-            glm::vec3   normal;
-            float       d;
+            glm::vec3 normal = glm::vec3(0,1,0);
+            float32 d = 0;
 
-            Plane() : normal(0,1,0), d(0) {}
+            Plane() = default;
 
             /** Create plane from 3 points in counter clockwise order*/
             Plane(const glm::vec3 &p1, const glm::vec3 &p2, const glm::vec3 &p3) {
@@ -129,50 +160,49 @@ namespace ignimbrite
                 d = -glm::dot(normal, p1);
             }
 
-            float planeDot(const glm::vec3 &point) const {
+            float32 planeDot(const glm::vec3 &point) const {
                 return glm::dot(normal, point) + d;
             }
 
-            /** Does specified AABB intersect with negative halfspace of this plane? */
-            bool intersect(const AABB &aabb) const {
-                const glm::vec3 &c = aabb.getCenter();
-                const glm::vec3 &e = aabb.getExtent();
-                const glm::vec3 &n = normal;
+            /** @return True, if box at least on positive plane side or intersects it */
+            bool onPositiveSideOrIntersects(const AABB &aabb) const {
+                auto c = aabb.getCenter();
+                auto e = aabb.getExtent();
+                const auto &n = normal;
 
-                // get projection of AABB's extent on plane's normal
-                float r = e[0] * std::abs(n[0]) + e[1] * glm::abs(n[1]) + e[2] * glm::abs(n[2]);
-                // get distance of AABB's center from plane
-                float s = planeDot(c);
+                float32 r = glm::dot(e, glm::abs(n));
+                float32 s = planeDot(c);
 
-                // intersection with negative halfspace occurs
-                // if s is in (-inf, +r]
-                return s <= r;
+                return s >= -r;
             }
         };
 
-        enum class FrustumPlane {
-            Near, Far,
-            Left, Right,
-            Top, Bottom
+        enum PlaneIndex : uint32 {
+            Near = 0,
+            Far,
+            Left,
+            Right,
+            Top,
+            Bottom
+        };
+
+        enum VertexIndex : uint32 {
+            UpperRight = 0,
+            UpperLeft,
+            LowerLeft,
+            LowerRight
         };
 
         /** Frustum planes with normals pointing to the outside of frustum */
-        Plane planes[6];
+        Plane planes[6] = {};
+        /** Near vertices of this frustum in counter clockwise order (First vertex is upper right) */
+        glm::vec3 mNearVertices[4] = {};
+        /** Far vertices of this frustum in counter clockwise order (First vertex is upper right) */
+        glm::vec3 mFarVertices[4] = {};
 
-        /**
-         * Near vertices of this frustum in counter clockwise order.
-         * First vertex is upper right*/
-        glm::vec3 mNearVerts[4];
-
-        /**
-         * Far vertices of this frustum in counter clockwise order.
-         * First vertex is upper right*/
-        glm::vec3 mFarVerts[4];
-
-        glm::vec3 mForward;
-        glm::vec3 mRight;
-        glm::vec3 mUp;
-
+        glm::vec3 mForward = glm::vec3(0,0,-1);
+        glm::vec3 mRight = glm::vec3(1,0,0);
+        glm::vec3 mUp = glm::vec3(0,1,0);
         glm::vec3 mPosition;
     };
 
