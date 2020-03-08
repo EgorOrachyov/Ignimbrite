@@ -38,8 +38,10 @@ set(Ignimbrite_SOURCES
     IRenderable.h
     Mesh.cpp
     Mesh.h
-    MeshLoader.cpp
     MeshLoader.h
+    MeshLoader.cpp
+    RenderTarget.cpp
+    RenderTarget.h
     Frustum.h)
 
 add_library(Ignimbrite STATIC ${Ignimbrite_SOURCES})

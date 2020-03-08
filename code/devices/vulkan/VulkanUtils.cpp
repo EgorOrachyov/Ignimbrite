@@ -454,7 +454,7 @@ namespace ignimbrite {
         } else if (properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
             tiling = VK_IMAGE_TILING_OPTIMAL;
         } else {
-            throw VulkanException("Unsupported depth format");
+            throw VulkanException("Failed to find supported format");
         }
 
         createImage(width, height, depth, 1,
