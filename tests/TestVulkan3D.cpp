@@ -6,6 +6,7 @@
 #include <Shader.h>
 #include <UniformBuffer.h>
 #include <MeshLoader.h>
+#include <GraphicsPipeline.h>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -42,7 +43,7 @@ struct ShaderUniformBuffer {
 
 struct Material {
     std::shared_ptr<Shader> shader;
-    ID<IRenderDevice::GraphicsPipeline> graphicsPipeline;
+    std::shared_ptr<GraphicsPipeline> graphicsPipeline;
     ID<IRenderDevice::UniformSet> uniformSet;
     std::shared_ptr<UniformBuffer> uniformBuffer;
     ShaderUniformBuffer data;
@@ -92,7 +93,7 @@ public:
             pDevice->drawListBegin();
             {
                 pDevice->drawListBindSurface(surface, clearColor, area);
-                pDevice->drawListBindPipeline(material.graphicsPipeline);
+                material.graphicsPipeline->bindPipeline();
 
                 pDevice->drawListBindUniformSet(material.uniformSet);
                 pDevice->drawListBindVertexBuffer(rmesh.vertexBuffer, 0, 0);
@@ -287,35 +288,16 @@ private:
     }
 
     void initGraphicsPipeline() {
-        IRenderDevice::PipelineRasterizationDesc rasterizationDesc = {};
-        rasterizationDesc.cullMode = PolygonCullMode::Back;
-        rasterizationDesc.frontFace = PolygonFrontFace::FrontCounterClockwise;
-        rasterizationDesc.lineWidth = 1.0f;
-        rasterizationDesc.mode = PolygonMode::Fill;
+        std::shared_ptr<GraphicsPipeline> &pipeline = material.graphicsPipeline;
+        pipeline = std::make_shared<GraphicsPipeline>(pDevice);
+        pipeline->setSurface(surface);
+        pipeline->setShader(material.shader);
+        pipeline->setVertexLayout(rmesh.vertexLayout);
+        pipeline->setBlendEnable(false);
+        pipeline->setDepthTestEnable(true);
+        pipeline->setDepthWriteEnable(true);
 
-        IRenderDevice::BlendAttachmentDesc blendAttachmentDesc = {};
-        blendAttachmentDesc.blendEnable = false;
-        IRenderDevice::PipelineSurfaceBlendStateDesc blendStateDesc = {};
-        blendStateDesc.attachment = blendAttachmentDesc;
-        blendStateDesc.logicOpEnable = false;
-        blendStateDesc.logicOp = LogicOperation::NoOp;
-
-        IRenderDevice::PipelineDepthStencilStateDesc depthStencilStateDesc = {};
-        depthStencilStateDesc.depthCompareOp = CompareOperation::Less;
-        depthStencilStateDesc.depthWriteEnable = true;
-        depthStencilStateDesc.depthTestEnable = true;
-        depthStencilStateDesc.stencilTestEnable = false;
-
-        material.graphicsPipeline = pDevice->createGraphicsPipeline(
-                surface,
-                PrimitiveTopology::TriangleList,
-                material.shader->getHandle(),
-                rmesh.vertexLayout,
-                material.shader->getLayout(),
-                rasterizationDesc,
-                blendStateDesc,
-                depthStencilStateDesc
-        );
+        pipeline->createPipeline();
     }
 
     void destroy() {
@@ -328,7 +310,6 @@ private:
         pDevice->destroyTexture(material.texture);
         pDevice->destroySampler(material.textureSampler);
 
-        pDevice->destroyGraphicsPipeline(material.graphicsPipeline);
         material.shader = nullptr;
         material.uniformBuffer = nullptr;
 
