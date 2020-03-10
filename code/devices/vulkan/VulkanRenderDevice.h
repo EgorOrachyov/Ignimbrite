@@ -102,7 +102,10 @@ namespace ignimbrite {
         void flush() override;
         void synchronize() override;
 
+        const std::vector<DataFormat> &getSupportedTextureFormats() const override;
+        const std::vector<ShaderLanguage> &getSupportedShaderLanguages() override;
         const std::string &getDeviceName() const override;
+        Type getDeviceType() const override;
 
     private:
         friend class VulkanExtensions;
@@ -143,6 +146,9 @@ namespace ignimbrite {
         IDBuffer<VulkanUniformSet,       UniformSet>        mUniformSets;
         IDBuffer<VulkanShaderProgram,    ShaderProgram>     mShaderPrograms;
         IDBuffer<VulkanGraphicsPipeline, GraphicsPipeline>  mGraphicsPipelines;
+
+        std::vector<DataFormat> mSupportedTextureDataFormats;
+        std::vector<ShaderLanguage> mSupportedShaderLanguages = { ShaderLanguage::SPIRV };
     };
 
 } // namespace ignimbrite

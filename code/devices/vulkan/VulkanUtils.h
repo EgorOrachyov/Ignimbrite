@@ -18,6 +18,10 @@ namespace ignimbrite {
     class VulkanUtils {
     public:
 
+        static void getSupportedFormats(
+                std::vector<DataFormat> &formats
+        );
+
         static VkFormatProperties getDeviceFormatProperties(
                 VkFormat format
         );

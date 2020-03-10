@@ -116,6 +116,11 @@ private:
         // create render device
         pDevice = std::make_shared<VulkanRenderDevice>(window.extensionsCount, window.extensions);
 
+        // supported texture data formats (for debug)
+        for (auto format: pDevice->getSupportedTextureFormats()) {
+            std::cout << (uint32) format;
+        }
+
         // create surface
         surface = VulkanExtensions::createSurfaceGLFW(
                 *pDevice, window.glfwWindow, window.widthFrameBuffer, window.heightFrameBuffer, name);

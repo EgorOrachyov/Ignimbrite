@@ -33,6 +33,13 @@ namespace ignimbrite {
     class IRenderDevice {
     public:
 
+        /** Known device types */
+        enum class Type {
+            VulkanDevice,
+            OpenGLDevice,
+            Custom
+        };
+
         class VertexLayout;
         class VertexBuffer;
         class IndexBuffer;
@@ -458,11 +465,44 @@ namespace ignimbrite {
          */
         virtual void synchronize() = 0;
 
+        /**
+         * @brief Texture data formats query
+         *
+         * Returns supported data representation formats for texture objects.
+         * Since format support is not specified and depends on target platform
+         * and driver implementation, requested texture formats must be explicitely checked.
+         *
+         * @note MoltenVK for macOS does not support D24_UNORM_S8_UINT format for depth stencil textures
+         *
+         * @return Texture supported data formats
+         */
+        virtual const std::vector<DataFormat> &getSupportedTextureFormats() const = 0;
+
+        /**
+         * @brief Shader languages query
+         *
+         * Returns supported languages list.
+         * By default Vulkan supports SPIR-V language, as well as,
+         * OpenGL supports GLSL and DirectX supports HLSL.
+         *
+         * Cross-compiling is an languages translation is possible by
+         * render device implementations, but it is considered as an undesired feature,
+         * since render device only wraps underlying API.
+         *
+         * @return List of supported shader languages
+         *
+         */
+        virtual const std::vector<ShaderLanguage> &getSupportedShaderLanguages() = 0;
+
+        /** @return Device type */
+        virtual Type getDeviceType() const;
+
         /** @return Readable hardware API name */
         virtual const String &getDeviceName() const;
 
         /** @return Video card vendor name */
         virtual const String &getVendorName() const;
+
     };
 
 } // namespace ignimbrite

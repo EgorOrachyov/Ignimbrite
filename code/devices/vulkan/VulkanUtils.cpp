@@ -16,6 +16,28 @@
 
 namespace ignimbrite {
 
+    void VulkanUtils::getSupportedFormats(std::vector<ignimbrite::DataFormat> &formats) {
+        const DataFormat known[] = {
+                DataFormat::R8G8B8_UNORM,
+                DataFormat::R8G8B8A8_UNORM,
+
+                DataFormat::R32_SFLOAT,
+                DataFormat::R32G32_SFLOAT,
+                DataFormat::R32G32B32_SFLOAT,
+                DataFormat::R32G32B32A32_SFLOAT,
+
+                DataFormat::D24_UNORM_S8_UINT,
+                DataFormat::D32_SFLOAT_S8_UINT,
+        };
+
+        for (auto f: known) {
+            auto properties = getDeviceFormatProperties(VulkanDefinitions::dataFormat(f));
+
+            if (properties.bufferFeatures || properties.linearTilingFeatures || properties.optimalTilingFeatures)
+                formats.push_back(f);
+        }
+    }
+
     VkFormatProperties VulkanUtils::getDeviceFormatProperties(VkFormat format) {
         auto& context = VulkanContext::getInstance();
         VkFormatProperties properties;

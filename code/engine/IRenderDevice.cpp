@@ -11,6 +11,10 @@
 
 namespace ignimbrite {
 
+    IRenderDevice::Type IRenderDevice::getDeviceType() const {
+        return Type::Custom;
+    }
+
     const String &IRenderDevice::getDeviceName() const {
         static const String device = "Default Device";
         return device;

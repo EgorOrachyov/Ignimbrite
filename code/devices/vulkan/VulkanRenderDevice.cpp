@@ -38,6 +38,8 @@ namespace ignimbrite {
         mContext.createLogicalDevice();
         mContext.createAllocator();
         mContext.createCommandPools();
+
+        VulkanUtils::getSupportedFormats(mSupportedTextureDataFormats);
     }
 
     VulkanRenderDevice::~VulkanRenderDevice() {
@@ -1242,9 +1244,22 @@ namespace ignimbrite {
         mSyncQueue.clear();
     }
 
+
+    const std::vector<DataFormat> &VulkanRenderDevice::getSupportedTextureFormats() const {
+        return mSupportedTextureDataFormats;
+    }
+
+    const std::vector<ShaderLanguage> &VulkanRenderDevice::getSupportedShaderLanguages() {
+        return mSupportedShaderLanguages;
+    }
+
     const std::string &VulkanRenderDevice::getDeviceName() const {
         static std::string mDeviceName = "VulkanDevice";
         return mDeviceName;
+    }
+
+    IRenderDevice::Type VulkanRenderDevice::getDeviceType() const {
+        return IRenderDevice::Type::VulkanDevice;
     }
 
 } // namespace ignimbrite
