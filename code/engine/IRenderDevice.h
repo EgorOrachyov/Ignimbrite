@@ -63,7 +63,7 @@ namespace ignimbrite {
         struct VertexBufferLayoutDesc {
             /** Size of the stride (step) fro single vertex */
             uint32 stride;
-            /** Interate per instance/vertex */
+            /** Iterate per instance/vertex */
             VertexUsage usage;
             /** Attributes, updated from that vertex buffer */
             std::vector<VertexAttributeDesc> attributes;
@@ -251,16 +251,20 @@ namespace ignimbrite {
         };
 
         struct PipelineBlendStateDesc {
+            static const uint32 BLEND_CONSTANTS_COUNT = 4;
+
             bool logicOpEnable = false;
             LogicOperation logicOp = LogicOperation::Copy;
-            float blendConstants[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+            std::array<float32,BLEND_CONSTANTS_COUNT> blendConstants = {0.0f, 0.0f, 0.0f, 0.0f};
             std::vector<BlendAttachmentDesc> attachments;
         };
 
         struct PipelineSurfaceBlendStateDesc {
+            static const uint32 BLEND_CONSTANTS_COUNT = 4;
+
             bool logicOpEnable = false;
             LogicOperation logicOp = LogicOperation::Copy;
-            float blendConstants[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+            std::array<float32,BLEND_CONSTANTS_COUNT> blendConstants = {0.0f, 0.0f, 0.0f, 0.0f};
             BlendAttachmentDesc attachment;
         };
 

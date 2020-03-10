@@ -32,6 +32,8 @@ set(Ignimbrite_SOURCES
     Texture.cpp
     Sampler.cpp
     UniformBuffer.cpp
+    GraphicsPipeline.cpp
+    GraphicsPipeline.h
     Material.cpp
     Material.h
     IRenderable.cpp

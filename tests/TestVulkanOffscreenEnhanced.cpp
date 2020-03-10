@@ -156,7 +156,7 @@ public:
                 offscreenPass.shader->getHandle(),
                 offscreenPass.vertexLayout,
                 offscreenPass.shader->getLayout(),
-                offscreenPass.renderTarget->getFramebufferFormat()->handle,
+                offscreenPass.renderTarget->getFramebufferFormat()->mFormatHandle,
                 rasterizationDesc,
                 blendStateDesc,
                 depthStencilStateDesc

@@ -6,6 +6,7 @@
 #include <Shader.h>
 #include <UniformBuffer.h>
 #include <MeshLoader.h>
+#include <GraphicsPipeline.h>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -27,7 +28,6 @@ struct Vertex {
 };
 
 struct RenderableMesh {
-    ID<IRenderDevice::VertexLayout> vertexLayout;
     ID<IRenderDevice::VertexBuffer> vertexBuffer;
     ID<IRenderDevice::IndexBuffer> indexBuffer;
     uint32 indexCount = 0;
@@ -42,7 +42,7 @@ struct ShaderUniformBuffer {
 
 struct Material {
     std::shared_ptr<Shader> shader;
-    ID<IRenderDevice::GraphicsPipeline> graphicsPipeline;
+    std::shared_ptr<GraphicsPipeline> graphicsPipeline;
     ID<IRenderDevice::UniformSet> uniformSet;
     std::shared_ptr<UniformBuffer> uniformBuffer;
     ShaderUniformBuffer data;
@@ -92,7 +92,7 @@ public:
             pDevice->drawListBegin();
             {
                 pDevice->drawListBindSurface(surface, clearColor, area);
-                pDevice->drawListBindPipeline(material.graphicsPipeline);
+                material.graphicsPipeline->bindPipeline();
 
                 pDevice->drawListBindUniformSet(material.uniformSet);
                 pDevice->drawListBindVertexBuffer(rmesh.vertexBuffer, 0, 0);
@@ -151,34 +151,8 @@ private:
     }
 
     void initModel() {
-        // declare vertex layout
-        initVertexLayout();
         // init mesh vertex and index buffers
         loadObjModel(objMeshPath.c_str());
-    }
-
-    void initVertexLayout() {
-        IRenderDevice::VertexBufferLayoutDesc vertexBufferLayoutDesc = {};
-
-        std::vector<IRenderDevice::VertexAttributeDesc> &attrs = vertexBufferLayoutDesc.attributes;
-        attrs.resize(3);
-
-        attrs[0].location = 0;
-        attrs[0].format = DataFormat::R32G32B32_SFLOAT;
-        attrs[0].offset = offsetof(Vertex, Position);
-
-        attrs[1].location = 1;
-        attrs[1].format = DataFormat::R32G32B32_SFLOAT;
-        attrs[1].offset = offsetof(Vertex, Normal);
-
-        attrs[2].location = 2;
-        attrs[2].format = DataFormat::R32G32_SFLOAT;
-        attrs[2].offset = offsetof(Vertex, UV);
-
-        vertexBufferLayoutDesc.stride = sizeof(Vertex);
-        vertexBufferLayoutDesc.usage = VertexUsage::PerVertex;
-
-        rmesh.vertexLayout = pDevice->createVertexLayout({ vertexBufferLayoutDesc });
     }
 
     void loadObjModel(const char *path) {
@@ -287,40 +261,40 @@ private:
     }
 
     void initGraphicsPipeline() {
-        IRenderDevice::PipelineRasterizationDesc rasterizationDesc = {};
-        rasterizationDesc.cullMode = PolygonCullMode::Back;
-        rasterizationDesc.frontFace = PolygonFrontFace::FrontCounterClockwise;
-        rasterizationDesc.lineWidth = 1.0f;
-        rasterizationDesc.mode = PolygonMode::Fill;
+        IRenderDevice::VertexBufferLayoutDesc vertexBufferLayoutDesc = {};
 
-        IRenderDevice::BlendAttachmentDesc blendAttachmentDesc = {};
-        blendAttachmentDesc.blendEnable = false;
-        IRenderDevice::PipelineSurfaceBlendStateDesc blendStateDesc = {};
-        blendStateDesc.attachment = blendAttachmentDesc;
-        blendStateDesc.logicOpEnable = false;
-        blendStateDesc.logicOp = LogicOperation::NoOp;
+        std::vector<IRenderDevice::VertexAttributeDesc> &attrs = vertexBufferLayoutDesc.attributes;
+        attrs.resize(3);
 
-        IRenderDevice::PipelineDepthStencilStateDesc depthStencilStateDesc = {};
-        depthStencilStateDesc.depthCompareOp = CompareOperation::Less;
-        depthStencilStateDesc.depthWriteEnable = true;
-        depthStencilStateDesc.depthTestEnable = true;
-        depthStencilStateDesc.stencilTestEnable = false;
+        attrs[0].location = 0;
+        attrs[0].format = DataFormat::R32G32B32_SFLOAT;
+        attrs[0].offset = offsetof(Vertex, Position);
 
-        material.graphicsPipeline = pDevice->createGraphicsPipeline(
-                surface,
-                PrimitiveTopology::TriangleList,
-                material.shader->getHandle(),
-                rmesh.vertexLayout,
-                material.shader->getLayout(),
-                rasterizationDesc,
-                blendStateDesc,
-                depthStencilStateDesc
-        );
+        attrs[1].location = 1;
+        attrs[1].format = DataFormat::R32G32B32_SFLOAT;
+        attrs[1].offset = offsetof(Vertex, Normal);
+
+        attrs[2].location = 2;
+        attrs[2].format = DataFormat::R32G32_SFLOAT;
+        attrs[2].offset = offsetof(Vertex, UV);
+
+        vertexBufferLayoutDesc.stride = sizeof(Vertex);
+        vertexBufferLayoutDesc.usage = VertexUsage::PerVertex;
+
+        std::shared_ptr<GraphicsPipeline> &pipeline = material.graphicsPipeline;
+        pipeline = std::make_shared<GraphicsPipeline>(pDevice);
+        pipeline->setSurface(surface);
+        pipeline->setShader(material.shader);
+        pipeline->setVertexBuffersCount(1);
+        pipeline->setVertexBufferDesc(0, vertexBufferLayoutDesc);
+        pipeline->setBlendEnable(false);
+        pipeline->setDepthTestEnable(true);
+        pipeline->setDepthWriteEnable(true);
+        pipeline->createPipeline();
     }
 
     void destroy() {
         pDevice->destroyVertexBuffer(rmesh.vertexBuffer);
-        pDevice->destroyVertexLayout(rmesh.vertexLayout);
         pDevice->destroyIndexBuffer(rmesh.indexBuffer);
 
         pDevice->destroyUniformSet(material.uniformSet);
@@ -328,13 +302,10 @@ private:
         pDevice->destroyTexture(material.texture);
         pDevice->destroySampler(material.textureSampler);
 
-        pDevice->destroyGraphicsPipeline(material.graphicsPipeline);
         material.shader = nullptr;
         material.uniformBuffer = nullptr;
 
         ignimbrite::VulkanExtensions::destroySurface(*pDevice, surface);
-        pDevice = nullptr;
-        cmesh = nullptr;
 
         glfwDestroyWindow(window.glfwWindow);
         glfwTerminate();

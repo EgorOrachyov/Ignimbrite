@@ -41,12 +41,22 @@ namespace ignimbrite {
 
         /** Framebuffer format possibly shared among different render targets or pipelines */
         struct Format {
-            Format(RefCounted<IRenderDevice> device);
+            explicit Format(RefCounted<IRenderDevice> device);
             ~Format();
 
-            std::vector<IRenderDevice::FramebufferAttachmentDesc> attachments;
-            ID<IRenderDevice::FramebufferFormat> handle;
-            RefCounted<IRenderDevice> device;
+            bool hasDepthStencilAttachment() const;
+            const ID<IRenderDevice::FramebufferFormat> &getFormatHandle() const;
+            const std::vector<IRenderDevice::FramebufferAttachmentDesc> &getAttachments() const;
+
+        private:
+
+            friend class RenderTarget;
+
+            std::vector<IRenderDevice::FramebufferAttachmentDesc> mAttachments;
+            ID<IRenderDevice::FramebufferFormat> mFormatHandle;
+            RefCounted<IRenderDevice> mRenderDevice;
+
+            bool mHasDepthStencilAttachment = false;
         };
 
         /** Default formats for render targets */
