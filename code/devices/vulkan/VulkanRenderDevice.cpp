@@ -804,8 +804,7 @@ namespace ignimbrite {
         }
 
         VkPipelineColorBlendStateCreateInfo colorBlending = {};
-        VulkanUtils::createColorBlendState(blendStateDesc, (uint32) attachments.size(), attachments.data(),
-                                           colorBlending);
+        VulkanUtils::createColorBlendState(blendStateDesc, (uint32) attachments.size(), attachments.data(), colorBlending);
 
         VkPipelineDepthStencilStateCreateInfo depthStencilState = {};
         if (depthStencilStateDesc.depthTestEnable || depthStencilStateDesc.stencilTestEnable) {

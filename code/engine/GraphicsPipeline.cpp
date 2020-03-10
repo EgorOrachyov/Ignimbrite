@@ -7,149 +7,217 @@
 /* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                */
 /**********************************************************************************/
 
+#include <GraphicsPipeline.h>
 
-#include "GraphicsPipeline.h"
+namespace ignimbrite {
 
-ignimbrite::GraphicsPipeline::GraphicsPipeline(ignimbrite::RefCounted<ignimbrite::IRenderDevice> device)
-        : mDevice(std::move(device)), mTopology(PrimitiveTopology::TriangleList), mTarget(TargetType::None) {
-    mBlendDesc.attachments.resize(1);
-}
+    GraphicsPipeline::GraphicsPipeline(RefCounted <IRenderDevice> device)
+            : mDevice(std::move(device)),
+              mTopology(PrimitiveTopology::TriangleList),
+              mTarget(TargetType::None) {
 
-ignimbrite::GraphicsPipeline::~GraphicsPipeline() {
-    releasePipeline();
-}
+    }
 
-void ignimbrite::GraphicsPipeline::createPipeline() {
-    // if pipeline was previously created, destrou it
-    releasePipeline();
+    GraphicsPipeline::~GraphicsPipeline() {
+        releasePipeline();
+    }
 
-    /*if (!mHandle.isNull())
-        throw std::runtime_error("Graphics pipeline handle is already created");
-    }*/
+    void GraphicsPipeline::setShader(RefCounted <Shader> shader) {
+        mShader = std::move(shader);
+    }
 
-    switch (mTarget) {
-        case TargetType::Surface: {
-            // create blend state desc for surface
-            IRenderDevice::PipelineSurfaceBlendStateDesc blendDesc = {};
-            blendDesc.logicOpEnable = mBlendDesc.logicOpEnable;
-            blendDesc.logicOp = mBlendDesc.logicOp;
-            for (uint32 i = 0; i < 4; i++) {
-                blendDesc.blendConstants[i] = mBlendDesc.blendConstants[i];
+    void GraphicsPipeline::setSurface(ID <IRenderDevice::Surface> surface) {
+        mSurface = surface;
+        mTarget = TargetType::Surface;
+
+        auto blendAttachmentsCount = 1; // For surface oly one available always !
+        mBlendDesc.attachments.resize(blendAttachmentsCount);
+    }
+
+    void GraphicsPipeline::setTargetFormat(RefCounted<RenderTarget::Format> format) {
+        mTargetFormat = std::move(format);
+        mTarget = TargetType::Framebuffer;
+
+        auto blendAttachmentsCount = (uint32) mTargetFormat->getAttachments().size();
+             blendAttachmentsCount -= (mTargetFormat->hasDepthStencilAttachment() ? 1 : 0);
+
+        mBlendDesc.attachments.resize(blendAttachmentsCount);
+    }
+    
+    void GraphicsPipeline::setVertexBuffersCount(uint32 count) {
+        mVertexBuffersDesc.resize(count);
+    }
+    
+    void GraphicsPipeline::setVertexBufferDesc(uint32 index, const IRenderDevice::VertexBufferLayoutDesc &desc) {
+        if (index >= mVertexBuffersDesc.size())
+            throw std::runtime_error("Index of buffer descriptor is out of bounds");
+
+        mVertexBuffersDesc[index] = desc;
+    }
+
+    void GraphicsPipeline::setPrimitiveTopology(PrimitiveTopology topology) {
+        mTopology = topology;
+    }
+
+    void GraphicsPipeline::setPolygonMode(PolygonMode mode) {
+        mRasterizationDesc.mode = mode;
+    }
+
+    void GraphicsPipeline::setPolygonCullMode(PolygonCullMode cullMode) {
+        mRasterizationDesc.cullMode = cullMode;
+    }
+
+    void GraphicsPipeline::setPolygonFrontFace(PolygonFrontFace frontFace) {
+        mRasterizationDesc.frontFace = frontFace;
+    }
+
+    void GraphicsPipeline::setLineWidth(float32 lineWidth) {
+        mRasterizationDesc.lineWidth = lineWidth;
+    }
+
+    void GraphicsPipeline::setBlendEnable(bool enable) {
+        mBlendDesc.logicOpEnable = enable;
+    }
+
+    void GraphicsPipeline::setBlendLogicOp(LogicOperation logicOp) {
+        mBlendDesc.logicOp = logicOp;
+    }
+
+    void GraphicsPipeline::setBlendConstants(const std::array<float32,4> &blendConstants) {
+        mBlendDesc.blendConstants = blendConstants;
+    }
+
+    void GraphicsPipeline::setBlendAttachment(uint32 index, const IRenderDevice::BlendAttachmentDesc &desc) {
+        if (index >= mBlendDesc.attachments.size())
+            throw std::runtime_error("Index of blend attachment descriptor is out of bounds");
+
+        mBlendDesc.attachments[index] = desc;
+    }
+
+    void GraphicsPipeline::setDepthTestEnable(bool enable) {
+        mDepthStencilDesc.depthTestEnable = enable;
+    }
+
+    void GraphicsPipeline::setDepthWriteEnable(bool enable) {
+        mDepthStencilDesc.depthWriteEnable = enable;
+    }
+
+    void GraphicsPipeline::setStencilTestEnable(bool enable) {
+        mDepthStencilDesc.stencilTestEnable = enable;
+    }
+
+
+    void GraphicsPipeline::setDepthCompareOp(CompareOperation depthCompareOp) {
+        mDepthStencilDesc.depthCompareOp = depthCompareOp;
+    }
+
+    void GraphicsPipeline::setStencilFrontDesc(const IRenderDevice::StencilOpStateDesc &front) {
+        mDepthStencilDesc.front = front;
+    }
+
+    void GraphicsPipeline::setStencilBackDesc(const IRenderDevice::StencilOpStateDesc &back) {
+        mDepthStencilDesc.back = back;
+    }
+
+    void GraphicsPipeline::createPipeline() {
+        if (mHandle.isNotNull())
+            throw std::runtime_error("An attempt to recreate pipeline prior release");
+
+        switch (mTarget) {
+
+            case TargetType::Surface: {
+
+                checkSurfacePresent();
+                checkShaderPresent();
+                createVertexLayout();
+
+                // create blend state desc for surface
+                IRenderDevice::PipelineSurfaceBlendStateDesc blendDesc = {};
+                blendDesc.logicOpEnable = mBlendDesc.logicOpEnable;
+                blendDesc.logicOp = mBlendDesc.logicOp;
+                blendDesc.attachment = mBlendDesc.attachments[0];
+                blendDesc.blendConstants = mBlendDesc.blendConstants;
+
+                mHandle = mDevice->createGraphicsPipeline(
+                        mSurface,
+                        mTopology,
+                        mShader->getHandle(),
+                        mVertexLayout,
+                        mShader->getLayout(),
+                        mRasterizationDesc,
+                        blendDesc,
+                        mDepthStencilDesc
+                );
+
+                if (mHandle.isNull())
+                    throw std::runtime_error("Failed to create graphics pipeline");
             }
-            // using only first descriptor for surface
-            blendDesc.attachment = mBlendDesc.attachments[0];
-
-            mHandle = mDevice->createGraphicsPipeline(
-                    mSurface, mTopology, mShader->getHandle(), mVertexLayout, mShader->getLayout(),
-                    mRasterizationDesc, blendDesc, mDepthStencilDesc);
             break;
-        }
-        case TargetType::Framebuffer: {
-            mHandle = mDevice->createGraphicsPipeline(
-                    mTopology, mShader->getHandle(), mVertexLayout, mShader->getLayout(),
-                    mFramebufferFormat, mRasterizationDesc, mBlendDesc, mDepthStencilDesc);
+
+            case TargetType::Framebuffer: {
+
+                checkShaderPresent();
+                checkTargetFormatPresent();
+                createVertexLayout();
+
+                mHandle = mDevice->createGraphicsPipeline(
+                        mTopology,
+                        mShader->getHandle(),
+                        mVertexLayout,
+                        mShader->getLayout(),
+                        mTargetFormat->getFormatHandle(),
+                        mRasterizationDesc,
+                        mBlendDesc,
+                        mDepthStencilDesc
+                );
+
+                if (mHandle.isNull())
+                    throw std::runtime_error("Failed to create graphics pipeline");
+            }
             break;
+
+            default:
+                throw std::runtime_error("Rendering target is not specified [TargetType::None]");
+
         }
-        default:
-            throw std::runtime_error("Surface or framebuffer format must be set before creating pipeline");
-    }
-}
-
-void ignimbrite::GraphicsPipeline::releasePipeline() {
-    if (mHandle.isNotNull()) {
-        mDevice->destroyGraphicsPipeline(mHandle);
-        mHandle = ID<IRenderDevice::GraphicsPipeline>();
-    }
-}
-
-void ignimbrite::GraphicsPipeline::setShader(ignimbrite::RefCounted<ignimbrite::Shader> shader) {
-    mShader = std::move(shader);
-}
-
-void ignimbrite::GraphicsPipeline::setSurface(ignimbrite::ID<ignimbrite::IRenderDevice::Surface> surface) {
-    mSurface = surface;
-    mTarget = TargetType::Surface;
-}
-
-void ignimbrite::GraphicsPipeline::setFramebufferFormat(
-        ignimbrite::ID<ignimbrite::IRenderDevice::FramebufferFormat> format) {
-    mFramebufferFormat = format;
-    mTarget = TargetType::Framebuffer;
-}
-
-void
-ignimbrite::GraphicsPipeline::setVertexLayout(ignimbrite::ID<ignimbrite::IRenderDevice::VertexLayout> vertexLayout) {
-    mVertexLayout = vertexLayout;
-}
-
-void ignimbrite::GraphicsPipeline::setPrimitiveTopology(ignimbrite::PrimitiveTopology topology) {
-    mTopology = topology;
-}
-
-void ignimbrite::GraphicsPipeline::setBlendEnable(bool enable) {
-    mBlendDesc.logicOpEnable = enable;
-}
-
-void ignimbrite::GraphicsPipeline::setBlendLogicOp(ignimbrite::LogicOperation logicOp) {
-    mBlendDesc.logicOp = logicOp;
-}
-
-void ignimbrite::GraphicsPipeline::setBlendConstants(const std::array<float, 4> &blendConstants) {
-    for (uint32 i = 0; i < 4; i++) {
-        mBlendDesc.blendConstants[i] = blendConstants[i];
-    }
-}
-
-void ignimbrite::GraphicsPipeline::setBlendAttachment(ignimbrite::uint32 index,
-                                                      const ignimbrite::IRenderDevice::BlendAttachmentDesc &desc) {
-    if (index >= mBlendDesc.attachments.size()) {
-        mBlendDesc.attachments.resize(index + 1);
     }
 
-    mBlendDesc.attachments[index] = desc;
-}
+    void GraphicsPipeline::releasePipeline() {
+        if (mHandle.isNotNull()) {
+            mDevice->destroyGraphicsPipeline(mHandle);
+            mHandle = ID<IRenderDevice::GraphicsPipeline>();
+        }
 
-void ignimbrite::GraphicsPipeline::setPolygonMode(ignimbrite::PolygonMode mode) {
-    mRasterizationDesc.mode = mode;
-}
+        if (mVertexLayout.isNotNull()) {
+            mDevice->destroyVertexLayout(mVertexLayout);
+            mVertexLayout = ID<IRenderDevice::VertexLayout>();
+        }
+    }
 
-void ignimbrite::GraphicsPipeline::setPolygonCullMode(ignimbrite::PolygonCullMode cullMode) {
-    mRasterizationDesc.cullMode = cullMode;
-}
+    void GraphicsPipeline::bindPipeline() {
+        mDevice->drawListBindPipeline(mHandle);
+    }
 
-void ignimbrite::GraphicsPipeline::setPolygonFrontFace(ignimbrite::PolygonFrontFace frontFace) {
-    mRasterizationDesc.frontFace = frontFace;
-}
+    void GraphicsPipeline::checkShaderPresent() const {
+        if (mShader == nullptr)
+            throw std::runtime_error("Shader is not specified for pipeline");
+    }
 
-void ignimbrite::GraphicsPipeline::setLineWidth(float lineWidth) {
-    mRasterizationDesc.lineWidth = lineWidth;
-}
+    void GraphicsPipeline::checkSurfacePresent() const {
+        if (mSurface.isNull())
+            throw std::runtime_error("Surface is not specified for pipeline");
+    }
 
-void ignimbrite::GraphicsPipeline::setDepthTestEnable(bool enable) {
-    mDepthStencilDesc.depthTestEnable = enable;
-}
+    void GraphicsPipeline::checkTargetFormatPresent() const {
+        if (mTargetFormat == nullptr)
+            throw std::runtime_error("Target format is not specified for pipeline");
+    }
 
-void ignimbrite::GraphicsPipeline::setDepthWriteEnable(bool enable) {
-    mDepthStencilDesc.depthWriteEnable = enable;
-}
+    void GraphicsPipeline::createVertexLayout() {
+        mVertexLayout = mDevice->createVertexLayout(mVertexBuffersDesc);
 
-void ignimbrite::GraphicsPipeline::setStencilTestEnable(bool enable) {
-    mDepthStencilDesc.stencilTestEnable = enable;
-}
+        if (mVertexLayout.isNull())
+            throw std::runtime_error("Failed to create vertex layout object");
+    }
 
-
-void ignimbrite::GraphicsPipeline::setDepthCompareOp(ignimbrite::CompareOperation depthCompareOp) {
-    mDepthStencilDesc.depthCompareOp = depthCompareOp;
-}
-
-void ignimbrite::GraphicsPipeline::setStencilFrontDesc(const ignimbrite::IRenderDevice::StencilOpStateDesc &front) {
-    mDepthStencilDesc.front = front;
-}
-
-void ignimbrite::GraphicsPipeline::setStencilBackDesc(const ignimbrite::IRenderDevice::StencilOpStateDesc &back) {
-    mDepthStencilDesc.back = back;
-}
-
-void ignimbrite::GraphicsPipeline::bindPipeline() {
-    mDevice->drawListBindPipeline(mHandle);
 }

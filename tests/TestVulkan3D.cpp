@@ -28,7 +28,6 @@ struct Vertex {
 };
 
 struct RenderableMesh {
-    ID<IRenderDevice::VertexLayout> vertexLayout;
     ID<IRenderDevice::VertexBuffer> vertexBuffer;
     ID<IRenderDevice::IndexBuffer> indexBuffer;
     uint32 indexCount = 0;
@@ -152,34 +151,8 @@ private:
     }
 
     void initModel() {
-        // declare vertex layout
-        initVertexLayout();
         // init mesh vertex and index buffers
         loadObjModel(objMeshPath.c_str());
-    }
-
-    void initVertexLayout() {
-        IRenderDevice::VertexBufferLayoutDesc vertexBufferLayoutDesc = {};
-
-        std::vector<IRenderDevice::VertexAttributeDesc> &attrs = vertexBufferLayoutDesc.attributes;
-        attrs.resize(3);
-
-        attrs[0].location = 0;
-        attrs[0].format = DataFormat::R32G32B32_SFLOAT;
-        attrs[0].offset = offsetof(Vertex, Position);
-
-        attrs[1].location = 1;
-        attrs[1].format = DataFormat::R32G32B32_SFLOAT;
-        attrs[1].offset = offsetof(Vertex, Normal);
-
-        attrs[2].location = 2;
-        attrs[2].format = DataFormat::R32G32_SFLOAT;
-        attrs[2].offset = offsetof(Vertex, UV);
-
-        vertexBufferLayoutDesc.stride = sizeof(Vertex);
-        vertexBufferLayoutDesc.usage = VertexUsage::PerVertex;
-
-        rmesh.vertexLayout = pDevice->createVertexLayout({ vertexBufferLayoutDesc });
     }
 
     void loadObjModel(const char *path) {
@@ -288,21 +261,40 @@ private:
     }
 
     void initGraphicsPipeline() {
+        IRenderDevice::VertexBufferLayoutDesc vertexBufferLayoutDesc = {};
+
+        std::vector<IRenderDevice::VertexAttributeDesc> &attrs = vertexBufferLayoutDesc.attributes;
+        attrs.resize(3);
+
+        attrs[0].location = 0;
+        attrs[0].format = DataFormat::R32G32B32_SFLOAT;
+        attrs[0].offset = offsetof(Vertex, Position);
+
+        attrs[1].location = 1;
+        attrs[1].format = DataFormat::R32G32B32_SFLOAT;
+        attrs[1].offset = offsetof(Vertex, Normal);
+
+        attrs[2].location = 2;
+        attrs[2].format = DataFormat::R32G32_SFLOAT;
+        attrs[2].offset = offsetof(Vertex, UV);
+
+        vertexBufferLayoutDesc.stride = sizeof(Vertex);
+        vertexBufferLayoutDesc.usage = VertexUsage::PerVertex;
+
         std::shared_ptr<GraphicsPipeline> &pipeline = material.graphicsPipeline;
         pipeline = std::make_shared<GraphicsPipeline>(pDevice);
         pipeline->setSurface(surface);
         pipeline->setShader(material.shader);
-        pipeline->setVertexLayout(rmesh.vertexLayout);
+        pipeline->setVertexBuffersCount(1);
+        pipeline->setVertexBufferDesc(0, vertexBufferLayoutDesc);
         pipeline->setBlendEnable(false);
         pipeline->setDepthTestEnable(true);
         pipeline->setDepthWriteEnable(true);
-
         pipeline->createPipeline();
     }
 
     void destroy() {
         pDevice->destroyVertexBuffer(rmesh.vertexBuffer);
-        pDevice->destroyVertexLayout(rmesh.vertexLayout);
         pDevice->destroyIndexBuffer(rmesh.indexBuffer);
 
         pDevice->destroyUniformSet(material.uniformSet);
@@ -314,8 +306,6 @@ private:
         material.uniformBuffer = nullptr;
 
         ignimbrite::VulkanExtensions::destroySurface(*pDevice, surface);
-        pDevice = nullptr;
-        cmesh = nullptr;
 
         glfwDestroyWindow(window.glfwWindow);
         glfwTerminate();

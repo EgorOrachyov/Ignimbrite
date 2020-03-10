@@ -10,6 +10,7 @@
 #ifndef IGNIMBRITE_INCLUDESTD_H
 #define IGNIMBRITE_INCLUDESTD_H
 
+#include <array>
 #include <string>
 #include <memory>
 #include <vector>

@@ -11,7 +11,6 @@
 #define IGNIMBRITE_TEXTURE_H
 
 #include <Sampler.h>
-#include <IncludeStd.h>
 
 namespace ignimbrite {
 

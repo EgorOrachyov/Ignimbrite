@@ -22,15 +22,18 @@ namespace ignimbrite {
     }
 
     bool checkCompatibility(const RenderTarget::Format &format1, const RenderTarget::Format &format2) {
-        if (format1.handle == format2.handle)
+        if (format1.getFormatHandle() == format2.getFormatHandle())
             return true;
 
-        if (format1.attachments.size() != format2.attachments.size())
+        if (format1.getAttachments().size() != format2.getAttachments().size())
             return false;
 
-        for (uint32 i = 0; i < format1.attachments.size(); i++) {
-            const auto &attachment1 = format1.attachments[i];
-            const auto &attachment2 = format2.attachments[i];
+        const auto& attachments1 = format1.getAttachments();
+        const auto& attachments2 = format2.getAttachments();
+
+        for (uint32 i = 0; i < attachments1.size(); i++) {
+            const auto &attachment1 = attachments1[i];
+            const auto &attachment2 = attachments2[i];
 
             if (attachment1.format != attachment2.format    ||
                 attachment1.samples != attachment2.samples  ||
@@ -52,15 +55,27 @@ namespace ignimbrite {
     }
 
     RenderTarget::Format::Format(ignimbrite::RefCounted<ignimbrite::IRenderDevice> device)
-        : device(std::move(device)) {
+        : mRenderDevice(std::move(device)) {
 
     }
 
     RenderTarget::Format::~Format() {
-        if (handle.isNotNull()) {
-            device->destroyFramebufferFormat(handle);
-            handle = ID<IRenderDevice::FramebufferFormat>();
+        if (mFormatHandle.isNotNull()) {
+            mRenderDevice->destroyFramebufferFormat(mFormatHandle);
+            mFormatHandle = ID<IRenderDevice::FramebufferFormat>();
         }
+    }
+
+    bool RenderTarget::Format::hasDepthStencilAttachment() const {
+        return mHasDepthStencilAttachment;
+    }
+
+    const ID<ignimbrite::IRenderDevice::FramebufferFormat> & RenderTarget::Format::getFormatHandle() const {
+        return mFormatHandle;
+    }
+
+    const std::vector<IRenderDevice::FramebufferAttachmentDesc>& RenderTarget::Format::getAttachments() const {
+        return mAttachments;
     }
 
     RenderTarget::RenderTarget(RefCounted<IRenderDevice> device)
@@ -113,7 +128,7 @@ namespace ignimbrite {
             throw std::runtime_error("Incomplete specification of color attachments");
 
         Format format(mDevice);
-        getFramebufferFormatDescription(format.attachments);
+        getFramebufferFormatDescription(format.mAttachments);
 
         if (mFramebufferFormat != nullptr) {
             bool areCompatible = checkCompatibility(format, *mFramebufferFormat);
@@ -123,7 +138,8 @@ namespace ignimbrite {
         }
         else {
             mFramebufferFormat = std::make_shared<Format>(std::move(format));
-            mFramebufferFormat->handle = mDevice->createFramebufferFormat(mFramebufferFormat->attachments);
+            mFramebufferFormat->mFormatHandle = mDevice->createFramebufferFormat(mFramebufferFormat->mAttachments);
+            mFramebufferFormat->mHasDepthStencilAttachment = hasDepthStencilAttachment();
         }
 
         std::vector<ID<IRenderDevice::Texture>> attachments;
@@ -136,7 +152,7 @@ namespace ignimbrite {
             attachments.push_back(mDepthStencilAttachment->getHandle());
         }
 
-        mHandle = mDevice->createFramebuffer(attachments, mFramebufferFormat->handle);
+        mHandle = mDevice->createFramebuffer(attachments, mFramebufferFormat->mFormatHandle);
 
         if (mHandle.isNull())
             throw std::runtime_error("Failed to create framebuffer object");
