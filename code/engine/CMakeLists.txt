@@ -34,17 +34,19 @@ set(Ignimbrite_SOURCES
     UniformBuffer.cpp
     GraphicsPipeline.cpp
     GraphicsPipeline.h
+    PipelineContext.cpp
+    PipelineContext.h
     Material.cpp
     Material.h
-    IRenderable.cpp
-    IRenderable.h
     Mesh.cpp
     Mesh.h
     MeshLoader.h
     MeshLoader.cpp
     RenderTarget.cpp
     RenderTarget.h
-    Frustum.h)
+    Frustum.h
+    IRenderable.cpp
+    IRenderable.h)
 
 add_library(Ignimbrite STATIC ${Ignimbrite_SOURCES})
 

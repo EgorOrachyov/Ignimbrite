@@ -97,8 +97,6 @@ namespace ignimbrite {
         virtual void destroyIndexBuffer(ID<IndexBuffer> buffer) = 0;
 
         struct UniformTextureDesc {
-            /** Where this texture will be used */
-            ShaderStageFlags stageFlags = 0;
             /** Binding of the texture in the shader */
             uint32 binding = -1;
             /** Actual texture with data */

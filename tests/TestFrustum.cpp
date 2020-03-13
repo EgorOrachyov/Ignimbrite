@@ -40,7 +40,7 @@ struct UniformBufferData {
     glm::vec4       color = { 1.0f, 1.0f, 1.0f, 1.0f };
 };
 
-struct Material {
+struct MatData {
     UniformBuffer                *buffer;
     UniformBufferData             data;
     ID<IRenderDevice::UniformSet> uniformSet;
@@ -48,7 +48,7 @@ struct Material {
 
 struct Model {
     Mesh        mesh;
-    Material    material;
+    MatData    material;
 };
 
 struct Camera {

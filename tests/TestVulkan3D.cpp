@@ -7,6 +7,8 @@
 #include <UniformBuffer.h>
 #include <MeshLoader.h>
 #include <GraphicsPipeline.h>
+#include <PipelineContext.h>
+#include <Material.h>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -34,20 +36,18 @@ struct RenderableMesh {
 };
 
 struct ShaderUniformBuffer {
-    float32 mvp[16] = {};
-    float32 model[16] = {};
-    float32 lightDir[3] = {};
-    float32 ambient[3] = {};
+    Mat4f model = Mat4f();
+    Mat4f MVP = Mat4f();
 };
 
-struct Material {
-    std::shared_ptr<Shader> shader;
-    std::shared_ptr<GraphicsPipeline> graphicsPipeline;
-    ID<IRenderDevice::UniformSet> uniformSet;
-    std::shared_ptr<UniformBuffer> uniformBuffer;
+struct MatData {
+    RefCounted<Shader> shader;
+    RefCounted<GraphicsPipeline> graphicsPipeline;
+    RefCounted<Material> material;
+    RefCounted<Texture> texture;
+    RefCounted<Sampler> sampler;
     ShaderUniformBuffer data;
-    ID<IRenderDevice::Texture> texture;
-    ID<IRenderDevice::Sampler> textureSampler;
+    RefCounted<Material> instanced;
 };
 
 struct Window {
@@ -82,19 +82,19 @@ public:
 
             IRenderDevice::Region area = { 0, 0, { (uint32)window.widthFrameBuffer, (uint32)window.heightFrameBuffer} };
 
-            if (area.extent.x == 0|| area.extent.y == 0)
-            {
+            if (area.extent.x == 0|| area.extent.y == 0) {
                 continue;
             }
 
             updateScene();
 
-            pDevice->drawListBegin();
-            {
+            pDevice->drawListBegin(); {
                 pDevice->drawListBindSurface(surface, clearColor, area);
-                material.graphicsPipeline->bindPipeline();
+                PipelineContext::cacheSurfaceBinding(surface);
 
-                pDevice->drawListBindUniformSet(material.uniformSet);
+                matData.material->bindGraphicsPipeline();
+                matData.material->bindUniformData();
+
                 pDevice->drawListBindVertexBuffer(rmesh.vertexBuffer, 0, 0);
                 pDevice->drawListBindIndexBuffer(rmesh.indexBuffer, ignimbrite::IndicesType::Uint32, 0);
 
@@ -112,7 +112,6 @@ private:
     void init() {
         // create window to render in
         initWindow();
-
         // create render device
         pDevice = std::make_shared<VulkanRenderDevice>(window.extensionsCount, window.extensions);
 
@@ -122,17 +121,16 @@ private:
         }
 
         // create surface
-        surface = VulkanExtensions::createSurfaceGLFW(
-                *pDevice, window.glfwWindow, window.widthFrameBuffer, window.heightFrameBuffer, name);
-
+        surface = VulkanExtensions::createSurfaceGLFW(*pDevice, window.glfwWindow, window.widthFrameBuffer, window.heightFrameBuffer, name);
         // init vertex layout and load model
         initModel();
-
         // init material and its resources
         initMaterial();
-
-        // create graphics pipeline
-        initGraphicsPipeline();
+        // first upadte
+        updateScene();
+        // instancing test
+        matData.instanced = matData.material->clone();
+        matData.material = matData.instanced;
     }
 
     void initWindow() {
@@ -144,9 +142,7 @@ private:
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
         window.glfwWindow = glfwCreateWindow(window.width, window.height, name.c_str(), nullptr, nullptr);
-
-        glfwGetFramebufferSize(window.glfwWindow,
-                (int*) &window.widthFrameBuffer, (int*) &window.heightFrameBuffer);
+        glfwGetFramebufferSize(window.glfwWindow,(int*) &window.widthFrameBuffer, (int*) &window.heightFrameBuffer);
 
         // get required extensions for a surface
         window.extensions = glfwGetRequiredInstanceExtensions(&window.extensionsCount);
@@ -164,23 +160,21 @@ private:
         MeshLoader meshLoader(path);
         cmesh = meshLoader.importMesh(Mesh::VertexFormat::PNT);
 
-        rmesh.vertexBuffer = pDevice->createVertexBuffer(BufferUsage::Dynamic,
-                cmesh->getVertexCount() * sizeof(Vertex), cmesh->getVertexData());
+        rmesh.vertexBuffer = pDevice->createVertexBuffer(BufferUsage::Dynamic,cmesh->getVertexCount() * sizeof(Vertex), cmesh->getVertexData());
         rmesh.indexCount = cmesh->getIndexCount();
-        rmesh.indexBuffer = pDevice->createIndexBuffer(BufferUsage::Static,
-                rmesh.indexCount * sizeof(uint32), cmesh->getIndexData());
+        rmesh.indexBuffer = pDevice->createIndexBuffer(BufferUsage::Static,rmesh.indexCount * sizeof(uint32), cmesh->getIndexData());
     }
 
     void initMaterial() {
-        // load shader, init its uniform layout
         initShader();
-
-        // prepare buffers and textures for material
-        initUniformBuffers();
+        initGraphicsPipeline();
         initTextures();
 
-        // bind created resources to uniform set
-        initUniformSet();
+        matData.material = std::make_shared<Material>(pDevice);
+        matData.material->setGraphicsPipeline(matData.graphicsPipeline);
+        matData.material->createMaterial();
+        matData.material->setTexture2D("texSampler", matData.texture);
+        matData.material->updateUniformData();
     }
 
     void initShader() {
@@ -190,15 +184,10 @@ private:
         std::vector<uint8> vertSpv(std::istreambuf_iterator<char>(vertFile), {});
         std::vector<uint8> fragSpv(std::istreambuf_iterator<char>(fragFile), {});
 
-        material.shader = std::make_shared<Shader>(pDevice);
-        material.shader->fromSources(ShaderLanguage::SPIRV, vertSpv, fragSpv);
-        material.shader->reflectData();
-        material.shader->generateUniformLayout();
-    }
-
-    void initUniformBuffers() {
-        material.uniformBuffer = std::make_shared<UniformBuffer>(pDevice);
-        material.uniformBuffer->createBuffer(sizeof(ShaderUniformBuffer));
+        matData.shader = std::make_shared<Shader>(pDevice);
+        matData.shader->fromSources(ShaderLanguage::SPIRV, vertSpv, fragSpv);
+        matData.shader->reflectData();
+        matData.shader->generateUniformLayout();
     }
 
     void initTextures() {
@@ -213,56 +202,14 @@ private:
             throw std::runtime_error(std::string("Can't load texture at: ") + path);
         }
 
-        uint32 mipmapCount = (uint32)std::floor(std::log2(std::max(texWidth, texHeight))) + 1;
+        matData.sampler = std::make_shared<Sampler>(pDevice);
+        matData.sampler->setHighQualityFiltering();
 
-        IRenderDevice::TextureDesc textureDesc = {};
-        textureDesc.height = texHeight;
-        textureDesc.width = texWidth;
-        textureDesc.depth = 1;
-        textureDesc.size = texHeight * texWidth * 4;
-        textureDesc.type = TextureType::Texture2D;
-        textureDesc.usageFlags = (uint32)TextureUsageBit::ShaderSampling;
-        textureDesc.format = DataFormat::R8G8B8A8_UNORM;
-        textureDesc.data = pixels;
-        textureDesc.size = texWidth * texHeight * texChannels;
-        textureDesc.mipmaps = mipmapCount;
-
-        material.texture = pDevice->createTexture(textureDesc);
+        matData.texture = std::make_shared<Texture>(pDevice);
+        matData.texture->setDataAsRGBA8(texWidth, texHeight, pixels, true);
+        matData.texture->setSampler(matData.sampler);
 
         stbi_image_free(pixels);
-
-        IRenderDevice::SamplerDesc samplerDesc = {};
-        samplerDesc.mag = SamplerFilter::Linear;
-        samplerDesc.min = SamplerFilter::Linear;
-        samplerDesc.u = samplerDesc.v = samplerDesc.w = SamplerRepeatMode::Repeat;
-        samplerDesc.useAnisotropy = true;
-        samplerDesc.anisotropyMax = 16;
-        samplerDesc.color = SamplerBorderColor::Black;
-        samplerDesc.minLod = 0;
-        samplerDesc.maxLod = mipmapCount;
-        samplerDesc.mipmapMode = SamplerFilter::Linear;
-        samplerDesc.mipLodBias = 0;
-
-        material.textureSampler = pDevice->createSampler(samplerDesc);
-    }
-
-    void initUniformSet() {
-        IRenderDevice::UniformBufferDesc uniformBufferDesc = {};
-        uniformBufferDesc.binding = 0;
-        uniformBufferDesc.offset = 0;
-        uniformBufferDesc.range = sizeof(ShaderUniformBuffer);
-        uniformBufferDesc.buffer = material.uniformBuffer->getHandle();
-        IRenderDevice::UniformTextureDesc uniformTextureDesc = {};
-        uniformTextureDesc.binding = 1;
-        uniformTextureDesc.texture = material.texture;
-        uniformTextureDesc.sampler = material.textureSampler;
-        uniformTextureDesc.stageFlags = (ShaderStageFlags)ShaderStageFlagBits::FragmentBit;
-
-        IRenderDevice::UniformSetDesc uniformSetDesc = {};
-        uniformSetDesc.buffers.push_back(uniformBufferDesc);
-        uniformSetDesc.textures.push_back(uniformTextureDesc);
-
-        material.uniformSet = pDevice->createUniformSet(uniformSetDesc, material.shader->getLayout());
     }
 
     void initGraphicsPipeline() {
@@ -286,10 +233,10 @@ private:
         vertexBufferLayoutDesc.stride = sizeof(Vertex);
         vertexBufferLayoutDesc.usage = VertexUsage::PerVertex;
 
-        std::shared_ptr<GraphicsPipeline> &pipeline = material.graphicsPipeline;
+        std::shared_ptr<GraphicsPipeline> &pipeline = matData.graphicsPipeline;
         pipeline = std::make_shared<GraphicsPipeline>(pDevice);
         pipeline->setSurface(surface);
-        pipeline->setShader(material.shader);
+        pipeline->setShader(matData.shader);
         pipeline->setVertexBuffersCount(1);
         pipeline->setVertexBufferDesc(0, vertexBufferLayoutDesc);
         pipeline->setBlendEnable(false);
@@ -302,14 +249,6 @@ private:
         pDevice->destroyVertexBuffer(rmesh.vertexBuffer);
         pDevice->destroyIndexBuffer(rmesh.indexBuffer);
 
-        pDevice->destroyUniformSet(material.uniformSet);
-
-        pDevice->destroyTexture(material.texture);
-        pDevice->destroySampler(material.textureSampler);
-
-        material.shader = nullptr;
-        material.uniformBuffer = nullptr;
-
         ignimbrite::VulkanExtensions::destroySurface(*pDevice, surface);
 
         glfwDestroyWindow(window.glfwWindow);
@@ -318,22 +257,16 @@ private:
 
 
     void updateScene() {
-        calculateMvp(window.widthFrameBuffer, window.heightFrameBuffer, fov, pitch, yaw, z,
-                material.data.mvp, material.data.model);
+        calculateMvp(window.widthFrameBuffer, window.heightFrameBuffer, fov, pitch, yaw, z, matData.data.model, matData.data.MVP);
 
-        material.data.lightDir[0] = -1;
-        material.data.lightDir[1] = 1;
-        material.data.lightDir[2] = -0.5f;
-        material.data.ambient[0] = 0.1f;
-        material.data.ambient[1] = 0.1f;
-        material.data.ambient[2] = 0.1f;
-
-        material.uniformBuffer->updateData(sizeof(ShaderUniformBuffer), 0, (uint8*)&material.data);
+        static String mvpName = "bufferVals.mvp";
+        matData.material->setMat4(mvpName, matData.data.MVP);
+        matData.material->updateUniformData();
     }
 
     static void calculateMvp(float32 viewWidth, float32 viewHeight,
                              float32 fovDegrees, float32 apitch, float32 ayaw, float32 cz,
-                             float32 *outMat4, float32 *outModelMat4) {
+                             Mat4f& outModel, Mat4f& outMvp) {
         auto projection = glm::perspective(fovDegrees, viewWidth / viewHeight, 0.1f, 100.0f);
 
         auto view = glm::lookAt(
@@ -351,14 +284,8 @@ private:
                               0.0f, 0.0f, 0.5f, 0.0f,
                               0.0f, 0.0f, 0.5f, 1.0f);
 
-        auto mvp = clip * projection * view * model;
-
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                outMat4[i * 4 + j] = mvp[i][j];
-                outModelMat4[i * 4 + j] = model[i][j];
-            }
-        }
+        outModel = model;
+        outMvp = clip * projection * view * model;
     }
 
     static void mouseCallback(GLFWwindow *window, float64 x, float64 y) {
@@ -388,7 +315,7 @@ private:
     Window           window;
     RefCounted<Mesh> cmesh;
     RenderableMesh   rmesh;
-    Material         material;
+    MatData          matData;
 
     String name = "Textured 3D model";
     String objMeshPath;

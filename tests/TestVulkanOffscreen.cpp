@@ -242,7 +242,6 @@ public:
         IRenderDevice::UniformTextureDesc uniformTextureDesc = {};
         uniformTextureDesc.binding = 0;
         uniformTextureDesc.sampler = surfacePass.sampler;
-        uniformTextureDesc.stageFlags = (uint32) ShaderStageFlagBits::FragmentBit;
         uniformTextureDesc.texture = offscreenPass.colorTexture;
 
         IRenderDevice::UniformSetDesc uniformSetDesc = {};

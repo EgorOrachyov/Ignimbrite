@@ -22,7 +22,7 @@ namespace ignimbrite {
         void setSampler(RefCounted<Sampler> sampler);
         void setAsRGBA8(uint32 width, uint32 height);
         void setAsD32S8(uint32 width, uint32 height);
-        void setDataAsRGBA8(uint32 width, uint32 height, const uint8 *data);
+        void setDataAsRGBA8(uint32 width, uint32 height, const uint8 *data, bool genMipmaps);
         void releaseHandle();
         bool isValidHandle();
 

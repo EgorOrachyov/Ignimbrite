@@ -156,7 +156,7 @@ public:
                 offscreenPass.shader->getHandle(),
                 offscreenPass.vertexLayout,
                 offscreenPass.shader->getLayout(),
-                offscreenPass.renderTarget->getFramebufferFormat()->mFormatHandle,
+                offscreenPass.renderTarget->getFramebufferFormat()->getFormatHandle(),
                 rasterizationDesc,
                 blendStateDesc,
                 depthStencilStateDesc
@@ -201,7 +201,6 @@ public:
         IRenderDevice::UniformTextureDesc uniformTextureDesc = {};
         uniformTextureDesc.binding = 0;
         uniformTextureDesc.sampler = surfacePass.sampler->getHandle();
-        uniformTextureDesc.stageFlags = (uint32) ShaderStageFlagBits::FragmentBit;
         uniformTextureDesc.texture = offscreenPass.colorTexture->getHandle();
 
         IRenderDevice::UniformSetDesc uniformSetDesc = {};

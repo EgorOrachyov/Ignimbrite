@@ -20,6 +20,7 @@ namespace ignimbrite {
     using Vec2f = glm::vec2;
     using Vec3f = glm::vec3;
     using Vec4f = glm::vec4;
+    using Mat4f = glm::mat4x4;
 }
 
 #endif //IGNIMBRITE_INCLUDEMATH_H

@@ -25,8 +25,6 @@ endif ()
 ##################################################################
 ## Third-party setup
 
-include_directories(code/thirdparty/test_include)
-
 option(IGNIMBRITE_WITH_GLFW "GLFW Window system" NO)
 if (IGNIMBRITE_WITH_GLFW)
     message(STATUS "Add GLFW as window system API")

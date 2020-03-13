@@ -25,12 +25,33 @@ namespace ignimbrite {
     }
 
     void Texture::setAsRGBA8(ignimbrite::uint32 width, ignimbrite::uint32 height) {
-        Texture::setDataAsRGBA8(width, height, nullptr);
-    }
+        if (mHandle.isNotNull())
+            throw std::runtime_error("An attempt to recreate texture");
+
+        mWidth = width;
+        mHeight = height;
+        mStride = 4 * width;
+        mDataFormat = DataFormat::R8G8B8A8_UNORM;
+
+        IRenderDevice::TextureDesc textureDesc{};
+        textureDesc.data = nullptr;
+        textureDesc.format = mDataFormat;
+        textureDesc.width = mWidth;
+        textureDesc.height = mHeight;
+        textureDesc.depth = 1;
+        textureDesc.size = mStride * mWidth;
+        textureDesc.type = TextureType::Texture2D;
+        textureDesc.usageFlags = (uint32) TextureUsageBit::ShaderSampling | (uint32) TextureUsageBit::ColorAttachment;
+        textureDesc.mipmaps = 1;
+
+        mHandle = mDevice->createTexture(textureDesc);
+
+        if (mHandle.isNull())
+            throw std::runtime_error("Failed to create texture object");    }
 
     void Texture::setAsD32S8(ignimbrite::uint32 width, ignimbrite::uint32 height) {
         if (mHandle.isNotNull())
-            return;
+            throw std::runtime_error("An attempt to recreate texture");
 
         mWidth = width;
         mHeight = height;
@@ -52,37 +73,33 @@ namespace ignimbrite {
             throw std::runtime_error("Failed to create texture object");
     }
 
-    void Texture::setDataAsRGBA8(uint32 width, uint32 height, const uint8* data) {
-        if (mHandle.isNotNull()) {
-            return;
-        }
+    void Texture::setDataAsRGBA8(uint32 width, uint32 height, const uint8* data, bool genMipmaps) {
+        if (mHandle.isNotNull())
+            throw std::runtime_error("An attempt to recreate texture");
+
+        if (data == nullptr)
+            throw std::runtime_error("Data must be specified for texture creation");
 
         mWidth = width;
         mHeight = height;
         mStride = 4 * width;
         mDataFormat = DataFormat::R8G8B8A8_UNORM;
 
-        if (data != nullptr) {
-            mData.reserve(getSize());
-            for (uint32 i = 0; i < getSize(); i++) {
-                mData.push_back(data[i]);
-            }
-        }
-
         IRenderDevice::TextureDesc textureDesc{};
         textureDesc.data = data;
         textureDesc.format = mDataFormat;
         textureDesc.width = mWidth;
         textureDesc.height = mHeight;
+        textureDesc.depth = 1;
         textureDesc.size = mStride * mWidth;
         textureDesc.type = TextureType::Texture2D;
-        textureDesc.usageFlags = (uint32) TextureUsageBit::ShaderSampling | (uint32) TextureUsageBit::ColorAttachment;
+        textureDesc.usageFlags = (uint32) TextureUsageBit::ShaderSampling;
+        textureDesc.mipmaps = (genMipmaps ? (uint32)std::floor(std::log2(std::max(width, height))) + 1 : 1);
 
         mHandle = mDevice->createTexture(textureDesc);
 
-        if (mHandle.isNull()) {
-            // todo: do something
-        }
+        if (mHandle.isNull())
+            throw std::runtime_error("Failed to create texture object");
     }
 
     void Texture::releaseHandle() {

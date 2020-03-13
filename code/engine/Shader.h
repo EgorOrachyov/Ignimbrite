@@ -80,6 +80,7 @@ namespace ignimbrite {
         const std::vector<IRenderDevice::ShaderDesc> &getShaders() const;
         const ParameterInfo& getParameterInfo(const String &name) const;
         const UniformBufferInfo& getBufferInfo(const String &name) const;
+        const std::unordered_map<String, UniformBufferInfo> &getBuffersInfo() const;
 
     private:
         friend class ShaderReflection;

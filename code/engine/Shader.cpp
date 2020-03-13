@@ -113,5 +113,9 @@ namespace ignimbrite {
         return mBuffers.at(name);
     }
 
+    const std::unordered_map<String, Shader::UniformBufferInfo>& Shader::getBuffersInfo() const {
+        return mBuffers;
+    }
+
 
 }
