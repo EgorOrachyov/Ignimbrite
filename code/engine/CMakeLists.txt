@@ -6,6 +6,8 @@ set(Ignimbrite_SOURCES
     IncludeStd.h
     IncludeMath.h
     Compilation.h
+    IRenderEngine.cpp
+    IRenderEngine.h
     IRenderDevice.cpp
     IRenderDevice.h
     IRenderDeviceDefinitions.h
