@@ -13,6 +13,7 @@
 
 #include <Frustum.h>
 #include <glm/gtc/quaternion.hpp>
+#include <vector>
 
 namespace ignimbrite {
 
@@ -28,40 +29,36 @@ namespace ignimbrite {
         Light();
         Light(LightType type);
 
+        LightType getType() const;
         const glm::vec3 &getPosition() const;
+        const glm::vec3 &getColor() const;
         const glm::vec3 &getDirection() const;
         const glm::vec3 &getUp() const;
-        const glm::vec3 &getColor() const;
         float32 getIntensity() const;
         float32 getRange() const;
+        /** Get fov angle in degrees of spot light */
         float32 getSpotAngle() const;
-        float32 isShadowCast() const;
+        bool isShadowCast() const;
         float32 getShadowBias() const;
         float32 getShadowNormalBias() const;
         float32 getShadowNearPlane() const;
-        /**
-         * Get frustum for directional or spot light
-         */
+        /** Get frustum for directional or spot light */
         const Frustum &getFrustum() const;
-        /**
-         * Get AABB for point light
-         */
+        /** Get AABB for point light */
         const AABB &getAABB() const;
-        LightType getType() const;
-        void setType(LightType type);
 
+        void setType(LightType type);
         void setPosition(const glm::vec3 &position);
         void setColor(const glm::vec3 &color);
+        void setDirection(const glm::vec3 &direction, const glm::vec3 &up);
         void setIntensity(float32 intensity);
         void setRange(float32 range);
-        /** Get fov angle in radians of spot light */
-        void setSpotAngle(float32 spotAngle);
+        /** Set fov angle for spot light in degrees */
+        void setSpotAngle(float32 spotAngleDeg);
         void setCastShadow(bool castShadow);
         void setShadowBias(float32 shadowBias);
         void setShadowNormalBias(float32 shadowNormalBias);
         void setShadowNearPlane(float32 shadowNearPlane);
-
-        void setDirection(const glm::vec3 &direction, const glm::vec3 &up);
 
         /**
          * Recalculate directional light's frustum to fit camera's view
@@ -71,6 +68,14 @@ namespace ignimbrite {
          * @note only for directional light
          */
         void fitCameraFrustum(const Frustum &cameraFrustum, float32 percentage = 1.0f);
+
+        /**
+         * Get View-Projection matrices for this light.
+         * @param outMatrices an output vector with required matrices.
+         * The length will be 1 for directional and spot lights, and 6 for point lights.
+         * For point lights the order is (+X, -X, +Y, -Y, +Z, -Z)
+         */
+        void getLightSpace(std::vector<glm::mat4> &outMatrices) const;
 
     private:
         /**
@@ -94,6 +99,8 @@ namespace ignimbrite {
 
         float32 mRange;
         float32 mSpotAngle;
+        /** Near plane for spot and point lights */
+        const float32 mLightPerspectiveNear = 0.0001f;
 
         bool mCastShadow;
         float32 mShadowBias;
@@ -104,6 +111,8 @@ namespace ignimbrite {
         AABB mAabb;
         /** Frustum for directional and spot light */
         Frustum mFrustum;
+        /** View-projection matrix for directional and spot lights */
+        glm::mat4 mViewProjMatrix;
     };
 
 }

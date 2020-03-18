@@ -9,6 +9,7 @@
 
 #include <glm/gtx/euler_angles.hpp>
 #include <glm/gtx/quaternion.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <stdexcept>
 #include "Light.h"
 
@@ -50,7 +51,7 @@ namespace ignimbrite {
         return mType;
     }
 
-    float32 Light::isShadowCast() const {
+    bool Light::isShadowCast() const {
         return mCastShadow;
     }
 
@@ -101,7 +102,7 @@ namespace ignimbrite {
     }
 
     void Light::setRange(float32 range) {
-        mRange = range;
+        mRange = range > 0.0f ? range : 0.0f;
 
         if (mType == LightType::Spot) {
             rebuildSpotFrustum();
@@ -111,7 +112,7 @@ namespace ignimbrite {
     }
 
     void Light::setSpotAngle(float32 spotAngle) {
-        mSpotAngle = spotAngle;
+        mSpotAngle = glm::clamp(spotAngle, 0.0f, 180.0f - glm::epsilon<float>());
 
         if (mType == LightType::Spot) {
             rebuildSpotFrustum();
@@ -158,7 +159,12 @@ namespace ignimbrite {
         }
 
         mFrustum.setViewProperties(getDirection(), getUp());
-        mFrustum.createPerspective(getPosition(), mSpotAngle, 1, 0.0001f, mRange);
+        mFrustum.createPerspective(getPosition(), glm::radians(mSpotAngle), 1, mLightPerspectiveNear, mRange);
+
+        const glm::mat4 &view = glm::lookAt(getPosition(), getPosition() + getDirection(), getUp());
+        const glm::mat4 &proj = glm::perspective(glm::radians(mSpotAngle), 1.0f, mLightPerspectiveNear, mRange);
+
+        mViewProjMatrix = proj * view;
     }
 
     void Light::rebuildPointAABB() {
@@ -175,8 +181,8 @@ namespace ignimbrite {
         }
 
         // transform all vertices from world to light's space
-        glm::mat4 lightSpace = glm::lookAt(glm::vec3(0, 0, 0), getDirection(), getUp());
-        glm::mat4 invLightSpace = glm::inverse(lightSpace);
+        const glm::mat4 &lightSpace = glm::lookAt(glm::vec3(0, 0, 0), getDirection(), getUp());
+        const glm::mat4 &invLightSpace = glm::inverse(lightSpace);
 
         const glm::vec3 *cnearVerts = cameraFrustum.getNearVertices();
         const glm::vec3 *cfarVerts = cameraFrustum.getFarVertices();
@@ -205,6 +211,11 @@ namespace ignimbrite {
 
         mFrustum.setViewProperties(getDirection(), getUp());
         mFrustum.createOrthographic(-bmin[0], -bmax[0], bmin[1], bmax[1], nearPlane, farPlane);
+
+        const glm::mat4 &view = lightSpace;
+        const glm::mat4 &proj = glm::ortho(-bmin[0], -bmax[0], bmin[1], bmax[1], nearPlane, farPlane);
+
+        mViewProjMatrix = proj * view;
     }
 
     void Light::setDirection(const glm::vec3 &direction, const glm::vec3 &up) {
@@ -213,6 +224,37 @@ namespace ignimbrite {
 
         if (mType == LightType::Spot) {
             rebuildSpotFrustum();
+        }
+    }
+
+    void Light::getLightSpace(std::vector<glm::mat4> &outMatrices) const {
+        if (mType == LightType::Spot) {
+            outMatrices.resize(1);
+            outMatrices[0] = mViewProjMatrix;
+        } else if (mType == LightType::Directional) {
+            outMatrices.resize(1);
+            outMatrices[0] = mViewProjMatrix;
+        } else if (mType == LightType::Point) {
+            outMatrices.resize(6);
+
+            // directions and up vectors
+            glm::vec3 curDir[6][2] = {
+                    {glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0)},
+                    {glm::vec3(1, 0, 0),  glm::vec3(0, 1, 0)},
+                    {glm::vec3(0, 1, 0),  glm::vec3(0, 0, 1)},
+                    {glm::vec3(0, -1, 0), glm::vec3(0, 0, 1)},
+                    {glm::vec3(0, 0, 1),  glm::vec3(0, 1, 0)},
+                    {glm::vec3(0, 0, -1), glm::vec3(0, 1, 0)}
+            };
+
+            const glm::mat4 &proj = glm::perspective(glm::pi<float32>() / 2.0f, 1.0f, mLightPerspectiveNear, mRange);
+
+            for (int i = 0; i < 6; i++) {
+                const glm::mat4 &view = glm::lookAt(getPosition(), getPosition() + curDir[i][0], curDir[i][1]);
+                outMatrices[i] = proj * view;
+            }
+        } else {
+            throw std::runtime_error("Light space is only available for directional, spot and point lights");
         }
     }
 }
