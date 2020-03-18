@@ -16,132 +16,132 @@ namespace ignimbrite {
 
     Light::Light() : Light(LightType::Point) {}
 
-    Light::Light(LightType ltype) : type(ltype) {}
+    Light::Light(LightType ltype) : mType(ltype) {}
 
     const glm::vec3 &Light::getPosition() const {
-        return position;
+        return mPosition;
     }
 
     const glm::vec3 &Light::getDirection() const {
-        return direction;
+        return mDirection;
     }
 
     const glm::vec3 &Light::getUp() const {
-        return up;
+        return mUp;
     }
 
     const glm::vec3 &Light::getColor() const {
-        return color;
+        return mColor;
     }
 
-    float Light::getIntensity() const {
-        return intensity;
+    float32 Light::getIntensity() const {
+        return mIntensity;
     }
 
-    float Light::getRange() const {
-        return range;
+    float32 Light::getRange() const {
+        return mRange;
     }
 
-    float Light::getSpotAngle() const {
-        return spotAngle;
+    float32 Light::getSpotAngle() const {
+        return mSpotAngle;
     }
 
     LightType Light::getType() const {
-        return type;
+        return mType;
     }
 
-    float Light::isShadowCast() const {
-        return castShadow;
+    float32 Light::isShadowCast() const {
+        return mCastShadow;
     }
 
-    float Light::getShadowBias() const {
-        return shadowBias;
+    float32 Light::getShadowBias() const {
+        return mShadowBias;
     }
 
-    float Light::getShadowNormalBias() const {
-        return shadowBias;
+    float32 Light::getShadowNormalBias() const {
+        return mShadowBias;
     }
 
-    float Light::getShadowNearPlane() const {
-        return shadowNearPlane;
+    float32 Light::getShadowNearPlane() const {
+        return mShadowNearPlane;
     }
 
     const Frustum &Light::getFrustum() const {
-        if (type != LightType::Directional && type != LightType::Spot) {
+        if (mType != LightType::Directional && mType != LightType::Spot) {
             throw std::runtime_error("Frustum is used only by directional and spot light");
         }
 
-        return frustum;
+        return mFrustum;
     }
 
     const AABB &Light::getAABB() const {
-        if (type != LightType::Point) {
+        if (mType != LightType::Point) {
             throw std::runtime_error("AABB is used only by point light");
         }
 
-        return aabb;
+        return mAabb;
     }
 
     void Light::setPosition(const glm::vec3 &position) {
-        Light::position = position;
+        mPosition = position;
 
-        if (type == LightType::Spot) {
+        if (mType == LightType::Spot) {
             rebuildSpotFrustum();
-        } else if (type == LightType::Point) {
+        } else if (mType == LightType::Point) {
             rebuildPointAABB();
         }
     }
 
     void Light::setColor(const glm::vec3 &color) {
-        Light::color = color;
+        mColor = color;
     }
 
-    void Light::setIntensity(float intensity) {
-        Light::intensity = intensity;
+    void Light::setIntensity(float32 intensity) {
+        mIntensity = intensity;
     }
 
-    void Light::setRange(float range) {
-        Light::range = range;
+    void Light::setRange(float32 range) {
+        mRange = range;
 
-        if (type == LightType::Spot) {
+        if (mType == LightType::Spot) {
             rebuildSpotFrustum();
-        } else if (type == LightType::Point) {
+        } else if (mType == LightType::Point) {
             rebuildPointAABB();
         }
     }
 
-    void Light::setSpotAngle(float spotAngle) {
-        Light::spotAngle = spotAngle;
+    void Light::setSpotAngle(float32 spotAngle) {
+        mSpotAngle = spotAngle;
 
-        if (type == LightType::Spot) {
+        if (mType == LightType::Spot) {
             rebuildSpotFrustum();
         }
     }
 
     void Light::setCastShadow(bool castShadow) {
-        Light::castShadow = castShadow;
+        mCastShadow = castShadow;
     }
 
-    void Light::setShadowBias(float shadowBias) {
-        Light::shadowBias = shadowBias;
+    void Light::setShadowBias(float32 shadowBias) {
+        mShadowBias = shadowBias;
     }
 
-    void Light::setShadowNormalBias(float shadowNormalBias) {
-        Light::shadowNormalBias = shadowNormalBias;
+    void Light::setShadowNormalBias(float32 shadowNormalBias) {
+        mShadowNormalBias = shadowNormalBias;
     }
 
-    void Light::setShadowNearPlane(float shadowNearPlane) {
-        Light::shadowNearPlane = shadowNearPlane;
+    void Light::setShadowNearPlane(float32 shadowNearPlane) {
+        mShadowNearPlane = shadowNearPlane;
 
-        if (type == LightType::Spot) {
+        if (mType == LightType::Spot) {
             rebuildSpotFrustum();
         }
     }
 
     void Light::setType(LightType type) {
 
-        LightType oldType = Light::type;
-        Light::type = type;
+        LightType oldType = mType;
+        mType = type;
 
         if (oldType != type) {
             if (type == LightType::Point) {
@@ -153,68 +153,65 @@ namespace ignimbrite {
     }
 
     void Light::rebuildSpotFrustum() {
-        if (type != LightType::Spot) {
+        if (mType != LightType::Spot) {
             return;
         }
 
-        frustum.setViewProperties(position, getDirection(), getUp());
-        frustum.createPerspective(spotAngle, 1, 0.0001f, range);
+        mFrustum.setViewProperties(getDirection(), getUp());
+        mFrustum.createPerspective(getPosition(), mSpotAngle, 1, 0.0001f, mRange);
     }
 
     void Light::rebuildPointAABB() {
-        if (type != LightType::Point) {
+        if (mType != LightType::Point) {
             return;
         }
 
-        aabb = AABB(position, range);
+        mAabb = AABB(mPosition, mRange);
     }
 
-    void Light::fitCameraFrustum(const Frustum &cameraFrustum) {
-        if (type != LightType::Directional) {
+    void Light::fitCameraFrustum(const Frustum &cameraFrustum, float32 percentage) {
+        if (mType != LightType::Directional) {
             throw std::runtime_error("Fitting frustum is allowed only for directional lights");
         }
 
         // transform all vertices from world to light's space
         glm::mat4 lightSpace = glm::lookAt(glm::vec3(0, 0, 0), getDirection(), getUp());
+        glm::mat4 invLightSpace = glm::inverse(lightSpace);
 
         const glm::vec3 *cnearVerts = cameraFrustum.getNearVertices();
         const glm::vec3 *cfarVerts = cameraFrustum.getFarVertices();
-        glm::vec4 lnearVerts[4];
-        glm::vec4 lfarVerts[4];
+        glm::vec4 lVerts[8];
 
         for (uint32 i = 0; i < 4; i++) {
-            lnearVerts[i] = lightSpace * glm::vec4(cnearVerts[i], 1.0f);
-            lfarVerts[i] = lightSpace * glm::vec4(cfarVerts[i], 1.0f);
+            lVerts[i] = invLightSpace * glm::vec4(cnearVerts[i], 1.0f);
+            lVerts[i + 4] = invLightSpace * glm::vec4(cfarVerts[i], 1.0f);
         }
 
         // get bounding box, in light space
-        glm::vec3 bmin = glm::vec3(lnearVerts[0]);
-        glm::vec3 bmax = glm::vec3(lnearVerts[0]);
+        glm::vec3 bmin = lVerts[0];
+        glm::vec3 bmax = lVerts[0];
 
-        for (uint32 j = 0; j < 3; j++) {
-            for (uint32 i = 0; i < 4; i++) {
-                bmin[j] = std::min(bmin[j], lnearVerts[i][j]);
-                bmin[j] = std::min(bmin[j], lfarVerts[i][j]);
-                bmax[j] = std::max(bmax[j], lnearVerts[i][j]);
-                bmax[j] = std::max(bmax[j], lfarVerts[i][j]);
+        for (auto &lVert : lVerts) {
+            for (uint32 j = 0; j < 3; j++) {
+                bmin[j] = std::min(bmin[j], lVert[j]);
+                bmax[j] = std::max(bmax[j], lVert[j]);
             }
         }
 
-        glm::vec3 center = (bmax + bmin) / 2.0f;
-        center = glm::vec3(glm::inverse(lightSpace) * glm::vec4(center, 1.0f));
+        mPosition = lightSpace * glm::vec4((bmax + bmin) / 2.0f, 1.0f);
 
-        float width = bmax[0] - bmin[0];
-        float height = bmax[1] - bmin[1];
+        float32 nearPlane = bmin[2];
+        float32 farPlane = nearPlane + (bmax[2] - nearPlane) * percentage;
 
-        frustum.setViewProperties(center, getDirection(), getUp());
-        frustum.createOrthographic(width, height, bmin[2], bmax[2]);
+        mFrustum.setViewProperties(getDirection(), getUp());
+        mFrustum.createOrthographic(-bmin[0], -bmax[0], bmin[1], bmax[1], nearPlane, farPlane);
     }
 
     void Light::setDirection(const glm::vec3 &direction, const glm::vec3 &up) {
-        Light::direction = direction;
-        Light::up = up;
+        mDirection = direction;
+        mUp = up;
 
-        if (type == LightType::Spot) {
+        if (mType == LightType::Spot) {
             rebuildSpotFrustum();
         }
     }

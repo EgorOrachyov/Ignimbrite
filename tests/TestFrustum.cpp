@@ -470,15 +470,15 @@ private:
 
         if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) {
             auto& f = scene.frustum->frustum;
-            f.setViewProperties(f.getPosition() + glm::vec3(0,0,0.01), f.getForward(), f.getUp());
-            f.createPerspective(M_PI / 4.0f, 16.0f/9.0f, 0.1f, 20.0f);
+            f.setViewProperties(f.getForward(), f.getUp());
+            f.createPerspective(f.getPosition() + glm::vec3(0,0,0.01), M_PI / 4.0f, 16.0f/9.0f, 0.1f, 20.0f);
             updateFrustumMesh(f);
         }
 
         if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
             auto& f = scene.frustum->frustum;
-            f.setViewProperties(f.getPosition() + glm::vec3(0,0,-0.01), f.getForward(), f.getUp());
-            f.createPerspective(M_PI / 4.0f, 16.0f/9.0f, 0.1f, 20.0f);
+            f.setViewProperties(f.getForward(), f.getUp());
+            f.createPerspective(f.getPosition() + glm::vec3(0,0,-0.01), M_PI / 4.0f, 16.0f/9.0f, 0.1f, 20.0f);
             updateFrustumMesh(f);
         }
     }
@@ -502,8 +502,8 @@ private:
 
 int32 main() {
     Frustum f = {};
-    f.setViewProperties(glm::vec3(0, 0, 1), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
-    f.createPerspective(M_PI / 4.0f, 16.0f/9.0f, 0.1f, 20.0f);
+    f.setViewProperties(glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
+    f.createPerspective(glm::vec3(0, 0, 1), M_PI / 4.0f, 16.0f/9.0f, 0.1f, 20.0f);
 
     const float32 range = 4;
     const int32 amount = 10;

@@ -37,8 +37,7 @@ namespace ignimbrite {
     public:
 
         /** Set vectors to define orientation */
-        void setViewProperties(const glm::vec3 &position, const glm::vec3 &forward, const glm::vec3 &up) {
-            mPosition = position;
+        void setViewProperties(const glm::vec3 &forward, const glm::vec3 &up) {
             mUp = glm::normalize(up);
             mForward = glm::normalize(forward);
             mRight = glm::cross(mForward, mUp);
@@ -48,8 +47,18 @@ namespace ignimbrite {
          * Calculate planes and near, far vertices for orthographic projection
          * @note to set offset use setPosition(..)
          */
-        void createOrthographic(float32 width, float32 height, float32 nearPlane, float32 farPlane) {
-            recalculate(width / 2.0f, width / 2.0f, height / 2.0f, height / 2.0f, nearPlane, farPlane);
+        void createOrthographic(float32 left, float32 right, float32 bottom, float32 top, float32 nearPlane, float32 farPlane) {
+            mNearVertices[VertexIndex::UpperRight] = right * mRight + top * mUp + nearPlane * mForward;
+            mNearVertices[VertexIndex::UpperLeft] = left * mRight + top * mUp + nearPlane * mForward;
+            mNearVertices[VertexIndex::LowerLeft] = left * mRight + bottom * mUp + nearPlane * mForward;
+            mNearVertices[VertexIndex::LowerRight] = right * mRight + bottom * mUp + nearPlane * mForward;
+
+            mFarVertices[VertexIndex::UpperRight] = right * mRight + top * mUp + farPlane * mForward;
+            mFarVertices[VertexIndex::UpperLeft] = left * mRight + top * mUp + farPlane * mForward;
+            mFarVertices[VertexIndex::LowerLeft] = left * mRight + bottom * mUp + farPlane * mForward;
+            mFarVertices[VertexIndex::LowerRight] = right * mRight + bottom * mUp + farPlane * mForward;
+
+            recalculatePlanes();
         }
 
         /**
@@ -57,7 +66,9 @@ namespace ignimbrite {
          * @param fovRad vertical field of view in radians
          * @param aspect aspect ratio (width/height) of this frustum
          */
-        void createPerspective(float32 fovRad, float32 aspect, float32 nearPlane, float32 farPlane) {
+        void createPerspective(const glm::vec3 &position, float32 fovRad, float32 aspect, float32 nearPlane, float32 farPlane) {
+            mPosition = position;
+
             float32 tanfov = tanf(fovRad * 0.5f);
 
             float32 nearHeight = tanfov * nearPlane;
@@ -66,7 +77,22 @@ namespace ignimbrite {
             float32 farHeight = tanfov * farPlane;
             float32 farWidth = farHeight * aspect;
 
-            recalculate(nearWidth, farWidth, nearHeight, farHeight, nearPlane, farPlane);
+            mNearVertices[VertexIndex::UpperRight] = nearWidth * mRight + nearHeight * mUp + nearPlane * mForward;
+            mNearVertices[VertexIndex::UpperLeft] = -nearWidth * mRight + nearHeight * mUp + nearPlane * mForward;
+            mNearVertices[VertexIndex::LowerLeft] = -nearWidth * mRight - nearHeight * mUp + nearPlane * mForward;
+            mNearVertices[VertexIndex::LowerRight] = nearWidth * mRight - nearHeight * mUp + nearPlane * mForward;
+
+            mFarVertices[VertexIndex::UpperRight] = farWidth * mRight + farHeight * mUp + farPlane * mForward;
+            mFarVertices[VertexIndex::UpperLeft] = -farWidth * mRight + farHeight * mUp + farPlane * mForward;
+            mFarVertices[VertexIndex::LowerLeft] = -farWidth * mRight - farHeight * mUp + farPlane * mForward;
+            mFarVertices[VertexIndex::LowerRight] = farWidth * mRight - farHeight * mUp + farPlane * mForward;
+
+            for (uint32 i = 0; i < 4; i++) {
+                mNearVertices[i] += mPosition;
+                mFarVertices[i] += mPosition;
+            }
+
+            recalculatePlanes();
         }
 
         /** Does this frustum contain or intersect specified AABB? */
@@ -90,24 +116,7 @@ namespace ignimbrite {
 
     private:
 
-        void recalculate(float32 nearWidth,  float32 farWidth,
-                         float32 nearHeight, float32 farHeight,
-                         float32 nearPlane,  float32 farPlane) {
-
-            mNearVertices[VertexIndex::UpperRight] = nearWidth * mRight + nearHeight * mUp + nearPlane * mForward;
-            mNearVertices[VertexIndex::UpperLeft] = -nearWidth * mRight + nearHeight * mUp + nearPlane * mForward;
-            mNearVertices[VertexIndex::LowerLeft] = -nearWidth * mRight - nearHeight * mUp + nearPlane * mForward;
-            mNearVertices[VertexIndex::LowerRight] = nearWidth * mRight - nearHeight * mUp + nearPlane * mForward;
-
-            mFarVertices[VertexIndex::UpperRight] = farWidth * mRight + farHeight * mUp + farPlane * mForward;
-            mFarVertices[VertexIndex::UpperLeft] = -farWidth * mRight + farHeight * mUp + farPlane * mForward;
-            mFarVertices[VertexIndex::LowerLeft] = -farWidth * mRight - farHeight * mUp + farPlane * mForward;
-            mFarVertices[VertexIndex::LowerRight] = farWidth * mRight - farHeight * mUp + farPlane * mForward;
-
-            for (uint32 i = 0; i < 4; i++) {
-                mNearVertices[i] += mPosition;
-                mFarVertices[i] += mPosition;
-            }
+        void recalculatePlanes() {
 
             planes[PlaneIndex::Near] = Plane(
                     mNearVertices[VertexIndex::UpperRight],

@@ -32,13 +32,13 @@ namespace ignimbrite {
         const glm::vec3 &getDirection() const;
         const glm::vec3 &getUp() const;
         const glm::vec3 &getColor() const;
-        float getIntensity() const;
-        float getRange() const;
-        float getSpotAngle() const;
-        float isShadowCast() const;
-        float getShadowBias() const;
-        float getShadowNormalBias() const;
-        float getShadowNearPlane() const;
+        float32 getIntensity() const;
+        float32 getRange() const;
+        float32 getSpotAngle() const;
+        float32 isShadowCast() const;
+        float32 getShadowBias() const;
+        float32 getShadowNormalBias() const;
+        float32 getShadowNearPlane() const;
         /**
          * Get frustum for directional or spot light
          */
@@ -52,22 +52,25 @@ namespace ignimbrite {
 
         void setPosition(const glm::vec3 &position);
         void setColor(const glm::vec3 &color);
-        void setIntensity(float intensity);
-        void setRange(float range);
+        void setIntensity(float32 intensity);
+        void setRange(float32 range);
         /** Get fov angle in radians of spot light */
-        void setSpotAngle(float spotAngle);
+        void setSpotAngle(float32 spotAngle);
         void setCastShadow(bool castShadow);
-        void setShadowBias(float shadowBias);
-        void setShadowNormalBias(float shadowNormalBias);
-        void setShadowNearPlane(float shadowNearPlane);
+        void setShadowBias(float32 shadowBias);
+        void setShadowNormalBias(float32 shadowNormalBias);
+        void setShadowNearPlane(float32 shadowNearPlane);
 
         void setDirection(const glm::vec3 &direction, const glm::vec3 &up);
 
         /**
          * Recalculate directional light's frustum to fit camera's view
+         * @param percentage fit only a part of camera's frustum.
+         *              For instance, 0.25 means that light's frustum will only
+         *              contain a quarter of camera's frustum
          * @note only for directional light
          */
-        void fitCameraFrustum(const Frustum &cameraFrustum);
+        void fitCameraFrustum(const Frustum &cameraFrustum, float32 percentage = 1.0f);
 
     private:
         /**
@@ -81,26 +84,26 @@ namespace ignimbrite {
         void rebuildPointAABB();
 
     private:
-        LightType type;
+        LightType mType;
 
-        glm::vec3 position;
-        glm::vec3 direction;
-        glm::vec3 up;
-        glm::vec3 color;
-        float intensity;
+        glm::vec3 mPosition;
+        glm::vec3 mDirection;
+        glm::vec3 mUp;
+        glm::vec3 mColor;
+        float32 mIntensity;
 
-        float range;
-        float spotAngle;
+        float32 mRange;
+        float32 mSpotAngle;
 
-        bool castShadow;
-        float shadowBias;
-        float shadowNormalBias;
-        float shadowNearPlane;
+        bool mCastShadow;
+        float32 mShadowBias;
+        float32 mShadowNormalBias;
+        float32 mShadowNearPlane;
 
         /** AABB for point light */
-        AABB aabb;
+        AABB mAabb;
         /** Frustum for directional and spot light */
-        Frustum frustum;
+        Frustum mFrustum;
     };
 
 }

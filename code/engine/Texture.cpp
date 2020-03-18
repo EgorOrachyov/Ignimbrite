@@ -8,6 +8,7 @@
 /**********************************************************************************/
 
 #include <Texture.h>
+#include <cmath>
 
 namespace ignimbrite {
 
