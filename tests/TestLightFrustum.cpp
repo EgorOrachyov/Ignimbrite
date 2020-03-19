@@ -76,6 +76,7 @@ struct Scene {
     std::vector<AABBModel *> aabbs;
     bool drawLightFrustum;
     bool drawBoxes;
+    bool rotateLight;
 };
 
 class TestLightFrustum {
@@ -121,7 +122,7 @@ public:
                 device->drawListBindPipeline(graphicsPipeline);
 
                 uint32 frustumCount = scene.drawLightFrustum ? 2 : 1;
-                FrustumModel *frustums[] = { scene.frustum, scene.lightFrModel};
+                FrustumModel *frustums[] = {scene.frustum, scene.lightFrModel};
 
                 for (uint32 i = 0; i < frustumCount; i++) {
                     Model &model = frustums[i]->model;
@@ -433,11 +434,26 @@ private:
 
         for (AABBModel *aabbm : scene.aabbs) {
 
-            bool isIn = scene.frustum->frustum.isInside(aabbm->aabb);
+            bool isInMain = scene.frustum->frustum.isInside(aabbm->aabb);
+            bool isInLight = false;
+            glm::vec4 aabbColor = glm::vec4(1, 0, 0, 0.3f);
+
+            if (scene.light.getType() == LightType::Point) {
+                isInLight = scene.light.getAABB().contains(aabbm->aabb);
+            } else if (scene.light.getType() == LightType::Directional || scene.light.getType() == LightType::Spot) {
+                isInLight = scene.light.getFrustum().isInside(aabbm->aabb);
+            }
+
+            if (isInMain) {
+                aabbColor = isInLight ? glm::vec4(0, 1, 0, 0.3f) : glm::vec4(1, 0.5f, 0, 0.3f);
+            } else if (isInLight) {
+                aabbColor = glm::vec4(1, 0.65f, 0, 0.3f);
+            }
+
             UniformBufferData *data = &aabbm->model.material.data;
 
             data->viewProj = viewProj;
-            data->color = isIn ? glm::vec4(0, 1, 0, 0.3f) : glm::vec4(1, 0, 0, 0.3f);
+            data->color = aabbColor;
 
             aabbm->model.material.buffer->updateData(sizeof(UniformBufferData), 0, (uint8 *) data);
         }
@@ -529,27 +545,34 @@ private:
             scene.drawLightFrustum = !scene.drawLightFrustum;
             lastUpdateTime = glfwGetTime();
         }
+        if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS && glfwGetTime() > lastUpdateTime + 0.1f) {
+            scene.rotateLight = !scene.rotateLight;
+            lastUpdateTime = glfwGetTime();
+        }
 
         if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) {
             auto &f = scene.frustum->frustum;
             f.setViewProperties(f.getForward(), f.getUp());
-            f.createPerspective(f.getPosition() + glm::vec3(0, 0, 0.1), M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
+            f.createPerspective(f.getPosition() + glm::vec3(0, 0, 0.05f), M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
             updateFrustumMesh(f);
         }
 
         if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
             auto &f = scene.frustum->frustum;
             f.setViewProperties(f.getForward(), f.getUp());
-            f.createPerspective(f.getPosition() - glm::vec3(0, 0, 0.1), M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
+            f.createPerspective(f.getPosition() - glm::vec3(0, 0, 0.05f), M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
             updateFrustumMesh(f);
         }
 
-        static float y = 0, x = 0;
+        static float yf = 0, xf = 0, yl = 0, xl = 0;
 
         if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS ||
             glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS ||
             glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS ||
             glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
+
+            float &x = scene.rotateLight ? xl : xf;
+            float &y = scene.rotateLight ? yl : yf;
 
             if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS) {
                 y -= 0.05f;
@@ -574,8 +597,13 @@ private:
             glm::vec3 r = glm::cross(d, glm::vec3(0, 1, 0));
             glm::vec3 u = glm::cross(r, d);
 
-            f.setViewProperties(d, u);
-            f.createPerspective(f.getPosition(), M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
+            if (scene.rotateLight) {
+                scene.light.setDirection(d, u);
+            } else {
+                f.setViewProperties(d, u);
+                f.createPerspective(f.getPosition(), M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
+            }
+
             updateFrustumMesh(f);
         }
     }

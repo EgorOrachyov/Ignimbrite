@@ -180,47 +180,51 @@ namespace ignimbrite {
             throw std::runtime_error("Fitting frustum is allowed only for directional lights");
         }
 
-        // transform all vertices from world to light's space
-        const glm::mat4 &lightSpace = glm::lookAt(glm::vec3(0, 0, 0), getDirection(), getUp());
-        const glm::mat4 &invLightSpace = glm::inverse(lightSpace);
+        mPosition = cameraFrustum.getPosition();
 
         const glm::vec3 *cnearVerts = cameraFrustum.getNearVertices();
         const glm::vec3 *cfarVerts = cameraFrustum.getFarVertices();
-        glm::vec4 lVerts[8];
+        glm::vec3 lVerts[8];
 
         for (uint32 i = 0; i < 4; i++) {
-            lVerts[i] = invLightSpace * glm::vec4(cnearVerts[i], 1.0f);
-            lVerts[i + 4] = invLightSpace * glm::vec4(cfarVerts[i], 1.0f);
+            lVerts[i] = cnearVerts[i];
+            lVerts[i + 4] = cfarVerts[i];
         }
 
-        // get bounding box, in light space
-        glm::vec3 bmin = lVerts[0];
-        glm::vec3 bmax = lVerts[0];
+        const glm::vec3 &d = getDirection();
+        const glm::vec3 &u = getUp();
+        const glm::vec3 &r = glm::cross(d, u);
 
-        for (auto &lVert : lVerts) {
-            for (uint32 j = 0; j < 3; j++) {
-                bmin[j] = std::min(bmin[j], lVert[j]);
-                bmax[j] = std::max(bmax[j], lVert[j]);
-            }
+        float32 left = glm::dot(lVerts[0], r);
+        float32 bottom = glm::dot(lVerts[0], u);
+        float32 nearPlane = glm::dot(lVerts[0], d);
+        float32 right = left;
+        float32 top = bottom;
+        float32 farPlane = nearPlane;
+
+        for (const glm::vec3 &lVert : lVerts) {
+            left = std::min(left, glm::dot(lVert, r));
+            right = std::max(right, glm::dot(lVert, r));
+
+            bottom = std::min(bottom, glm::dot(lVert, u));
+            top = std::max(top, glm::dot(lVert, u));
+
+            nearPlane = std::min(nearPlane, glm::dot(lVert, d));
+            farPlane = std::max(farPlane, glm::dot(lVert, d));
         }
-
-        mPosition = lightSpace * glm::vec4((bmax + bmin) / 2.0f, 1.0f);
-
-        float32 nearPlane = bmin[2];
-        float32 farPlane = nearPlane + (bmax[2] - nearPlane) * percentage;
 
         mFrustum.setViewProperties(getDirection(), getUp());
-        mFrustum.createOrthographic(-bmin[0], -bmax[0], bmin[1], bmax[1], nearPlane, farPlane);
+        mFrustum.createOrthographic(left, right, bottom, top, nearPlane, farPlane);
 
-        const glm::mat4 &view = lightSpace;
-        const glm::mat4 &proj = glm::ortho(-bmin[0], -bmax[0], bmin[1], bmax[1], nearPlane, farPlane);
+        const glm::mat4 &view = glm::lookAt(glm::vec3(0, 0, 0), getDirection(), getUp());
+        const glm::mat4 &proj = glm::ortho(left, right, bottom, top, nearPlane, farPlane);
 
         mViewProjMatrix = proj * view;
     }
 
     void Light::setDirection(const glm::vec3 &direction, const glm::vec3 &up) {
-        mDirection = direction;
-        mUp = up;
+        mDirection = glm::normalize(direction);
+        mUp = glm::normalize(up);
 
         if (mType == LightType::Spot) {
             rebuildSpotFrustum();

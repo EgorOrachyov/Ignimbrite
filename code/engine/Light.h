@@ -100,7 +100,7 @@ namespace ignimbrite {
         float32 mRange;
         float32 mSpotAngle;
         /** Near plane for spot and point lights */
-        const float32 mLightPerspectiveNear = 0.0001f;
+        constexpr const static float32 mLightPerspectiveNear = 0.0001f;
 
         bool mCastShadow;
         float32 mShadowBias;
