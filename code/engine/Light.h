@@ -31,14 +31,15 @@ namespace ignimbrite {
         void setColor(const Vec3f &color);
         void setIntensity(float32 intensity);
         void setCastShadow(bool castShadow);
+        void setRotation(const Vec3f& axis, float32 angle);
         void rotate(const Vec3f& axis, float32 angle);
-        void move(const Vec3f& dir);
+        void move(const Vec3f& vec);
 
         Type getType() const { return mType; }
         const Vec3f &getPosition() const { return mPosition; }
         const Vec3f &getDirection() const { return mDirection; }
         const Vec3f &getUp() const { return mUp;}
-        const Vec3f  getRight() const { return glm::cross(getDirection(), getUp());}
+        Vec3f getRight() const { return glm::cross(getDirection(), getUp());}
         const Vec3f &getColor() const { return mColor; }
         float32 getIntensity() const { return mIntensity; }
         bool castShadow() const { return mCastShadow; }

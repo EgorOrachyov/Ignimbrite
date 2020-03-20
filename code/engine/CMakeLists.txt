@@ -50,7 +50,9 @@ set(Ignimbrite_SOURCES
     IRenderable.cpp
     IRenderable.h
     Light.cpp 
-    Light.h)
+    Light.h
+    Camera.cpp
+    Camera.h)
 
 add_library(Ignimbrite STATIC ${Ignimbrite_SOURCES})
 
