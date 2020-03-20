@@ -10,6 +10,7 @@
 #ifndef IGNIMBRITE_FRUSTUM_H
 #define IGNIMBRITE_FRUSTUM_H
 
+#include <IncludeStd.h>
 #include <AABB.h>
 
 namespace ignimbrite {
@@ -95,6 +96,24 @@ namespace ignimbrite {
             recalculatePlanes();
         }
 
+        /**
+         * Cut frustum for some percent factor.
+         * Recalculates frustum with new distance between near and far planes,
+         * where new distance equals previous distance between near and far planes scaled by percentage
+         * @param percentage Factor to make initial frustum shorter
+         */
+        void cutFrustum(float32 percentage) {
+            percentage = glm::clamp(percentage, 0.0f, 1.0f);
+
+            for (uint32 i = 0; i < mNearVertices.size(); i++) {
+                auto delta = mFarVertices[i] - mNearVertices[i];
+                delta *= percentage;
+                mFarVertices[i] = mNearVertices[i] + delta;
+            }
+
+            recalculateFarPlane();
+        }
+
         /** Does this frustum contain or intersect specified AABB? */
         bool isInside(const AABB &aabb) const {
             for (const auto &p: planes) {
@@ -111,13 +130,12 @@ namespace ignimbrite {
         const glm::vec3 &getForward() const { return mForward; }
         const glm::vec3 &getPosition() const { return mPosition; }
 
-        const glm::vec3 *getNearVertices() const { return mNearVertices; }
-        const glm::vec3 *getFarVertices() const { return mFarVertices; }
+        const std::array<glm::vec3,4> &getNearVertices() const { return mNearVertices; }
+        const std::array<glm::vec3,4> &getFarVertices() const { return mFarVertices; }
 
     private:
 
         void recalculatePlanes() {
-
             planes[PlaneIndex::Near] = Plane(
                     mNearVertices[VertexIndex::UpperRight],
                     mNearVertices[VertexIndex::UpperLeft],
@@ -152,6 +170,14 @@ namespace ignimbrite {
                     mFarVertices[VertexIndex::LowerRight],
                     mFarVertices[VertexIndex::UpperRight],
                     mNearVertices[VertexIndex::UpperRight]
+            );
+        }
+
+        void recalculateFarPlane() {
+            planes[PlaneIndex::Far] = Plane(
+                    mFarVertices[VertexIndex::LowerLeft],
+                    mFarVertices[VertexIndex::UpperLeft],
+                    mFarVertices[VertexIndex::UpperRight]
             );
         }
 
@@ -203,16 +229,16 @@ namespace ignimbrite {
         };
 
         /** Frustum planes with normals pointing to the outside of frustum */
-        Plane planes[6] = {};
+        std::array<Plane,6> planes = {};
         /** Near vertices of this frustum in counter clockwise order (First vertex is upper right) */
-        glm::vec3 mNearVertices[4] = {};
+        std::array<glm::vec3, 4> mNearVertices = {};
         /** Far vertices of this frustum in counter clockwise order (First vertex is upper right) */
-        glm::vec3 mFarVertices[4] = {};
+        std::array<glm::vec3, 4> mFarVertices = {};
 
-        glm::vec3 mForward = glm::vec3(0,0,-1);
-        glm::vec3 mRight = glm::vec3(1,0,0);
-        glm::vec3 mUp = glm::vec3(0,1,0);
-        glm::vec3 mPosition;
+        glm::vec3 mForward  = glm::vec3(0,0,-1);
+        glm::vec3 mRight    = glm::vec3(1,0,0);
+        glm::vec3 mUp       = glm::vec3(0,1,0);
+        glm::vec3 mPosition = glm::vec3(0,0,0);
     };
 
 }

@@ -16,9 +16,7 @@
 
 #include <algorithm>
 #include <fstream>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/ext/matrix_clip_space.hpp>
-#include <glm/gtx/rotate_vector.hpp>
+
 
 using namespace ignimbrite;
 
@@ -77,6 +75,7 @@ struct Scene {
     bool drawLightFrustum;
     bool drawBoxes;
     bool rotateLight;
+    float32 camShadowViewPercent = 0.7f;
 };
 
 class TestLightFrustum {
@@ -290,8 +289,8 @@ private:
         const uint32 vertCount = 8;
         const uint32 indexCount = 3 * 2 * 6;
 
-        const glm::vec3 *nearVerts = frustum.getNearVertices();
-        const glm::vec3 *farVerts = frustum.getFarVertices();
+        const auto &nearVerts = frustum.getNearVertices();
+        const auto &farVerts = frustum.getFarVertices();
 
         glm::vec4 verts[vertCount];
 
@@ -339,8 +338,8 @@ private:
     void updateFrustumMesh(const Frustum &frustum) {
         const uint32 vertCount = 8;
 
-        const glm::vec3 *nearVerts = frustum.getNearVertices();
-        const glm::vec3 *farVerts = frustum.getFarVertices();
+        const auto &nearVerts = frustum.getNearVertices();
+        const auto &farVerts = frustum.getFarVertices();
 
         glm::vec4 verts[vertCount];
 
@@ -356,10 +355,12 @@ private:
 
         device->updateVertexBuffer(scene.frustum->model.mesh.vertexBuffer, vertCount * sizeof(glm::vec4), 0, verts);
 
-        scene.light.fitCameraFrustum(frustum);
+        Frustum cameraShadowSpace = scene.frustum->frustum;
+        cameraShadowSpace.cutFrustum(scene.camShadowViewPercent);
+        scene.light.buildViewFrustum(cameraShadowSpace);
 
-        const glm::vec3 *nearLightFrVerts = scene.light.getFrustum().getNearVertices();
-        const glm::vec3 *farLightFrVerts = scene.light.getFrustum().getFarVertices();
+        const auto &nearLightFrVerts = scene.light.getFrustum().getNearVertices();
+        const auto &farLightFrVerts = scene.light.getFrustum().getFarVertices();
 
         glm::vec4 lightFrVerts[vertCount];
 
@@ -396,9 +397,9 @@ private:
         scene.frustum = new FrustumModel();
         initFrustumModel(frustum, *scene.frustum);
 
-        scene.light = Light(LightType::Directional);
-        scene.light.setDirection(glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
-        scene.light.fitCameraFrustum(scene.frustum->frustum);
+        Frustum cameraShadowSpace = scene.frustum->frustum;
+        cameraShadowSpace.cutFrustum(scene.camShadowViewPercent);
+        scene.light.buildViewFrustum(cameraShadowSpace);
 
         scene.lightFrModel = new FrustumModel();
         initFrustumModel(scene.light.getFrustum(), *scene.lightFrModel);
@@ -438,9 +439,7 @@ private:
             bool isInLight = false;
             glm::vec4 aabbColor = glm::vec4(1, 0, 0, 0.3f);
 
-            if (scene.light.getType() == LightType::Point) {
-                isInLight = scene.light.getAABB().contains(aabbm->aabb);
-            } else if (scene.light.getType() == LightType::Directional || scene.light.getType() == LightType::Spot) {
+            if (scene.light.getType() == Light::Type::Directional) {
                 isInLight = scene.light.getFrustum().isInside(aabbm->aabb);
             }
 
@@ -598,7 +597,10 @@ private:
             glm::vec3 u = glm::cross(r, d);
 
             if (scene.rotateLight) {
-                scene.light.setDirection(d, u);
+                scene.light.rotate(scene.light.getUp(), x);
+                scene.light.rotate(scene.light.getRight(), y);
+                x = 0;
+                y = 0;
             } else {
                 f.setViewProperties(d, u);
                 f.createPerspective(f.getPosition(), M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
