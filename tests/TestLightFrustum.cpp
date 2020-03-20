@@ -12,43 +12,42 @@
 #include <Shader.h>
 #include <UniformBuffer.h>
 #include <Frustum.h>
+#include <Light.h>
 
 #include <algorithm>
 #include <fstream>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/ext/matrix_clip_space.hpp>
-#include <glm/gtx/rotate_vector.hpp>
+
 
 using namespace ignimbrite;
 
 struct Window {
-    GLFWwindow*        glfwWindow = nullptr;
-    int32              widthFrameBuffer = 0, heightFrameBuffer = 0;
-    uint32             extensionsCount = 0;
-    const char* const* extensions = nullptr;
+    GLFWwindow *glfwWindow = nullptr;
+    int32 widthFrameBuffer = 0, heightFrameBuffer = 0;
+    uint32 extensionsCount = 0;
+    const char *const *extensions = nullptr;
 };
 
 struct Mesh {
     ID<IRenderDevice::VertexBuffer> vertexBuffer;
-    ID<IRenderDevice::IndexBuffer>  indexBuffer;
-    uint32                          indexCount = 0;
+    ID<IRenderDevice::IndexBuffer> indexBuffer;
+    uint32 indexCount = 0;
 };
 
 struct UniformBufferData {
-    glm::mat4x4     viewProj;
-    glm::mat4x4     model;
-    glm::vec4       color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glm::mat4x4 viewProj;
+    glm::mat4x4 model;
+    glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
 };
 
 struct MatData {
-    UniformBuffer                *buffer;
-    UniformBufferData             data;
+    UniformBuffer *buffer;
+    UniformBufferData data;
     ID<IRenderDevice::UniformSet> uniformSet;
 };
 
 struct Model {
-    Mesh        mesh;
-    MatData    material;
+    Mesh mesh;
+    MatData material;
 };
 
 struct Camera {
@@ -58,24 +57,30 @@ struct Camera {
 };
 
 struct AABBModel {
-    AABB  aabb;
+    AABB aabb;
     Model model;
 };
 
 struct FrustumModel {
     Frustum frustum;
-    Model   model;
+    Model model;
 };
 
 struct Scene {
-    Camera                  camera;
-    FrustumModel*           frustum;
-    std::vector<AABBModel*> aabbs;
+    Camera camera;
+    Light light;
+    FrustumModel *lightFrModel;
+    FrustumModel *frustum;
+    std::vector<AABBModel *> aabbs;
+    bool drawLightFrustum;
+    bool drawBoxes;
+    bool rotateLight;
+    float32 camShadowViewPercent = 0.7f;
 };
 
-class TestFrustum {
+class TestLightFrustum {
 public:
-    TestFrustum(const Frustum &frustum, const AABB *aabbs, uint32 aabbCount) {
+    TestLightFrustum(const Frustum &frustum, const AABB *aabbs, uint32 aabbCount) {
         initWindow();
 
         device = std::make_shared<VulkanRenderDevice>(window.extensionsCount, window.extensions);
@@ -90,22 +95,21 @@ public:
         initScene(frustum, aabbs, aabbCount);
     }
 
-    ~TestFrustum() {
+    ~TestLightFrustum() {
         destroy();
     }
 
     void loop() {
-        IRenderDevice::Color clearColor = { { 0.5f, 0.5f, 0.5f, 0.0f} };
+        IRenderDevice::Color clearColor = {{0.5f, 0.5f, 0.5f, 0.0f}};
 
         while (!glfwWindowShouldClose(window.glfwWindow)) {
             glfwPollEvents();
             glfwSwapBuffers(window.glfwWindow);
             glfwGetFramebufferSize(window.glfwWindow, &window.widthFrameBuffer, &window.heightFrameBuffer);
 
-            IRenderDevice::Region area = { 0, 0, { (uint32)window.widthFrameBuffer, (uint32)window.heightFrameBuffer} };
+            IRenderDevice::Region area = {0, 0, {(uint32) window.widthFrameBuffer, (uint32) window.heightFrameBuffer}};
 
-            if (area.extent.x == 0|| area.extent.y == 0)
-            {
+            if (area.extent.x == 0 || area.extent.y == 0) {
                 continue;
             }
 
@@ -116,21 +120,27 @@ public:
                 device->drawListBindSurface(surface, clearColor, area);
                 device->drawListBindPipeline(graphicsPipeline);
 
-                Model &frmodel = scene.frustum->model;
+                uint32 frustumCount = scene.drawLightFrustum ? 2 : 1;
+                FrustumModel *frustums[] = {scene.frustum, scene.lightFrModel};
 
-                device->drawListBindUniformSet(frmodel.material.uniformSet);
-                device->drawListBindVertexBuffer(frmodel.mesh.vertexBuffer, 0, 0);
-                device->drawListBindIndexBuffer(frmodel.mesh.indexBuffer, ignimbrite::IndicesType::Uint32, 0);
-                device->drawListDrawIndexed(frmodel.mesh.indexCount, 1);
-
-                for (auto *aabbModel : scene.aabbs)
-                {
-                    Model &model = aabbModel->model;
+                for (uint32 i = 0; i < frustumCount; i++) {
+                    Model &model = frustums[i]->model;
 
                     device->drawListBindUniformSet(model.material.uniformSet);
                     device->drawListBindVertexBuffer(model.mesh.vertexBuffer, 0, 0);
                     device->drawListBindIndexBuffer(model.mesh.indexBuffer, ignimbrite::IndicesType::Uint32, 0);
                     device->drawListDrawIndexed(model.mesh.indexCount, 1);
+                }
+
+                if (scene.drawBoxes) {
+                    for (auto *aabbModel : scene.aabbs) {
+                        Model &model = aabbModel->model;
+
+                        device->drawListBindUniformSet(model.material.uniformSet);
+                        device->drawListBindVertexBuffer(model.mesh.vertexBuffer, 0, 0);
+                        device->drawListBindIndexBuffer(model.mesh.indexBuffer, ignimbrite::IndicesType::Uint32, 0);
+                        device->drawListDrawIndexed(model.mesh.indexCount, 1);
+                    }
                 }
             }
             device->drawListEnd();
@@ -150,15 +160,14 @@ private:
         window.widthFrameBuffer = 1280;
         window.heightFrameBuffer = 720;
 
-        window.glfwWindow = glfwCreateWindow(window.widthFrameBuffer, window.heightFrameBuffer, name.c_str(), nullptr, nullptr);
+        window.glfwWindow = glfwCreateWindow(window.widthFrameBuffer, window.heightFrameBuffer, name.c_str(), nullptr,
+                                             nullptr);
 
-        glfwGetFramebufferSize(window.glfwWindow, (int32*) &window.widthFrameBuffer, (int32*) &window.heightFrameBuffer);
+        glfwGetFramebufferSize(window.glfwWindow, (int32 *) &window.widthFrameBuffer,
+                               (int32 *) &window.heightFrameBuffer);
 
         // get required extensions for a surface
         window.extensions = glfwGetRequiredInstanceExtensions(&window.extensionsCount);
-//
-//        glfwSetCursorPosCallback(window.glfwWindow, mouseCallback);
-//        glfwSetScrollCallback(window.glfwWindow, scrollCallback);
     }
 
     void initVertexLayout() {
@@ -173,7 +182,7 @@ private:
         vertexBufferLayoutDesc.usage = VertexUsage::PerVertex;
         vertexBufferLayoutDesc.attributes.push_back(attr);
 
-        vertexLayout = device->createVertexLayout({ vertexBufferLayoutDesc });
+        vertexLayout = device->createVertexLayout({vertexBufferLayoutDesc});
     }
 
     void initShader() {
@@ -280,8 +289,8 @@ private:
         const uint32 vertCount = 8;
         const uint32 indexCount = 3 * 2 * 6;
 
-        const glm::vec3 *nearVerts = frustum.getNearVertices();
-        const glm::vec3 *farVerts = frustum.getFarVertices();
+        const auto &nearVerts = frustum.getNearVertices();
+        const auto &farVerts = frustum.getFarVertices();
 
         glm::vec4 verts[vertCount];
 
@@ -321,16 +330,16 @@ private:
 
         outModel.material.buffer->createBuffer(sizeof(UniformBufferData));
         outModel.material.data.model = glm::mat4x4(1.0f);
-        outModel.material.data.color = glm::vec4(0,0,1,0.3f);
+        outModel.material.data.color = glm::vec4(0, 0, 1, 0.3f);
 
         outModel.material.uniformSet = createUniformSet(*outModel.material.buffer);
     }
 
-    void updateFrustumMesh(const Frustum& frustum) {
+    void updateFrustumMesh(const Frustum &frustum) {
         const uint32 vertCount = 8;
 
-        const glm::vec3 *nearVerts = frustum.getNearVertices();
-        const glm::vec3 *farVerts = frustum.getFarVertices();
+        const auto &nearVerts = frustum.getNearVertices();
+        const auto &farVerts = frustum.getFarVertices();
 
         glm::vec4 verts[vertCount];
 
@@ -345,6 +354,28 @@ private:
         verts[7] = glm::vec4(farVerts[3], 1);
 
         device->updateVertexBuffer(scene.frustum->model.mesh.vertexBuffer, vertCount * sizeof(glm::vec4), 0, verts);
+
+        Frustum cameraShadowSpace = scene.frustum->frustum;
+        cameraShadowSpace.cutFrustum(scene.camShadowViewPercent);
+        scene.light.buildViewFrustum(cameraShadowSpace);
+
+        const auto &nearLightFrVerts = scene.light.getFrustum().getNearVertices();
+        const auto &farLightFrVerts = scene.light.getFrustum().getFarVertices();
+
+        glm::vec4 lightFrVerts[vertCount];
+
+        lightFrVerts[0] = glm::vec4(nearLightFrVerts[0], 1);
+        lightFrVerts[1] = glm::vec4(nearLightFrVerts[1], 1);
+        lightFrVerts[2] = glm::vec4(nearLightFrVerts[2], 1);
+        lightFrVerts[3] = glm::vec4(nearLightFrVerts[3], 1);
+
+        lightFrVerts[4] = glm::vec4(farLightFrVerts[0], 1);
+        lightFrVerts[5] = glm::vec4(farLightFrVerts[1], 1);
+        lightFrVerts[6] = glm::vec4(farLightFrVerts[2], 1);
+        lightFrVerts[7] = glm::vec4(farLightFrVerts[3], 1);
+
+        device->updateVertexBuffer(scene.lightFrModel->model.mesh.vertexBuffer, vertCount * sizeof(glm::vec4), 0,
+                                   lightFrVerts);
     }
 
     ID<IRenderDevice::UniformSet> createUniformSet(const UniformBuffer &unbuffer) {
@@ -366,6 +397,13 @@ private:
         scene.frustum = new FrustumModel();
         initFrustumModel(frustum, *scene.frustum);
 
+        Frustum cameraShadowSpace = scene.frustum->frustum;
+        cameraShadowSpace.cutFrustum(scene.camShadowViewPercent);
+        scene.light.buildViewFrustum(cameraShadowSpace);
+
+        scene.lightFrModel = new FrustumModel();
+        initFrustumModel(scene.light.getFrustum(), *scene.lightFrModel);
+
         for (uint32 i = 0; i < aabbCount; i++) {
             auto *aabbModel = new AABBModel();
             initAABBModel(aabbs[i], *aabbModel);
@@ -373,18 +411,20 @@ private:
             scene.aabbs.push_back(aabbModel);
         }
 
-        scene.camera.up = glm::vec3(0,1,0);
-        scene.camera.direction = glm::vec3(0,0,1);
-        scene.camera.position = glm::vec3(0,0, -1);
+        scene.camera.up = glm::vec3(0, 1, 0);
+        scene.camera.direction = glm::vec3(0, 0, 1);
+        scene.camera.position = glm::vec3(0, 0, -1);
+
+        scene.drawLightFrustum = true;
     }
 
     void updateScene() {
-        auto& camera = scene.camera;
+        auto &camera = scene.camera;
 
         processInput(window.glfwWindow);
 
         auto view = glm::lookAt(camera.position, camera.position + camera.direction, camera.up);
-        auto proj = glm::perspective(1.5f, (float32)window.widthFrameBuffer / window.heightFrameBuffer, 0.1f, 1000.0f);
+        auto proj = glm::perspective(1.5f, (float32) window.widthFrameBuffer / window.heightFrameBuffer, 0.1f, 1000.0f);
 
         auto clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
                               0.0f, -1.0f, 0.0f, 0.0f,
@@ -395,18 +435,36 @@ private:
 
         for (AABBModel *aabbm : scene.aabbs) {
 
-            bool isIn = scene.frustum->frustum.isInside(aabbm->aabb);
+            bool isInMain = scene.frustum->frustum.isInside(aabbm->aabb);
+            bool isInLight = false;
+            glm::vec4 aabbColor = glm::vec4(1, 0, 0, 0.3f);
+
+            if (scene.light.getType() == Light::Type::Directional) {
+                isInLight = scene.light.getFrustum().isInside(aabbm->aabb);
+            }
+
+            if (isInMain) {
+                aabbColor = isInLight ? glm::vec4(0, 1, 0, 0.3f) : glm::vec4(1, 0.5f, 0, 0.3f);
+            } else if (isInLight) {
+                aabbColor = glm::vec4(1, 0.65f, 0, 0.3f);
+            }
+
             UniformBufferData *data = &aabbm->model.material.data;
 
             data->viewProj = viewProj;
-            data->color = isIn ? glm::vec4(0, 1, 0, 0.3f) : glm::vec4(1, 0, 0, 0.3f);
+            data->color = aabbColor;
 
-            aabbm->model.material.buffer->updateData(sizeof(UniformBufferData), 0, (uint8*)data);
+            aabbm->model.material.buffer->updateData(sizeof(UniformBufferData), 0, (uint8 *) data);
         }
 
         UniformBufferData *frdata = &scene.frustum->model.material.data;
         frdata->viewProj = viewProj;
-        scene.frustum->model.material.buffer->updateData(sizeof(UniformBufferData), 0, (uint8*)frdata);
+        scene.frustum->model.material.buffer->updateData(sizeof(UniformBufferData), 0, (uint8 *) frdata);
+
+        UniformBufferData *lightFrdata = &scene.lightFrModel->model.material.data;
+        lightFrdata->viewProj = viewProj;
+        lightFrdata->color = glm::vec4(1, 1, 0, 0.3f);
+        scene.lightFrModel->model.material.buffer->updateData(sizeof(UniformBufferData), 0, (uint8 *) lightFrdata);
     }
 
     void destroyScene() {
@@ -415,8 +473,16 @@ private:
         device->destroyVertexBuffer(scene.frustum->model.mesh.vertexBuffer);
         device->destroyIndexBuffer(scene.frustum->model.mesh.indexBuffer);
 
+        device->destroyUniformSet(scene.lightFrModel->model.material.uniformSet);
+
+        device->destroyVertexBuffer(scene.lightFrModel->model.mesh.vertexBuffer);
+        device->destroyIndexBuffer(scene.lightFrModel->model.mesh.indexBuffer);
+
         delete scene.frustum->model.material.buffer;
         delete scene.frustum;
+
+        delete scene.lightFrModel->model.material.buffer;
+        delete scene.lightFrModel;
 
         for (AABBModel *aabbModel : scene.aabbs) {
             device->destroyUniformSet(aabbModel->model.material.uniformSet);
@@ -447,10 +513,10 @@ private:
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             glfwSetWindowShouldClose(window, true);
 
-        auto& camera = scene.camera;
+        auto &camera = scene.camera;
 
-        float32 cameraSpeed = 2.0f / 60.0f;
-        float32 cameraRotationSpeed = 0.5f / 60.0f;
+        float32 cameraSpeed = 20.0f / 60.0f;
+        float32 cameraRotationSpeed = 1 / 60.0f;
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
             camera.position += cameraSpeed * camera.direction;
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -464,38 +530,99 @@ private:
         if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
             camera.position += glm::normalize(camera.up) * cameraSpeed;
         if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-            camera.direction = glm::rotate(camera.direction, cameraRotationSpeed, glm::vec3(0,1,0));
+            camera.direction = glm::rotate(camera.direction, cameraRotationSpeed, glm::vec3(0, 1, 0));
         if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-            camera.direction = glm::rotate(camera.direction, -cameraRotationSpeed, glm::vec3(0,1,0));
+            camera.direction = glm::rotate(camera.direction, -cameraRotationSpeed, glm::vec3(0, 1, 0));
+
+        static double lastUpdateTime = 0;
+
+        if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && glfwGetTime() > lastUpdateTime + 0.1f) {
+            scene.drawBoxes = !scene.drawBoxes;
+            lastUpdateTime = glfwGetTime();
+        }
+        if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS && glfwGetTime() > lastUpdateTime + 0.1f) {
+            scene.drawLightFrustum = !scene.drawLightFrustum;
+            lastUpdateTime = glfwGetTime();
+        }
+        if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS && glfwGetTime() > lastUpdateTime + 0.1f) {
+            scene.rotateLight = !scene.rotateLight;
+            lastUpdateTime = glfwGetTime();
+        }
 
         if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) {
-            auto& f = scene.frustum->frustum;
+            auto &f = scene.frustum->frustum;
             f.setViewProperties(f.getForward(), f.getUp());
-            f.createPerspective(f.getPosition() + glm::vec3(0,0,0.01), M_PI / 4.0f, 16.0f/9.0f, 0.1f, 20.0f);
+            f.createPerspective(f.getPosition() + glm::vec3(0, 0, 0.05f), M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
             updateFrustumMesh(f);
         }
 
         if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
-            auto& f = scene.frustum->frustum;
+            auto &f = scene.frustum->frustum;
             f.setViewProperties(f.getForward(), f.getUp());
-            f.createPerspective(f.getPosition() + glm::vec3(0,0,-0.01), M_PI / 4.0f, 16.0f/9.0f, 0.1f, 20.0f);
+            f.createPerspective(f.getPosition() - glm::vec3(0, 0, 0.05f), M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
+            updateFrustumMesh(f);
+        }
+
+        static float yf = 0, xf = 0, yl = 0, xl = 0;
+
+        if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
+
+            float &x = scene.rotateLight ? xl : xf;
+            float &y = scene.rotateLight ? yl : yf;
+
+            if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS) {
+                y -= 0.05f;
+            }
+            if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
+                y += 0.05f;
+            }
+
+            if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS) {
+                x -= 0.05f;
+            }
+            if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
+                x += 0.05f;
+            }
+
+            auto &f = scene.frustum->frustum;
+
+            y = glm::clamp(y, (float) (-M_PI / 2.0f + 0.05f), (float) (M_PI / 2.0f - 0.05f));
+
+            glm::quat q = glm::quat(glm::vec3(y, x, 0));
+            glm::vec3 d = glm::normalize(q * glm::vec3(0, 0, 1));
+            glm::vec3 r = glm::cross(d, glm::vec3(0, 1, 0));
+            glm::vec3 u = glm::cross(r, d);
+
+            if (scene.rotateLight) {
+                scene.light.rotate(scene.light.getUp(), x);
+                scene.light.rotate(scene.light.getRight(), y);
+                x = 0;
+                y = 0;
+            } else {
+                f.setViewProperties(d, u);
+                f.createPerspective(f.getPosition(), M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
+            }
+
             updateFrustumMesh(f);
         }
     }
 
 private:
 
-    Scene   scene;
-    Window  window;
+    Scene scene;
+    Window window;
 
-    ID<IRenderDevice::Surface>          surface;
-    ID<IRenderDevice::VertexLayout>     vertexLayout;
+    ID<IRenderDevice::Surface> surface;
+    ID<IRenderDevice::VertexLayout> vertexLayout;
     ID<IRenderDevice::GraphicsPipeline> graphicsPipeline;
 
-    RefCounted<Shader>              shader;
-    RefCounted<VulkanRenderDevice>  device;
+    RefCounted<Shader> shader;
+    RefCounted<VulkanRenderDevice> device;
 
-    String name           = "Frustum Test";
+    String name = "Frustum Test";
     String vertShaderPath = "shaders/spirv/TestFrustumVert.spv";
     String fragShaderPath = "shaders/spirv/TestFrustumFrag.spv";
 };
@@ -503,7 +630,7 @@ private:
 int32 main() {
     Frustum f = {};
     f.setViewProperties(glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
-    f.createPerspective(glm::vec3(0, 0, 1), M_PI / 4.0f, 16.0f/9.0f, 0.1f, 20.0f);
+    f.createPerspective(glm::vec3(0, 0, 1), M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
 
     const float32 range = 4;
     const int32 amount = 10;
@@ -522,7 +649,7 @@ int32 main() {
         }
     }
 
-    TestFrustum testFrustum(f, aabbs, count);
+    TestLightFrustum testFrustum(f, aabbs, count);
     testFrustum.loop();
 
     return 0;

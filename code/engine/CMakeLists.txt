@@ -48,7 +48,9 @@ set(Ignimbrite_SOURCES
     RenderTarget.h
     Frustum.h
     IRenderable.cpp
-    IRenderable.h)
+    IRenderable.h
+    Light.cpp 
+    Light.h)
 
 add_library(Ignimbrite STATIC ${Ignimbrite_SOURCES})
 

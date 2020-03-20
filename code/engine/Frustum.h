@@ -10,6 +10,7 @@
 #ifndef IGNIMBRITE_FRUSTUM_H
 #define IGNIMBRITE_FRUSTUM_H
 
+#include <IncludeStd.h>
 #include <AABB.h>
 
 namespace ignimbrite {
@@ -37,8 +38,7 @@ namespace ignimbrite {
     public:
 
         /** Set vectors to define orientation */
-        void setViewProperties(const glm::vec3 &position, const glm::vec3 &forward, const glm::vec3 &up) {
-            mPosition = position;
+        void setViewProperties(const glm::vec3 &forward, const glm::vec3 &up) {
             mUp = glm::normalize(up);
             mForward = glm::normalize(forward);
             mRight = glm::cross(mForward, mUp);
@@ -48,8 +48,18 @@ namespace ignimbrite {
          * Calculate planes and near, far vertices for orthographic projection
          * @note to set offset use setPosition(..)
          */
-        void createOrthographic(float32 width, float32 height, float32 nearPlane, float32 farPlane) {
-            recalculate(width / 2.0f, width / 2.0f, height / 2.0f, height / 2.0f, nearPlane, farPlane);
+        void createOrthographic(float32 left, float32 right, float32 bottom, float32 top, float32 nearPlane, float32 farPlane) {
+            mNearVertices[VertexIndex::UpperRight] = right * mRight + top * mUp + nearPlane * mForward;
+            mNearVertices[VertexIndex::UpperLeft] = left * mRight + top * mUp + nearPlane * mForward;
+            mNearVertices[VertexIndex::LowerLeft] = left * mRight + bottom * mUp + nearPlane * mForward;
+            mNearVertices[VertexIndex::LowerRight] = right * mRight + bottom * mUp + nearPlane * mForward;
+
+            mFarVertices[VertexIndex::UpperRight] = right * mRight + top * mUp + farPlane * mForward;
+            mFarVertices[VertexIndex::UpperLeft] = left * mRight + top * mUp + farPlane * mForward;
+            mFarVertices[VertexIndex::LowerLeft] = left * mRight + bottom * mUp + farPlane * mForward;
+            mFarVertices[VertexIndex::LowerRight] = right * mRight + bottom * mUp + farPlane * mForward;
+
+            recalculatePlanes();
         }
 
         /**
@@ -57,7 +67,9 @@ namespace ignimbrite {
          * @param fovRad vertical field of view in radians
          * @param aspect aspect ratio (width/height) of this frustum
          */
-        void createPerspective(float32 fovRad, float32 aspect, float32 nearPlane, float32 farPlane) {
+        void createPerspective(const glm::vec3 &position, float32 fovRad, float32 aspect, float32 nearPlane, float32 farPlane) {
+            mPosition = position;
+
             float32 tanfov = tanf(fovRad * 0.5f);
 
             float32 nearHeight = tanfov * nearPlane;
@@ -66,7 +78,40 @@ namespace ignimbrite {
             float32 farHeight = tanfov * farPlane;
             float32 farWidth = farHeight * aspect;
 
-            recalculate(nearWidth, farWidth, nearHeight, farHeight, nearPlane, farPlane);
+            mNearVertices[VertexIndex::UpperRight] = nearWidth * mRight + nearHeight * mUp + nearPlane * mForward;
+            mNearVertices[VertexIndex::UpperLeft] = -nearWidth * mRight + nearHeight * mUp + nearPlane * mForward;
+            mNearVertices[VertexIndex::LowerLeft] = -nearWidth * mRight - nearHeight * mUp + nearPlane * mForward;
+            mNearVertices[VertexIndex::LowerRight] = nearWidth * mRight - nearHeight * mUp + nearPlane * mForward;
+
+            mFarVertices[VertexIndex::UpperRight] = farWidth * mRight + farHeight * mUp + farPlane * mForward;
+            mFarVertices[VertexIndex::UpperLeft] = -farWidth * mRight + farHeight * mUp + farPlane * mForward;
+            mFarVertices[VertexIndex::LowerLeft] = -farWidth * mRight - farHeight * mUp + farPlane * mForward;
+            mFarVertices[VertexIndex::LowerRight] = farWidth * mRight - farHeight * mUp + farPlane * mForward;
+
+            for (uint32 i = 0; i < 4; i++) {
+                mNearVertices[i] += mPosition;
+                mFarVertices[i] += mPosition;
+            }
+
+            recalculatePlanes();
+        }
+
+        /**
+         * Cut frustum for some percent factor.
+         * Recalculates frustum with new distance between near and far planes,
+         * where new distance equals previous distance between near and far planes scaled by percentage
+         * @param percentage Factor to make initial frustum shorter
+         */
+        void cutFrustum(float32 percentage) {
+            percentage = glm::clamp(percentage, 0.0f, 1.0f);
+
+            for (uint32 i = 0; i < mNearVertices.size(); i++) {
+                auto delta = mFarVertices[i] - mNearVertices[i];
+                delta *= percentage;
+                mFarVertices[i] = mNearVertices[i] + delta;
+            }
+
+            recalculateFarPlane();
         }
 
         /** Does this frustum contain or intersect specified AABB? */
@@ -85,30 +130,12 @@ namespace ignimbrite {
         const glm::vec3 &getForward() const { return mForward; }
         const glm::vec3 &getPosition() const { return mPosition; }
 
-        const glm::vec3 *getNearVertices() const { return mNearVertices; }
-        const glm::vec3 *getFarVertices() const { return mFarVertices; }
+        const std::array<glm::vec3,4> &getNearVertices() const { return mNearVertices; }
+        const std::array<glm::vec3,4> &getFarVertices() const { return mFarVertices; }
 
     private:
 
-        void recalculate(float32 nearWidth,  float32 farWidth,
-                         float32 nearHeight, float32 farHeight,
-                         float32 nearPlane,  float32 farPlane) {
-
-            mNearVertices[VertexIndex::UpperRight] = nearWidth * mRight + nearHeight * mUp + nearPlane * mForward;
-            mNearVertices[VertexIndex::UpperLeft] = -nearWidth * mRight + nearHeight * mUp + nearPlane * mForward;
-            mNearVertices[VertexIndex::LowerLeft] = -nearWidth * mRight - nearHeight * mUp + nearPlane * mForward;
-            mNearVertices[VertexIndex::LowerRight] = nearWidth * mRight - nearHeight * mUp + nearPlane * mForward;
-
-            mFarVertices[VertexIndex::UpperRight] = farWidth * mRight + farHeight * mUp + farPlane * mForward;
-            mFarVertices[VertexIndex::UpperLeft] = -farWidth * mRight + farHeight * mUp + farPlane * mForward;
-            mFarVertices[VertexIndex::LowerLeft] = -farWidth * mRight - farHeight * mUp + farPlane * mForward;
-            mFarVertices[VertexIndex::LowerRight] = farWidth * mRight - farHeight * mUp + farPlane * mForward;
-
-            for (uint32 i = 0; i < 4; i++) {
-                mNearVertices[i] += mPosition;
-                mFarVertices[i] += mPosition;
-            }
-
+        void recalculatePlanes() {
             planes[PlaneIndex::Near] = Plane(
                     mNearVertices[VertexIndex::UpperRight],
                     mNearVertices[VertexIndex::UpperLeft],
@@ -143,6 +170,14 @@ namespace ignimbrite {
                     mFarVertices[VertexIndex::LowerRight],
                     mFarVertices[VertexIndex::UpperRight],
                     mNearVertices[VertexIndex::UpperRight]
+            );
+        }
+
+        void recalculateFarPlane() {
+            planes[PlaneIndex::Far] = Plane(
+                    mFarVertices[VertexIndex::LowerLeft],
+                    mFarVertices[VertexIndex::UpperLeft],
+                    mFarVertices[VertexIndex::UpperRight]
             );
         }
 
@@ -194,16 +229,16 @@ namespace ignimbrite {
         };
 
         /** Frustum planes with normals pointing to the outside of frustum */
-        Plane planes[6] = {};
+        std::array<Plane,6> planes = {};
         /** Near vertices of this frustum in counter clockwise order (First vertex is upper right) */
-        glm::vec3 mNearVertices[4] = {};
+        std::array<glm::vec3, 4> mNearVertices = {};
         /** Far vertices of this frustum in counter clockwise order (First vertex is upper right) */
-        glm::vec3 mFarVertices[4] = {};
+        std::array<glm::vec3, 4> mFarVertices = {};
 
-        glm::vec3 mForward = glm::vec3(0,0,-1);
-        glm::vec3 mRight = glm::vec3(1,0,0);
-        glm::vec3 mUp = glm::vec3(0,1,0);
-        glm::vec3 mPosition;
+        glm::vec3 mForward  = glm::vec3(0,0,-1);
+        glm::vec3 mRight    = glm::vec3(1,0,0);
+        glm::vec3 mUp       = glm::vec3(0,1,0);
+        glm::vec3 mPosition = glm::vec3(0,0,0);
     };
 
 }
