@@ -10,6 +10,7 @@ set(Ignimbrite_SOURCES
     IRenderable.h
     IRenderEngine.cpp
     IRenderEngine.h
+    IRenderContext.h
     IRenderDevice.cpp
     IRenderDevice.h
     IRenderDeviceDefinitions.h
@@ -52,6 +53,10 @@ set(Ignimbrite_SOURCES
     Light.h
     Camera.cpp
     Camera.h
+
+    RenderEngine.cpp
+    RenderEngine.h
+    RenderQueueElement.h
     )
 
 add_library(Ignimbrite STATIC ${Ignimbrite_SOURCES})

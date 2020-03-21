@@ -11,7 +11,8 @@
 #define IGNIMBRITE_IRENDERABLE_H
 
 #include <Types.h>
-#include <IncludeMath.h>
+#include <Material.h>
+#include <IRenderContext.h>
 
 namespace ignimbrite {
 
@@ -38,16 +39,30 @@ namespace ignimbrite {
 
         virtual ~IRenderable() = default;
 
-        /** Called once, when this node enter draw queue after culling and material sorting */
-        virtual void onRenderQueueEntered(/* todo: pass useful info */) = 0;
+        /**
+         * Called once, when this node enter draw queue after culling before material sorting.
+         * Required to determine which material and lod will be used for the rendering.
+         * @param distFromViewPoint Distance from the view point of this object
+         */
+        virtual void onRenderQueueEntered(float32 distFromViewPoint) = 0;
         /** Called once to draw this render node */
-        virtual void onRender(/* todo: pass useful info */) = 0;
+        virtual void onRender(const IRenderContext& context) = 0;
+        /**
+         * Called once, when this node enter draw queue after culling before material sorting.
+         * Required to determine which material and lod will be used for the shadow rendering.
+         * @param distFromViewPoint Distance from the view point of this object
+         */
+        virtual void onShadowRenderQueueEntered(float32 distFromViewPoint) = 0;
         /** Called once to draw this render node to shadow map  */
-        virtual void onShadowRender(/* todo: pass useful info */) = 0;
+        virtual void onShadowRender(const IRenderContext& context) = 0;
         /** @return Object world position for culling */
         virtual Vec3f getWorldPosition() const = 0;
         /** @return Object world bounds */
         virtual AABB getWorldBoundingBox() const = 0;
+        /** @return Material for rendering in main pass */
+        virtual Material* getRenderMaterial() = 0;
+        /** @return Material for rendering in shadow pass */
+        virtual Material* getShadowRenderMaterial() = 0;
 
         void setCastShadows(bool set = true) { mCastShadows = set; }
         void setVisible(bool set = true) { mIsVisible = set; }
@@ -61,8 +76,10 @@ namespace ignimbrite {
         bool isVisible() const { return mIsVisible; }
         /** @return True, if can apply culling for that object based on its world position setting */
         bool canApplyCulling() const { return mCanApplyCulling; }
-        /** @return Max view distance after this object is automatically culled */
+        /** @return Max view distance after that object is automatically culled */
         float32 getMaxViewDistance() const { return mMaxViewDistance; }
+        /** @return Max view distance squared after that object is automatically culled */
+        float32 getMaxViewDistanceSquared() const { return mMaxViewDistance * mMaxViewDistance; }
         /** @return Layer id of this object. All the objects are grouped by its layer rendered layer by layer */
         uint32 getLayerID() const { return mLayerID; }
 

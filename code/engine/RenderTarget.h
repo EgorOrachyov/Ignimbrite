@@ -69,7 +69,6 @@ namespace ignimbrite {
         explicit RenderTarget(RefCounted<IRenderDevice> device);
         ~RenderTarget() override;
 
-
         void setTargetProperties(uint32 width, uint32 height, uint32 colorAttachmentsCount);
         void setColorAttachment(uint32 index, RefCounted<Texture> attachment);
         void setDepthStencilAttachment(RefCounted<Texture> attachment);

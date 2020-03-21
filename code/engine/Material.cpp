@@ -173,4 +173,8 @@ namespace ignimbrite {
         return mat;
     }
 
+    const RefCounted<GraphicsPipeline>& Material::getGraphicsPipeline() const {
+        return mPipeline;
+    }
+
 }

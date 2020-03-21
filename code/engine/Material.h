@@ -76,6 +76,7 @@ namespace ignimbrite {
 
         /** Creates instance of this material, modifiable copy of the one */
         RefCounted<Material> clone() const;
+        const RefCounted<GraphicsPipeline> &getGraphicsPipeline() const;
 
     private:
 
