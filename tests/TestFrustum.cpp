@@ -12,6 +12,7 @@
 #include <Shader.h>
 #include <UniformBuffer.h>
 #include <Frustum.h>
+#include <Camera.h>
 
 #include <algorithm>
 #include <fstream>
@@ -49,12 +50,6 @@ struct MatData {
 struct Model {
     Mesh        mesh;
     MatData    material;
-};
-
-struct Camera {
-    glm::vec3 position;
-    glm::vec3 direction;
-    glm::vec3 up;
 };
 
 struct AABBModel {
@@ -280,8 +275,8 @@ private:
         const uint32 vertCount = 8;
         const uint32 indexCount = 3 * 2 * 6;
 
-        const glm::vec3 *nearVerts = frustum.getNearVertices();
-        const glm::vec3 *farVerts = frustum.getFarVertices();
+        const auto &nearVerts = frustum.getNearVertices();
+        const auto &farVerts = frustum.getFarVertices();
 
         glm::vec4 verts[vertCount];
 
@@ -329,8 +324,8 @@ private:
     void updateFrustumMesh(const Frustum& frustum) {
         const uint32 vertCount = 8;
 
-        const glm::vec3 *nearVerts = frustum.getNearVertices();
-        const glm::vec3 *farVerts = frustum.getFarVertices();
+        const auto &nearVerts = frustum.getNearVertices();
+        const auto &farVerts = frustum.getFarVertices();
 
         glm::vec4 verts[vertCount];
 
@@ -373,25 +368,25 @@ private:
             scene.aabbs.push_back(aabbModel);
         }
 
-        scene.camera.up = glm::vec3(0,1,0);
-        scene.camera.direction = glm::vec3(0,0,1);
-        scene.camera.position = glm::vec3(0,0, -1);
+        Mat4f clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
+                               0.0f, -1.0f, 0.0f, 0.0f,
+                               0.0f, 0.0f, 0.5f, 0.0f,
+                               0.0f, 0.0f, 0.5f, 1.0f);
+
+        scene.camera.setType(Camera::Type::Perspective);
+        scene.camera.setPosition(glm::vec3(0,0, -1));
+        scene.camera.setNearView(0.1f);
+        scene.camera.setFarView(1000.0f);
+        scene.camera.setClipMatrix(clip);
     }
 
     void updateScene() {
-        auto& camera = scene.camera;
-
         processInput(window.glfwWindow);
 
-        auto view = glm::lookAt(camera.position, camera.position + camera.direction, camera.up);
-        auto proj = glm::perspective(1.5f, (float32)window.widthFrameBuffer / window.heightFrameBuffer, 0.1f, 1000.0f);
+        scene.camera.setAspect((float32)window.widthFrameBuffer / window.heightFrameBuffer);
+        scene.camera.recalculate();
 
-        auto clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
-                              0.0f, -1.0f, 0.0f, 0.0f,
-                              0.0f, 0.0f, 0.5f, 0.0f,
-                              0.0f, 0.0f, 0.5f, 1.0f);
-
-        glm::mat4x4 viewProj = clip * proj * view;
+        const Mat4f &viewProj = scene.camera.getViewProjMatrix();;
 
         for (AABBModel *aabbm : scene.aabbs) {
 
@@ -452,33 +447,69 @@ private:
         float32 cameraSpeed = 2.0f / 60.0f;
         float32 cameraRotationSpeed = 0.5f / 60.0f;
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            camera.position += cameraSpeed * camera.direction;
+            camera.move(cameraSpeed * camera.getDirection());
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            camera.position -= cameraSpeed * camera.direction;
+            camera.move(-cameraSpeed * camera.getDirection());
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            camera.position -= glm::normalize(glm::cross(camera.direction, camera.up)) * cameraSpeed;
+            camera.move(-camera.getRight() * cameraSpeed);
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            camera.position += glm::normalize(glm::cross(camera.direction, camera.up)) * cameraSpeed;
+            camera.move(camera.getRight() * cameraSpeed);
         if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-            camera.position -= glm::normalize(camera.up) * cameraSpeed;
+            camera.move(-camera.getUp() * cameraSpeed);
         if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-            camera.position += glm::normalize(camera.up) * cameraSpeed;
+            camera.move(camera.getUp() * cameraSpeed);
         if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-            camera.direction = glm::rotate(camera.direction, cameraRotationSpeed, glm::vec3(0,1,0));
+            camera.rotate(glm::vec3(0, 1, 0), cameraRotationSpeed);
         if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-            camera.direction = glm::rotate(camera.direction, -cameraRotationSpeed, glm::vec3(0,1,0));
+            camera.rotate(glm::vec3(0, 1, 0), -cameraRotationSpeed);
 
         if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) {
             auto& f = scene.frustum->frustum;
             f.setViewProperties(f.getForward(), f.getUp());
-            f.createPerspective(f.getPosition() + glm::vec3(0,0,0.01), M_PI / 4.0f, 16.0f/9.0f, 0.1f, 20.0f);
+            f.createPerspective(M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
             updateFrustumMesh(f);
         }
 
         if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
             auto& f = scene.frustum->frustum;
             f.setViewProperties(f.getForward(), f.getUp());
-            f.createPerspective(f.getPosition() + glm::vec3(0,0,-0.01), M_PI / 4.0f, 16.0f/9.0f, 0.1f, 20.0f);
+            f.createPerspective(M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
+            updateFrustumMesh(f);
+        }
+
+        static float y = 0, x = 0;
+
+        if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
+
+            if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS) {
+                y -= 0.05f;
+            }
+            if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
+                y += 0.05f;
+            }
+
+            if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS) {
+                x -= 0.05f;
+            }
+            if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
+                x += 0.05f;
+            }
+
+            auto &f = scene.frustum->frustum;
+
+            y = glm::clamp(y, (float) (-M_PI / 2.0f + 0.05f), (float) (M_PI / 2.0f - 0.05f));
+
+            glm::quat q = glm::quat(glm::vec3(y, x, 0));
+            glm::vec3 d = glm::normalize(q * glm::vec3(0, 0, 1));
+            glm::vec3 r = glm::cross(d, glm::vec3(0, 1, 0));
+            glm::vec3 u = glm::cross(r, d);
+
+            f.setViewProperties(d, u);
+            f.createPerspective(M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
+
             updateFrustumMesh(f);
         }
     }
@@ -503,7 +534,8 @@ private:
 int32 main() {
     Frustum f = {};
     f.setViewProperties(glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
-    f.createPerspective(glm::vec3(0, 0, 1), M_PI / 4.0f, 16.0f/9.0f, 0.1f, 20.0f);
+    f.setPosition(Vec3f(0,0,1));
+    f.createPerspective(M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
 
     const float32 range = 4;
     const int32 amount = 10;

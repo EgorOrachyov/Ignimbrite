@@ -36,8 +36,13 @@ namespace ignimbrite {
         mUp = glm::rotate(mUp, angle, axis);
     }
 
-    void Light::move(const ignimbrite::Vec3f &dir) {
-        mPosition += dir;
+    void Light::setRotation(const Vec3f &axis, float32 angle) {
+        mDirection = glm::rotate(glm::vec3(0, 0, 1), angle, axis);
+        mUp = glm::rotate(glm::vec3(0, 1, 0), angle, axis);
+    }
+
+    void Light::move(const ignimbrite::Vec3f &vec) {
+        mPosition += vec;
     }
 
     void Light::setType(Type type) {
