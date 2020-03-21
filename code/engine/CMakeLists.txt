@@ -6,11 +6,14 @@ set(Ignimbrite_SOURCES
     IncludeStd.h
     IncludeMath.h
     Compilation.h
+    IRenderable.cpp
+    IRenderable.h
     IRenderEngine.cpp
     IRenderEngine.h
     IRenderDevice.cpp
-    IRenderDevice.h
+        IRenderDevice.h
     IRenderDeviceDefinitions.h
+    FileUtils.cpp
     FileUtils.h
     ObjectID.h
     ObjectIDBuffer.h
@@ -18,22 +21,20 @@ set(Ignimbrite_SOURCES
     Platform.h
     AABB.h
     Types.h
-    ShaderReflection.h
+    Shader.cpp
     Shader.h
+    ShaderReflection.cpp
     ShaderReflection.h
+    Texture.cpp
     Texture.h
+    Sampler.cpp
     Sampler.h
+    UniformBuffer.cpp
     UniformBuffer.h
-    FileUtils.cpp
     Cache.cpp
     Cache.h
     CacheItem.cpp
     CacheItem.h
-    Shader.cpp
-    ShaderReflection.cpp
-    Texture.cpp
-    Sampler.cpp
-    UniformBuffer.cpp
     GraphicsPipeline.cpp
     GraphicsPipeline.h
     PipelineContext.cpp
@@ -42,15 +43,14 @@ set(Ignimbrite_SOURCES
     Material.h
     Mesh.cpp
     Mesh.h
-    MeshLoader.h
     MeshLoader.cpp
+    MeshLoader.h
     RenderTarget.cpp
     RenderTarget.h
     Frustum.h
-    IRenderable.cpp
-    IRenderable.h
     Light.cpp 
-    Light.h)
+    Light.h
+        )
 
 add_library(Ignimbrite STATIC ${Ignimbrite_SOURCES})
 

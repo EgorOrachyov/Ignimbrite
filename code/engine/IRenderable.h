@@ -42,16 +42,21 @@ namespace ignimbrite {
         virtual void onRenderQueueEntered(/* todo: pass useful info */) = 0;
         /** Called once to draw this render node */
         virtual void onRender(/* todo: pass useful info */) = 0;
+        /** Called once to draw this render node to shadow map  */
+        virtual void onShadowRender(/* todo: pass useful info */) = 0;
         /** @return Object world position for culling */
         virtual Vec3f getWorldPosition() const = 0;
         /** @return Object world bounds */
         virtual AABB getWorldBoundingBox() const = 0;
 
+        void setCastShadows(bool set = true) { mCastShadows = set; }
         void setVisible(bool set = true) { mIsVisible = set; }
         void setCanApplyCulling(bool set = true) { mCanApplyCulling = set; }
         void setMaxViewDistance(float32 distance) { mMaxViewDistance = distance; }
         void setLayerID(uint32 layer) { mLayerID = layer; }
 
+        /** @return True, if object cast shadows */
+        bool castShadows() const { return mCastShadows; }
         /** @return True, if object visible and must be submitted for rendering queue */
         bool isVisible() const { return mIsVisible; }
         /** @return True, if can apply culling for that object based on its world position setting */
@@ -62,6 +67,7 @@ namespace ignimbrite {
         uint32 getLayerID() const { return mLayerID; }
 
     private:
+        bool mCastShadows = false;
         bool mCanApplyCulling = false;
         bool mIsVisible = false;
         uint32 mLayerID = 0x0;
