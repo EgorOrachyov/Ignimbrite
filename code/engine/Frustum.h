@@ -44,6 +44,10 @@ namespace ignimbrite {
             mRight = glm::cross(mForward, mUp);
         }
 
+        void setPosition(const glm::vec3& position) {
+            mPosition = position;
+        }
+
         /**
          * Calculate planes and near, far vertices for orthographic projection
          * @note to set offset use setPosition(..)
@@ -59,6 +63,11 @@ namespace ignimbrite {
             mFarVertices[VertexIndex::LowerLeft] = left * mRight + bottom * mUp + farPlane * mForward;
             mFarVertices[VertexIndex::LowerRight] = right * mRight + bottom * mUp + farPlane * mForward;
 
+            for (uint32 i = 0; i < 4; i++) {
+                mNearVertices[i] += mPosition;
+                mFarVertices[i] += mPosition;
+            }
+
             recalculatePlanes();
         }
 
@@ -67,9 +76,7 @@ namespace ignimbrite {
          * @param fovRad vertical field of view in radians
          * @param aspect aspect ratio (width/height) of this frustum
          */
-        void createPerspective(const glm::vec3 &position, float32 fovRad, float32 aspect, float32 nearPlane, float32 farPlane) {
-            mPosition = position;
-
+        void createPerspective(float32 fovRad, float32 aspect, float32 nearPlane, float32 farPlane) {
             float32 tanfov = tanf(fovRad * 0.5f);
 
             float32 nearHeight = tanfov * nearPlane;

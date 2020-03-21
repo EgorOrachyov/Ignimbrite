@@ -11,11 +11,67 @@
 
 namespace ignimbrite {
 
-    float32 Camera::getSize() const {
-        return mSize;
+    void Camera::setType(Type type) {
+        mType = type;
+        markDirty();
     }
 
-    CameraType Camera::getType() const {
+    void Camera::setPosition(const Vec3f &position) {
+        mPosition = position;
+        markDirty();
+    }
+
+    void Camera::setAspect(float32 aspect) {
+        if (std::abs(aspect) <= 0.0005f)
+            throw std::runtime_error("Camera aspect near zero");
+
+        mAspect = aspect;
+        markDirty();
+    }
+
+    void Camera::setFarView(float32 farView) {
+        mFarView = farView;
+        markDirty();
+    }
+
+    void Camera::setNearView(float32 nearView) {
+        mNearView = nearView;
+        markDirty();
+    }
+
+    void Camera::setFov(float32 verticalFovRad) {
+        mVerticalFov = verticalFovRad;
+        markDirty();
+    }
+
+    void Camera::setOrthoWidht(ignimbrite::float32 width) {
+        mOrthoWidth = width;
+        markDirty();
+    }
+
+    void Camera::setClipMatrix(const ignimbrite::Mat4f &clip) {
+        mClipMatrix = clip;
+        markDirty();
+    }
+
+    void Camera::rotate(const Vec3f &axis, float32 angle) {
+        mDirection = glm::rotate(mDirection, angle, axis);
+        mUp = glm::rotate(mUp, angle, axis);
+        markDirty();
+    }
+
+    void Camera::setRotation(const Vec3f &axis, float32 angle) {
+        mDirection = glm::rotate(glm::vec3(0, 0, 1), angle, axis);
+        mUp = glm::rotate(glm::vec3(0, 1, 0), angle, axis);
+        markDirty();
+    }
+
+    void Camera::move(const Vec3f &vec) {
+        mPosition += vec;
+        markDirty();
+    }
+
+    Camera::Type Camera::getType() const {
         return mType;
     }
 
@@ -28,69 +84,19 @@ namespace ignimbrite {
     }
 
     float32 Camera::getFarClip() const {
-        return mFarClip;
+        return mFarView;
     }
 
     float32 Camera::getNearClip() const {
-        return mNearClip;
+        return mNearView;
     }
 
     float32 Camera::getFov() const {
         return mVerticalFov;
     }
 
-    void Camera::setType(CameraType type) {
-        mType = type;
-        mIsDirty = true;
-    }
-
-    void Camera::setPosition(const Vec3f &position) {
-        mPosition = position;
-        mIsDirty = true;
-    }
-
-    void Camera::setAspect(float32 aspect) {
-        mAspect = aspect;
-        mIsDirty = true;
-    }
-
-    void Camera::setFarClip(float32 farClip) {
-        mFarClip = farClip;
-        mIsDirty = true;
-    }
-
-    void Camera::setNearClip(float32 nearClip) {
-        mNearClip = nearClip;
-        mIsDirty = true;
-    }
-
-    void Camera::setFov(float32 verticalFov) {
-        mVerticalFov = verticalFov;
-        mIsDirty = true;
-    }
-
-    void Camera::setSize(float32 size) {
-        mSize = size;
-        mIsDirty = true;
-    }
-
-    void Camera::rotate(const Vec3f &axis, float32 angle) {
-        mDirection = glm::normalize(glm::rotate(mDirection, angle, axis));
-        mUp =  glm::normalize(glm::rotate(mUp, angle, axis));
-
-        mIsDirty = true;
-    }
-
-    void Camera::setRotation(const Vec3f &axis, float32 angle) {
-        mDirection = glm::rotate(glm::vec3(0, 0, 1), angle, axis);
-        mUp = glm::rotate(glm::vec3(0, 1, 0), angle, axis);
-
-        mIsDirty = true;
-    }
-
-    void Camera::move(const Vec3f &vec) {
-        mPosition += vec;
-        mIsDirty = true;
+    float32 Camera::getOrthoWidth() const {
+        return mOrthoWidth;
     }
 
     const Vec3f &Camera::getDirection() const {
@@ -109,6 +115,18 @@ namespace ignimbrite {
         return mFrustum;
     }
 
+    const Mat4f& Camera::getClipMatrix() const {
+        return mClipMatrix;
+    }
+
+    const Mat4f& Camera::getViewMatrix() const {
+        return mViewMatrix;
+    }
+
+    const Mat4f& Camera::getProjMatrix() const {
+        return mProjMatrix;
+    }
+
     const Mat4f &Camera::getViewProjMatrix() const {
         return mViewProjMatrix;
     }
@@ -118,27 +136,37 @@ namespace ignimbrite {
             return;
         }
 
-        Mat4f view = glm::lookAt(mPosition, mPosition + mDirection, mUp);
-        Mat4f clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
-                              0.0f, -1.0f, 0.0f, 0.0f,
-                              0.0f, 0.0f, 0.5f, 0.0f,
-                              0.0f, 0.0f, 0.5f, 1.0f);
+        mViewMatrix = glm::lookAt(mPosition, mPosition + mDirection, mUp);
 
-        if (mType == CameraType::Perspective) {
-            float fovyRad = glm::radians(mVerticalFov);
+//        Depends on rendering device
+//        Mat4f clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
+//                               0.0f, -1.0f, 0.0f, 0.0f,
+//                               0.0f, 0.0f, 0.5f, 0.0f,
+//                               0.0f, 0.0f, 0.5f, 1.0f);
+
+        if (isPerspective()) {
+            mFrustum.setViewProperties(mDirection, mUp);
+            mFrustum.setPosition(mPosition);
+            mFrustum.createPerspective(mVerticalFov, mAspect, mNearView, mFarView);
+
+            mProjMatrix = glm::perspective(mVerticalFov, mAspect, mNearView, mFarView);
+            mViewProjMatrix = mClipMatrix * mProjMatrix * mViewMatrix;
+        }
+
+        if (isOrthographic()) {
+            float32 width = mOrthoWidth;
+            float32 height = mOrthoWidth / mAspect;
+            float32 left = -width / 2;
+            float32 right = -left;
+            float32 bottom = -height / 2;
+            float32 top = -bottom;
 
             mFrustum.setViewProperties(mDirection, mUp);
-            mFrustum.createPerspective(mPosition, fovyRad, mAspect, mNearClip, mFarClip);
+            mFrustum.setPosition(mPosition);
+            mFrustum.createOrthographic(left, right, bottom, top, mNearView, mFarView);
 
-            Mat4f proj = glm::perspective(fovyRad, mAspect, mNearClip, mFarClip);
-            mViewProjMatrix = clip * proj * view;
-
-        } else {
-            float width = mSize;
-            float height = mSize / mAspect;
-
-            Mat4f proj = glm::ortho(-width / 2, width / 2, -height / 2, height / 2, mNearClip, mFarClip);
-            mViewProjMatrix = clip * proj * view;
+            mProjMatrix = glm::ortho(left, right, bottom, top, mNearView, mFarView);
+            mViewProjMatrix = mClipMatrix * mProjMatrix * mViewMatrix;
         }
 
         mIsDirty = false;

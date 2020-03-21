@@ -368,10 +368,16 @@ private:
             scene.aabbs.push_back(aabbModel);
         }
 
-        scene.camera.setType(CameraType::Perspective);
+        Mat4f clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
+                               0.0f, -1.0f, 0.0f, 0.0f,
+                               0.0f, 0.0f, 0.5f, 0.0f,
+                               0.0f, 0.0f, 0.5f, 1.0f);
+
+        scene.camera.setType(Camera::Type::Perspective);
         scene.camera.setPosition(glm::vec3(0,0, -1));
-        scene.camera.setNearClip(0.1f);
-        scene.camera.setFarClip(1000.0f);
+        scene.camera.setNearView(0.1f);
+        scene.camera.setFarView(1000.0f);
+        scene.camera.setClipMatrix(clip);
     }
 
     void updateScene() {
@@ -460,14 +466,14 @@ private:
         if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) {
             auto& f = scene.frustum->frustum;
             f.setViewProperties(f.getForward(), f.getUp());
-            f.createPerspective(f.getPosition() + glm::vec3(0,0,0.03), M_PI / 4.0f, 16.0f/9.0f, 0.1f, 20.0f);
+            f.createPerspective(M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
             updateFrustumMesh(f);
         }
 
         if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
             auto& f = scene.frustum->frustum;
             f.setViewProperties(f.getForward(), f.getUp());
-            f.createPerspective(f.getPosition() + glm::vec3(0,0,-0.03), M_PI / 4.0f, 16.0f/9.0f, 0.1f, 20.0f);
+            f.createPerspective(M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
             updateFrustumMesh(f);
         }
 
@@ -502,7 +508,7 @@ private:
             glm::vec3 u = glm::cross(r, d);
 
             f.setViewProperties(d, u);
-            f.createPerspective(f.getPosition(), M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
+            f.createPerspective(M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
 
             updateFrustumMesh(f);
         }
@@ -528,7 +534,8 @@ private:
 int32 main() {
     Frustum f = {};
     f.setViewProperties(glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
-    f.createPerspective(glm::vec3(0, 0, 1), M_PI / 4.0f, 16.0f/9.0f, 0.1f, 20.0f);
+    f.setPosition(Vec3f(0,0,1));
+    f.createPerspective(M_PI / 4.0f, 16.0f / 9.0f, 0.1f, 20.0f);
 
     const float32 range = 4;
     const int32 amount = 10;
