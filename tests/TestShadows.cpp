@@ -76,7 +76,7 @@ public:
     }
 
     void run() {
-        std::vector<IRenderDevice::Color> clearFbColors = {{{0.0, 0.0, 0.0, 0.0}}};
+        std::vector<IRenderDevice::Color> clearFbColors;
 
         while (!glfwWindowShouldClose(window.handle)) {
             glfwPollEvents();
@@ -150,7 +150,7 @@ private:
         shadowPass.renderTarget = std::make_shared<RenderTarget>(device);
         shadowPass.renderTarget->createTargetFromFormat(
                 ShadowsPass::width, ShadowsPass::height,
-                RenderTarget::DefaultFormat::Color0AndDepthStencil);
+                RenderTarget::DefaultFormat::DepthStencil);
         shadowPass.depthTexture = shadowPass.renderTarget->getDepthStencilAttachment();
 
         RefCounted<Sampler> sampler = std::make_shared<Sampler>(device);
