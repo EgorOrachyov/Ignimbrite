@@ -101,8 +101,11 @@ configure_file(
 ##################################################################
 ## Include actual sub directories
 
-message(STATUS "Add Ignimbrite main sub directory")
+message(STATUS "Add Ignimbrite main engine module")
 add_subdirectory(code/engine)
+
+message(STATUS "Add Ignimbrite Materials module")
+add_subdirectory(code/materials)
 
 option(IGNIMBRITE_WITH_TESTS "Compile tests and examples for library" OFF)
 if (IGNIMBRITE_WITH_TESTS)

@@ -80,8 +80,8 @@ namespace ignimbrite {
 
     private:
 
-        bool mUniformBuffersWereModified = false;
-        bool mUniformTexturesWereModified = false;
+        bool mUniformBuffersWereModified = true;
+        bool mUniformTexturesWereModified = true;
 
         RefCounted<IRenderDevice> mDevice;
         RefCounted<GraphicsPipeline> mPipeline;

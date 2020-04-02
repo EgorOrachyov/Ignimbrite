@@ -32,9 +32,9 @@ namespace ignimbrite {
 
         /** Fixed vertex layout with predefined types of attributes */
         enum class VertexFormat : uint32 {
-            P = Pos3f,                              /** P.x P.y P.z */
-            PN = Pos3f | Norm3f,                    /** P.x P.y P.z | N.x N.y N.z */
-            PNT = Pos3f | Norm3f | TexCoords2f,     /** P.x P.y P.z | N.x N.y N.z | T.u T.v */
+            P   = Pos3f,                        /** P.x P.y P.z */
+            PN  = Pos3f | Norm3f,               /** P.x P.y P.z | N.x N.y N.z */
+            PNT = Pos3f | Norm3f | TexCoords2f  /** P.x P.y P.z | N.x N.y N.z | T.u T.v */
         };
 
         Mesh(VertexFormat format, uint32 vertexCount, uint32 indexCount);
@@ -65,7 +65,7 @@ namespace ignimbrite {
         const uint32 *getIndexData() const { return mIndexData.data(); }
         uint32 getStride() const { return mStride; }
         uint32 getVertexCount() const { return mVertexCount; }
-        uint32 getIndexCount() const { return mIndexData.size(); }
+        uint32 getIndicesCount() const { return mIndexData.size(); }
 
         static uint32 getSizeOfStride(VertexFormat format);
         static uint32 getNumberOfAttributes(VertexFormat format);

@@ -8,6 +8,7 @@
 /**********************************************************************************/
 
 #include <RenderEngine.h>
+#include <PipelineContext.h>
 
 namespace ignimbrite {
 
@@ -45,6 +46,14 @@ namespace ignimbrite {
         mOffscreenTarget = std::make_shared<RenderTarget>(mRenderDevice);
         mOffscreenTarget->createTargetFromFormat(width, height, RenderTarget::DefaultFormat::Color0AndDepthStencil);
         mTargetSurface = surface;
+    }
+
+    void RenderEngine::setRenderArea(uint32 x, uint32 y, uint32 w, uint32 h) {
+        mRenderArea.x = x;
+        mRenderArea.y = y;
+        mRenderArea.w = w;
+        mRenderArea.h = h;
+
     }
 
     void RenderEngine::addRenderable(RefCounted<IRenderable> object) {
@@ -157,10 +166,28 @@ namespace ignimbrite {
             RenderQueueElement::SortPredicate predicate;
             std::sort(mVisibleSortedQueue.begin(), mVisibleSortedQueue.end(), predicate);
 
-            // Pass to object render context and call render for each
-            for (const auto& element: mVisibleSortedQueue) {
-                element.object->onRender(*mContext);
+            // todo: Bind render target not surface
+            {
+
+                mRenderDevice->drawListBegin();
+                mRenderDevice->drawListBindSurface(mTargetSurface,
+                        IRenderDevice::Color{0,0,0,0},
+                        IRenderDevice::Region{mRenderArea.x, mRenderArea.y,
+                                              IRenderDevice::Extent{mRenderArea.w, mRenderArea.h}});
+                PipelineContext::cacheSurfaceBinding(mTargetSurface);
+
+                // Pass to object render context and call render for each
+                for (const auto& element: mVisibleSortedQueue) {
+                    element.object->onRender(*mContext);
+                }
+
+                mRenderDevice->drawListEnd();
+                mRenderDevice->flush();
+                mRenderDevice->synchronize();
+                mRenderDevice->swapBuffers(mTargetSurface);
             }
+
+
         }
 
         // todo: post processing

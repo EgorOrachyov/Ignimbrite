@@ -161,7 +161,7 @@ private:
         cmesh = meshLoader.importMesh(Mesh::VertexFormat::PNT);
 
         rmesh.vertexBuffer = pDevice->createVertexBuffer(BufferUsage::Dynamic,cmesh->getVertexCount() * sizeof(Vertex), cmesh->getVertexData());
-        rmesh.indexCount = cmesh->getIndexCount();
+        rmesh.indexCount = cmesh->getIndicesCount();
         rmesh.indexBuffer = pDevice->createIndexBuffer(BufferUsage::Static,rmesh.indexCount * sizeof(uint32), cmesh->getIndexData());
     }
 
@@ -340,7 +340,7 @@ float32 Vulkan3DTest::prevx = 0;
 float32 Vulkan3DTest::prevy = 0;
 
 int main(int argc, char **argv) {
-    const char *mesh = "assets/models/sphere.obj";
+    const char *mesh = "assets/modspvels/sphere.obj";
     const char *texture = "assets/textures/double.png";
 
     if (argc >= 3) {

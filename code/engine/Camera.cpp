@@ -127,8 +127,8 @@ namespace ignimbrite {
         return mProjMatrix;
     }
 
-    const Mat4f &Camera::getViewProjMatrix() const {
-        return mViewProjMatrix;
+    const Mat4f &Camera::getViewProjClipMatrix() const {
+        return mViewProjClipMatrix;
     }
 
     void Camera::recalculate() {
@@ -138,19 +138,13 @@ namespace ignimbrite {
 
         mViewMatrix = glm::lookAt(mPosition, mPosition + mDirection, mUp);
 
-//        Depends on rendering device
-//        Mat4f clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
-//                               0.0f, -1.0f, 0.0f, 0.0f,
-//                               0.0f, 0.0f, 0.5f, 0.0f,
-//                               0.0f, 0.0f, 0.5f, 1.0f);
-
         if (isPerspective()) {
             mFrustum.setViewProperties(mDirection, mUp);
             mFrustum.setPosition(mPosition);
             mFrustum.createPerspective(mVerticalFov, mAspect, mNearView, mFarView);
 
             mProjMatrix = glm::perspective(mVerticalFov, mAspect, mNearView, mFarView);
-            mViewProjMatrix = mClipMatrix * mProjMatrix * mViewMatrix;
+            mViewProjClipMatrix = mClipMatrix * mProjMatrix * mViewMatrix;
         }
 
         if (isOrthographic()) {
@@ -166,7 +160,7 @@ namespace ignimbrite {
             mFrustum.createOrthographic(left, right, bottom, top, mNearView, mFarView);
 
             mProjMatrix = glm::ortho(left, right, bottom, top, mNearView, mFarView);
-            mViewProjMatrix = mClipMatrix * mProjMatrix * mViewMatrix;
+            mViewProjClipMatrix = mClipMatrix * mProjMatrix * mViewMatrix;
         }
 
         mIsDirty = false;

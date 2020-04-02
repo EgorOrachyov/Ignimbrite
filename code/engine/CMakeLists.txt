@@ -53,7 +53,8 @@ set(Ignimbrite_SOURCES
     Light.h
     Camera.cpp
     Camera.h
-
+    RenderableMesh.cpp
+    RenderableMesh.h
     RenderEngine.cpp
     RenderEngine.h
     RenderQueueElement.h

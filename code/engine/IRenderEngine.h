@@ -28,6 +28,7 @@ namespace ignimbrite {
         virtual void setCamera(RefCounted<Camera> camera) = 0;
         virtual void setRenderDevice(RefCounted<IRenderDevice> device) = 0;
         virtual void setTargetSurface(ID<IRenderDevice::Surface> surface) = 0;
+        virtual void setRenderArea(uint32 x, uint32 y, uint32 w, uint32 h) = 0;
 
         virtual void addRenderable(RefCounted<IRenderable> object) = 0;
         virtual void removeRenderable(const RefCounted <ignimbrite::IRenderable> &object) = 0;

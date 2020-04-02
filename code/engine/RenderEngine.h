@@ -29,6 +29,8 @@ namespace ignimbrite {
 
         void setTargetSurface(ID<IRenderDevice::Surface> surface) override;
 
+        void setRenderArea(uint32 x, uint32 y, uint32 w, uint32 h) override;
+
         void addRenderable(RefCounted<IRenderable> object) override;
 
         void removeRenderable(const RefCounted<IRenderable> &object) override;
@@ -47,6 +49,12 @@ namespace ignimbrite {
         void CHECK_DEVICE_PRESENT() const;
         void CHECK_SURFACE_PRESENT() const;
 
+        struct RenderArea {
+            uint32 x = 0 , y =0;
+            uint32 w = 0, h = 0;
+        };
+
+        RenderArea                 mRenderArea;
         RefCounted<Camera>         mCamera;
         RefCounted<IRenderContext> mContext;
         RefCounted<IRenderDevice>  mRenderDevice;
