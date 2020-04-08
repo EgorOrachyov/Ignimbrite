@@ -107,6 +107,9 @@ add_subdirectory(code/engine)
 message(STATUS "Add Ignimbrite Materials module")
 add_subdirectory(code/materials)
 
+message(STATUS "Add Ignimbrite Post Effects module")
+add_subdirectory(code/posteffects)
+
 option(IGNIMBRITE_WITH_TESTS "Compile tests and examples for library" OFF)
 if (IGNIMBRITE_WITH_TESTS)
     message(STATUS "Add tests folder to build tests")

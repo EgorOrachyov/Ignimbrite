@@ -7,20 +7,22 @@
 /* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
-#ifndef IGNIMBRITE_FILEUTILS_H
-#define IGNIMBRITE_FILEUTILS_H
+#ifndef IGNIMBRITE_GEOMETRY_H
+#define IGNIMBRITE_GEOMETRY_H
 
 #include <Types.h>
 #include <IncludeStd.h>
+#include <IRenderDevice.h>
 
 namespace ignimbrite {
 
-    class FileUtils {
+    class Geometry {
     public:
-        static void loadData(const String &filename, std::vector<char> &data);
-        static void loadBinary(const String& filename, std::vector<uint8> &data);
+
+        static void createFullscreenQuad(ID<IRenderDevice::VertexBuffer> &vertexBuffer, const RefCounted<IRenderDevice> &device);
+
     };
 
-} // namespace ignimbrite
+}
 
-#endif //IGNIMBRITE_FILEUTILS_H
+#endif //IGNIMBRITE_GEOMETRY_H

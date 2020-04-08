@@ -3,7 +3,9 @@ project(IgnimbriteMaterials)
 
 set(IgnimbriteMaterials_SOURCES
     VertexLayoutFactory.cpp
-    VertexLayoutFactory.h)
+    VertexLayoutFactory.h
+    MaterialFullscreen.cpp
+    MaterialFullscreen.h)
 
 add_library(IgnimbriteMaterials STATIC ${IgnimbriteMaterials_SOURCES})
 target_include_directories(IgnimbriteMaterials PUBLIC .)
