@@ -68,7 +68,6 @@ public:
 
     TestShadows() {
         init();
-
     }
 
     ~TestShadows() {
@@ -142,6 +141,13 @@ private:
         device = std::make_shared<VulkanRenderDevice>(window.extensionsCount, window.extensions);
         window.surface = VulkanExtensions::createSurfaceGLFW(
                 (VulkanRenderDevice &) *device, window.handle, window.w, window.h, window.name);
+
+        // vulkan uses inverted y axis and half of z axis
+        clipMatrix = glm::mat4(
+                1.0f, 0.0f, 0.0f, 0.0f,
+                0.0f, -1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 0.5f, 0.0f,
+                0.0f, 0.0f, 0.5f, 1.0f);
     }
 
     void initShadowPass() {
@@ -223,10 +229,12 @@ private:
         scene->camera.setPosition(glm::vec3(0, 0, -1));
         scene->camera.setNearView(0.1f);
         scene->camera.setFarView(500.0f);
+        scene->camera.setClipMatrix(clipMatrix);
 
         scene->light.setType(Light::Type::Directional);
         scene->light.setCastShadow(true);
         scene->light.setRotation(glm::vec3(0,-1,0), 0);
+        scene->light.setClipMatrix(clipMatrix);
 
         scene->meshes.push_back(std::move(createRenderable(planeMeshPath)));
         scene->meshes.push_back(std::move(createRenderable(sphereMeshPath)));
@@ -258,13 +266,8 @@ private:
         frustumCut.cutFrustum(distance / scene->camera.getFarClip());
         scene->light.buildViewFrustum(frustumCut);
 
-        Mat4f clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
-                               0.0f, -1.0f, 0.0f, 0.0f,
-                               0.0f, 0.0f, 0.5f, 0.0f,
-                               0.0f, 0.0f, 0.5f, 1.0f);
-
-        Mat4f camViewProj = clip * scene->camera.getViewProjMatrix();
-        Mat4f lightViewProj = clip * scene->light.getViewProjMatrix();
+        Mat4f camViewProj = scene->camera.getViewProjClipMatrix();
+        Mat4f lightViewProj = scene->light.getViewProjClipMatrix();
 
         for (auto &mesh : scene->meshes) {
             mesh->material->setMat4("UBO.viewProj", camViewProj);
@@ -286,7 +289,7 @@ private:
 
         result->vertexBuffer = device->createVertexBuffer(
                 BufferUsage::Static, cmesh->getVertexCount() * sizeof(Vertex), cmesh->getVertexData());
-        result->indexCount = cmesh->getIndexCount();
+        result->indexCount = cmesh->getIndicesCount();
         result->indexBuffer = device->createIndexBuffer(
                 BufferUsage::Static, result->indexCount * sizeof(uint32), cmesh->getIndexData());
 
@@ -366,6 +369,7 @@ private:
 private:
     Window window;
     RefCounted<IRenderDevice> device;
+    Mat4f clipMatrix;
 
     ShadowsPass shadowPass;
     RefCounted<Scene> scene;

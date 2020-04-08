@@ -67,6 +67,8 @@ namespace ignimbrite {
         std::vector<RefCounted<Light>>       mLightSources;
         std::vector<RefCounted<IRenderable>> mRenderObjects;
 
+        RefCounted<RenderTarget> mShadowsRenderTarget;
+
         std::unordered_map<uint32, std::vector<IRenderable*>> mRenderLayers;
 
     };

@@ -39,6 +39,9 @@ namespace ignimbrite {
 
         virtual ~IRenderable() = default;
 
+        /** Called once when renderable is added on a scene */
+        virtual void onAddToScene(const IRenderContext& context) = 0;
+
         /**
          * Called once, when this node enter draw queue after culling before material sorting.
          * Required to determine which material and lod will be used for the rendering.

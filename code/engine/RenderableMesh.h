@@ -35,6 +35,7 @@ namespace ignimbrite {
 
         // IRenderable
 
+        void onAddToScene(const IRenderContext &context) override;
         void onRenderQueueEntered(float32 distFromViewPoint) override;
         void onRender(const IRenderContext &context) override;
         void onShadowRenderQueueEntered(float32 distFromViewPoint) override;
@@ -64,6 +65,9 @@ namespace ignimbrite {
         RefCounted<IRenderDevice>       mDevice;
         ID<IRenderDevice::IndexBuffer>  mIndexBuffer;
         ID<IRenderDevice::VertexBuffer> mVertexBuffer;
+        // TODO: shadow mesh
+        // ID<IRenderDevice::IndexBuffer>  mShadowIndexBuffer;
+        // ID<IRenderDevice::VertexBuffer> mShadowVertexBuffer;
     };
 
 }

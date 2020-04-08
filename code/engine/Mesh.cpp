@@ -9,6 +9,7 @@
 
 
 #include <stdexcept>
+#include <cstring>
 #include "Mesh.h"
 
 namespace ignimbrite {
