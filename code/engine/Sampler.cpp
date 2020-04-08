@@ -23,13 +23,13 @@ namespace ignimbrite {
         releaseHandle();
     }
 
-    void Sampler::setHighQualityFiltering() {
+    void Sampler::setHighQualityFiltering(SamplerRepeatMode mode) {
         releaseHandle();
 
         mFilter = SamplerFilter::Linear;
         mMipmapFilter = SamplerFilter::Linear;
-        mRepeatMode = SamplerRepeatMode::Repeat;
-        mBorderColor = SamplerBorderColor::Black;
+        mRepeatMode = mode;
+        mBorderColor = SamplerBorderColor::White;
 
         IRenderDevice::SamplerDesc samplerDesc{};
         samplerDesc.u = mRepeatMode;

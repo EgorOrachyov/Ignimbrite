@@ -45,6 +45,10 @@ namespace ignimbrite {
         bool castShadow() const { return mCastShadow; }
         const Frustum &getFrustum() const { return mFrustum; }
 
+        const Mat4f &getViewMatrix() const { return mViewMatrix; }
+        const Mat4f &getProjMatrix() const { return mProjectionMatrix; }
+        Mat4f getViewProjMatrix() const { return mProjectionMatrix * mViewMatrix; }
+
         void buildViewFrustum(const Frustum &cameraFrustum);
 
     private:
