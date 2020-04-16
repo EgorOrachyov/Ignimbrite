@@ -14,12 +14,12 @@ namespace ignimbrite {
     void Geometry::createFullscreenQuad(ID<IRenderDevice::VertexBuffer> &vertexBuffer, const RefCounted<IRenderDevice> &device) {
 
         float32 data[] = {
-                -1.0f, -1.0f, 0.0f, 1.0f,
-                -1.0f,  1.0f, 0.0f, 0.0f,
-                 1.0f,  1.0f, 1.0f, 0.0f,
-                 1.0f,  1.0f, 1.0f, 0.0f,
-                 1.0f, -1.0f, 1.0f, 1.0f,
-                -1.0f, -1.0f, 0.0f, 1.0f,
+                -1.0f, -1.0f, 0.0f, 0.0f,
+                -1.0f,  1.0f, 0.0f, 1.0f,
+                 1.0f,  1.0f, 1.0f, 1.0f,
+                 1.0f,  1.0f, 1.0f, 1.0f,
+                 1.0f, -1.0f, 1.0f, 0.0f,
+                -1.0f, -1.0f, 0.0f, 0.0f,
         };
 
         vertexBuffer = device->createVertexBuffer(BufferUsage::Static, sizeof(data), data);

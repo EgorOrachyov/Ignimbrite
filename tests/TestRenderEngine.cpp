@@ -100,11 +100,11 @@ public:
     }
 
     void initPostEffects() {
-        auto noir = std::make_shared<NoirFilter>(device, PREFIX_PATH);
-        engine->addPostEffect(noir);
-
         auto inverse = std::make_shared<InverseFilter>(device, PREFIX_PATH);
         engine->addPostEffect(inverse);
+
+        auto noir = std::make_shared<NoirFilter>(device, PREFIX_PATH);
+        engine->addPostEffect(noir);
     }
 
     void initMeshMaterial() {
