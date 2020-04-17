@@ -25,4 +25,12 @@ namespace ignimbrite {
         file.read(data.data(), size);
     }
 
+    void FileUtils::loadBinary(const ignimbrite::String &filename, std::vector<ignimbrite::uint8> &data) {
+        std::ifstream file(filename.c_str(), std::ios::binary);
+        std::vector<uint8> readData(std::istreambuf_iterator<char>(file), {});
+        data = std::move(readData);
+    }
+
+
+
 } // namespace ignimbrite

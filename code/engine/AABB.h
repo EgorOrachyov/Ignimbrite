@@ -11,7 +11,9 @@
 #define IGNIMBRITE_AABB_H
 
 #include <glm/glm.hpp>
+#include <glm/vec3.hpp>
 #include <Types.h>
+#include <array>
 
 namespace ignimbrite {
 
@@ -23,6 +25,16 @@ namespace ignimbrite {
     public:
         /** Null aabb */
         AABB() = default;
+
+        /** AABB from oriented 8 vertices volume box */
+        AABB(const std::array<glm::vec3, 8> &box) {
+            for (const auto& v: box) {
+                for (uint32 i = 0; i < 3; i++) {
+                    minBounds[i] = glm::min(minBounds[i], v[i]);
+                    maxBounds[i] = glm::max(maxBounds[i], v[i]);
+                }
+            }
+        }
 
         /** Create bounding box Min=-vec, Max=vec */
         AABB(const glm::vec3 &vec) {
@@ -86,6 +98,17 @@ namespace ignimbrite {
             }
 
             return true;
+        }
+
+        void getVertices(std::array<glm::vec3, 8> &vertices) {
+            vertices[0] = glm::vec3(minBounds[0], minBounds[1], minBounds[2]);
+            vertices[1] = glm::vec3(minBounds[0], minBounds[1], maxBounds[2]);
+            vertices[2] = glm::vec3(minBounds[0], maxBounds[1], minBounds[2]);
+            vertices[3] = glm::vec3(minBounds[0], maxBounds[1], maxBounds[2]);
+            vertices[4] = glm::vec3(maxBounds[0], minBounds[1], minBounds[2]);
+            vertices[5] = glm::vec3(maxBounds[0], minBounds[1], maxBounds[2]);
+            vertices[6] = glm::vec3(maxBounds[0], maxBounds[1], minBounds[2]);
+            vertices[7] = glm::vec3(maxBounds[0], maxBounds[1], maxBounds[2]);
         }
 
         /** Expands box to contain specified point */

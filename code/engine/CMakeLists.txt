@@ -53,11 +53,12 @@ set(Ignimbrite_SOURCES
     Light.h
     Camera.cpp
     Camera.h
-
+    RenderableMesh.cpp
+    RenderableMesh.h
     RenderEngine.cpp
     RenderEngine.h
     RenderQueueElement.h
-    )
+    IPostEffect.h Geometry.cpp Geometry.h)
 
 add_library(Ignimbrite STATIC ${Ignimbrite_SOURCES})
 

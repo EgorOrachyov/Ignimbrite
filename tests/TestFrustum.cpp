@@ -386,7 +386,7 @@ private:
         scene.camera.setAspect((float32)window.widthFrameBuffer / window.heightFrameBuffer);
         scene.camera.recalculate();
 
-        const Mat4f &viewProj = scene.camera.getViewProjMatrix();;
+        const Mat4f &viewProj = scene.camera.getViewProjClipMatrix();;
 
         for (AABBModel *aabbm : scene.aabbs) {
 

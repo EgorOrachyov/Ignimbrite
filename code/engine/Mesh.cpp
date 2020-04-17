@@ -43,10 +43,19 @@ namespace ignimbrite {
         uint32 offset = 0;
         mBoundingBox = AABB();
         const uint8* data = getVertexData();
-        for (uint32 i = 0; i < mVertexCount; i++) {
-            const Vec3f* pos = (Vec3f*)(data + offset);
-            mBoundingBox.expandToContain(*pos);
-            offset += getStride();
+
+        switch (mVertexFormat) {
+            case VertexFormat::PNT: {
+                for (uint32 i = 0; i < mVertexCount; i++) {
+                    const Vec3f* pos = (Vec3f*)(data + offset);
+                    mBoundingBox.expandToContain(*pos);
+                    offset += getStride();
+                }
+            }
+            break;
+
+            default:
+                throw std::runtime_error("Unsupported vertex format");
         }
     }
 

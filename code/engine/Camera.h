@@ -57,7 +57,7 @@ namespace ignimbrite {
         const Mat4f &getClipMatrix() const;
         const Mat4f &getViewMatrix() const;
         const Mat4f &getProjMatrix() const;
-        const Mat4f &getViewProjMatrix() const;
+        const Mat4f &getViewProjClipMatrix() const;
 
         void recalculate();
         void markDirty() { mIsDirty = true; }
@@ -83,10 +83,10 @@ namespace ignimbrite {
         float32 mOrthoWidth  = 100.0f;
 
         Frustum mFrustum;
-        Mat4f mClipMatrix     = Mat4f(1.0f);
-        Mat4f mViewMatrix     = Mat4f(1.0f);
-        Mat4f mProjMatrix     = Mat4f(1.0f);
-        Mat4f mViewProjMatrix = Mat4f(1.0f);
+        Mat4f mClipMatrix         = Mat4f(1.0f);
+        Mat4f mViewMatrix         = Mat4f(1.0f);
+        Mat4f mProjMatrix         = Mat4f(1.0f);
+        Mat4f mViewProjClipMatrix = Mat4f(1.0f);
 
     };
 

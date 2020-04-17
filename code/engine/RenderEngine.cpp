@@ -7,12 +7,21 @@
 /* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
+#include <Geometry.h>
 #include <RenderEngine.h>
+#include <PipelineContext.h>
 
 namespace ignimbrite {
 
     RenderEngine::RenderEngine() {
         mContext = std::make_shared<IRenderContext>();
+    }
+
+    RenderEngine::~RenderEngine() {
+        if (mFullscreenQuad.isNotNull()) {
+            mRenderDevice->destroyVertexBuffer(mFullscreenQuad);
+            mFullscreenQuad = ID<IRenderDevice::VertexBuffer>();
+        }
     }
 
     void RenderEngine::setCamera(RefCounted<Camera> camera) {
@@ -31,7 +40,7 @@ namespace ignimbrite {
         mContext->setRenderDevice(mRenderDevice.get());
     }
 
-    void RenderEngine::setTargetSurface(ID<ignimbrite::IRenderDevice::Surface> surface) {
+    void RenderEngine::setTargetSurface(ID<IRenderDevice::Surface> surface) {
         CHECK_DEVICE_PRESENT();
 
         if (surface == mTargetSurface)
@@ -42,9 +51,33 @@ namespace ignimbrite {
 
         uint32 width, height;
         mRenderDevice->getSurfaceSize(surface, width, height);
-        mOffscreenTarget = std::make_shared<RenderTarget>(mRenderDevice);
-        mOffscreenTarget->createTargetFromFormat(width, height, RenderTarget::DefaultFormat::Color0AndDepthStencil);
+
+        mOffscreenTarget1 = std::make_shared<RenderTarget>(mRenderDevice);
+        mOffscreenTarget1->createTargetFromFormat(width, height, RenderTarget::DefaultFormat::Color0AndDepthStencil);
+        mOffscreenTarget2 = std::make_shared<RenderTarget>(mRenderDevice);
+        mOffscreenTarget2->createTargetFromFormat(width, height, RenderTarget::DefaultFormat::Color0AndDepthStencil);
+
+        auto sampler = std::make_shared<Sampler>(mRenderDevice);
+        sampler->setHighQualityFiltering();
+
+        mOffscreenTarget1->getAttachment(0)->setSampler(sampler);
+        mOffscreenTarget2->getAttachment(0)->setSampler(sampler);
+
         mTargetSurface = surface;
+    }
+
+    void RenderEngine::setRenderArea(uint32 x, uint32 y, uint32 w, uint32 h) {
+        mRenderArea.x = x;
+        mRenderArea.y = y;
+        mRenderArea.w = w;
+        mRenderArea.h = h;
+    }
+
+    void RenderEngine::setPresentationPass(RefCounted<Material> present) {
+        CHECK_DEVICE_PRESENT();
+
+        mPresentationMaterial = std::move(present);
+        Geometry::createFullscreenQuad(mFullscreenQuad, mRenderDevice);
     }
 
     void RenderEngine::addRenderable(RefCounted<IRenderable> object) {
@@ -60,7 +93,7 @@ namespace ignimbrite {
         mRenderObjects.emplace_back(std::move(object));
     }
 
-    void RenderEngine::removeRenderable(const RefCounted <ignimbrite::IRenderable> &object) {
+    void RenderEngine::removeRenderable(const RefCounted <IRenderable> &object) {
         auto found = std::find(mRenderObjects.begin(), mRenderObjects.end(), object);
 
         if (found == mRenderObjects.end())
@@ -84,7 +117,7 @@ namespace ignimbrite {
         mLightSources.emplace_back(std::move(light));
     }
 
-    void RenderEngine::removeLightSource(const RefCounted <ignimbrite::Light> &light) {
+    void RenderEngine::removeLightSource(const RefCounted <Light> &light) {
         auto found = std::find(mLightSources.begin(), mLightSources.end(), light);
 
         if (found == mLightSources.end())
@@ -93,10 +126,32 @@ namespace ignimbrite {
         mLightSources.erase(found);
     }
 
+    void RenderEngine::addPostEffect(RefCounted<IPostEffect> effect) {
+        auto found = std::find(mPostEffects.begin(), mPostEffects.end(), effect);
+
+        if (found != mPostEffects.end())
+            throw std::runtime_error("Engine already contains this effect object");
+
+        effect->onAddedToPipeline(mOffscreenTarget1->getFramebufferFormat());
+        mPostEffects.emplace_back(std::move(effect));
+    }
+
+    void RenderEngine::removePostEffect(const RefCounted<IPostEffect> &effect) {
+        auto found = std::find(mPostEffects.begin(), mPostEffects.end(), effect);
+
+        if (found == mPostEffects.end())
+            throw std::runtime_error("Engine does not contain such effect object");
+
+        mPostEffects.erase(found);
+    }
+
     void RenderEngine::draw() {
         CHECK_CAMERA_PRESENT();
         CHECK_DEVICE_PRESENT();
         CHECK_SURFACE_PRESENT();
+        CHECK_FINAL_PASS_PRESENT();
+
+        RefCounted<RenderTarget> resultPostEffectsPass;
 
         // Draw consists of 4 main stages
         // 1. Generate shadow maps and do all the pre-render steps
@@ -157,15 +212,65 @@ namespace ignimbrite {
             RenderQueueElement::SortPredicate predicate;
             std::sort(mVisibleSortedQueue.begin(), mVisibleSortedQueue.end(), predicate);
 
-            // Pass to object render context and call render for each
-            for (const auto& element: mVisibleSortedQueue) {
-                element.object->onRender(*mContext);
+            // todo: Bind render target not surface
+            {
+                static std::vector<IRenderDevice::Color> clearColors = { IRenderDevice::Color{0,0,0,0} };
+                IRenderDevice::Region region = { mRenderArea.x, mRenderArea.y, { mRenderArea.w, mRenderArea.h } };
+
+                mRenderDevice->drawListBegin();
+                mRenderDevice->drawListBindFramebuffer(mOffscreenTarget1->getHandle(), clearColors, region);
+                PipelineContext::cacheFramebufferBinding(mOffscreenTarget1->getHandle());
+
+                // Pass to object render context and call render for each
+                for (const auto& element: mVisibleSortedQueue) {
+                    element.object->onRender(*mContext);
+                }
+
+                mRenderDevice->drawListEnd();
+
             }
+
+
         }
 
-        // todo: post processing
+        {
+            auto source = mOffscreenTarget1;
+            auto dest = mOffscreenTarget2;
 
-        // todo: presenting
+            for (auto& effect: mPostEffects) {
+                effect->execute(source, dest);
+                std::swap(source, dest);
+            }
+
+            resultPostEffectsPass = source;
+        }
+
+        {
+            IRenderDevice::Color color = { 0.0f, 0.0f, 0.0f, 0.0f };
+            IRenderDevice::Region region = { mRenderArea.x, mRenderArea.y, { mRenderArea.w, mRenderArea.h } };
+
+            const auto& resultFrame = resultPostEffectsPass->getAttachment(0);
+            static String texture0 = "Texture0";
+            mPresentationMaterial->setTexture2D(texture0, resultFrame);
+            mPresentationMaterial->updateUniformData();
+
+            mRenderDevice->drawListBegin();
+            mRenderDevice->drawListBindSurface(mTargetSurface, color, region);
+            PipelineContext::cacheSurfaceBinding(mTargetSurface);
+            mPresentationMaterial->bindGraphicsPipeline();
+            mPresentationMaterial->bindUniformData();
+            mRenderDevice->drawListBindVertexBuffer(mFullscreenQuad, 0, 0);
+            mRenderDevice->drawListDraw(6, 1);
+            mRenderDevice->drawListEnd();
+
+            mRenderDevice->flush();
+            mRenderDevice->synchronize();
+            mRenderDevice->swapBuffers(mTargetSurface);
+        }
+    }
+
+    const RefCounted <RenderTarget::Format> &RenderEngine::getOffscreenTargetFormat() const {
+        return mOffscreenTarget1->getFramebufferFormat();
     }
 
     const String &RenderEngine::getName() {
@@ -187,5 +292,11 @@ namespace ignimbrite {
         if (mTargetSurface.isNull())
             throw std::runtime_error("Target Surface is not specified");
     }
+
+    void RenderEngine::CHECK_FINAL_PASS_PRESENT() const {
+        if (mPresentationMaterial == nullptr)
+            throw std::runtime_error("Presentation material is not specified");
+    }
+
 
 }

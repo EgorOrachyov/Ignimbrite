@@ -95,6 +95,9 @@ namespace ignimbrite {
             }
         }
 
+        // Update implicitly for safety
+        mesh->updateBoundingVolume();
+
         return mesh;
     }
 
