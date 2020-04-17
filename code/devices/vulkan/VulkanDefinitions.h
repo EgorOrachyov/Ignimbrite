@@ -75,6 +75,8 @@ namespace ignimbrite {
             switch (color) {
                 case SamplerBorderColor::Black:
                     return VkBorderColor::VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+                case SamplerBorderColor::White:
+                    return VkBorderColor::VK_BORDER_COLOR_INT_OPAQUE_WHITE;
                 default:
                     throw InvalidEnum();
             }

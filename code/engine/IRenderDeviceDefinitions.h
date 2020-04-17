@@ -114,7 +114,8 @@ namespace ignimbrite {
 
     /** Vulkan has only predefined colors */
     enum class SamplerBorderColor {
-        Black
+        Black,
+        White
     };
 
     enum class PolygonMode {

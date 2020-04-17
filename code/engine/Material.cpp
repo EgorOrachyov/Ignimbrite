@@ -114,7 +114,7 @@ namespace ignimbrite {
             }
         }
         // If textures were modified, therefore we need to recreate uniform set
-        if (mUniformTexturesWereModified) {
+        if (mUniformTexturesWereModified || mUniformSet.isNull()) {
             IRenderDevice::UniformSetDesc setDesc;
             setDesc.textures.reserve(mTextures.size());
             setDesc.buffers.reserve(mUniformBuffers.size());

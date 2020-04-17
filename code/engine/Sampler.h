@@ -21,7 +21,7 @@ namespace ignimbrite {
         explicit Sampler(RefCounted<IRenderDevice> device);
         ~Sampler() override;
 
-        void setHighQualityFiltering();
+        void setHighQualityFiltering(SamplerRepeatMode mode = SamplerRepeatMode::Repeat);
 
         void releaseHandle();
         bool isValidHandle();
