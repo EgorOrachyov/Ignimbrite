@@ -13,6 +13,9 @@
 
 namespace ignimbrite {
 
+// todo: remove !!!
+#define SHADOWMAP_SIZE 4096
+
     RenderEngine::RenderEngine() {
         mContext = std::make_shared<IRenderContext>();
     }
@@ -38,6 +41,17 @@ namespace ignimbrite {
 
         mRenderDevice = std::move(device);
         mContext->setRenderDevice(mRenderDevice.get());
+
+        mShadowsRenderTarget.reset(new RenderTarget(mRenderDevice));
+        mShadowsRenderTarget->createTargetFromFormat(
+                SHADOWMAP_SIZE, SHADOWMAP_SIZE,
+                RenderTarget::DefaultFormat::DepthStencil);
+
+        RefCounted<Sampler> sampler = std::make_shared<Sampler>(mRenderDevice);
+        sampler->setHighQualityFiltering(SamplerRepeatMode::ClampToBorder);
+        mShadowsRenderTarget->getDepthStencilAttachment()->setSampler(sampler);
+
+        mContext->setShadowsRenderTarget(mShadowsRenderTarget);
     }
 
     void RenderEngine::setTargetSurface(ID<IRenderDevice::Surface> surface) {
@@ -90,6 +104,7 @@ namespace ignimbrite {
         IRenderable* objectPtr = object.get();
         mRenderLayers[layer].emplace_back(objectPtr);
 
+        object->onAddToScene(*mContext);
         mRenderObjects.emplace_back(std::move(object));
     }
 
@@ -151,6 +166,7 @@ namespace ignimbrite {
         CHECK_SURFACE_PRESENT();
         CHECK_FINAL_PASS_PRESENT();
 
+        // This target will be finally presented to the screen
         RefCounted<RenderTarget> resultPostEffectsPass;
 
         // Draw consists of 4 main stages
@@ -159,12 +175,96 @@ namespace ignimbrite {
         // 3. Run post processing on generated image
         // 4. Present image
 
-        // todo: shadow mapping
-
-        // todo: main pass
+        mRenderDevice->drawListBegin();
 
         Vec3f cameraPos = mCamera->getPosition();
         const auto& frustum = mCamera->getFrustum();
+
+        // todo: make shadow distance variable ?
+        float shadowDistance = 20.0f;
+        Frustum frustumCut = frustum;
+        frustumCut.cutFrustum(shadowDistance / mCamera->getFarClip());
+
+        for (auto &light : mLightSources) {
+            if (!light->castShadow()) {
+                break;
+            }
+
+            mContext->setGlobalLight(light.get());
+
+            Vec3f lightpos = light->getPosition();
+
+            light->buildViewFrustum(frustumCut);
+            const auto &lightFrustum = light->getFrustum();
+
+            for (const auto& layer: mRenderLayers) {
+                const auto& list = layer.second;
+
+                if (list.empty())
+                    continue;
+
+                mCollectQueue.clear();
+                mVisibleSortedQueue.clear();
+
+                for (auto object: list) {
+                    // object not visible at all
+                    if (!object->isVisible())
+                        continue;
+
+                    Vec3f pos = object->getWorldPosition();
+                    float32 maxViewDistanceSq = object->getMaxViewDistanceSquared();
+                    float32 distanceSq = glm::distance2(lightpos, pos);
+
+                    // Object too far and we can cull it
+                    if (distanceSq > maxViewDistanceSq && object->canApplyCulling())
+                        continue;
+
+                    RenderQueueElement element = {};
+                    element.object = object;
+                    element.viewDistance = std::sqrt(distanceSq);
+                    element.boundingBox = object->getWorldBoundingBox();
+
+                    mCollectQueue.push_back(element);
+                }
+
+                // Do frustum culling
+                for (const auto& element: mCollectQueue) {
+                    if (lightFrustum.isInside(element.boundingBox))
+                        mVisibleSortedQueue.push_back(element);
+                }
+
+                // Notify elements entered the render queue successfully and get it material for rendering
+                for (auto& element: mVisibleSortedQueue) {
+                    element.object->onShadowRenderQueueEntered(element.viewDistance);
+                    element.material = element.object->getShadowRenderMaterial();
+                }
+
+                // Sort with distance and material predicate
+                RenderQueueElement::SortPredicate predicate;
+                std::sort(mVisibleSortedQueue.begin(), mVisibleSortedQueue.end(), predicate);
+
+                {
+                    // TODO: make shadow resolution variable
+                    IRenderDevice::Region shadowsFbArea = {0, 0, {SHADOWMAP_SIZE, SHADOWMAP_SIZE}};
+
+                    mRenderDevice->drawListBindFramebuffer(
+                            mShadowsRenderTarget->getHandle(),
+                            std::vector<IRenderDevice::Color>(),
+                            shadowsFbArea);
+                    PipelineContext::cacheFramebufferBinding(mShadowsRenderTarget->getHandle());
+                    PipelineContext::cachePipelineBinding(ID<IRenderDevice::GraphicsPipeline>());
+
+                    for (const auto& element: mVisibleSortedQueue) {
+                        element.object->onShadowRender(*mContext);
+                    }
+                }
+            }
+
+            // only 1 light casts shadows
+            break;
+        }
+
+        // todo: main pass
 
         for (const auto& layer: mRenderLayers) {
             const auto& list = layer.second;
@@ -212,7 +312,6 @@ namespace ignimbrite {
             RenderQueueElement::SortPredicate predicate;
             std::sort(mVisibleSortedQueue.begin(), mVisibleSortedQueue.end(), predicate);
 
-            // todo: Bind render target not surface
             {
                 static std::vector<IRenderDevice::Color> clearColors = { IRenderDevice::Color{0,0,0,0} };
                 IRenderDevice::Region region = { mRenderArea.x, mRenderArea.y, { mRenderArea.w, mRenderArea.h } };
@@ -227,10 +326,7 @@ namespace ignimbrite {
                 }
 
                 mRenderDevice->drawListEnd();
-
             }
-
-
         }
 
         {

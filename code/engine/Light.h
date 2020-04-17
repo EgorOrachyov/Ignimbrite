@@ -34,6 +34,7 @@ namespace ignimbrite {
         void setRotation(const Vec3f& axis, float32 angle);
         void rotate(const Vec3f& axis, float32 angle);
         void move(const Vec3f& vec);
+        void setClipMatrix(const Mat4f &clipMatrix) { mClipMatrix = clipMatrix; };
 
         Type getType() const { return mType; }
         const Vec3f &getPosition() const { return mPosition; }
@@ -47,7 +48,12 @@ namespace ignimbrite {
 
         const Mat4f &getViewMatrix() const { return mViewMatrix; }
         const Mat4f &getProjMatrix() const { return mProjectionMatrix; }
+        const Mat4f &getClipMatrix() const { return mClipMatrix; }
+        
+        // todo: cache this matrices for intensive get calls
+      
         Mat4f getViewProjMatrix() const { return mProjectionMatrix * mViewMatrix; }
+        Mat4f getViewProjClipMatrix() const { return mClipMatrix * mProjectionMatrix * mViewMatrix; }
 
         void buildViewFrustum(const Frustum &cameraFrustum);
 
@@ -67,6 +73,7 @@ namespace ignimbrite {
 
         Mat4f mViewMatrix = Mat4f(1.0f);
         Mat4f mProjectionMatrix = Mat4f(1.0f);
+        Mat4f mClipMatrix = Mat4f(1.0f);
     };
 
 }

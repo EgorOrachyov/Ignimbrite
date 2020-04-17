@@ -82,6 +82,8 @@ namespace ignimbrite {
         std::vector<RefCounted<IRenderable>> mRenderObjects;
         std::vector<RefCounted<IPostEffect>> mPostEffects;
 
+        RefCounted<RenderTarget> mShadowsRenderTarget;
+
         std::unordered_map<uint32, std::vector<IRenderable*>> mRenderLayers;
 
     };

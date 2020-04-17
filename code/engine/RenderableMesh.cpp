@@ -20,15 +20,17 @@ namespace ignimbrite {
             throw std::runtime_error("An attempt to set null device");
 
         mDevice = std::move(device);
-    } 
-    
-    
+    }
+
     void RenderableMesh::setRenderMesh(RefCounted<Mesh> mesh, bool useAsShadowMesh) {
         if (mesh == nullptr)
             throw std::runtime_error("An attempt to set null mesh");
 
-        mRenderMesh = std::move(mesh);
-        if (useAsShadowMesh) mShadowMesh = mRenderMesh;
+        if (!useAsShadowMesh) {
+            mRenderMesh = std::move(mesh);
+        } else {
+            mShadowMesh = std::move(mesh);
+        }
 
         markDirty();
     }
@@ -37,8 +39,11 @@ namespace ignimbrite {
         if (material == nullptr)
             throw std::runtime_error("An attempt to set null material");
 
-        mRenderMaterial = std::move(material);
-        if (useAsShadowMaterial) mShadowMaterial = mRenderMaterial;
+        if (!useAsShadowMaterial) {
+            mRenderMaterial = std::move(material);
+        } else {
+            mShadowMaterial = material;
+        }
 
         markDirty();
     }
@@ -85,7 +90,6 @@ namespace ignimbrite {
         if (mVertexBuffer.isNotNull())
             throw std::runtime_error("An attempt to recreate buffer");
 
-
         if (mIndexBuffer.isNotNull())
             throw std::runtime_error("An attempt to recreate buffer");
 
@@ -112,6 +116,16 @@ namespace ignimbrite {
         }
     }
 
+    void RenderableMesh::onAddToScene(const IRenderContext &context) {
+        auto &shadowsPipeline = mShadowMaterial->getGraphicsPipeline();
+
+        // check if shadows graphics pipeline was not initialized
+        if (shadowsPipeline->getHandle().isNull()) {
+            shadowsPipeline->setTargetFormat(context.getShadowsRenderTarget()->getFramebufferFormat());
+            shadowsPipeline->createPipeline();
+        }
+    }
+
     void RenderableMesh::onRenderQueueEntered(float32 distFromViewPoint) {
         // Possibly select LOD, but this mesh has only LOD 0
         // Do nothing
@@ -120,16 +134,27 @@ namespace ignimbrite {
     void RenderableMesh::onRender(const IRenderContext &context) {
         auto device = context.getRenderDevice();
         auto camera = context.getCamera();
+        auto light = context.getGlobalLight();
 
-        auto Model = glm::translate(mWorldPosition) * mRotation;
-        auto MVP = camera->getViewProjClipMatrix() * Model;
+        auto model = glm::translate(mWorldPosition) * mRotation;
+        auto camViewProj = camera->getViewProjClipMatrix();
+
+        if (light != nullptr) {
+            auto lightViewProj = light->getViewProjClipMatrix();
+
+            mRenderMaterial->setMat4("UBO.lightSpace", lightViewProj);
+            mRenderMaterial->setVec3("UBO.lightDir", light->getDirection());
+            mRenderMaterial->setTexture2D("shadowMap", context.getShadowMap());
+        }
 
         // todo: another bindings
-        static String mvpName = "bufferVals.mvp";
-        mRenderMaterial->setMat4(mvpName, MVP);
+        mRenderMaterial->setMat4("UBO.viewProj", camViewProj);
+        mRenderMaterial->setMat4("UBO.model", model);
+
         mRenderMaterial->updateUniformData();
         mRenderMaterial->bindGraphicsPipeline();
         mRenderMaterial->bindUniformData();
+
         device->drawListBindVertexBuffer(mVertexBuffer, 0, 0);
         device->drawListBindIndexBuffer(mIndexBuffer, IndicesType::Uint32, 0);
         device->drawListDrawIndexed(mRenderMesh->getIndicesCount(), 1);
@@ -141,9 +166,22 @@ namespace ignimbrite {
     }
 
     void RenderableMesh::onShadowRender(const IRenderContext &context) {
-        auto& device = *context.getRenderDevice();
+        auto device = context.getRenderDevice();
+        auto light = context.getGlobalLight();
 
-        // todo: generate vertex / index buffers for shadow mesh
+        auto model = glm::translate(mWorldPosition) * mRotation;
+        auto lightMVP = light->getViewProjClipMatrix() * model;
+
+        // todo: another bindings
+        mShadowMaterial->setMat4("UBO.depthMVP", lightMVP);
+
+        mShadowMaterial->updateUniformData();
+        mShadowMaterial->bindGraphicsPipeline();
+        mShadowMaterial->bindUniformData();
+
+        device->drawListBindVertexBuffer(mVertexBuffer, 0, 0);
+        device->drawListBindIndexBuffer(mIndexBuffer, ignimbrite::IndicesType::Uint32, 0);
+        device->drawListDrawIndexed(mRenderMesh->getIndicesCount(), 1);
     }
 
     Vec3f RenderableMesh::getWorldPosition() const {

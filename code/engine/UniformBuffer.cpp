@@ -8,6 +8,7 @@
 /**********************************************************************************/
 
 #include <UniformBuffer.h>
+#include <cstring>
 
 namespace ignimbrite {
 
