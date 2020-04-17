@@ -142,7 +142,7 @@ private:
         window.surface = VulkanExtensions::createSurfaceGLFW(
                 (VulkanRenderDevice &) *device, window.handle, window.w, window.h, window.name);
 
-        // vulkan uses inverted y axis and half of z axis
+        // vulkan uses inverted y axis and half of z axis (for OpenGL use identity)
         clipMatrix = glm::mat4(
                 1.0f, 0.0f, 0.0f, 0.0f,
                 0.0f, -1.0f, 0.0f, 0.0f,

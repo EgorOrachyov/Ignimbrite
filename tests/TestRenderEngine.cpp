@@ -9,9 +9,12 @@
 
 #include <Material.h>
 #include <MeshLoader.h>
+#include <NoirFilter.h>
+#include <InverseFilter.h>
 #include <RenderEngine.h>
 #include <RenderableMesh.h>
 #include <VulkanExtensions.h>
+#include <MaterialFullscreen.h>
 #include <VulkanRenderDevice.h>
 #include <VertexLayoutFactory.h>
 
@@ -105,6 +108,17 @@ public:
         engine->setCamera(camera);
         engine->addLightSource(light);
         engine->setRenderArea(0, 0, window.w, window.h);
+
+        auto presentationPass = MaterialFullscreen::fullscreenQuad(PREFIX_PATH, window.surface, device);
+        engine->setPresentationPass(presentationPass);
+    }
+
+    void initPostEffects() {
+        auto inverse = std::make_shared<InverseFilter>(device, PREFIX_PATH);
+        engine->addPostEffect(inverse);
+
+        auto noir = std::make_shared<NoirFilter>(device, PREFIX_PATH);
+        engine->addPostEffect(noir);
     }
 
     void initMeshMaterial() {
@@ -136,7 +150,7 @@ public:
         VertexLayoutFactory::createVertexLayoutDesc(Mesh::VertexFormat::PNT, vertexBufferLayoutDesc);
 
         RefCounted<GraphicsPipeline> pipeline = std::make_shared<GraphicsPipeline>(device);
-        pipeline->setSurface(window.surface);
+        pipeline->setTargetFormat(engine->getOffscreenTargetFormat());
         pipeline->setShader(shader);
         pipeline->setVertexBuffersCount(1);
         pipeline->setVertexBufferDesc(0, vertexBufferLayoutDesc);
@@ -280,6 +294,7 @@ public:
         initCamera();
         initLight();
         initEngine();
+        initPostEffects();
         initMeshMaterial();
         initMesh();
     }
@@ -318,6 +333,7 @@ private:
     String MODEL3D_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/MeshFrag.spv";
     String SHADOWS_SHADER_PATH_VERT = "shaders/spirv/shadowmapping/ShadowsVert.spv";
     String SHADOWS_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/ShadowsFrag.spv";
+    String PREFIX_PATH = "./shaders/";
 
     String MESH_PATH = "assets/models/sphere.obj";
     String MESH_PLANE_PATH = "assets/models/plane.obj";

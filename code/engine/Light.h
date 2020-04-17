@@ -49,6 +49,10 @@ namespace ignimbrite {
         const Mat4f &getViewMatrix() const { return mViewMatrix; }
         const Mat4f &getProjMatrix() const { return mProjectionMatrix; }
         const Mat4f &getClipMatrix() const { return mClipMatrix; }
+        
+        // todo: cache this matrices for intensive get calls
+      
+        Mat4f getViewProjMatrix() const { return mProjectionMatrix * mViewMatrix; }
         Mat4f getViewProjClipMatrix() const { return mClipMatrix * mProjectionMatrix * mViewMatrix; }
 
         void buildViewFrustum(const Frustum &cameraFrustum);

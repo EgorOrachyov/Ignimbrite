@@ -10,6 +10,7 @@
 #ifndef IGNIMBRITE_RENDERENGINE_H
 #define IGNIMBRITE_RENDERENGINE_H
 
+#include <Material.h>
 #include <RenderTarget.h>
 #include <IRenderEngine.h>
 #include <RenderQueueElement.h>
@@ -21,7 +22,7 @@ namespace ignimbrite {
 
         RenderEngine();
 
-        ~RenderEngine() override = default;
+        ~RenderEngine() override;
 
         void setCamera(RefCounted<Camera> camera) override;
 
@@ -31,6 +32,8 @@ namespace ignimbrite {
 
         void setRenderArea(uint32 x, uint32 y, uint32 w, uint32 h) override;
 
+        void setPresentationPass(RefCounted<Material> present) override;
+
         void addRenderable(RefCounted<IRenderable> object) override;
 
         void removeRenderable(const RefCounted<IRenderable> &object) override;
@@ -39,7 +42,13 @@ namespace ignimbrite {
 
         void removeLightSource(const RefCounted<Light> &light) override;
 
+        void addPostEffect(RefCounted<IPostEffect> effect) override;
+
+        void removePostEffect(const RefCounted<IPostEffect> &effect) override;
+
         void draw() override;
+
+        const RefCounted<RenderTarget::Format> &getOffscreenTargetFormat() const override;
 
         const String &getName() override;
 
@@ -48,6 +57,7 @@ namespace ignimbrite {
         void CHECK_CAMERA_PRESENT() const;
         void CHECK_DEVICE_PRESENT() const;
         void CHECK_SURFACE_PRESENT() const;
+        void CHECK_FINAL_PASS_PRESENT() const;
 
         struct RenderArea {
             uint32 x = 0 , y =0;
@@ -58,14 +68,19 @@ namespace ignimbrite {
         RefCounted<Camera>         mCamera;
         RefCounted<IRenderContext> mContext;
         RefCounted<IRenderDevice>  mRenderDevice;
-        RefCounted<RenderTarget>   mOffscreenTarget;
-        ID<IRenderDevice::Surface> mTargetSurface;
+        RefCounted<RenderTarget>   mOffscreenTarget1;
+        RefCounted<RenderTarget>   mOffscreenTarget2;
+        RefCounted<Material>       mPresentationMaterial;
+
+        ID<IRenderDevice::Surface>      mTargetSurface;
+        ID<IRenderDevice::VertexBuffer> mFullscreenQuad;
 
         std::vector<RenderQueueElement> mCollectQueue;
         std::vector<RenderQueueElement> mVisibleSortedQueue;
 
         std::vector<RefCounted<Light>>       mLightSources;
         std::vector<RefCounted<IRenderable>> mRenderObjects;
+        std::vector<RefCounted<IPostEffect>> mPostEffects;
 
         RefCounted<RenderTarget> mShadowsRenderTarget;
 
