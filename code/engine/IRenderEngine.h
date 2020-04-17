@@ -29,6 +29,7 @@ namespace ignimbrite {
         virtual void setCamera(RefCounted<Camera> camera) = 0;
         virtual void setRenderDevice(RefCounted<IRenderDevice> device) = 0;
         virtual void setTargetSurface(ID<IRenderDevice::Surface> surface) = 0;
+        virtual void setShadowTarget(RefCounted<Light> light, RefCounted<RenderTarget> target) = 0;
         virtual void setRenderArea(uint32 x, uint32 y, uint32 w, uint32 h) = 0;
         virtual void setPresentationPass(RefCounted<Material> present) = 0;
 
@@ -43,6 +44,7 @@ namespace ignimbrite {
         
         virtual void draw() = 0;
 
+        virtual const RefCounted<RenderTarget::Format> &getShadowTargetFormat() const = 0;
         virtual const RefCounted<RenderTarget::Format> &getOffscreenTargetFormat() const = 0;
         virtual const String& getName();
 

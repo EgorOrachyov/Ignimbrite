@@ -111,14 +111,23 @@ public:
 
         auto presentationPass = MaterialFullscreen::fullscreenQuad(PREFIX_PATH, window.surface, device);
         engine->setPresentationPass(presentationPass);
+
+        auto shadowTarget = std::make_shared<RenderTarget>(device);
+        shadowTarget->createTargetFromFormat(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, RenderTarget::DefaultFormat::DepthStencil);
+
+        auto sampler = std::make_shared<Sampler>(device);
+        sampler->setHighQualityFiltering(SamplerRepeatMode::ClampToBorder);
+
+        shadowTarget->getDepthStencilAttachment()->setSampler(sampler);
+        engine->setShadowTarget(light, shadowTarget);
     }
 
     void initPostEffects() {
-        auto inverse = std::make_shared<InverseFilter>(device, PREFIX_PATH);
-        engine->addPostEffect(inverse);
+        //auto inverse = std::make_shared<InverseFilter>(device, PREFIX_PATH);
+        //engine->addPostEffect(inverse);
 
-        auto noir = std::make_shared<NoirFilter>(device, PREFIX_PATH);
-        engine->addPostEffect(noir);
+        //auto noir = std::make_shared<NoirFilter>(device, PREFIX_PATH);
+        //engine->addPostEffect(noir);
     }
 
     void initMeshMaterial() {
@@ -183,6 +192,7 @@ public:
         vertShadowLayoutDesc.attributes.push_back({0, 0, DataFormat::R32G32B32_SFLOAT});
 
         RefCounted<GraphicsPipeline> shadowsPipeline = std::make_shared<GraphicsPipeline>(device);
+        shadowsPipeline->setTargetFormat(engine->getShadowTargetFormat());
         shadowsPipeline->setShader(shadowShader);
         shadowsPipeline->setPolygonCullMode(PolygonCullMode::Front);
         shadowsPipeline->setDepthTestEnable(true);
@@ -190,8 +200,7 @@ public:
         shadowsPipeline->setDepthCompareOp(CompareOperation::LessOrEqual);
         shadowsPipeline->setVertexBuffersCount(1);
         shadowsPipeline->setVertexBufferDesc(0, vertShadowLayoutDesc);
-        // this pipeline will be created by renderable itself, when shadows render target will be given
-        // shadowsPipeline->createPipeline();
+        shadowsPipeline->createPipeline();
 
         shadowMaterial = std::make_shared<Material>(device);
         shadowMaterial->setGraphicsPipeline(shadowsPipeline);
@@ -209,10 +218,10 @@ public:
                 RefCounted<Material> shadowMat = shadowMaterial->clone();
 
                 mesh->setRenderDevice(device);
-                mesh->setRenderMesh(data, false);
-                mesh->setRenderMesh(data, true);
-                mesh->setRenderMaterial(mat, false);
-                mesh->setRenderMaterial(shadowMat, true);
+                mesh->setRenderMesh(data);
+                mesh->setRenderMaterial(mat);
+                mesh->setShadowRenderMesh(data);
+                mesh->setShadowRenderMaterial(shadowMat);
                 mesh->translate(Vec3f(x * MESH_STEP, 0, z * MESH_STEP));
                 mesh->create();
                 mesh->setVisible(true);
@@ -239,10 +248,10 @@ public:
 
         RefCounted<RenderableMesh> planeMesh = std::make_shared<RenderableMesh>();
         planeMesh->setRenderDevice(device);
-        planeMesh->setRenderMesh(planeMeshData, false);
-        planeMesh->setRenderMesh(planeMeshData, true);
-        planeMesh->setRenderMaterial(mat, false);
-        planeMesh->setRenderMaterial(shadowMat, true);
+        planeMesh->setRenderMesh(planeMeshData);
+        planeMesh->setRenderMaterial(mat);
+        planeMesh->setShadowRenderMesh(planeMeshData);
+        planeMesh->setShadowRenderMaterial(shadowMat);
         planeMesh->translate(Vec3f(0, -2, 0));
         planeMesh->create();
         planeMesh->setVisible(true);
@@ -257,25 +266,34 @@ public:
         if (glfwGetKey(window.handle, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             glfwSetWindowShouldClose(window.handle, true);
 
-        float32 cameraSpeed = 2.0f / 60.0f;
-        float32 cameraRotationSpeed = 0.5f / 60.0f;
+        float32 movementSpeed = 2.0f / 60.0f;
+        float32 rotationSpeed = 0.5f / 60.0f;
         if (glfwGetKey(window.handle, GLFW_KEY_W) == GLFW_PRESS)
-            camera->move(cameraSpeed * camera->getDirection());
+            camera->move(movementSpeed * camera->getDirection());
         if (glfwGetKey(window.handle, GLFW_KEY_S) == GLFW_PRESS)
-            camera->move(-cameraSpeed * camera->getDirection());
+            camera->move(-movementSpeed * camera->getDirection());
         if (glfwGetKey(window.handle, GLFW_KEY_A) == GLFW_PRESS)
-            camera->move(-camera->getRight() * cameraSpeed);
+            camera->move(-camera->getRight() * movementSpeed);
         if (glfwGetKey(window.handle, GLFW_KEY_D) == GLFW_PRESS)
-            camera->move(camera->getRight() * cameraSpeed);
+            camera->move(camera->getRight() * movementSpeed);
         if (glfwGetKey(window.handle, GLFW_KEY_Q) == GLFW_PRESS)
-            camera->move(-camera->getUp() * cameraSpeed);
+            camera->move(-camera->getUp() * movementSpeed);
         if (glfwGetKey(window.handle, GLFW_KEY_E) == GLFW_PRESS)
-            camera->move(camera->getUp() * cameraSpeed);
+            camera->move(camera->getUp() * movementSpeed);
         if (glfwGetKey(window.handle, GLFW_KEY_LEFT) == GLFW_PRESS)
-            camera->rotate(glm::vec3(0, 1, 0), cameraRotationSpeed);
+            camera->rotate(glm::vec3(0, 1, 0), rotationSpeed);
         if (glfwGetKey(window.handle, GLFW_KEY_RIGHT) == GLFW_PRESS)
-            camera->rotate(glm::vec3(0, 1, 0), -cameraRotationSpeed);
+            camera->rotate(glm::vec3(0, 1, 0), -rotationSpeed);
 
+        if (glfwGetKey(window.handle, GLFW_KEY_T) == GLFW_PRESS)
+            light->rotate(glm::vec3(1, 0, 0), rotationSpeed);
+        if (glfwGetKey(window.handle, GLFW_KEY_G) == GLFW_PRESS)
+            light->rotate(glm::vec3(1, 0, 0), -rotationSpeed);
+        if (glfwGetKey(window.handle, GLFW_KEY_F) == GLFW_PRESS)
+            light->rotate(glm::vec3(0, 1, 0), rotationSpeed);
+        if (glfwGetKey(window.handle, GLFW_KEY_H) == GLFW_PRESS)
+            light->rotate(glm::vec3(0, 1, 0), -rotationSpeed);
+        
         camera->recalculate();
     }
 
@@ -324,6 +342,8 @@ private:
 
     std::vector<RefCounted<RenderableMesh>> meshes;
     std::vector<Vec4f>                      rotations;
+
+    const uint32 SHADOW_MAP_SIZE = 1024;
 
     const int32 MESH_COUNT_X2 = 5;
     const int32 MESH_COUNT_Z2 = 5;

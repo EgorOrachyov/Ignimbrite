@@ -13,9 +13,6 @@
 
 namespace ignimbrite {
 
-// todo: remove !!!
-#define SHADOWMAP_SIZE 4096
-
     RenderEngine::RenderEngine() {
         mContext = std::make_shared<IRenderContext>();
     }
@@ -41,17 +38,6 @@ namespace ignimbrite {
 
         mRenderDevice = std::move(device);
         mContext->setRenderDevice(mRenderDevice.get());
-
-        mShadowsRenderTarget.reset(new RenderTarget(mRenderDevice));
-        mShadowsRenderTarget->createTargetFromFormat(
-                SHADOWMAP_SIZE, SHADOWMAP_SIZE,
-                RenderTarget::DefaultFormat::DepthStencil);
-
-        RefCounted<Sampler> sampler = std::make_shared<Sampler>(mRenderDevice);
-        sampler->setHighQualityFiltering(SamplerRepeatMode::ClampToBorder);
-        mShadowsRenderTarget->getDepthStencilAttachment()->setSampler(sampler);
-
-        mContext->setShadowsRenderTarget(mShadowsRenderTarget);
     }
 
     void RenderEngine::setTargetSurface(ID<IRenderDevice::Surface> surface) {
@@ -78,6 +64,13 @@ namespace ignimbrite {
         mOffscreenTarget2->getAttachment(0)->setSampler(sampler);
 
         mTargetSurface = surface;
+    }
+
+    void RenderEngine::setShadowTarget(RefCounted<Light> light, RefCounted<RenderTarget> target) {
+        // Now only one light cast shadows, but this could be fixed via map (light -> target)
+        mShadowsRenderTarget = std::move(target);
+        mShadowTargetFormat = mShadowsRenderTarget->getFramebufferFormat();
+        mContext->setShadowsRenderTarget(mShadowsRenderTarget.get());
     }
 
     void RenderEngine::setRenderArea(uint32 x, uint32 y, uint32 w, uint32 h) {
@@ -244,13 +237,10 @@ namespace ignimbrite {
                 std::sort(mVisibleSortedQueue.begin(), mVisibleSortedQueue.end(), predicate);
 
                 {
-                    // TODO: make shadow resolution variable
-                    IRenderDevice::Region shadowsFbArea = {0, 0, {SHADOWMAP_SIZE, SHADOWMAP_SIZE}};
+                    IRenderDevice::Region region = {0, 0, {mShadowsRenderTarget->getWidth(), mShadowsRenderTarget->getHeight()}};
+                    std::vector<IRenderDevice::Color> clearColors;
 
-                    mRenderDevice->drawListBindFramebuffer(
-                            mShadowsRenderTarget->getHandle(),
-                            std::vector<IRenderDevice::Color>(),
-                            shadowsFbArea);
+                    mRenderDevice->drawListBindFramebuffer(mShadowsRenderTarget->getHandle(), clearColors, region);
                     PipelineContext::cacheFramebufferBinding(mShadowsRenderTarget->getHandle());
                     PipelineContext::cachePipelineBinding(ID<IRenderDevice::GraphicsPipeline>());
 
@@ -316,7 +306,7 @@ namespace ignimbrite {
                 static std::vector<IRenderDevice::Color> clearColors = { IRenderDevice::Color{0,0,0,0} };
                 IRenderDevice::Region region = { mRenderArea.x, mRenderArea.y, { mRenderArea.w, mRenderArea.h } };
 
-                mRenderDevice->drawListBegin();
+                //mRenderDevice->drawListBegin();
                 mRenderDevice->drawListBindFramebuffer(mOffscreenTarget1->getHandle(), clearColors, region);
                 PipelineContext::cacheFramebufferBinding(mOffscreenTarget1->getHandle());
 
@@ -324,8 +314,6 @@ namespace ignimbrite {
                 for (const auto& element: mVisibleSortedQueue) {
                     element.object->onRender(*mContext);
                 }
-
-                mRenderDevice->drawListEnd();
             }
         }
 
@@ -342,27 +330,31 @@ namespace ignimbrite {
         }
 
         {
-            IRenderDevice::Color color = { 0.0f, 0.0f, 0.0f, 0.0f };
-            IRenderDevice::Region region = { mRenderArea.x, mRenderArea.y, { mRenderArea.w, mRenderArea.h } };
+            IRenderDevice::Color color = {0.0f, 0.0f, 0.0f, 0.0f};
+            IRenderDevice::Region region = {mRenderArea.x, mRenderArea.y, {mRenderArea.w, mRenderArea.h}};
 
-            const auto& resultFrame = resultPostEffectsPass->getAttachment(0);
+            const auto &resultFrame = resultPostEffectsPass->getAttachment(0);
             static String texture0 = "Texture0";
             mPresentationMaterial->setTexture2D(texture0, resultFrame);
             mPresentationMaterial->updateUniformData();
 
-            mRenderDevice->drawListBegin();
             mRenderDevice->drawListBindSurface(mTargetSurface, color, region);
             PipelineContext::cacheSurfaceBinding(mTargetSurface);
             mPresentationMaterial->bindGraphicsPipeline();
             mPresentationMaterial->bindUniformData();
             mRenderDevice->drawListBindVertexBuffer(mFullscreenQuad, 0, 0);
             mRenderDevice->drawListDraw(6, 1);
-            mRenderDevice->drawListEnd();
-
-            mRenderDevice->flush();
-            mRenderDevice->synchronize();
-            mRenderDevice->swapBuffers(mTargetSurface);
         }
+
+        mRenderDevice->drawListEnd();
+
+        mRenderDevice->flush();
+        mRenderDevice->synchronize();
+        mRenderDevice->swapBuffers(mTargetSurface);
+    }
+
+    const RefCounted<ignimbrite::RenderTarget::Format> &RenderEngine::getShadowTargetFormat() const {
+        return mShadowTargetFormat;
     }
 
     const RefCounted <RenderTarget::Format> &RenderEngine::getOffscreenTargetFormat() const {
@@ -393,6 +385,5 @@ namespace ignimbrite {
         if (mPresentationMaterial == nullptr)
             throw std::runtime_error("Presentation material is not specified");
     }
-
 
 }

@@ -30,6 +30,8 @@ namespace ignimbrite {
 
         void setTargetSurface(ID<IRenderDevice::Surface> surface) override;
 
+        void setShadowTarget(RefCounted<Light> light, RefCounted<RenderTarget> target) override;
+
         void setRenderArea(uint32 x, uint32 y, uint32 w, uint32 h) override;
 
         void setPresentationPass(RefCounted<Material> present) override;
@@ -48,6 +50,8 @@ namespace ignimbrite {
 
         void draw() override;
 
+        const RefCounted<ignimbrite::RenderTarget::Format> &getShadowTargetFormat() const override;
+
         const RefCounted<RenderTarget::Format> &getOffscreenTargetFormat() const override;
 
         const String &getName() override;
@@ -60,7 +64,7 @@ namespace ignimbrite {
         void CHECK_FINAL_PASS_PRESENT() const;
 
         struct RenderArea {
-            uint32 x = 0 , y =0;
+            uint32 x = 0, y =0;
             uint32 w = 0, h = 0;
         };
 
@@ -83,6 +87,7 @@ namespace ignimbrite {
         std::vector<RefCounted<IPostEffect>> mPostEffects;
 
         RefCounted<RenderTarget> mShadowsRenderTarget;
+        RefCounted<RenderTarget::Format> mShadowTargetFormat;
 
         std::unordered_map<uint32, std::vector<IRenderable*>> mRenderLayers;
 

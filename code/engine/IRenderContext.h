@@ -31,8 +31,8 @@ namespace ignimbrite {
         Camera* getDebugCamera() const { return mDebugCamera; }
         Frustum* getViewFrustum() const { return mViewFrustum; }
         Light* getGlobalLight() const { return mGlobalLight; }
-        RefCounted<Texture> getShadowMap() const { return mShadowsRenderTarget->getDepthStencilAttachment(); }
-        RefCounted<RenderTarget> getShadowsRenderTarget() const { return mShadowsRenderTarget; }
+        const RefCounted<Texture> &getShadowMap() const { return mShadowsRenderTarget->getDepthStencilAttachment(); }
+        RenderTarget* getShadowsRenderTarget() const { return mShadowsRenderTarget; }
 
         IRenderDevice* getRenderDevice() const { return mRenderDevice; }
 
@@ -42,7 +42,7 @@ namespace ignimbrite {
         void setRenderDevice(IRenderDevice* device) { mRenderDevice = device; }
         void setCamera(Camera* camera) { mCamera = camera; }
         void setGlobalLight(Light* light) { mGlobalLight = light; }
-        void setShadowsRenderTarget(RefCounted<RenderTarget> target) { mShadowsRenderTarget = std::move(target); }
+        void setShadowsRenderTarget(RenderTarget* target) { mShadowsRenderTarget = target; }
 
     protected:
 
@@ -59,7 +59,7 @@ namespace ignimbrite {
         /** Global (directional) scene light */
         Light* mGlobalLight = nullptr;
         /** Shadows render target for global directional light */
-        RefCounted<RenderTarget> mShadowsRenderTarget;
+        RenderTarget* mShadowsRenderTarget;
 
         /** Rendering config flags */
         bool mRenderShadows = false;

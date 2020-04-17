@@ -26,11 +26,8 @@ namespace ignimbrite {
         if (mesh == nullptr)
             throw std::runtime_error("An attempt to set null mesh");
 
-        if (!useAsShadowMesh) {
-            mRenderMesh = std::move(mesh);
-        } else {
-            mShadowMesh = std::move(mesh);
-        }
+        mRenderMesh = std::move(mesh);
+        if (useAsShadowMesh) mShadowMesh = mRenderMesh;
 
         markDirty();
     }
@@ -39,12 +36,25 @@ namespace ignimbrite {
         if (material == nullptr)
             throw std::runtime_error("An attempt to set null material");
 
-        if (!useAsShadowMaterial) {
-            mRenderMaterial = std::move(material);
-        } else {
-            mShadowMaterial = material;
-        }
+        mRenderMaterial = std::move(material);
+        if (useAsShadowMaterial) mShadowMaterial = mRenderMaterial;
 
+        markDirty();
+    }
+    
+    void RenderableMesh::setShadowRenderMesh(RefCounted<Mesh> mesh) {
+        if (mesh == nullptr)
+            throw std::runtime_error("An attempt to set null mesh");
+
+        mShadowMesh = std::move(mesh);
+        markDirty();
+    }
+    
+    void RenderableMesh::setShadowRenderMaterial(RefCounted<Material> material) {
+        if (material == nullptr)
+            throw std::runtime_error("An attempt to set null material");
+
+        mShadowMaterial = std::move(material);
         markDirty();
     }
 
@@ -98,11 +108,26 @@ namespace ignimbrite {
 
         uint32 ibSize = mRenderMesh->getIndicesCount() * sizeof(uint32);
         mIndexBuffer = mDevice->createIndexBuffer(BufferUsage::Static, ibSize, mRenderMesh->getIndexData());
+
+        if (mShadowVertexBuffer.isNotNull())
+            throw std::runtime_error("An attempt to recreate buffer");
+
+        if (mShadowIndexBuffer.isNotNull())
+            throw std::runtime_error("An attempt to recreate buffer");
+
+        vbSize = mShadowMesh->getStride() * mShadowMesh->getVertexCount();
+        mShadowVertexBuffer = mDevice->createVertexBuffer(BufferUsage::Static, vbSize, mShadowMesh->getVertexData());
+
+        ibSize = mShadowMesh->getIndicesCount() * sizeof(uint32);
+        mShadowIndexBuffer = mDevice->createIndexBuffer(BufferUsage::Static, ibSize, mShadowMesh->getIndexData());
     }
 
     void RenderableMesh::updateGpuBuffersData() {
         uint32 vbSize = mRenderMesh->getStride() * mRenderMesh->getVertexCount();
         mDevice->updateVertexBuffer(mVertexBuffer, vbSize, 0, mRenderMesh->getVertexData());
+
+        vbSize = mShadowMesh->getStride() * mShadowMesh->getVertexCount();
+        mDevice->updateVertexBuffer(mShadowVertexBuffer, vbSize, 0, mShadowMesh->getVertexData());
     }
 
     void RenderableMesh::releaseGpuBuffers() {
@@ -114,16 +139,18 @@ namespace ignimbrite {
             mDevice->destroyIndexBuffer(mIndexBuffer);
             mIndexBuffer = ID<IRenderDevice::IndexBuffer>();
         }
+        if (mShadowVertexBuffer.isNotNull()) {
+            mDevice->destroyVertexBuffer(mShadowVertexBuffer);
+            mShadowVertexBuffer = ID<IRenderDevice::VertexBuffer>();
+        }
+        if (mShadowIndexBuffer.isNotNull()) {
+            mDevice->destroyIndexBuffer(mShadowIndexBuffer);
+            mShadowIndexBuffer = ID<IRenderDevice::IndexBuffer>();
+        }
     }
 
     void RenderableMesh::onAddToScene(const IRenderContext &context) {
-        auto &shadowsPipeline = mShadowMaterial->getGraphicsPipeline();
-
-        // check if shadows graphics pipeline was not initialized
-        if (shadowsPipeline->getHandle().isNull()) {
-            shadowsPipeline->setTargetFormat(context.getShadowsRenderTarget()->getFramebufferFormat());
-            shadowsPipeline->createPipeline();
-        }
+        // Do nothing
     }
 
     void RenderableMesh::onRenderQueueEntered(float32 distFromViewPoint) {
@@ -179,9 +206,9 @@ namespace ignimbrite {
         mShadowMaterial->bindGraphicsPipeline();
         mShadowMaterial->bindUniformData();
 
-        device->drawListBindVertexBuffer(mVertexBuffer, 0, 0);
-        device->drawListBindIndexBuffer(mIndexBuffer, ignimbrite::IndicesType::Uint32, 0);
-        device->drawListDrawIndexed(mRenderMesh->getIndicesCount(), 1);
+        device->drawListBindVertexBuffer(mShadowVertexBuffer, 0, 0);
+        device->drawListBindIndexBuffer(mShadowIndexBuffer, IndicesType::Uint32, 0);
+        device->drawListDrawIndexed(mShadowMesh->getIndicesCount(), 1);
     }
 
     Vec3f RenderableMesh::getWorldPosition() const {

@@ -22,8 +22,10 @@ namespace ignimbrite {
         ~RenderableMesh() override;
 
         void setRenderDevice(RefCounted<IRenderDevice> device);
-        void setRenderMesh(RefCounted<Mesh> mesh, bool useAsShadowMesh = true);
-        void setRenderMaterial(RefCounted<Material> material, bool useAsShadowMaterial = true);
+        void setRenderMesh(RefCounted<Mesh> mesh, bool useAsShadowMesh = false);
+        void setRenderMaterial(RefCounted<Material> material, bool useAsShadowMaterial = false);
+        void setShadowRenderMesh(RefCounted<Mesh> mesh);
+        void setShadowRenderMaterial(RefCounted<Material> material);
         void create();
 
         void rotate(const Vec3f& axis, float32 angle);
@@ -65,9 +67,8 @@ namespace ignimbrite {
         RefCounted<IRenderDevice>       mDevice;
         ID<IRenderDevice::IndexBuffer>  mIndexBuffer;
         ID<IRenderDevice::VertexBuffer> mVertexBuffer;
-        // TODO: shadow mesh
-        // ID<IRenderDevice::IndexBuffer>  mShadowIndexBuffer;
-        // ID<IRenderDevice::VertexBuffer> mShadowVertexBuffer;
+        ID<IRenderDevice::IndexBuffer>  mShadowIndexBuffer;
+        ID<IRenderDevice::VertexBuffer> mShadowVertexBuffer;
     };
 
 }

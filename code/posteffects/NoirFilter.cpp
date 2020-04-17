@@ -47,14 +47,12 @@ namespace ignimbrite {
             mMaterial->updateUniformData();
         }
 
-        mDevice->drawListBegin();
         mDevice->drawListBindFramebuffer(output->getHandle(), color, region);
         PipelineContext::cacheFramebufferBinding(output->getHandle());
         mMaterial->bindGraphicsPipeline();
         mMaterial->bindUniformData();
         mDevice->drawListBindVertexBuffer(mScreenQuad, 0, 0);
         mDevice->drawListDraw(6, 1);
-        mDevice->drawListEnd();
     }
 
 }
