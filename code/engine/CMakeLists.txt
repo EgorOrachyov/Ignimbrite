@@ -58,7 +58,7 @@ set(Ignimbrite_SOURCES
     RenderEngine.cpp
     RenderEngine.h
     RenderQueueElement.h
-    IPostEffect.h Geometry.cpp Geometry.h)
+    IPostEffect.h Geometry.cpp Geometry.h Canvas.cpp Canvas.h)
 
 add_library(Ignimbrite STATIC ${Ignimbrite_SOURCES})
 
