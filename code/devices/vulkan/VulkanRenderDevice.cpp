@@ -98,7 +98,9 @@ namespace ignimbrite {
                                       vertexBuffer.vkBuffer,
                                       vertexBuffer.allocation
             );
-            VulkanUtils::updateBufferMemory(vertexBuffer.allocation, 0, size, data);
+            if (data != nullptr) {
+                VulkanUtils::updateBufferMemory(vertexBuffer.allocation, 0, size, data);
+            }
         } else {
             VulkanUtils::createBufferLocal(
                     data,
@@ -126,7 +128,9 @@ namespace ignimbrite {
                                       indexBuffer.vkBuffer,
                                       indexBuffer.allocation
             );
-            VulkanUtils::updateBufferMemory(indexBuffer.allocation, 0, size, data);
+            if (data != nullptr) {
+                VulkanUtils::updateBufferMemory(indexBuffer.allocation, 0, size, data);
+            }
         } else {
             VulkanUtils::createBufferLocal(data, size, usage, indexBuffer.vkBuffer,
                                            indexBuffer.allocation);
@@ -967,6 +971,8 @@ namespace ignimbrite {
     void VulkanRenderDevice::drawListBegin() {
         mDrawListState = {};
         mDrawListState.commandBuffer = VulkanUtils::beginTmpCommandBuffer(mContext.graphicsTmpCommandPool);
+
+        vkCmdSetLineWidth(mDrawListState.commandBuffer, 1);
     }
 
     void VulkanRenderDevice::drawListEnd() {

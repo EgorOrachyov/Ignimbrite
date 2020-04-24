@@ -200,8 +200,8 @@ namespace ignimbrite {
                 mVisibleSortedQueue.clear();
 
                 for (auto object: list) {
-                    // object not visible at all
-                    if (!object->isVisible())
+                    // object not visible at all or doesn't cast shadows
+                    if (!object->isVisible() || !object->castShadows())
                         continue;
 
                     Vec3f pos = object->getWorldPosition();
