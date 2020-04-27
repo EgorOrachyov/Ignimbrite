@@ -170,7 +170,7 @@ namespace ignimbrite {
         mPoints3d.push_back({Vec4f(p, size), color});
     }
 
-    void Canvas::renderPrimitives(const std::vector<Point> &ps2d, const std::vector<Point> &ps3d, ID<IRenderDevice::VertexBuffer> vb,
+    void Canvas::renderPrimitives(const std::vector<Point> &ps2d, const std::vector<Point> &ps3d, ID<IRenderDevice::VertexBuffer> &vb,
                                   const RefCounted<Material> &mat2d, const RefCounted<Material> &mat3d) {
 
         if (ps2d.size() + ps3d.size() > mLinesVertCount) {

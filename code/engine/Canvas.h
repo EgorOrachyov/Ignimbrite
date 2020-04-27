@@ -99,7 +99,7 @@ namespace ignimbrite {
         void preparePipelines();
         void createPipelines();
 
-        void renderPrimitives(const std::vector<Point> &ps2d, const std::vector<Point> &ps3d, ID <IRenderDevice::VertexBuffer> vb,
+        void renderPrimitives(const std::vector<Point> &ps2d, const std::vector<Point> &ps3d, ID <IRenderDevice::VertexBuffer> &vb,
                               const RefCounted<Material> &mat2d, const RefCounted<Material> &mat3d);
 
     private:
