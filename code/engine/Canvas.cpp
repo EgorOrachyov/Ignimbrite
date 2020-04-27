@@ -205,6 +205,10 @@ namespace ignimbrite {
     }
 
     void Canvas::render(){
+        if (mCurrentTarget == TargetType::None) {
+            throw std::runtime_error("Surface or target isn't set for Canvas");
+        }
+
         mPipelinePoints->bindPipeline();
         renderPrimitives(mPoints2d, mPoints3d, mVertexBufferPoints, mMaterialPoints2d, mMaterialPoints3d);
 

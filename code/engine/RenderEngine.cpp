@@ -30,6 +30,10 @@ namespace ignimbrite {
 
         mCamera = std::move(camera);
         mContext->setCamera(mCamera.get());
+
+        if (mCanvas) {
+            mCanvas->setCamera(mCamera);
+        }
     }
 
     void RenderEngine::setRenderDevice(RefCounted<IRenderDevice> device) {
@@ -38,6 +42,14 @@ namespace ignimbrite {
 
         mRenderDevice = std::move(device);
         mContext->setRenderDevice(mRenderDevice.get());
+
+        mCanvas = std::make_shared<Canvas>(mRenderDevice);
+        if (mTargetSurface.isNotNull()) {
+            mCanvas->setSurface(mTargetSurface);
+        }
+        if (mCamera) {
+            mCanvas->setCamera(mCamera);
+        }
     }
 
     void RenderEngine::setTargetSurface(ID<IRenderDevice::Surface> surface) {
@@ -64,6 +76,10 @@ namespace ignimbrite {
         mOffscreenTarget2->getAttachment(0)->setSampler(sampler);
 
         mTargetSurface = surface;
+
+        if (mCanvas) {
+            mCanvas->setSurface(mTargetSurface);
+        }
     }
 
     void RenderEngine::setShadowTarget(RefCounted<Light> light, RefCounted<RenderTarget> target) {
@@ -346,6 +362,8 @@ namespace ignimbrite {
             mRenderDevice->drawListDraw(6, 1);
         }
 
+        mCanvas->render();
+
         mRenderDevice->drawListEnd();
 
         mRenderDevice->flush();
@@ -384,6 +402,22 @@ namespace ignimbrite {
     void RenderEngine::CHECK_FINAL_PASS_PRESENT() const {
         if (mPresentationMaterial == nullptr)
             throw std::runtime_error("Presentation material is not specified");
+    }
+
+    void RenderEngine::addScreenPoint2d(const Vec2f &p, const Vec4f &color, float size) {
+        mCanvas->addPoint2d(p, color, size);
+    }
+
+    void RenderEngine::addScreenLine2d(const Vec2f &a, const Vec2f &b, const Vec4f &color, float width) {
+        mCanvas->addLine2d(a, b, color, width);
+    }
+
+    void RenderEngine::addPoint3d(const Vec3f &p, const Vec4f &color, float size) {
+        mCanvas->addPoint3d(p, color, size);
+    }
+
+    void RenderEngine::addLine3d(const Vec3f &a, const Vec3f &b, const Vec4f &color, float width) {
+        mCanvas->addLine3d(a, b, color, width);
     }
 
 }

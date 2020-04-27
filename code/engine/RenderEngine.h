@@ -14,6 +14,7 @@
 #include <RenderTarget.h>
 #include <IRenderEngine.h>
 #include <RenderQueueElement.h>
+#include <Canvas.h>
 
 namespace ignimbrite {
 
@@ -48,6 +49,14 @@ namespace ignimbrite {
 
         void removePostEffect(const RefCounted<IPostEffect> &effect) override;
 
+        void addScreenPoint2d(const Vec2f &p, const Vec4f &color, float size) override;
+
+        void addScreenLine2d(const Vec2f &a, const Vec2f &b, const Vec4f &color, float width) override;
+
+        void addPoint3d(const Vec3f &p, const Vec4f &color, float size) override;
+
+        void addLine3d(const Vec3f &a, const Vec3f &b, const Vec4f &color, float width) override;
+
         void draw() override;
 
         const RefCounted<ignimbrite::RenderTarget::Format> &getShadowTargetFormat() const override;
@@ -75,6 +84,8 @@ namespace ignimbrite {
         RefCounted<RenderTarget>   mOffscreenTarget1;
         RefCounted<RenderTarget>   mOffscreenTarget2;
         RefCounted<Material>       mPresentationMaterial;
+
+        RefCounted<Canvas>         mCanvas;
 
         ID<IRenderDevice::Surface>      mTargetSurface;
         ID<IRenderDevice::VertexBuffer> mFullscreenQuad;

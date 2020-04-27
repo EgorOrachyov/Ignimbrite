@@ -222,6 +222,7 @@ public:
                 mesh->setRenderMaterial(mat);
                 mesh->setShadowRenderMesh(data);
                 mesh->setShadowRenderMaterial(shadowMat);
+                mesh->setCastShadows();
                 mesh->translate(Vec3f(x * MESH_STEP, 0, z * MESH_STEP));
                 mesh->create();
                 mesh->setVisible(true);
@@ -323,6 +324,13 @@ public:
             glfwSwapBuffers(window.handle);
             inputUpdate();
             meshUpdate();
+
+            engine->addScreenLine2d({0, 0}, {0.5f, 0.5f}, {1, 1, 1, 1}, 2);
+            engine->addScreenPoint2d({0.6f, 0.6f}, {1, 0, 0, 1}, 2);
+
+            engine->addLine3d({0, 1, 0}, {10, 0, 1}, {0, 1, 0, 1}, 2);
+            engine->addPoint3d({0, 0, 0}, {0, 0, 1, 1}, 2);
+
             engine->draw();
         }
     }
@@ -339,6 +347,7 @@ private:
     RefCounted<Light>          light;
     RefCounted<Material>       material;
     RefCounted<Material>       shadowMaterial;
+    RefCounted<Canvas>         canvas;
 
     std::vector<RefCounted<RenderableMesh>> meshes;
     std::vector<Vec4f>                      rotations;

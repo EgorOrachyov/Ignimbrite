@@ -41,7 +41,12 @@ namespace ignimbrite {
 
         virtual void addPostEffect(RefCounted<IPostEffect> effect) = 0;
         virtual void removePostEffect(const RefCounted<IPostEffect> &effect) = 0;
-        
+
+        virtual void addScreenPoint2d(const Vec2f &p, const Vec4f &color, float size) = 0;
+        virtual void addScreenLine2d(const Vec2f &a, const Vec2f &b, const Vec4f &color, float width) = 0;
+        virtual void addPoint3d(const Vec3f &p, const Vec4f &color, float size) = 0;
+        virtual void addLine3d(const Vec3f &a, const Vec3f &b, const Vec4f &color, float width) = 0;
+
         virtual void draw() = 0;
 
         virtual const RefCounted<RenderTarget::Format> &getShadowTargetFormat() const = 0;
