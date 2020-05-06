@@ -10,8 +10,8 @@
 #ifndef IGNIMBRITE_COMPILATION_H
 #define IGNIMBRITE_COMPILATION_H
 
-#ifndef MODE_DEBUG
+/*#ifndef MODE_DEBUG
     #define MODE_DEBUG
-#endif
+#endif*/
 
 #endif //IGNIMBRITE_COMPILATION_H

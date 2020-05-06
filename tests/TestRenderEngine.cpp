@@ -23,12 +23,6 @@
 
 using namespace ignimbrite;
 
-struct Vertex {
-    float32 Position[3];
-    float32 Normal[3];
-    float32 UV[2];
-};
-
 struct Window {
 #ifdef __APPLE__
     int32 w = 1280 / 2;
@@ -80,8 +74,8 @@ public:
         camera = std::make_shared<Camera>();
         camera->setType(Camera::Type::Perspective);
         camera->setAspect((float32)window.w / (float32)window.h);
-        camera->setPosition(glm::vec3(0,0, 1));
-        camera->rotate(glm::vec3(0,1,0), glm::radians(180.0f));
+        camera->setPosition(glm::vec3(0,0, 3));
+        camera->rotate(glm::vec3(0,1,0), M_PI);
         camera->setNearView(0.1f);
         camera->setFarView(100.0f);
         camera->setClipMatrix(clip);
@@ -97,7 +91,7 @@ public:
         light = std::make_shared<Light>();
         light->setType(Light::Type::Directional);
         light->setCastShadow(true);
-        light->setRotation(glm::vec3(0.67f, -0.67f, -0.28f), 1.09f);
+        light->rotate(light->getRight(), -M_PI / 2);
         light->setClipMatrix(clip);
     }
 
@@ -156,7 +150,7 @@ public:
 
         // Pipeline
         IRenderDevice::VertexBufferLayoutDesc vertexBufferLayoutDesc = {};
-        VertexLayoutFactory::createVertexLayoutDesc(Mesh::VertexFormat::PNT, vertexBufferLayoutDesc);
+        VertexLayoutFactory::createVertexLayoutDesc(Mesh::VertexFormat::PNTTB, vertexBufferLayoutDesc);
 
         RefCounted<GraphicsPipeline> pipeline = std::make_shared<GraphicsPipeline>(device);
         pipeline->setTargetFormat(engine->getOffscreenTargetFormat());
@@ -166,6 +160,7 @@ public:
         pipeline->setBlendEnable(false);
         pipeline->setDepthTestEnable(true);
         pipeline->setDepthWriteEnable(true);
+        //pipeline->setPolygonMode(PolygonMode::Line);
         pipeline->createPipeline();
 
         // Sampler
@@ -176,25 +171,28 @@ public:
         material = std::make_shared<Material>(device);
         material->setGraphicsPipeline(pipeline);
         material->createMaterial();
-        //material->setTexture2D("texSampler", texture);
-        //material->updateUniformData();
 
-        uint8_t defaultShadowTextureSource[] = {0, 0, 0, 0};
+        setMaterialTexture(MESH_ALBEDO_PATH.c_str(), "IB_Albedo", material, sampler);
+        setMaterialTexture(MESH_EMISSIVE_PATH.c_str(), "IB_Emmisive", material, sampler);
+        setMaterialTexture(MESH_AO_PATH.c_str(), "IB_AO", material, sampler);
+        setMaterialTexture(MESH_METALROUGH_PATH.c_str(), "IB_MetalRough", material, sampler);
+        setMaterialTexture(MESH_NORMAL_PATH.c_str(), "IB_Normal", material, sampler);
+
         RefCounted<Texture> defaultShadowTexture = std::make_shared<Texture>(device);
-        defaultShadowTexture->setDataAsRGBA8(1, 1, defaultShadowTextureSource, true);
+        defaultShadowTexture->setDataAsRGBA8(1, 1, blackPixel, true);
         defaultShadowTexture->setSampler(sampler);
         material->setTexture2D("shadowMap", defaultShadowTexture);
         material->updateUniformData();
 
         IRenderDevice::VertexBufferLayoutDesc vertShadowLayoutDesc = {};
-        vertShadowLayoutDesc.stride = sizeof(Vertex);
+        vertShadowLayoutDesc.stride = Mesh::getSizeOfStride(Mesh::VertexFormat::PNTTB);
         vertShadowLayoutDesc.usage = VertexUsage::PerVertex;
         vertShadowLayoutDesc.attributes.push_back({0, 0, DataFormat::R32G32B32_SFLOAT});
 
         RefCounted<GraphicsPipeline> shadowsPipeline = std::make_shared<GraphicsPipeline>(device);
         shadowsPipeline->setTargetFormat(engine->getShadowTargetFormat());
         shadowsPipeline->setShader(shadowShader);
-        shadowsPipeline->setPolygonCullMode(PolygonCullMode::Front);
+        shadowsPipeline->setPolygonCullMode(PolygonCullMode::Back);
         shadowsPipeline->setDepthTestEnable(true);
         shadowsPipeline->setDepthWriteEnable(true);
         shadowsPipeline->setDepthCompareOp(CompareOperation::LessOrEqual);
@@ -207,9 +205,26 @@ public:
         shadowMaterial->createMaterial();
     }
 
+    void setMaterialTexture(const char *path, const char *name, std::shared_ptr<Material> mt, RefCounted<Sampler> sampler) {
+        RefCounted<Texture> texture = std::make_shared<Texture>(device);
+        texture->setSampler(sampler);
+
+        int w, h, channels;
+        stbi_uc* pixels = stbi_load(path, &w, &h, &channels, STBI_rgb_alpha);
+        if (pixels != nullptr) {
+            texture->setDataAsRGBA8(w, h, pixels, true);
+        } else {
+            texture->setDataAsRGBA8(1, 1, whitePixel, true);
+        }
+
+        mt->setTexture2D(name, texture);
+
+        stbi_image_free(pixels);
+    }
+
     void initMesh() {
         MeshLoader loader(MESH_PATH);
-        RefCounted<Mesh> data = loader.importMesh(Mesh::VertexFormat::PNT);
+        RefCounted<Mesh> data = loader.importMesh(Mesh::VertexFormat::PNTTB);
 
         for (int32 x = -MESH_COUNT_X2; x <= MESH_COUNT_X2; x++) {
             for (int32 z = -MESH_COUNT_Z2; z <= MESH_COUNT_Z2; z++) {
@@ -223,12 +238,15 @@ public:
                 mesh->setShadowRenderMesh(data);
                 mesh->setShadowRenderMaterial(shadowMat);
                 mesh->setCastShadows();
-                mesh->translate(Vec3f(x * MESH_STEP, 0, z * MESH_STEP));
+                mesh->translate(Vec3f(x * MESH_STEP, 0.0f, z * MESH_STEP));
                 mesh->create();
                 mesh->setVisible(true);
                 mesh->setCanApplyCulling(true);
                 mesh->setLayerID((uint32) IRenderable::DefaultLayers::Solid);
                 mesh->setMaxViewDistance(50.0f);
+
+                //mesh->rotate({1,0,0}, -M_PI / 2);
+                mesh->setScale({2, 2, 2});
 
                 engine->addRenderable(mesh);
                 meshes.push_back(mesh);
@@ -243,7 +261,7 @@ public:
         }
 
         MeshLoader planeMeshLoader(MESH_PLANE_PATH);
-        RefCounted<Mesh> planeMeshData = planeMeshLoader.importMesh(Mesh::VertexFormat::PNT);
+        RefCounted<Mesh> planeMeshData = planeMeshLoader.importMesh(Mesh::VertexFormat::PNTTB);
         RefCounted<Material> mat = material->clone();
         RefCounted<Material> shadowMat = shadowMaterial->clone();
 
@@ -268,7 +286,7 @@ public:
             glfwSetWindowShouldClose(window.handle, true);
 
         float32 movementSpeed = 2.0f / 60.0f;
-        float32 rotationSpeed = 0.5f / 60.0f;
+        float32 rotationSpeed = 1.0f / 60.0f;
         if (glfwGetKey(window.handle, GLFW_KEY_W) == GLFW_PRESS)
             camera->move(movementSpeed * camera->getDirection());
         if (glfwGetKey(window.handle, GLFW_KEY_S) == GLFW_PRESS)
@@ -281,15 +299,19 @@ public:
             camera->move(-camera->getUp() * movementSpeed);
         if (glfwGetKey(window.handle, GLFW_KEY_E) == GLFW_PRESS)
             camera->move(camera->getUp() * movementSpeed);
+        if (glfwGetKey(window.handle, GLFW_KEY_UP) == GLFW_PRESS)
+            camera->rotate(camera->getRight(), rotationSpeed);
+        if (glfwGetKey(window.handle, GLFW_KEY_DOWN) == GLFW_PRESS)
+            camera->rotate(camera->getRight(), -rotationSpeed);
         if (glfwGetKey(window.handle, GLFW_KEY_LEFT) == GLFW_PRESS)
             camera->rotate(glm::vec3(0, 1, 0), rotationSpeed);
         if (glfwGetKey(window.handle, GLFW_KEY_RIGHT) == GLFW_PRESS)
             camera->rotate(glm::vec3(0, 1, 0), -rotationSpeed);
 
         if (glfwGetKey(window.handle, GLFW_KEY_T) == GLFW_PRESS)
-            light->rotate(glm::vec3(1, 0, 0), rotationSpeed);
+            light->rotate(light->getRight(), rotationSpeed);
         if (glfwGetKey(window.handle, GLFW_KEY_G) == GLFW_PRESS)
-            light->rotate(glm::vec3(1, 0, 0), -rotationSpeed);
+            light->rotate(light->getRight(), -rotationSpeed);
         if (glfwGetKey(window.handle, GLFW_KEY_F) == GLFW_PRESS)
             light->rotate(glm::vec3(0, 1, 0), rotationSpeed);
         if (glfwGetKey(window.handle, GLFW_KEY_H) == GLFW_PRESS)
@@ -302,7 +324,7 @@ public:
         for (uint32 i = 0; i < meshes.size(); i++) {
             auto& m = meshes[i];
             auto& R = rotations[i];
-            m->rotate(glm::vec3(R.x, R.y, R.z), 0.02f * R.w);
+            //m->rotate(glm::vec3(R.x, R.y, R.z), 0.02f * R.w);
             m->updateAABB();
         }
     }
@@ -325,11 +347,9 @@ public:
             inputUpdate();
             meshUpdate();
 
-            engine->addScreenLine2d({0, 0}, {0.5f, 0.5f}, {1, 1, 1, 1}, 2);
-            engine->addScreenPoint2d({0.6f, 0.6f}, {1, 0, 0, 1}, 2);
-
-            engine->addLine3d({0, 1, 0}, {10, 0, 1}, {0, 1, 0, 1}, 2);
-            engine->addPoint3d({0, 0, 0}, {0, 0, 1, 1}, 2);
+            engine->addLine3d({0, 0, 0}, light->getDirection(), {1, 1, 0, 1}, 2);
+            engine->addLine3d({0, 0, 0}, light->getRight(), {1, 0, 0, 1}, 2);
+            engine->addLine3d({0, 0, 0}, light->getUp(), {0, 1, 0, 1}, 2);
 
             engine->draw();
         }
@@ -352,10 +372,13 @@ private:
     std::vector<RefCounted<RenderableMesh>> meshes;
     std::vector<Vec4f>                      rotations;
 
-    const uint32 SHADOW_MAP_SIZE = 1024;
+    const uint8_t whitePixel[4] = {255, 255, 255, 255};
+    const uint8_t blackPixel[4] = {0, 0, 0, 0};
 
-    const int32 MESH_COUNT_X2 = 5;
-    const int32 MESH_COUNT_Z2 = 5;
+    const uint32 SHADOW_MAP_SIZE = 4096;
+
+    const int32 MESH_COUNT_X2 = 0;
+    const int32 MESH_COUNT_Z2 = 0;
     const int32 MESH_STEP     = 2;
 
     String MODEL3D_SHADER_PATH_VERT = "shaders/spirv/shadowmapping/MeshVert.spv";
@@ -364,9 +387,13 @@ private:
     String SHADOWS_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/ShadowsFrag.spv";
     String PREFIX_PATH = "./shaders/";
 
-    String MESH_PATH = "assets/models/sphere.obj";
+    String MESH_PATH = "assets/models/DamagedHelmet.obj";
+    String MESH_ALBEDO_PATH = "assets/textures/DamagedHelmet_Albedo.jpg";
+    String MESH_EMISSIVE_PATH = "assets/textures/DamagedHelmet_Emissive.jpg";
+    String MESH_AO_PATH = "assets/textures/DamagedHelmet_AO.jpg";
+    String MESH_METALROUGH_PATH = "assets/textures/DamagedHelmet_MetalRoughness.jpg";
+    String MESH_NORMAL_PATH = "assets/textures/DamagedHelmet_Normal.jpg";
     String MESH_PLANE_PATH = "assets/models/plane.obj";
-    String TEXTURE_PATH = "assets/textures/double.png";
 
 };
 

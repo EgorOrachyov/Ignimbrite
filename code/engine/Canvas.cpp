@@ -199,7 +199,7 @@ namespace ignimbrite {
             mat3d->updateUniformData();
             mat3d->bindUniformData();
 
-            mDevice->drawListBindVertexBuffer(vb, 0, sizeof(Point) * ps3d.size());
+            mDevice->drawListBindVertexBuffer(vb, 0, sizeof(Point) * ps2d.size());
             mDevice->drawListDraw(ps3d.size(), 1);
         }
     }

@@ -1,11 +1,17 @@
 #version 450
 
 layout (binding = 1) uniform sampler2D shadowMap;
+layout (binding = 2) uniform sampler2D IB_Albedo;
+layout (binding = 3) uniform sampler2D IB_Emmisive;
+layout (binding = 4) uniform sampler2D IB_AO;
+layout (binding = 5) uniform sampler2D IB_MetalRough;
+layout (binding = 6) uniform sampler2D IB_Normal;
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec3 inViewVec;
 layout (location = 2) in vec3 inLightVec;
 layout (location = 3) in vec4 inShadowCoord;
+layout (location = 4) in vec2 inTexCoord;
 
 layout (location = 0) out vec4 outColor;
 
@@ -14,11 +20,13 @@ layout (location = 0) out vec4 outColor;
 
 float textureProj(vec4 shadowCoord, vec2 offset)
 {
+	float bias = 0.01;
+
 	float shadow = 1.0;
 	if ( shadowCoord.z > -1.0 && shadowCoord.z < 1.0 ) 
 	{
 		float dist = texture(shadowMap, shadowCoord.st + offset).r;
-		if ( shadowCoord.w > 0.0 && dist < shadowCoord.z ) 
+		if ( shadowCoord.w > 0.0 && dist < shadowCoord.z - bias) 
 		{
 			shadow = 0.0;
 		}
@@ -29,24 +37,24 @@ float textureProj(vec4 shadowCoord, vec2 offset)
 float filterPCF(vec4 sc)
 {
 	ivec2 texDim = textureSize(shadowMap, 0);
-	float scale = 1.5;
-	float dx = scale * 1.0 / float(texDim.x);
-	float dy = scale * 1.0 / float(texDim.y);
+	float dx = 1 / float(texDim.x);
 
-	float shadowFactor = 0.0;
-	int count = 0;
-	int range = 1;
+	vec2 offset = vec2(mod(gl_FragCoord.x, 2), mod(gl_FragCoord.y, 2));
+	offset.y = offset.x;
 	
-	for (int x = -range; x <= range; x++)
+	if (offset.y > 1.1)
 	{
-		for (int y = -range; y <= range; y++)
-		{
-			shadowFactor += textureProj(sc, vec2(dx*x, dy*y));
-			count++;
-		}
-	
+		offset.y = 0;
 	}
-	return shadowFactor / count;
+
+	float shadowFactor = (
+		textureProj(sc, (offset + vec2(-1.5, 0.5)) * dx) +
+		textureProj(sc, (offset + vec2(0.5, 0.5)) * dx) +
+		textureProj(sc, (offset + vec2(-1.5, -1.5)) * dx) +
+		textureProj(sc, (offset + vec2(0.5, -1.5)) * dx)
+		) * 0.25;
+
+	return shadowFactor;
 }
 
 void main() 
@@ -61,5 +69,7 @@ void main()
 	vec3 R = normalize(-reflect(L, N));
 	vec3 c = vec3(max(dot(N, L) * shadow, ambient));
 
-	outColor = vec4(c, 1.0);
+	c += texture(IB_Emmisive, inTexCoord).rgb;
+
+	outColor = texture(IB_Albedo, inTexCoord) * texture(IB_AO, inTexCoord) * vec4(c, 1.0);
 }

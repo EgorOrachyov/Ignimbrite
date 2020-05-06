@@ -190,7 +190,7 @@ namespace ignimbrite {
         const auto& frustum = mCamera->getFrustum();
 
         // todo: make shadow distance variable ?
-        float shadowDistance = 20.0f;
+        float shadowDistance = 10.0f;
         Frustum frustumCut = frustum;
         frustumCut.cutFrustum(shadowDistance / mCamera->getFarClip());
 
