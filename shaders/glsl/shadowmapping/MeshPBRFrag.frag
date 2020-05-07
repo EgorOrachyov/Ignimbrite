@@ -1,6 +1,12 @@
 #version 450
 
 layout (binding = 1) uniform sampler2D IB_ShadowMap;
+layout (binding = 2) uniform sampler2D IB_Albedo;
+layout (binding = 3) uniform sampler2D IB_Emmisive;
+layout (binding = 4) uniform sampler2D IB_AO;
+layout (binding = 5) uniform sampler2D IB_MetalRough;
+layout (binding = 6) uniform sampler2D IB_Normal;
+layout (binding = 7) uniform samplerCube IB_Cubemap;
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec3 inCameraPos;
@@ -65,5 +71,9 @@ void main()
 	vec3 R = normalize(-reflect(L, N));
 	vec3 c = vec3(max(dot(N, L) * shadow, ambient));
 
-	outColor = vec4(c, 1.0);
+	c += texture(IB_Emmisive, inTexCoord).rgb;
+
+	c += texture(IB_Cubemap, normalize(reflect(V, N))).rgb * texture(IB_MetalRough, inTexCoord).b;
+
+	outColor = texture(IB_Albedo, inTexCoord) * texture(IB_AO, inTexCoord) * vec4(c, 1.0);
 }

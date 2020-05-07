@@ -180,14 +180,15 @@ namespace ignimbrite {
         if (light != nullptr) {
             auto lightViewProj = light->getViewProjClipMatrix();
 
-            mRenderMaterial->setMat4("UBO.lightSpace", lightViewProj);
-            mRenderMaterial->setVec3("UBO.lightDir", light->getDirection());
-            mRenderMaterial->setTexture2D("shadowMap", context.getShadowMap());
+            mRenderMaterial->setMat4("UBO.IB_LightSpace", lightViewProj);
+            mRenderMaterial->setVec3("UBO.IB_LightDir", light->getDirection());
+            mRenderMaterial->setTexture2D("IB_ShadowMap", context.getShadowMap());
         }
 
         // todo: another bindings
-        mRenderMaterial->setMat4("UBO.viewProj", camViewProj);
-        mRenderMaterial->setMat4("UBO.model", model);
+        mRenderMaterial->setMat4("UBO.IB_ViewProj", camViewProj);
+        mRenderMaterial->setMat4("UBO.IB_Model", model);
+        mRenderMaterial->setVec3("UBO.IB_CameraPos", camera->getPosition());
 
         mRenderMaterial->updateUniformData();
         mRenderMaterial->bindGraphicsPipeline();

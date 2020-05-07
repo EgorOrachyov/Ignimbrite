@@ -137,6 +137,19 @@ public:
         shader->reflectData();
         shader->generateUniformLayout();
 
+        // PBR shader
+        std::ifstream vertPbrFile(MODEL3D_SHADER_PATH_VERT.c_str(), std::ios::binary);
+        std::ifstream fragPbrFile(MODEL3D_PBR_SHADER_PATH_FRAG.c_str(), std::ios::binary);
+
+        std::vector<uint8> vertPbrSpv(std::istreambuf_iterator<char>(vertPbrFile), {});
+        std::vector<uint8> fragPbrSpv(std::istreambuf_iterator<char>(fragPbrFile), {});
+
+        RefCounted<Shader> pbrShader = std::make_shared<Shader>(device);
+        pbrShader->fromSources(ShaderLanguage::SPIRV, vertPbrSpv, fragPbrSpv);
+        pbrShader->reflectData();
+        pbrShader->generateUniformLayout();
+
+        // Shadow shader
         std::ifstream shVertFile(SHADOWS_SHADER_PATH_VERT.c_str(), std::ios::binary);
         std::ifstream shFragFile(SHADOWS_SHADER_PATH_FRAG.c_str(), std::ios::binary);
 
@@ -157,32 +170,48 @@ public:
         pipeline->setShader(shader);
         pipeline->setVertexBuffersCount(1);
         pipeline->setVertexBufferDesc(0, vertexBufferLayoutDesc);
-        pipeline->setBlendEnable(false);
         pipeline->setDepthTestEnable(true);
         pipeline->setDepthWriteEnable(true);
         //pipeline->setPolygonMode(PolygonMode::Line);
         pipeline->createPipeline();
 
+        RefCounted<GraphicsPipeline> pbrPipeline = std::make_shared<GraphicsPipeline>(device);
+        pbrPipeline->setTargetFormat(engine->getOffscreenTargetFormat());
+        pbrPipeline->setShader(pbrShader);
+        pbrPipeline->setVertexBuffersCount(1);
+        pbrPipeline->setVertexBufferDesc(0, vertexBufferLayoutDesc);
+        pbrPipeline->setDepthTestEnable(true);
+        pbrPipeline->setDepthWriteEnable(true);
+        pbrPipeline->createPipeline();
+
         // Sampler
         RefCounted<Sampler> sampler = std::make_shared<Sampler>(device);
         sampler->setHighQualityFiltering();
 
-        // Material
-        material = std::make_shared<Material>(device);
-        material->setGraphicsPipeline(pipeline);
-        material->createMaterial();
-
-        setMaterialTexture(MESH_ALBEDO_PATH.c_str(), "IB_Albedo", material, sampler);
-        setMaterialTexture(MESH_EMISSIVE_PATH.c_str(), "IB_Emmisive", material, sampler);
-        setMaterialTexture(MESH_AO_PATH.c_str(), "IB_AO", material, sampler);
-        setMaterialTexture(MESH_METALROUGH_PATH.c_str(), "IB_MetalRough", material, sampler);
-        setMaterialTexture(MESH_NORMAL_PATH.c_str(), "IB_Normal", material, sampler);
-
         RefCounted<Texture> defaultShadowTexture = std::make_shared<Texture>(device);
         defaultShadowTexture->setDataAsRGBA8(1, 1, blackPixel, true);
         defaultShadowTexture->setSampler(sampler);
-        material->setTexture2D("shadowMap", defaultShadowTexture);
+
+        // Material
+        material = std::make_shared<Material>(device);
+        material->setGraphicsPipeline(pbrPipeline);
+        material->createMaterial();
+
+        setMaterialTexture(TEXTURE_ALBEDO_PATH.c_str(), "IB_Albedo", material, sampler);
+        setMaterialTexture(TEXTURE_EMISSIVE_PATH.c_str(), "IB_Emmisive", material, sampler);
+        setMaterialTexture(TEXTURE_AO_PATH.c_str(), "IB_AO", material, sampler);
+        setMaterialTexture(TEXTURE_METALROUGH_PATH.c_str(), "IB_MetalRough", material, sampler);
+        setMaterialTexture(TEXTURE_NORMAL_PATH.c_str(), "IB_Normal", material, sampler);
+        setMaterialCubemap("IB_Cubemap", material, sampler);
+
+        material->setTexture2D("IB_ShadowMap", defaultShadowTexture);
         material->updateUniformData();
+
+        whiteMaterial = std::make_shared<Material>(device);
+        whiteMaterial->setGraphicsPipeline(pipeline);
+        whiteMaterial->createMaterial();
+        whiteMaterial->setTexture2D("IB_ShadowMap", defaultShadowTexture);
+        whiteMaterial->updateUniformData();
 
         IRenderDevice::VertexBufferLayoutDesc vertShadowLayoutDesc = {};
         vertShadowLayoutDesc.stride = Mesh::getSizeOfStride(Mesh::VertexFormat::PNTTB);
@@ -205,7 +234,7 @@ public:
         shadowMaterial->createMaterial();
     }
 
-    void setMaterialTexture(const char *path, const char *name, std::shared_ptr<Material> mt, RefCounted<Sampler> sampler) {
+    void setMaterialTexture(const char *path, const char *name, RefCounted<Material> mt, RefCounted<Sampler> sampler) {
         RefCounted<Texture> texture = std::make_shared<Texture>(device);
         texture->setSampler(sampler);
 
@@ -220,6 +249,45 @@ public:
         mt->setTexture2D(name, texture);
 
         stbi_image_free(pixels);
+    }
+
+    void setMaterialCubemap(const char *name, RefCounted<Material> mt, RefCounted<Sampler> sampler) {
+        RefCounted<Texture> texture = std::make_shared<Texture>(device);
+        texture->setSampler(sampler);
+
+        const char *paths[] = {
+                SKYBOX_PX_PATH.c_str(),
+                SKYBOX_NX_PATH.c_str(),
+                SKYBOX_PY_PATH.c_str(),
+                SKYBOX_NY_PATH.c_str(),
+                SKYBOX_PZ_PATH.c_str(),
+                SKYBOX_NZ_PATH.c_str()
+        };
+
+        uint8 *data = nullptr;
+        uint32 offset = 0;
+        int w = 0, h = 0, channels = 0;
+
+        for (int i = 0; i < 6; i++) {
+            stbi_uc* pixels = stbi_load(paths[i], &w, &h, &channels, STBI_rgb_alpha);
+            uint32 size = w * h * 4;
+
+            if (data == nullptr) {
+                // 6 textures
+                data = new uint8[6 * w * h * 4];
+            }
+
+            memcpy(data + offset, pixels, size);
+            offset += size;
+
+            stbi_image_free(pixels);
+        }
+
+        texture->setDataAsCubemapRGBA8(w, h, data, true);
+
+        mt->setTexture2D(name, texture);
+
+        delete[] data;
     }
 
     void initMesh() {
@@ -262,7 +330,7 @@ public:
 
         MeshLoader planeMeshLoader(MESH_PLANE_PATH);
         RefCounted<Mesh> planeMeshData = planeMeshLoader.importMesh(Mesh::VertexFormat::PNTTB);
-        RefCounted<Material> mat = material->clone();
+        RefCounted<Material> mat = whiteMaterial->clone();
         RefCounted<Material> shadowMat = shadowMaterial->clone();
 
         RefCounted<RenderableMesh> planeMesh = std::make_shared<RenderableMesh>();
@@ -366,6 +434,7 @@ private:
     RefCounted<Camera>         camera;
     RefCounted<Light>          light;
     RefCounted<Material>       material;
+    RefCounted<Material>       whiteMaterial;
     RefCounted<Material>       shadowMaterial;
     RefCounted<Canvas>         canvas;
 
@@ -383,17 +452,27 @@ private:
 
     String MODEL3D_SHADER_PATH_VERT = "shaders/spirv/shadowmapping/MeshVert.spv";
     String MODEL3D_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/MeshFrag.spv";
+    String MODEL3D_PBR_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/MeshPBRFrag.spv";
     String SHADOWS_SHADER_PATH_VERT = "shaders/spirv/shadowmapping/ShadowsVert.spv";
     String SHADOWS_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/ShadowsFrag.spv";
     String PREFIX_PATH = "./shaders/";
 
-    String MESH_PATH = "assets/models/DamagedHelmet.obj";
-    String MESH_ALBEDO_PATH = "assets/textures/DamagedHelmet_Albedo.jpg";
-    String MESH_EMISSIVE_PATH = "assets/textures/DamagedHelmet_Emissive.jpg";
-    String MESH_AO_PATH = "assets/textures/DamagedHelmet_AO.jpg";
-    String MESH_METALROUGH_PATH = "assets/textures/DamagedHelmet_MetalRoughness.jpg";
-    String MESH_NORMAL_PATH = "assets/textures/DamagedHelmet_Normal.jpg";
-    String MESH_PLANE_PATH = "assets/models/plane.obj";
+    String MESH_PATH                = "assets/models/DamagedHelmet.obj";
+    String MESH_PLANE_PATH          = "assets/models/plane.obj";
+
+    String TEXTURE_ALBEDO_PATH      = "assets/textures/DamagedHelmet_Albedo.jpg";
+    String TEXTURE_EMISSIVE_PATH    = "assets/textures/DamagedHelmet_Emissive.jpg";
+    String TEXTURE_AO_PATH          = "assets/textures/DamagedHelmet_AO.jpg";
+    String TEXTURE_METALROUGH_PATH  = "assets/textures/DamagedHelmet_MetalRoughness.jpg";
+    String TEXTURE_NORMAL_PATH      = "assets/textures/DamagedHelmet_Normal.jpg";
+
+    String SKYBOX_PX_PATH       = "assets/textures/SkyboxPX.jpg";
+    String SKYBOX_NX_PATH       = "assets/textures/SkyboxNX.jpg";
+    String SKYBOX_PY_PATH       = "assets/textures/SkyboxPY.jpg";
+    String SKYBOX_NY_PATH       = "assets/textures/SkyboxNY.jpg";
+    String SKYBOX_PZ_PATH       = "assets/textures/SkyboxPZ.jpg";
+    String SKYBOX_NZ_PATH       = "assets/textures/SkyboxNZ.jpg";
+
 
 };
 

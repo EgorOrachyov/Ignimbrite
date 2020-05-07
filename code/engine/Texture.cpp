@@ -40,7 +40,7 @@ namespace ignimbrite {
         textureDesc.width = mWidth;
         textureDesc.height = mHeight;
         textureDesc.depth = 1;
-        textureDesc.size = mStride * mWidth;
+        textureDesc.size = mStride * mHeight;
         textureDesc.type = TextureType::Texture2D;
         textureDesc.usageFlags = (uint32) TextureUsageBit::ShaderSampling | (uint32) TextureUsageBit::ColorAttachment;
         textureDesc.mipmaps = 1;
@@ -64,7 +64,7 @@ namespace ignimbrite {
         textureDesc.format = mDataFormat;
         textureDesc.width = mWidth;
         textureDesc.height = mHeight;
-        textureDesc.size = mStride * mWidth;
+        textureDesc.size = mStride * mHeight;
         textureDesc.type = TextureType::Texture2D;
         textureDesc.usageFlags = (uint32) TextureUsageBit::ShaderSampling | (uint32) TextureUsageBit::DepthStencilAttachment;
 
@@ -92,10 +92,41 @@ namespace ignimbrite {
         textureDesc.width = mWidth;
         textureDesc.height = mHeight;
         textureDesc.depth = 1;
-        textureDesc.size = mStride * mWidth;
+        textureDesc.size = mStride * mHeight;
         textureDesc.type = TextureType::Texture2D;
         textureDesc.usageFlags = (uint32) TextureUsageBit::ShaderSampling;
         textureDesc.mipmaps = (genMipmaps ? (uint32)std::floor(std::log2(std::max(width, height))) + 1 : 1);
+
+        mHandle = mDevice->createTexture(textureDesc);
+
+        if (mHandle.isNull())
+            throw std::runtime_error("Failed to create texture object");
+    }
+
+    void Texture::setDataAsCubemapRGBA8(uint32 width, uint32 height, const uint8* data, bool genMipmaps) {
+        if (mHandle.isNotNull())
+            throw std::runtime_error("An attempt to recreate texture");
+
+        if (data == nullptr)
+            throw std::runtime_error("Data must be specified for texture creation");
+
+        mWidth = width;
+        mHeight = height;
+        mStride = 4 * width;
+        mDataFormat = DataFormat::R8G8B8A8_UNORM;
+
+        IRenderDevice::TextureDesc textureDesc{};
+        textureDesc.data = data;
+        textureDesc.format = mDataFormat;
+        textureDesc.width = mWidth;
+        textureDesc.height = mHeight;
+        textureDesc.depth = 1;
+        textureDesc.usageFlags = (uint32) TextureUsageBit::ShaderSampling;
+        textureDesc.mipmaps = (genMipmaps ? (uint32)std::floor(std::log2(std::max(width, height))) + 1 : 1);
+
+        textureDesc.type = TextureType::Cubemap;
+        textureDesc.cubemapLayerSize = mStride * mHeight;
+        textureDesc.size = textureDesc.cubemapLayerSize * 6;
 
         mHandle = mDevice->createTexture(textureDesc);
 

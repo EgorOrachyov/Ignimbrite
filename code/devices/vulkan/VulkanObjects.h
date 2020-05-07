@@ -54,6 +54,7 @@ namespace ignimbrite {
         uint32 depth;
         uint32 mipmaps;
         VkImageUsageFlags usageFlags;
+        bool isCubemap;
     };
 
     struct VulkanUniformBuffer {

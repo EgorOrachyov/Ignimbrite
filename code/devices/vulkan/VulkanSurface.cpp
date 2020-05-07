@@ -161,7 +161,7 @@ namespace ignimbrite {
 
         for (uint32 i = 0; i < swapChainImageCount; i++) {
             VulkanUtils::createImage(
-                    width, height, 1, 1,
+                    width, height, 1, 1, false,
                     VK_IMAGE_TYPE_2D, depthFormat,
                     VK_IMAGE_TILING_OPTIMAL,
                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,

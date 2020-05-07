@@ -207,14 +207,18 @@ namespace ignimbrite {
             updateBufferMemory(stagingAllocation, 0, dataSize, imageData);
         }
 
-        createImage(width, height, depth, mipLevels, imageType, format, tiling,
+        createImage(width, height, depth, mipLevels, false, imageType, format, tiling,
                     // for copying and sampling in shaders
                     VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                     outTextureImage, outAllocation);
 
         // Transition layout to copy data
-        transitionImageLayout(outTextureImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
+        transitionImageLayout(
+                outTextureImage,
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                mipLevels, 1);
+
         copyBufferToImage(stagingBuffer, outTextureImage, width, height, depth);
 
         destroyBuffer(stagingBuffer, stagingAllocation);
@@ -222,15 +226,70 @@ namespace ignimbrite {
         if (mipLevels > 1) {
             // generate mipmaps and layout transition
             // from transfer destination to shader readonly
-            generateMipmaps(outTextureImage, format, width, height, mipLevels, textureLayout);
+            generateMipmaps(outTextureImage, format, width, height, mipLevels, 1, textureLayout);
         }
         else {
-            transitionImageLayout(outTextureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, textureLayout, mipLevels);
+            transitionImageLayout(
+                    outTextureImage,
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, textureLayout,
+                    mipLevels, 1);
+        }
+    }
+
+    void
+    VulkanUtils::createCubemapImage(const void *imageData, uint32 dataSize, uint32 width, uint32 height, uint32 depth,
+                                    uint32 mipLevels, uint32 cubemapLayerSize,
+                                    VkImageType imageType, VkFormat format, VkImageTiling tiling,
+                                    VkImage &outTextureImage,
+                                    VulkanAllocation &outAllocation, VkImageLayout textureLayout) {
+        VkBuffer stagingBuffer;
+        VulkanAllocation stagingAllocation = {};
+
+        if (cubemapLayerSize * 6 > dataSize) {
+            throw std::runtime_error("Cubemap dataSize must not be greater than (6 * cubemapLayerSize)");
+        }
+
+        // Create staging buffer to create image in device local memory
+        createBuffer(dataSize,
+                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     stagingBuffer, stagingAllocation);
+
+        if (imageData != nullptr) {
+            updateBufferMemory(stagingAllocation, 0, dataSize, imageData);
+        }
+
+        createImage(width, height, depth, mipLevels, true, imageType, format, tiling,
+                // for copying and sampling in shaders
+                    VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                    outTextureImage, outAllocation);
+
+        // Transition layout to copy data
+        transitionImageLayout(
+                outTextureImage,
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                mipLevels, 6);
+
+        copyBufferToCubemapImage(stagingBuffer, outTextureImage, width, height, depth, cubemapLayerSize);
+
+        destroyBuffer(stagingBuffer, stagingAllocation);
+
+        if (mipLevels > 1) {
+            // generate mipmaps and layout transition
+            // from transfer destination to shader readonly
+            generateMipmaps(outTextureImage, format, width, height, mipLevels, 6, textureLayout);
+        }
+        else {
+            transitionImageLayout(
+                    outTextureImage,
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, textureLayout,
+                    mipLevels, 6);
         }
     }
 
     void VulkanUtils::createImage(uint32 width, uint32 height,
-                                  uint32 depth, uint32 mipLevels,
+                                  uint32 depth, uint32 mipLevels, bool isCubemap,
                                   VkImageType imageType, VkFormat format, VkImageTiling tiling,
                                   VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
                                   VkImage &outImage, VulkanAllocation &outAllocation) {
@@ -243,13 +302,14 @@ namespace ignimbrite {
         imageInfo.extent.height = height;
         imageInfo.extent.depth = depth;
         imageInfo.mipLevels = mipLevels;
-        imageInfo.arrayLayers = 1;
+        imageInfo.arrayLayers = isCubemap ? 6 : 1;
         imageInfo.format = format;
         imageInfo.tiling = tiling;
         imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         imageInfo.usage = usage;
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        imageInfo.flags = isCubemap ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
 
         VmaAllocationCreateInfo allocInfo = {};
         // allocInfo.usage = ;
@@ -285,7 +345,35 @@ namespace ignimbrite {
         endTmpCommandBuffer(commandBuffer, context.transferQueue, context.transferTmpCommandPool);
     }
 
-    void VulkanUtils::transitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32 mipLevels) {
+    void VulkanUtils::copyBufferToCubemapImage(VkBuffer buffer, VkImage image, uint32 width, uint32 height, uint32 depth, uint32 layerSize) {
+        auto& context = VulkanContext::getInstance();
+
+        VkCommandBuffer commandBuffer = beginTmpCommandBuffer(context.transferTmpCommandPool);
+
+        VkBufferImageCopy regions[6];
+
+        for (int i = 0; i < 6; i++) {
+            auto &region = regions[i];
+            region = {};
+
+            region.bufferOffset = i * layerSize;
+            region.bufferRowLength = 0;
+            region.bufferImageHeight = 0;
+            region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            // this function copies without mipmaps
+            region.imageSubresource.mipLevel = 0;
+            region.imageSubresource.baseArrayLayer = i;
+            region.imageSubresource.layerCount = 1;
+            region.imageOffset = {0, 0, 0};
+            region.imageExtent = {width, height, depth};
+        }
+
+        vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 6, regions);
+
+        endTmpCommandBuffer(commandBuffer, context.transferQueue, context.transferTmpCommandPool);
+    }
+
+    void VulkanUtils::transitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32 mipLevels, uint32 layerCount) {
         auto& context = VulkanContext::getInstance();
         VkCommandBuffer commandBuffer = beginTmpCommandBuffer(context.transferTmpCommandPool);
 
@@ -300,7 +388,7 @@ namespace ignimbrite {
         barrier.subresourceRange.baseMipLevel = 0;
         barrier.subresourceRange.levelCount = mipLevels;
         barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
+        barrier.subresourceRange.layerCount = layerCount;
 
         VkPipelineStageFlags sourceStage;
         VkPipelineStageFlags destinationStage;
@@ -357,7 +445,7 @@ namespace ignimbrite {
 
     void
     VulkanUtils::generateMipmaps(VkImage image, VkFormat format, uint32 width, uint32 height,
-                                 uint32 mipLevels, VkImageLayout newLayout) {
+                                 uint32 mipLevels, uint32 layerCount, VkImageLayout newLayout) {
         auto& context = VulkanContext::getInstance();
 
         VkFormatProperties formatProperties = getDeviceFormatProperties(format);
@@ -368,96 +456,99 @@ namespace ignimbrite {
 
         VkCommandBuffer commandBuffer = beginTmpCommandBuffer(context.transferTmpCommandPool);
 
-        VkImageMemoryBarrier barrier = {};
-        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrier.image = image;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
-        barrier.subresourceRange.levelCount = 1;
+        for (uint32 layer = 0; layer < layerCount; layer++) {
 
-        int32 mipWidth = width;
-        int32 mipHeight = height;
+            VkImageMemoryBarrier barrier = {};
+            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            barrier.image = image;
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            barrier.subresourceRange.baseArrayLayer = layer;
+            barrier.subresourceRange.layerCount = 1;
+            barrier.subresourceRange.levelCount = 1;
 
-        // i=0 is original image
-        for (uint32 i = 1; i < mipLevels; i++) {
-            barrier.subresourceRange.baseMipLevel = i - 1;
+            int32 mipWidth = width;
+            int32 mipHeight = height;
+
+            // i=0 is original image
+            for (uint32 i = 1; i < mipLevels; i++) {
+                barrier.subresourceRange.baseMipLevel = i - 1;
+                barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+                vkCmdPipelineBarrier(commandBuffer,
+                                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                                     0, nullptr,
+                                     0, nullptr,
+                                     1, &barrier);
+
+                VkImageBlit blit = {};
+
+                // source
+                blit.srcOffsets[0] = {0, 0, 0};
+                blit.srcOffsets[1] = {mipWidth, mipHeight, 1};
+                blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                blit.srcSubresource.mipLevel = i - 1;
+                blit.srcSubresource.baseArrayLayer = layer;
+                blit.srcSubresource.layerCount = 1;
+
+                // destination, divided
+                blit.dstOffsets[0] = {0, 0, 0};
+                blit.dstOffsets[1] = {mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1};
+                blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                blit.dstSubresource.mipLevel = i;
+                blit.dstSubresource.baseArrayLayer = layer;
+                blit.dstSubresource.layerCount = 1;
+
+                vkCmdBlitImage(
+                        commandBuffer,
+                        image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                        image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                        1, &blit,
+                        // using linear interpolation
+                        VK_FILTER_LINEAR
+                );
+
+                barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+                vkCmdPipelineBarrier(
+                        commandBuffer,
+                        VK_PIPELINE_STAGE_TRANSFER_BIT,
+                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                        0, nullptr,
+                        0, nullptr,
+                        1, &barrier
+                );
+
+                if (mipWidth > 1) {
+                    mipWidth /= 2;
+                }
+
+                if (mipHeight > 1) {
+                    mipHeight /= 2;
+                }
+            }
+
+            barrier.subresourceRange.baseMipLevel = mipLevels - 1;
             barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            barrier.newLayout = newLayout;
             barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-
-            vkCmdPipelineBarrier(commandBuffer,
-                                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-                                 0, nullptr,
-                                 0, nullptr,
-                                 1, &barrier);
-
-            VkImageBlit blit = {};
-
-            // source
-            blit.srcOffsets[0] = {0, 0, 0};
-            blit.srcOffsets[1] = {mipWidth, mipHeight, 1};
-            blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            blit.srcSubresource.mipLevel = i - 1;
-            blit.srcSubresource.baseArrayLayer = 0;
-            blit.srcSubresource.layerCount = 1;
-
-            // destination, divided
-            blit.dstOffsets[0] = {0, 0, 0};
-            blit.dstOffsets[1] = {mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1};
-            blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            blit.dstSubresource.mipLevel = i;
-            blit.dstSubresource.baseArrayLayer = 0;
-            blit.dstSubresource.layerCount = 1;
-
-            vkCmdBlitImage(
-                    commandBuffer,
-                    image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                    image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                    1, &blit,
-                    // using linear interpolation
-                    VK_FILTER_LINEAR
-           );
-
-            barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-            barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
             vkCmdPipelineBarrier(
                     commandBuffer,
-                    VK_PIPELINE_STAGE_TRANSFER_BIT,
-                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
                     0, nullptr,
                     0, nullptr,
                     1, &barrier
             );
-
-            if (mipWidth > 1) {
-                mipWidth /= 2;
-            }
-
-            if (mipHeight > 1) {
-                mipHeight /= 2;
-            }
         }
-
-        barrier.subresourceRange.baseMipLevel = mipLevels - 1;
-        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        barrier.newLayout = newLayout;
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-        vkCmdPipelineBarrier(
-                commandBuffer,
-                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                0, nullptr,
-                0, nullptr,
-                1, &barrier
-        );
 
         endTmpCommandBuffer(commandBuffer, context.transferQueue, context.transferTmpCommandPool);
     }
@@ -479,7 +570,7 @@ namespace ignimbrite {
             throw VulkanException("Failed to find supported format");
         }
 
-        createImage(width, height, depth, 1,
+        createImage(width, height, depth, 1, false,
                     imageType, format, tiling, usageFlags,
                 // depth stencil buffer is device local
                 // TODO: make visible from cpu

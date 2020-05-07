@@ -186,6 +186,8 @@ namespace ignimbrite {
         VkImageType imageType = VulkanDefinitions::imageType(textureDesc.type);
         VkImageViewType viewType = VulkanDefinitions::imageViewType(textureDesc.type);
         VkImageUsageFlags usageFlags = VulkanDefinitions::imageUsageFlags(textureDesc.usageFlags);
+        bool isCubemap = textureDesc.type == TextureType::Cubemap;
+        uint32 cubemapLayerSize = textureDesc.cubemapLayerSize;
 
         VulkanTextureObject texture = {};
         texture.type = imageType;
@@ -195,10 +197,20 @@ namespace ignimbrite {
         texture.height = textureDesc.height;
         texture.depth = textureDesc.depth;
         texture.mipmaps = textureDesc.mipmaps;
+        texture.isCubemap = isCubemap;
 
         auto color = (usageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0;
         auto depth = (usageFlags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0;
         auto sampling = (usageFlags & VK_IMAGE_USAGE_SAMPLED_BIT) != 0;
+
+        if (isCubemap) {
+            if (!sampling) {
+                throw std::runtime_error("Cubemap can't be an attachment, it's only available for sampling");
+            }
+            if (cubemapLayerSize == 0) {
+                throw std::runtime_error("TextureDesc for cubemap must contain cubemapLayerSize > 0");
+            }
+        }
 
         // An image could be sampled, therefore it must have shader read layout
         // Otherwise it could not be sampled and must have the following layout: color or depth attachment
@@ -217,7 +229,7 @@ namespace ignimbrite {
 
             VulkanUtils::createImage(
                     textureDesc.width, textureDesc.height, textureDesc.depth,
-                    1, imageType, format, VK_IMAGE_TILING_OPTIMAL,
+                    1, false, imageType, format, VK_IMAGE_TILING_OPTIMAL,
                     usageFlags | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                     texture.image, texture.allocation
@@ -275,20 +287,30 @@ namespace ignimbrite {
         } else {
 
             // create texture image with mipmaps and allocate memory
-            VulkanUtils::createTextureImage(
-                    textureDesc.data, textureDesc.size,
-                    textureDesc.width, textureDesc.height, textureDesc.depth,
-                    textureDesc.mipmaps,
-                    imageType, format, VK_IMAGE_TILING_OPTIMAL,
-                    texture.image, texture.allocation, texture.layout
-            );
+            if (!isCubemap) {
+                VulkanUtils::createTextureImage(
+                        textureDesc.data, textureDesc.size,
+                        textureDesc.width, textureDesc.height, textureDesc.depth,
+                        textureDesc.mipmaps,
+                        imageType, format, VK_IMAGE_TILING_OPTIMAL,
+                        texture.image, texture.allocation, texture.layout
+                );
+            } else {
+                VulkanUtils::createCubemapImage(
+                        textureDesc.data, textureDesc.size,
+                        textureDesc.width, textureDesc.height, textureDesc.depth,
+                        textureDesc.mipmaps, cubemapLayerSize,
+                        imageType, format, VK_IMAGE_TILING_OPTIMAL,
+                        texture.image, texture.allocation, texture.layout
+                );
+            }
 
             VkImageSubresourceRange subresourceRange;
             subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             subresourceRange.baseMipLevel = 0;
             subresourceRange.levelCount = textureDesc.mipmaps;
             subresourceRange.baseArrayLayer = 0;
-            subresourceRange.layerCount = 1;
+            subresourceRange.layerCount = isCubemap ? 6 : 1;
 
             VkComponentMapping components = {
                     VK_COMPONENT_SWIZZLE_IDENTITY,

@@ -106,11 +106,19 @@ namespace ignimbrite {
     }
 
     const Shader::ParameterInfo& Shader::getParameterInfo(const String &name) const {
-        return mVariables.at(name);
+        try {
+            return mVariables.at(name);
+        } catch (const std::exception &e) {
+            throw std::runtime_error("Can't get parameter in a shader with name:" + name);
+        }
     }
 
     const Shader::UniformBufferInfo& Shader::getBufferInfo(const String &name) const {
-        return mBuffers.at(name);
+        try {
+            return mBuffers.at(name);
+        } catch (const std::exception &e) {
+            throw std::runtime_error("Can't get buffer in a shader with name: " + name);
+        }
     }
 
     const std::unordered_map<String, Shader::UniformBufferInfo>& Shader::getBuffersInfo() const {

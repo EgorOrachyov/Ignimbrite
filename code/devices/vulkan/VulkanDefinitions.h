@@ -57,6 +57,8 @@ namespace ignimbrite {
             switch (type) {
                 case TextureType::Texture2D:
                     return VkImageViewType::VK_IMAGE_VIEW_TYPE_2D;
+                case TextureType::Cubemap:
+                    return VkImageViewType::VK_IMAGE_VIEW_TYPE_CUBE;
                 default:
                     throw InvalidEnum();
             }
@@ -65,6 +67,7 @@ namespace ignimbrite {
         static VkImageType imageType(TextureType type) {
             switch (type) {
                 case TextureType::Texture2D:
+                case TextureType::Cubemap:
                     return VkImageType::VK_IMAGE_TYPE_2D;
                 default:
                     throw InvalidEnum();
