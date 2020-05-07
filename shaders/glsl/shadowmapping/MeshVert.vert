@@ -19,22 +19,24 @@ layout (location = 1) out vec3 outViewVec;
 layout (location = 2) out vec3 outLightVec;
 layout (location = 3) out vec4 outShadowCoord;
 layout (location = 4) out vec2 outTexCoord;
+layout (location = 5) out vec4 outPosition;
 
-const mat4 biasMat = mat4( 
+const mat4 biasMat = mat4(
 	0.5, 0.0, 0.0, 0.0,
 	0.0, 0.5, 0.0, 0.0,
 	0.0, 0.0, 1.0, 0.0,
 	0.5, 0.5, 0.0, 1.0 );
 
-void main() 
+void main()
 {
 	gl_Position = ubo.viewProj * ubo.model * vec4(inPos, 1.0);
 
 	vec4 pos = ubo.model * vec4(inPos, 1.0);
 	outNormal = mat3(ubo.model) * inNormal;
 	outLightVec = -normalize(ubo.lightDir);
-	outViewVec = -pos.xyz;			
+	outViewVec = -pos.xyz;
 	outTexCoord = inTexCoord;
+    outPosition = pos;
 
 	outShadowCoord = (biasMat * ubo.lightSpace * ubo.model) * vec4(inPos, 1.0);	
 }

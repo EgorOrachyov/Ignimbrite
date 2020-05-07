@@ -75,5 +75,5 @@ void main()
 
 	c += texture(IB_Cubemap, normalize(reflect(V, N))).rgb * texture(IB_MetalRough, inTexCoord).b;
 
-	outColor = texture(IB_Albedo, inTexCoord) * texture(IB_AO, inTexCoord) * vec4(c, 1.0);
+	outColor =  vec4(texture(IB_Albedo, inTexCoord).rgb * texture(IB_AO, inTexCoord).rrr, 1.0);
 }
