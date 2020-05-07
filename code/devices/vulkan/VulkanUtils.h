@@ -71,9 +71,18 @@ namespace ignimbrite {
                 VkImageLayout textureLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
         );
 
+        static void createCubemapImage(
+                const void *imageData, uint32 imageDataSize,
+                uint32 width, uint32 height,
+                uint32 depth, uint32 mipLevels, uint32 cubemapLayerSize,
+                VkImageType imageType, VkFormat format, VkImageTiling tiling,
+                VkImage &outTextureImage, VulkanAllocation &outAllocation,
+                VkImageLayout textureLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        );
+
         static void createImage(
                 uint32 width, uint32 height,
-                uint32 depth, uint32 mipLevels,
+                uint32 depth, uint32 mipLevels, bool isCubemap,
                 VkImageType imageType, VkFormat format,
                 VkImageTiling tiling, VkImageUsageFlags usage,
                 VkMemoryPropertyFlags properties,
@@ -86,11 +95,19 @@ namespace ignimbrite {
                 uint32 width, uint32 height, uint32 depth
         );
 
+        static void copyBufferToCubemapImage(
+                VkBuffer buffer,
+                VkImage image,
+                uint32 width, uint32 height, uint32 depth,
+                uint32 layerSize
+        );
+
         static void transitionImageLayout(
                 VkImage image,
                 VkImageLayout oldLayout,
                 VkImageLayout newLayout,
-                uint32 mipLevels
+                uint32 mipLevels,
+                uint32 layerCount = 1
         );
 
         static void createImageView(
@@ -104,7 +121,7 @@ namespace ignimbrite {
         static void generateMipmaps(
                 VkImage image, VkFormat format,
                 uint32 width, uint32 height,
-                uint32 mipLevels,
+                uint32 mipLevels, uint32 layerCount,
                 VkImageLayout newLayout
         );
 

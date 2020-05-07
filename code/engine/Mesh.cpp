@@ -46,7 +46,10 @@ namespace ignimbrite {
         const uint8* data = getVertexData();
 
         switch (mVertexFormat) {
-            case VertexFormat::PNT: {
+            case VertexFormat::P:
+            case VertexFormat::PN:
+            case VertexFormat::PNT:
+            case VertexFormat::PNTTB: {
                 for (uint32 i = 0; i < mVertexCount; i++) {
                     const Vec3f* pos = (Vec3f*)(data + offset);
                     mBoundingBox.expandToContain(*pos);
@@ -68,6 +71,8 @@ namespace ignimbrite {
                 return 2;
             case VertexFormat::PNT:
                 return 3;
+            case VertexFormat::PNTTB:
+                return 5;
             default:
                 return 0;
         }
@@ -80,6 +85,8 @@ namespace ignimbrite {
         if (mask & Pos3f) size += sizeof(float32) * 3;
         if (mask & Norm3f) size += sizeof(float32) * 3;
         if (mask & TexCoords2f) size += sizeof(float32) * 2;
+        if (mask & Tangent3f) size += sizeof(float32) * 3;
+        if (mask & Bitangent3f) size += sizeof(float32) * 3;
 
         return size;
     }

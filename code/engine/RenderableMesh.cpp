@@ -77,6 +77,12 @@ namespace ignimbrite {
         markDirty();
     }
 
+    void RenderableMesh::setScale(const Vec3f &scale) {
+        mScale = scale;
+
+        markDirty();
+    }
+
     void RenderableMesh::updateAABB() {
         if (!isDirty())
             return;
@@ -87,6 +93,10 @@ namespace ignimbrite {
         mAABB.getVertices(vertices);
 
         for (auto& v: vertices) {
+            v[0] *= mScale[0];
+            v[1] *= mScale[1];
+            v[2] *= mScale[2];
+
             auto r = (mRotation * glm::vec4(v, 1.0f));
             v = glm::vec3(r[0], r[1], r[2]) + mWorldPosition;
         }
@@ -163,20 +173,22 @@ namespace ignimbrite {
         auto camera = context.getCamera();
         auto light = context.getGlobalLight();
 
-        auto model = glm::translate(mWorldPosition) * mRotation;
+        auto model = glm::translate(mWorldPosition) * mRotation * glm::scale(mScale);
+
         auto camViewProj = camera->getViewProjClipMatrix();
 
         if (light != nullptr) {
             auto lightViewProj = light->getViewProjClipMatrix();
 
-            mRenderMaterial->setMat4("UBO.lightSpace", lightViewProj);
-            mRenderMaterial->setVec3("UBO.lightDir", light->getDirection());
-            mRenderMaterial->setTexture2D("shadowMap", context.getShadowMap());
+            mRenderMaterial->setMat4("UBO.IB_LightSpace", lightViewProj);
+            mRenderMaterial->setVec3("UBO.IB_LightDir", light->getDirection());
+            mRenderMaterial->setTexture2D("IB_ShadowMap", context.getShadowMap());
         }
 
         // todo: another bindings
-        mRenderMaterial->setMat4("UBO.viewProj", camViewProj);
-        mRenderMaterial->setMat4("UBO.model", model);
+        mRenderMaterial->setMat4("UBO.IB_ViewProj", camViewProj);
+        mRenderMaterial->setMat4("UBO.IB_Model", model);
+        mRenderMaterial->setVec3("UBO.IB_CameraPos", camera->getPosition());
 
         mRenderMaterial->updateUniformData();
         mRenderMaterial->bindGraphicsPipeline();
@@ -196,7 +208,7 @@ namespace ignimbrite {
         auto device = context.getRenderDevice();
         auto light = context.getGlobalLight();
 
-        auto model = glm::translate(mWorldPosition) * mRotation;
+        auto model = glm::translate(mWorldPosition) * mRotation * glm::scale(mScale);
         auto lightMVP = light->getViewProjClipMatrix() * model;
 
         // todo: another bindings

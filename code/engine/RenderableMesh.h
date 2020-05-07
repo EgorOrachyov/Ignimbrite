@@ -30,6 +30,7 @@ namespace ignimbrite {
 
         void rotate(const Vec3f& axis, float32 angle);
         void translate(const Vec3f& translation);
+        void setScale(const Vec3f& scale);
         void updateAABB();
         void generateGpuBuffers();
         void updateGpuBuffersData();
@@ -58,6 +59,7 @@ namespace ignimbrite {
         AABB  mAABB;
         Mat4f mRotation     = Mat4f(1.0f);
         Vec3f mWorldPosition = Vec3f(0,0,0);
+        Vec3f mScale = Vec3f(1,1,1);
 
         RefCounted<Mesh>     mRenderMesh;
         RefCounted<Mesh>     mShadowMesh;

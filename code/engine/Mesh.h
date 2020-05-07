@@ -27,14 +27,17 @@ namespace ignimbrite {
         enum BasicAttributes : uint32 {
             Pos3f       = 1u << 0u,
             Norm3f      = 1u << 1u,
-            TexCoords2f = 1u << 2u
+            TexCoords2f = 1u << 2u,
+            Tangent3f = 1u << 3u,
+            Bitangent3f = 1u << 4u,
         };
 
         /** Fixed vertex layout with predefined types of attributes */
         enum class VertexFormat : uint32 {
             P   = Pos3f,                        /** P.x P.y P.z */
             PN  = Pos3f | Norm3f,               /** P.x P.y P.z | N.x N.y N.z */
-            PNT = Pos3f | Norm3f | TexCoords2f  /** P.x P.y P.z | N.x N.y N.z | T.u T.v */
+            PNT = Pos3f | Norm3f | TexCoords2f, /** P.x P.y P.z | N.x N.y N.z | T.u T.v */
+            PNTTB = Pos3f | Norm3f | TexCoords2f | Tangent3f | Bitangent3f
         };
 
         Mesh(VertexFormat format, uint32 vertexCount, uint32 indexCount);

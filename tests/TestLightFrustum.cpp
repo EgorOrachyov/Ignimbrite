@@ -75,7 +75,7 @@ struct Scene {
     bool drawLightFrustum;
     bool drawBoxes;
     bool rotateLight;
-    float32 camShadowViewPercent = 0.7f;
+    float32 camShadowViewPercent = 1.0f;
 };
 
 class TestLightFrustum {
@@ -100,7 +100,7 @@ public:
     }
 
     void loop() {
-        IRenderDevice::Color clearColor = {{0.5f, 0.5f, 0.5f, 0.0f}};
+        IRenderDevice::Color clearColor = {{1.0f, 1.0f, 1.0f, 0.0f}};
 
         while (!glfwWindowShouldClose(window.glfwWindow)) {
             glfwPollEvents();
@@ -200,17 +200,24 @@ private:
 
     void initGraphicsPipeline() {
         IRenderDevice::PipelineRasterizationDesc rasterizationDesc = {};
-        rasterizationDesc.cullMode = PolygonCullMode::Disabled;
+        rasterizationDesc.cullMode = PolygonCullMode::Back;
         rasterizationDesc.frontFace = PolygonFrontFace::FrontCounterClockwise;
         rasterizationDesc.lineWidth = 1.0f;
         rasterizationDesc.mode = PolygonMode::Fill;
 
         IRenderDevice::BlendAttachmentDesc blendAttachmentDesc = {};
-        blendAttachmentDesc.blendEnable = false;
+        blendAttachmentDesc.blendEnable = true;
+        blendAttachmentDesc.srcColorBlendFactor = BlendFactor::SrcAlpha;
+        blendAttachmentDesc.dstColorBlendFactor = BlendFactor::OneMinusSrcAlpha;
+        blendAttachmentDesc.srcAlphaBlendFactor = BlendFactor::One;
+        blendAttachmentDesc.dstAlphaBlendFactor = BlendFactor::Zero;
+        blendAttachmentDesc.colorBlendOp = BlendOperation::Add;
+        blendAttachmentDesc.alphaBlendOp = BlendOperation::Add;
+
         IRenderDevice::PipelineSurfaceBlendStateDesc blendStateDesc = {};
         blendStateDesc.attachment = blendAttachmentDesc;
-        blendStateDesc.logicOpEnable = false;
-        blendStateDesc.logicOp = LogicOperation::NoOp;
+        blendStateDesc.logicOpEnable = true;
+        blendStateDesc.logicOp = LogicOperation::Copy;
 
         IRenderDevice::PipelineDepthStencilStateDesc depthStencilStateDesc = {};
         depthStencilStateDesc.depthCompareOp = CompareOperation::Less;
@@ -330,7 +337,7 @@ private:
 
         outModel.material.buffer->createBuffer(sizeof(UniformBufferData));
         outModel.material.data.model = glm::mat4x4(1.0f);
-        outModel.material.data.color = glm::vec4(0, 0, 1, 0.3f);
+        outModel.material.data.color = glm::vec4(0, 0, 1, 1.0f);
 
         outModel.material.uniformSet = createUniformSet(*outModel.material.buffer);
     }
@@ -437,16 +444,16 @@ private:
 
             bool isInMain = scene.frustum->frustum.isInside(aabbm->aabb);
             bool isInLight = false;
-            glm::vec4 aabbColor = glm::vec4(1, 0, 0, 0.3f);
+            glm::vec4 aabbColor = glm::vec4(1, 0, 0, 0.5f);
 
             if (scene.light.getType() == Light::Type::Directional) {
                 isInLight = scene.light.getFrustum().isInside(aabbm->aabb);
             }
 
             if (isInMain) {
-                aabbColor = isInLight ? glm::vec4(0, 1, 0, 0.3f) : glm::vec4(1, 0.5f, 0, 0.3f);
+                aabbColor = isInLight ? glm::vec4(0, 1, 0, 0.3f) : glm::vec4(1, 0.5f, 0, 0.5f);
             } else if (isInLight) {
-                aabbColor = glm::vec4(1, 0.65f, 0, 0.3f);
+                aabbColor = glm::vec4(1, 0.65f, 0, 0.5f);
             }
 
             UniformBufferData *data = &aabbm->model.material.data;
@@ -463,7 +470,7 @@ private:
 
         UniformBufferData *lightFrdata = &scene.lightFrModel->model.material.data;
         lightFrdata->viewProj = viewProj;
-        lightFrdata->color = glm::vec4(1, 1, 0, 0.3f);
+        lightFrdata->color = glm::vec4(1, 1, 0, 0.5f);
         scene.lightFrModel->model.material.buffer->updateData(sizeof(UniformBufferData), 0, (uint8 *) lightFrdata);
     }
 

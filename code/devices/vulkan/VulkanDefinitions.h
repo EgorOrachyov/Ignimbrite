@@ -57,6 +57,8 @@ namespace ignimbrite {
             switch (type) {
                 case TextureType::Texture2D:
                     return VkImageViewType::VK_IMAGE_VIEW_TYPE_2D;
+                case TextureType::Cubemap:
+                    return VkImageViewType::VK_IMAGE_VIEW_TYPE_CUBE;
                 default:
                     throw InvalidEnum();
             }
@@ -65,6 +67,7 @@ namespace ignimbrite {
         static VkImageType imageType(TextureType type) {
             switch (type) {
                 case TextureType::Texture2D:
+                case TextureType::Cubemap:
                     return VkImageType::VK_IMAGE_TYPE_2D;
                 default:
                     throw InvalidEnum();
@@ -255,6 +258,40 @@ namespace ignimbrite {
                     return VkBlendFactor::VK_BLEND_FACTOR_ZERO;
                 case BlendFactor::One:
                     return VkBlendFactor::VK_BLEND_FACTOR_ONE;
+                case BlendFactor::OneMinusSrcColor:
+                    return VkBlendFactor::VK_BLEND_FACTOR_SRC_COLOR;
+                case BlendFactor::OneMinusSrcAlpha:
+                    return VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+                case BlendFactor::SrcAlpha:
+                    return VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA;
+                case BlendFactor::SrcColor:
+                    return VkBlendFactor::VK_BLEND_FACTOR_SRC_COLOR;
+                case BlendFactor::DstAlpha:
+                    return VkBlendFactor::VK_BLEND_FACTOR_DST_ALPHA;
+                case BlendFactor::DstColor:
+                    return VkBlendFactor::VK_BLEND_FACTOR_DST_COLOR;
+                case BlendFactor::ConstantAlpha:
+                    return VkBlendFactor::VK_BLEND_FACTOR_CONSTANT_ALPHA;
+                case BlendFactor::ConstantColor:
+                    return VkBlendFactor::VK_BLEND_FACTOR_CONSTANT_COLOR;
+                case BlendFactor::OneMinusConstantAlpha:
+                    return VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+                case BlendFactor::OneMinusConstantColor:
+                    return VkBlendFactor::VK_BLEND_FACTOR_CONSTANT_COLOR;
+                case BlendFactor::OneMinusSrc1Color:
+                    return VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
+                case BlendFactor::OneMinusSrc1Alpha:
+                    return VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
+                case BlendFactor::OneMinusDstColor:
+                    return VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+                case BlendFactor::OneMinusDstAlpha:
+                    return VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+                case BlendFactor::SrcAlphaSaturate:
+                    return VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
+                case BlendFactor::Src1Color:
+                    return VkBlendFactor::VK_BLEND_FACTOR_SRC1_COLOR;
+                case BlendFactor::Src1Alpha:
+                    return VkBlendFactor::VK_BLEND_FACTOR_SRC1_ALPHA;
                 default:
                     throw InvalidEnum();
             }

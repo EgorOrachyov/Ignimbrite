@@ -84,10 +84,10 @@ namespace ignimbrite {
         }
 
         mFrustum.setViewProperties(getDirection(), getUp());
-        mFrustum.createOrthographic(left, right, bottom, top, nearPlane, farPlane);
+        mFrustum.createOrthographic(left, right, bottom, top, nearPlane - 20, farPlane);
 
         mViewMatrix = glm::lookAt(glm::vec3(0, 0, 0), getDirection(), getUp());
-        mProjectionMatrix = glm::ortho(left, right, bottom, top, nearPlane, farPlane);
+        mProjectionMatrix = glm::ortho(left, right, bottom, top, nearPlane - 20, farPlane);
     }
 
 }
