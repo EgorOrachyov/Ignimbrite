@@ -21,41 +21,41 @@ layout (location = 0) out vec4 outColor;
 
 float textureProj(vec4 shadowCoord, vec2 offset)
 {
-	float bias = 0.01;
+    float bias = 0.01;
 
-	float shadow = 1.0;
-	if ( shadowCoord.z > -1.0 && shadowCoord.z < 1.0 )
-	{
-		float dist = texture(TextureShadow, shadowCoord.st + offset).r;
-		if ( shadowCoord.w > 0.0 && dist < shadowCoord.z - bias)
-		{
-			shadow = 0.0;
-		}
-	}
-	return shadow;
+    float shadow = 1.0;
+    if ( shadowCoord.z > -1.0 && shadowCoord.z < 1.0 )
+    {
+        float dist = texture(TextureShadow, shadowCoord.st + offset).r;
+        if ( shadowCoord.w > 0.0 && dist < shadowCoord.z - bias)
+        {
+            shadow = 0.0;
+        }
+    }
+    return shadow;
 }
 
 float filterPCF(vec4 sc)
 {
-	ivec2 texDim = textureSize(TextureShadow, 0);
-	float dx = 1 / float(texDim.x);
+    ivec2 texDim = textureSize(TextureShadow, 0);
+    float dx = 1 / float(texDim.x);
 
-	vec2 offset = vec2(mod(gl_FragCoord.x, 2), mod(gl_FragCoord.y, 2));
-	offset.y = offset.x;
+    vec2 offset = vec2(mod(gl_FragCoord.x, 2), mod(gl_FragCoord.y, 2));
+    offset.y = offset.x;
 
-	if (offset.y > 1.1)
-	{
-		offset.y = 0;
-	}
+    if (offset.y > 1.1)
+    {
+        offset.y = 0;
+    }
 
-	float shadowFactor = (
-		textureProj(sc, (offset + vec2(-1.5, 0.5)) * dx) +
-		textureProj(sc, (offset + vec2(0.5, 0.5)) * dx) +
-		textureProj(sc, (offset + vec2(-1.5, -1.5)) * dx) +
-		textureProj(sc, (offset + vec2(0.5, -1.5)) * dx)
-		) * 0.25;
+    float shadowFactor = (
+        textureProj(sc, (offset + vec2(-1.5, 0.5)) * dx) +
+        textureProj(sc, (offset + vec2(0.5, 0.5)) * dx) +
+        textureProj(sc, (offset + vec2(-1.5, -1.5)) * dx) +
+        textureProj(sc, (offset + vec2(0.5, -1.5)) * dx)
+        ) * 0.25;
 
-	return shadowFactor;
+    return shadowFactor;
 }
 
 // Normal Distribution function
@@ -106,9 +106,9 @@ vec3 getNormal() {
 
 void main()
 {
-	float shadow = (enablePCF == 1) ?
-		filterPCF(inShadowCoord / inShadowCoord.w) :
-		textureProj(inShadowCoord / inShadowCoord.w, vec2(0.0));
+    float shadow = (enablePCF == 1) ?
+        filterPCF(inShadowCoord / inShadowCoord.w) :
+        textureProj(inShadowCoord / inShadowCoord.w, vec2(0.0));
 
     vec3 emissive   = texture(TextureEmissive,inTexCoord).rgb;
     vec3 albedo     = pow(texture(TextureAlbedo,inTexCoord).rgb, vec3(2.2));      // remember, abledo in sRGB
@@ -145,5 +145,5 @@ void main()
     vec3 color = ambient + Lo * vec3(shadow) + emissive;
     vec3 gammaCorrect = pow(color, vec3(1.0f / 2.2f));
 
-	outColor = vec4(gammaCorrect, 1.0f);
+    outColor = vec4(gammaCorrect, 1.0f);
 }
