@@ -34,7 +34,6 @@ namespace ignimbrite {
         float32 binormal[3];
     };
 
-
     void VertexLayoutFactory::createVertexLayoutDesc(Mesh::VertexFormat format, IRenderDevice::VertexBufferLayoutDesc &bufferDesc) {
         switch (format) {
             case Mesh::VertexFormat::P: {

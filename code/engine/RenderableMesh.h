@@ -49,7 +49,7 @@ namespace ignimbrite {
         Material *getRenderMaterial() override;
         Material *getShadowRenderMaterial() override;
 
-    private:
+    protected:
 
         bool isDirty() { return mDirty; }
         void markDirty() { mDirty = true; }

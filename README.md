@@ -21,13 +21,13 @@ or another data in real-time with high level of customization.
 ### Rendering
 * Generic back-end graphical interface (compatible with OpenGL and Vulkan as well)
 * Generic basic material for safe CPU -> GPU communication
-* Mesh importing
-* Post-process effects pipeline
+* Mesh importing with basic tangent space generation
+* Extendable post-process effects pipeline
 * Graphical pipeline for *renderable* objects of any kind
 * Dynamic SPIR-V binaries reflection for Vulkan shaders
 
 ### Back-ends support
-* Vulkan 1.0 on macOS, Window and Linux
+* Vulkan 1.0 on macOS, Windows and Linux
 
 ## Platforms
 * Windows 10 (**Tested**)

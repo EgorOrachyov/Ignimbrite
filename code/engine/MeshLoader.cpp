@@ -113,7 +113,7 @@ namespace ignimbrite {
                             -s2 * q1.z + s1 * q2.z
                     };
 
-                    float det = s1 * t2 - s2 * t1;
+                    float det = 1.0f / (s1 * t2 - s2 * t1);
                     tg *= det;
                     btg *= det;
 
@@ -139,8 +139,8 @@ namespace ignimbrite {
                         }
 
                         for (int k = 0; k < 3; k++) {
-                            tgbns[3 * shape.mesh.indices[i + j].vertex_index].Tangent[k] = oTg[k];
-                            tgbns[3 * shape.mesh.indices[i + j].vertex_index].Bitangent[k] = oBtg[k];
+                            tgbns[shape.mesh.indices[i + j].vertex_index].Tangent[k] = oTg[k];
+                            tgbns[shape.mesh.indices[i + j].vertex_index].Bitangent[k] = oBtg[k];
                         }
                     }
                 }
