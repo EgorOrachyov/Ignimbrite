@@ -125,12 +125,13 @@ void main()
     F0 = mix(F0, albedo, metallic);
 
     float NdotL = max(dot(N,L), 0.0f);
+    float NdotV = max(dot(N,V), 0.0f);
     vec3 lightColor = vec3(1.0f);
     vec3 radiance = lightColor;
 
     float NDF = DistributionGGX(N,H,roughness);
     float G = GeometrySmith(N,V,L,roughness);
-    vec3  F = fresnelSchlick(NdotL, F0);
+    vec3  F = fresnelSchlick(NdotV, F0);
 
     vec3 Ks = F;                                      // Energy save law
     vec3 Kd = (vec3(1.0f) - Ks) * (1.0f - metallic);  // Metals has low diffuse lightnig effect
