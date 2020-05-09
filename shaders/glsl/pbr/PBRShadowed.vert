@@ -31,9 +31,10 @@ const mat4 biasMat = mat4(
 
 void main()
 {
-    vec3 N    = normalize(mat3(commonParams.model) * inNormal);;
-    vec3 T    = normalize(mat3(commonParams.model) * inTangent);
-    vec3 B    = normalize(mat3(commonParams.model) * inBitangent);
+    mat3 norm = transpose(inverse(mat3(commonParams.model)));
+    vec3 N    = normalize(norm * inNormal);
+    vec3 T    = normalize(norm * inTangent);
+    vec3 B    = normalize(norm * inBitangent);
     outTBN    = mat3(T,B,N);
 
     outLightVec = -normalize(commonParams.lightDir);
@@ -44,6 +45,6 @@ void main()
     outPosition    = pos;
     outShadowCoord = (biasMat * commonParams.lightSpace * commonParams.model) * vec4(inPos, 1.0);
 
-    gl_Position = commonParams.viewProj * commonParams.model * pos;
+    gl_Position = commonParams.viewProj * pos;
 }
 

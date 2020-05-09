@@ -444,6 +444,8 @@ public:
         mesh->setScale({1, 1, 1});
 
         engine->addRenderable(mesh);
+
+        pbrMesh = mesh;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -516,6 +518,7 @@ public:
             inputUpdate();
             meshUpdate();
 
+            pbrMesh->rotate({0,1,0}, 0.002f);
             engine->draw();
         }
     }
@@ -569,6 +572,7 @@ private:
     String SHADER_PBR_VERT = "shaders/spirv/pbr/PBRShadowed.vert.spv";
     String SHADER_PBR_FRAG = "shaders/spirv/pbr/PBRShadowed.frag.spv";
 
+    RefCounted<RenderableMesh> pbrMesh;
     RefCounted<Material> pbrMaterial;
     RefCounted<Texture> defaultShadowTexture;
 };
