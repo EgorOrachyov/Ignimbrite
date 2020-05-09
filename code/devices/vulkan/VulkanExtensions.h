@@ -64,7 +64,7 @@ namespace ignimbrite {
          * @param qwindow QWindow to get surface from
          * @return Ignimbrite surface ID
          */
-        static ID createSurfaceQtWindow(
+        static ID<IRenderDevice::Surface> createSurfaceQtWindow(
                 VulkanRenderDevice &device,
                 QVulkanInstance *qvkInstance,
                 QWindow *qwindow
@@ -89,7 +89,7 @@ namespace ignimbrite {
          * @param qwindow QWindow to get vulkan surface
          * @return Ignimbrite surface ID
          */
-        static ID createSurfaceQtWidget(
+        static ID<IRenderDevice::Surface> createSurfaceQtWidget(
                 VulkanRenderDevice &device,
                 QWindow *qwindow
         );
@@ -98,7 +98,8 @@ namespace ignimbrite {
         /** Idle device and destroy surface with all its relative data */
         static void destroySurface(
                 VulkanRenderDevice &device,
-                ID<IRenderDevice::Surface> surface
+                ID<IRenderDevice::Surface> surface,
+                bool destroySurfKhr = true
         );
 
     private:

@@ -24,6 +24,7 @@ set(VulkanDevice_SOURCES
     VulkanUtils.cpp
     VulkanDescriptorAllocator.cpp
     VulkanSurface.cpp
+    VulkanFence.cpp
 )
 
 add_library(

@@ -31,7 +31,7 @@ namespace ignimbrite {
 
 #ifdef IGNIMBRITE_WITH_QT
 
-    VulkanExtensions::ID VulkanExtensions::createSurfaceQtWindow(VulkanRenderDevice &device, QVulkanInstance *qvkInstance, QWindow *qwindow) {
+    ID<IRenderDevice::Surface> VulkanExtensions::createSurfaceQtWindow(VulkanRenderDevice &device, QVulkanInstance *qvkInstance, QWindow *qwindow) {
 
         setVulkanInstance(device, qvkInstance);
 
@@ -50,10 +50,10 @@ namespace ignimbrite {
 
     void VulkanExtensions::setVulkanInstance(VulkanRenderDevice &device, QVulkanInstance *qvkInstance) {
         // register instance
-        qvkInstance->setVkInstance(device.context.instance);
+        qvkInstance->setVkInstance(device.mContext.instance);
     }
 
-    VulkanExtensions::ID VulkanExtensions::createSurfaceQtWidget(VulkanRenderDevice &device, QWindow *qwindow) {
+    ID<IRenderDevice::Surface> VulkanExtensions::createSurfaceQtWidget(VulkanRenderDevice &device, QWindow *qwindow) {
         // get VkSurfaceKHR from qt window
         VkSurfaceKHR surfaceKhr = QVulkanInstance::surfaceForWindow(qwindow);
 
@@ -74,7 +74,7 @@ namespace ignimbrite {
     }
 #endif
 
-    void VulkanExtensions::destroySurface(VulkanRenderDevice &device, ID<IRenderDevice::Surface> surface) {
+    void VulkanExtensions::destroySurface(VulkanRenderDevice &device, ID<IRenderDevice::Surface> surface, bool destroySurfKhr) {
         auto &vulkanSurface = device.mSurfaces.get(surface);
         auto &context = VulkanContext::getInstance();
 
@@ -82,7 +82,10 @@ namespace ignimbrite {
         vulkanSurface.destroyFramebuffers();
         vulkanSurface.destroyFramebufferFormat();
         vulkanSurface.destroySwapChain();
-        vkDestroySurfaceKHR(context.instance, vulkanSurface.surfaceKHR, nullptr);
+
+        if (destroySurfKhr) {
+            vkDestroySurfaceKHR(context.instance, vulkanSurface.surfaceKHR, nullptr);
+        }
 
         device.mSurfaces.remove(surface);
     }

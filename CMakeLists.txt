@@ -88,6 +88,7 @@ if (IGNIMBRITE_WITH_QT)
     message(STATUS "Add QT for surface creation")
     find_package(Qt5 COMPONENTS Core Gui REQUIRED)
     message(STATUS "QT5 directories: ${Qt5Core_INCLUDE_DIRS} ${Qt5Gui_INCLUDE_DIRS}")
+    include_directories(${Qt5Core_INCLUDE_DIRS} ${Qt5Gui_INCLUDE_DIRS})
 endif()
 
 ##################################################################
