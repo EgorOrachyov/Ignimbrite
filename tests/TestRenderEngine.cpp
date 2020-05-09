@@ -138,16 +138,16 @@ public:
         shader->generateUniformLayout();
 
         // PBR shader
-        std::ifstream vertPbrFile(MODEL3D_SHADER_PATH_VERT.c_str(), std::ios::binary);
-        std::ifstream fragPbrFile(MODEL3D_PBR_SHADER_PATH_FRAG.c_str(), std::ios::binary);
+        std::ifstream vertReflFile(MODEL3D_SHADER_PATH_VERT.c_str(), std::ios::binary);
+        std::ifstream fragReflFile(MODEL3D_REFL_SHADER_PATH_FRAG.c_str(), std::ios::binary);
 
-        std::vector<uint8> vertPbrSpv(std::istreambuf_iterator<char>(vertPbrFile), {});
-        std::vector<uint8> fragPbrSpv(std::istreambuf_iterator<char>(fragPbrFile), {});
+        std::vector<uint8> vertReflSpv(std::istreambuf_iterator<char>(vertReflFile), {});
+        std::vector<uint8> fragReflSpv(std::istreambuf_iterator<char>(fragReflFile), {});
 
-        RefCounted<Shader> pbrShader = std::make_shared<Shader>(device);
-        pbrShader->fromSources(ShaderLanguage::SPIRV, vertPbrSpv, fragPbrSpv);
-        pbrShader->reflectData();
-        pbrShader->generateUniformLayout();
+        RefCounted<Shader> reflShader = std::make_shared<Shader>(device);
+        reflShader->fromSources(ShaderLanguage::SPIRV, vertReflSpv, fragReflSpv);
+        reflShader->reflectData();
+        reflShader->generateUniformLayout();
 
         // Shadow shader
         std::ifstream shVertFile(SHADOWS_SHADER_PATH_VERT.c_str(), std::ios::binary);
@@ -177,7 +177,7 @@ public:
 
         RefCounted<GraphicsPipeline> pbrPipeline = std::make_shared<GraphicsPipeline>(device);
         pbrPipeline->setTargetFormat(engine->getOffscreenTargetFormat());
-        pbrPipeline->setShader(pbrShader);
+        pbrPipeline->setShader(reflShader);
         pbrPipeline->setVertexBuffersCount(1);
         pbrPipeline->setVertexBufferDesc(0, vertexBufferLayoutDesc);
         pbrPipeline->setDepthTestEnable(true);
@@ -197,20 +197,20 @@ public:
         material->setGraphicsPipeline(pbrPipeline);
         material->createMaterial();
 
-        setMaterialTexture(TEXTURE_ALBEDO_PATH.c_str(), "IB_Albedo", material, sampler);
-        setMaterialTexture(TEXTURE_EMISSIVE_PATH.c_str(), "IB_Emmisive", material, sampler);
-        setMaterialTexture(TEXTURE_AO_PATH.c_str(), "IB_AO", material, sampler);
-        setMaterialTexture(TEXTURE_METALROUGH_PATH.c_str(), "IB_MetalRough", material, sampler);
-        setMaterialTexture(TEXTURE_NORMAL_PATH.c_str(), "IB_Normal", material, sampler);
-        setMaterialCubemap("IB_Cubemap", material, sampler);
+        setMaterialTexture(TEXTURE_ALBEDO_PATH.c_str(), "texAlbedo", material, sampler);
+        setMaterialTexture(TEXTURE_EMISSIVE_PATH.c_str(), "texEmmisive", material, sampler);
+        setMaterialTexture(TEXTURE_AO_PATH.c_str(), "texAO", material, sampler);
+        setMaterialTexture(TEXTURE_METALROUGH_PATH.c_str(), "texMetalRough", material, sampler);
+        setMaterialTexture(TEXTURE_NORMAL_PATH.c_str(), "texNormal", material, sampler);
+        setMaterialCubemap("texEnvMap", material, sampler);
 
-        material->setTexture2D("IB_ShadowMap", defaultShadowTexture);
+        material->setTexture2D("texShadowMap", defaultShadowTexture);
         material->updateUniformData();
 
         whiteMaterial = std::make_shared<Material>(device);
         whiteMaterial->setGraphicsPipeline(pipeline);
         whiteMaterial->createMaterial();
-        whiteMaterial->setTexture2D("IB_ShadowMap", defaultShadowTexture);
+        whiteMaterial->setTexture2D("texShadowMap", defaultShadowTexture);
         whiteMaterial->updateUniformData();
 
         IRenderDevice::VertexBufferLayoutDesc vertShadowLayoutDesc = {};
@@ -450,11 +450,11 @@ private:
     const int32 MESH_COUNT_Z2 = 0;
     const int32 MESH_STEP     = 2;
 
-    String MODEL3D_SHADER_PATH_VERT = "shaders/spirv/shadowmapping/MeshVert.spv";
-    String MODEL3D_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/MeshFrag.spv";
-    String MODEL3D_PBR_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/MeshPBRFrag.spv";
-    String SHADOWS_SHADER_PATH_VERT = "shaders/spirv/shadowmapping/ShadowsVert.spv";
-    String SHADOWS_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/ShadowsFrag.spv";
+    String MODEL3D_SHADER_PATH_VERT = "shaders/spirv/shadowmapping/MeshShadowed.vert.spv";
+    String MODEL3D_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/MeshShadowed.frag.spv";
+    String MODEL3D_REFL_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/MeshReflectiveShadowed.frag.spv";
+    String SHADOWS_SHADER_PATH_VERT = "shaders/spirv/shadowmapping/Shadows.vert.spv";
+    String SHADOWS_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/Shadows.frag.spv";
     String PREFIX_PATH = "./shaders/";
 
     String MESH_PATH                = "assets/models/DamagedHelmet.obj";

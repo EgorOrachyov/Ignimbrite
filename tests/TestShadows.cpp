@@ -246,7 +246,7 @@ private:
             mesh->material = std::make_shared<Material>(device);
             mesh->material->setGraphicsPipeline(meshPipeline);
             mesh->material->createMaterial();
-            mesh->material->setTexture2D("shadowMap", shadowPass.depthTexture);
+            mesh->material->setTexture2D("texShadowMap", shadowPass.depthTexture);
 
             mesh->shadowMaterial = std::make_shared<Material>(device);
             mesh->shadowMaterial->setGraphicsPipeline(shadowsPipeline);
@@ -270,13 +270,14 @@ private:
         Mat4f lightViewProj = scene->light.getViewProjClipMatrix();
 
         for (auto &mesh : scene->meshes) {
-            mesh->material->setMat4("UBO.viewProj", camViewProj);
-            mesh->material->setMat4("UBO.model", mesh->transform);
-            mesh->material->setMat4("UBO.lightSpace", lightViewProj);
-            mesh->material->setVec3("UBO.lightDir", scene->light.getDirection());
+            mesh->material->setMat4("CommonParams.viewProj", camViewProj);
+            mesh->material->setMat4("CommonParams.model", mesh->transform);
+            mesh->material->setMat4("CommonParams.lightSpace", lightViewProj);
+            mesh->material->setVec3("CommonParams.lightDir", scene->light.getDirection());
+            mesh->material->setVec3("CommonParams.cameraPos", scene->camera.getPosition());
             mesh->material->updateUniformData();
 
-            mesh->shadowMaterial->setMat4("UBO.depthMVP", lightViewProj * mesh->transform);
+            mesh->shadowMaterial->setMat4("ShadowParams.depthMVP", lightViewProj * mesh->transform);
             mesh->shadowMaterial->updateUniformData();
         }
     }
@@ -379,10 +380,10 @@ private:
     RefCounted<GraphicsPipeline> meshPipeline;
     RefCounted<GraphicsPipeline> shadowsPipeline;
 
-    String meshVertPath = "shaders/spirv/shadowmapping/MeshVert.spv";
-    String meshFragPath = "shaders/spirv/shadowmapping/MeshFrag.spv";
-    String shadowsVertPath = "shaders/spirv/shadowmapping/ShadowsVert.spv";
-    String shadowsFragPath = "shaders/spirv/shadowmapping/ShadowsFrag.spv";
+    String meshVertPath = "shaders/spirv/shadowmapping/MeshShadowed.vert.spv";
+    String meshFragPath = "shaders/spirv/shadowmapping/MeshShadowed.frag.spv";
+    String shadowsVertPath = "shaders/spirv/shadowmapping/Shadows.vert.spv";
+    String shadowsFragPath = "shaders/spirv/shadowmapping/Shadows.frag.spv";
 
     String planeMeshPath = "assets/models/plane.obj";
     String sphereMeshPath = "assets/models/sphere.obj";

@@ -350,7 +350,7 @@ namespace ignimbrite {
             IRenderDevice::Region region = {mRenderArea.x, mRenderArea.y, {mRenderArea.w, mRenderArea.h}};
 
             const auto &resultFrame = resultPostEffectsPass->getAttachment(0);
-            static String texture0 = "Texture0";
+            static String texture0 = "texScreen";
             mPresentationMaterial->setTexture2D(texture0, resultFrame);
             mPresentationMaterial->updateUniformData();
 

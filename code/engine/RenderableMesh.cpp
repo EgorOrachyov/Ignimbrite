@@ -180,15 +180,15 @@ namespace ignimbrite {
         if (light != nullptr) {
             auto lightViewProj = light->getViewProjClipMatrix();
 
-            mRenderMaterial->setMat4("UBO.lightSpace", lightViewProj);
-            mRenderMaterial->setVec3("UBO.lightDir", light->getDirection());
-            mRenderMaterial->setTexture2D("IB_ShadowMap", context.getShadowMap());
+            mRenderMaterial->setMat4("CommonParams.lightSpace", lightViewProj);
+            mRenderMaterial->setVec3("CommonParams.lightDir", light->getDirection());
+            mRenderMaterial->setTexture2D("texShadowMap", context.getShadowMap());
         }
 
         // todo: another bindings
-        mRenderMaterial->setMat4("UBO.viewProj", camViewProj);
-        mRenderMaterial->setMat4("UBO.model", model);
-//        mRenderMaterial->setVec3("UBO.IB_CameraPos", camera->getPosition());
+        mRenderMaterial->setMat4("CommonParams.viewProj", camViewProj);
+        mRenderMaterial->setMat4("CommonParams.model", model);
+        mRenderMaterial->setVec3("CommonParams.cameraPos", camera->getPosition());
 
         mRenderMaterial->updateUniformData();
         mRenderMaterial->bindGraphicsPipeline();
@@ -212,7 +212,7 @@ namespace ignimbrite {
         auto lightMVP = light->getViewProjClipMatrix() * model;
 
         // todo: another bindings
-        mShadowMaterial->setMat4("UBO.depthMVP", lightMVP);
+        mShadowMaterial->setMat4("ShadowParams.depthMVP", lightMVP);
 
         mShadowMaterial->updateUniformData();
         mShadowMaterial->bindGraphicsPipeline();

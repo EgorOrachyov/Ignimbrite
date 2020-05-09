@@ -106,7 +106,7 @@ public:
     }
 
     void createOffscreenPass() {
-        loadShader(path + "gradient.vert.spv", path + "gradient.frag.spv", offscreenPass.shader);
+        loadShader(path + "Gradient.vert.spv", path + "Gradient.frag.spv", offscreenPass.shader);
 
         IRenderDevice::VertexBufferLayoutDesc vertexLayoutDesc = {};
         vertexLayoutDesc.stride = sizeof(float) * 6;
@@ -198,7 +198,7 @@ public:
     }
 
     void createSurfacePass() {
-        loadShader(path + "fullscreen.vert.spv", path + "fullscreen.frag.spv", surfacePass.shader);
+        loadShader(path + "Fullscreen.vert.spv", path + "Fullscreen.frag.spv", surfacePass.shader);
 
         IRenderDevice::VertexBufferLayoutDesc vertexLayoutDesc = {};
         vertexLayoutDesc.stride = sizeof(float) * 3;

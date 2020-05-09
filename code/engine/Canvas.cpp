@@ -29,10 +29,20 @@ namespace ignimbrite {
         vertLayout.attributes.push_back({1, sizeof(float) * 4, DataFormat::R32G32B32A32_SFLOAT});
 
         // init shader
-        std::ifstream vertFile("shaders/spirv/CanvasPrimitiveVert.spv", std::ios::binary);
-        std::ifstream fragFile("shaders/spirv/CanvasPrimitiveFrag.spv", std::ios::binary);
+        String vertShaderPath = "shaders/spirv/CanvasPrimitive.vert.spv";
+        String fragShaderPath = "shaders/spirv/CanvasPrimitive.frag.spv";
+
+        std::ifstream vertFile(vertShaderPath, std::ios::binary);
+        std::ifstream fragFile(fragShaderPath, std::ios::binary);
         std::vector<uint8> vertSpv(std::istreambuf_iterator<char>(vertFile), {});
         std::vector<uint8> fragSpv(std::istreambuf_iterator<char>(fragFile), {});
+        if (vertSpv.empty()) {
+            throw std::runtime_error("Can't find shader: " + vertShaderPath);
+        }
+        if (fragSpv.empty()) {
+            throw std::runtime_error("Can't find shader: " + fragShaderPath);
+        }
+
         RefCounted<Shader> shader = std::make_shared<Shader>(mDevice);
         shader->fromSources(ShaderLanguage::SPIRV, vertSpv, fragSpv);
         shader->reflectData();
@@ -134,9 +144,9 @@ namespace ignimbrite {
         mMaterialLines2d->setGraphicsPipeline(mPipelineLines);
         mMaterialLines2d->createMaterial();
 
-        mMaterialPoints2d->setMat4("UBO.vp", Mat4f(1.0f));
+        mMaterialPoints2d->setMat4("CanvasParams.vp", Mat4f(1.0f));
         mMaterialPoints2d->updateUniformData();
-        mMaterialLines2d->setMat4("UBO.vp", Mat4f(1.0f));
+        mMaterialLines2d->setMat4("CanvasParams.vp", Mat4f(1.0f));
         mMaterialLines2d->updateUniformData();
     }
 
@@ -195,7 +205,7 @@ namespace ignimbrite {
         if (!ps3d.empty()) {
             mDevice->updateVertexBuffer(vb, sizeof(Point) * ps3d.size(),sizeof(Point) * ps2d.size(), ps3d.data());
 
-            mat3d->setMat4("UBO.vp", mCamera->getViewProjClipMatrix());
+            mat3d->setMat4("CanvasParams.vp", mCamera->getViewProjClipMatrix());
             mat3d->updateUniformData();
             mat3d->bindUniformData();
 

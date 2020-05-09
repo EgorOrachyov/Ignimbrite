@@ -1,11 +1,11 @@
 #version 450
 
-layout (binding = 1) uniform sampler2D TextureShadow;           // Linear
-layout (binding = 2) uniform sampler2D TextureAlbedo;           // sRGB
-layout (binding = 3) uniform sampler2D TextureAO;               // Linear
-layout (binding = 4) uniform sampler2D TextureMetalRoughness;   // Linear
-layout (binding = 5) uniform sampler2D TextureNormal;           // Linear
-layout (binding = 6) uniform sampler2D TextureEmissive;         // Linear ?
+layout (binding = 1) uniform sampler2D texShadowMap;           // Linear
+layout (binding = 2) uniform sampler2D texAlbedo;           // sRGB
+layout (binding = 3) uniform sampler2D texAO;               // Linear
+layout (binding = 4) uniform sampler2D texMetalRoughness;   // Linear
+layout (binding = 5) uniform sampler2D texNormal;           // Linear
+layout (binding = 6) uniform sampler2D texEmissive;         // Linear ?
 
 layout (location = 0) in vec3 inViewVec;
 layout (location = 1) in vec3 inLightVec;
@@ -26,7 +26,7 @@ float textureProj(vec4 shadowCoord, vec2 offset)
     float shadow = 1.0;
     if ( shadowCoord.z > -1.0 && shadowCoord.z < 1.0 )
     {
-        float dist = texture(TextureShadow, shadowCoord.st + offset).r;
+        float dist = texture(texShadowMap, shadowCoord.st + offset).r;
         if ( shadowCoord.w > 0.0 && dist < shadowCoord.z - bias)
         {
             shadow = 0.0;
@@ -37,7 +37,7 @@ float textureProj(vec4 shadowCoord, vec2 offset)
 
 float filterPCF(vec4 sc)
 {
-    ivec2 texDim = textureSize(TextureShadow, 0);
+    ivec2 texDim = textureSize(texShadowMap, 0);
     float dx = 1 / float(texDim.x);
 
     vec2 offset = vec2(mod(gl_FragCoord.x, 2), mod(gl_FragCoord.y, 2));
@@ -99,7 +99,7 @@ vec3 fresnelSchlick(float NdotL, vec3 F0)
 
 // Extract normal accordingly to tangent space
 vec3 getNormal() {
-    vec3 normal = texture(TextureNormal, inTexCoord).rgb;
+    vec3 normal = texture(texNormal, inTexCoord).rgb;
     normal = normalize(normal * 2.0f - 1.0f);
     return normalize(inTBN * normal);
 }
@@ -110,11 +110,11 @@ void main()
         filterPCF(inShadowCoord / inShadowCoord.w) :
         textureProj(inShadowCoord / inShadowCoord.w, vec2(0.0));
 
-    vec3 emissive   = texture(TextureEmissive,inTexCoord).rgb;
-    vec3 albedo     = pow(texture(TextureAlbedo,inTexCoord).rgb, vec3(2.2));      // remember, abledo in sRGB
-    float metallic  = texture(TextureMetalRoughness,inTexCoord).b;
-    float roughness = texture(TextureMetalRoughness,inTexCoord).g;
-    float ao        = texture(TextureAO,inTexCoord).r;
+    vec3 emissive   = texture(texEmissive,inTexCoord).rgb;
+    vec3 albedo     = pow(texture(texAlbedo,inTexCoord).rgb, vec3(2.2));      // remember, abledo in sRGB
+    float metallic  = texture(texMetalRoughness,inTexCoord).b;
+    float roughness = texture(texMetalRoughness,inTexCoord).g;
+    float ao        = texture(texAO,inTexCoord).r;
 
     vec3 N = getNormal();               // World space normal vector
     vec3 V = normalize(inViewVec);      // From fragment to camera

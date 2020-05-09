@@ -26,6 +26,13 @@ namespace ignimbrite {
                              const std::vector<ignimbrite::uint8> &fragment) {
         if (mHandle.isNotNull()) return;
 
+        if (vertex.empty()) {
+            throw std::runtime_error("Vertex shader source is empty");
+        }
+        if (fragment.empty()) {
+            throw std::runtime_error("Fragment shader source is empty");
+        }
+
         mProgramDesc.language = language;
         mProgramDesc.shaders.resize(2);
         mProgramDesc.shaders[0].type = ShaderType::Vertex;

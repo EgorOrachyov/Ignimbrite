@@ -85,6 +85,13 @@ namespace ignimbrite {
             FileUtils::loadBinary(vertexName, vertexCode);
             FileUtils::loadBinary(fragmentName, fragmentCode);
 
+            if (vertexCode.empty()) {
+                throw std::runtime_error("Can't find shader: " + vertexName);
+            }
+            if (fragmentName.empty()) {
+                throw std::runtime_error("Can't find shader: " + fragmentName);
+            }
+
             shader->fromSources(ShaderLanguage::SPIRV, vertexCode, fragmentCode);
         }
         else {

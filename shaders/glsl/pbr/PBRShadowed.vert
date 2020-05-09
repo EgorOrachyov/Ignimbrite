@@ -6,14 +6,14 @@ layout (location = 2) in vec2 inTexCoord;
 layout (location = 3) in vec3 inTangent;
 layout (location = 4) in vec3 inBitangent;
 
-layout (binding = 0) uniform UBO
+layout (binding = 0) uniform CommonParams
 {
     mat4 viewProj;
     mat4 model;
     mat4 lightSpace;
     vec3 lightDir;
-    vec3 cameraPosition;
-} ubo;
+    vec3 cameraPos;
+} commonParams;
 
 layout (location = 0) out vec3 outViewVec;
 layout (location = 1) out vec3 outLightVec;
@@ -31,19 +31,19 @@ const mat4 biasMat = mat4(
 
 void main()
 {
-    vec3 N    = normalize(mat3(ubo.model) * inNormal);;
-    vec3 T    = normalize(mat3(ubo.model) * inTangent);
-    vec3 B    = normalize(mat3(ubo.model) * inBitangent);
+    vec3 N    = normalize(mat3(commonParams.model) * inNormal);;
+    vec3 T    = normalize(mat3(commonParams.model) * inTangent);
+    vec3 B    = normalize(mat3(commonParams.model) * inBitangent);
     outTBN    = mat3(T,B,N);
 
-    outLightVec = -normalize(ubo.lightDir);
+    outLightVec = -normalize(commonParams.lightDir);
     outTexCoord = inTexCoord;
 
-    vec4 pos       = ubo.model * vec4(inPos, 1.0);
-    outViewVec     = ubo.cameraPosition - pos.xyz;
+    vec4 pos       = commonParams.model * vec4(inPos, 1.0);
+    outViewVec     = commonParams.cameraPos - pos.xyz;
     outPosition    = pos;
-    outShadowCoord = (biasMat * ubo.lightSpace * ubo.model) * vec4(inPos, 1.0);
+    outShadowCoord = (biasMat * commonParams.lightSpace * commonParams.model) * vec4(inPos, 1.0);
 
-    gl_Position = ubo.viewProj * ubo.model * pos;
+    gl_Position = commonParams.viewProj * commonParams.model * pos;
 }
 

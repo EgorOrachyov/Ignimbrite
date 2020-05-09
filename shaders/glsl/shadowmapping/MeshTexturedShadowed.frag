@@ -1,6 +1,7 @@
 #version 450
 
-layout (binding = 1) uniform sampler2D IB_ShadowMap;
+layout (binding = 1) uniform sampler2D texShadowMap;
+layout (binding = 2) uniform sampler2D texAlbedo;
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec3 inCameraPos;
@@ -21,7 +22,7 @@ float textureProj(vec4 shadowCoord, vec2 offset)
 	float shadow = 1.0;
 	if ( shadowCoord.z > -1.0 && shadowCoord.z < 1.0 ) 
 	{
-		float dist = texture(IB_ShadowMap, shadowCoord.st + offset).r;
+		float dist = texture(texShadowMap, shadowCoord.st + offset).r;
 		if ( shadowCoord.w > 0.0 && dist < shadowCoord.z - bias) 
 		{
 			shadow = 0.0;
@@ -32,7 +33,7 @@ float textureProj(vec4 shadowCoord, vec2 offset)
 
 float filterPCF(vec4 sc)
 {
-	ivec2 texDim = textureSize(IB_ShadowMap, 0);
+	ivec2 texDim = textureSize(texShadowMap, 0);
 	float dx = 1 / float(texDim.x);
 
 	vec2 offset = vec2(mod(gl_FragCoord.x, 2), mod(gl_FragCoord.y, 2));
@@ -65,5 +66,5 @@ void main()
 	vec3 R = normalize(-reflect(L, N));
 	vec3 c = vec3(max(dot(N, L) * shadow, ambient));
 
-	outColor = vec4(c, 1.0);
+	outColor = vec4(c, 1.0) * texture(texAlbedo, inTexCoord);
 }

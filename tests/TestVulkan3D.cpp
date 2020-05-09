@@ -173,7 +173,7 @@ private:
         matData.material = std::make_shared<Material>(pDevice);
         matData.material->setGraphicsPipeline(matData.graphicsPipeline);
         matData.material->createMaterial();
-        matData.material->setTexture2D("texSampler", matData.texture);
+        matData.material->setTexture2D("texAlbedo", matData.texture);
         matData.material->updateUniformData();
     }
 
@@ -259,7 +259,7 @@ private:
     void updateScene() {
         calculateMvp(window.widthFrameBuffer, window.heightFrameBuffer, fov, pitch, yaw, z, matData.data.model, matData.data.MVP);
 
-        static String mvpName = "bufferVals.mvp";
+        static String mvpName = "MdParams.mvp";
         matData.material->setMat4(mvpName, matData.data.MVP);
         matData.material->updateUniformData();
     }
@@ -321,8 +321,8 @@ private:
     String objMeshPath;
     String texturePath;
 
-    String MODEL3D_SHADER_PATH_VERT = "shaders/spirv/vert3d.spv";
-    String MODEL3D_SHADER_PATH_FRAG = "shaders/spirv/frag3d.spv";
+    String MODEL3D_SHADER_PATH_VERT = "shaders/spirv/Textured.vert.spv";
+    String MODEL3D_SHADER_PATH_FRAG = "shaders/spirv/Textured.frag.spv";
 
     static float32 pitch;
     static float32 yaw;
@@ -340,7 +340,7 @@ float32 Vulkan3DTest::prevx = 0;
 float32 Vulkan3DTest::prevy = 0;
 
 int main(int argc, char **argv) {
-    const char *mesh = "assets/modspvels/sphere.obj";
+    const char *mesh = "assets/models/sphere.obj";
     const char *texture = "assets/textures/double.png";
 
     if (argc >= 3) {

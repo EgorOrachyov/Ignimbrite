@@ -527,8 +527,8 @@ private:
     RefCounted<VulkanRenderDevice>  device;
 
     String name           = "Frustum Test";
-    String vertShaderPath = "shaders/spirv/TestFrustumVert.spv";
-    String fragShaderPath = "shaders/spirv/TestFrustumFrag.spv";
+    String vertShaderPath = "shaders/spirv/TestFrustum.vert.spv";
+    String fragShaderPath = "shaders/spirv/TestFrustum.frag.spv";
 };
 
 int32 main() {

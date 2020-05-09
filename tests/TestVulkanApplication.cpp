@@ -130,8 +130,8 @@ public:
     }
 
     void loadTestShader(VulkanRenderDevice &device) {
-        std::ifstream vertFile("shaders/spirv/vert.spv", std::ios::binary);
-        std::ifstream fragFile("shaders/spirv/frag.spv", std::ios::binary);
+        std::ifstream vertFile("shaders/spirv/Triangle.vert.spv", std::ios::binary);
+        std::ifstream fragFile("shaders/spirv/Triangle.frag.spv", std::ios::binary);
 
         if (!vertFile.is_open() || !fragFile.is_open()) {
             throw std::runtime_error("Failed to open spir-v files");

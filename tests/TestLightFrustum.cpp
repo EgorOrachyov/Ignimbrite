@@ -78,6 +78,9 @@ struct Scene {
     float32 camShadowViewPercent = 1.0f;
 };
 
+// This test shows light frustum that fits camera frustum.
+// Note: light frustum's minZ is offset by some value
+// for drawing objects to shadow map that are "behind" a camera.
 class TestLightFrustum {
 public:
     TestLightFrustum(const Frustum &frustum, const AABB *aabbs, uint32 aabbCount) {
@@ -630,8 +633,8 @@ private:
     RefCounted<VulkanRenderDevice> device;
 
     String name = "Frustum Test";
-    String vertShaderPath = "shaders/spirv/TestFrustumVert.spv";
-    String fragShaderPath = "shaders/spirv/TestFrustumFrag.spv";
+    String vertShaderPath = "shaders/spirv/TestFrustum.vert.spv";
+    String fragShaderPath = "shaders/spirv/TestFrustum.frag.spv";
 };
 
 int32 main() {

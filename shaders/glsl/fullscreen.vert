@@ -1,9 +1,10 @@
 #version 450
 
-layout(location = 0) in vec3 position;
-layout(location = 0) out vec2 screenCoords;
+layout(location = 0) in vec3 inPosition;
+
+layout(location = 0) out vec2 outScreenCoords;
 
 void main() {
-    screenCoords = position.xy;
-    gl_Position = vec4(position, 1.0f);
+    outScreenCoords = inPosition.xy;
+    gl_Position = vec4(inPosition, 1.0f);
 }

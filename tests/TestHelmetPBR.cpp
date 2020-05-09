@@ -179,7 +179,7 @@ public:
         whiteMaterial = std::make_shared<Material>(device);
         whiteMaterial->setGraphicsPipeline(pipeline);
         whiteMaterial->createMaterial();
-        whiteMaterial->setTexture2D("IB_ShadowMap", defaultShadowTexture);
+        whiteMaterial->setTexture2D("texShadowMap", defaultShadowTexture);
         whiteMaterial->updateUniformData();
 
         IRenderDevice::VertexBufferLayoutDesc vertShadowLayoutDesc = {};
@@ -378,12 +378,12 @@ public:
         auto normal = loadTexture(TEXTURE_HELMET_NORMAL, sampler);
         auto emissive = loadTexture(TEXTURE_HELMET_EMISSIVE, sampler);
 
-        pbrMaterial->setTexture2D("TextureShadow", defaultShadowTexture);
-        pbrMaterial->setTexture2D("TextureAlbedo", albedo);
-        pbrMaterial->setTexture2D("TextureAO", ao);
-        pbrMaterial->setTexture2D("TextureMetalRoughness", metalroughness);
-        pbrMaterial->setTexture2D("TextureNormal", normal);
-        pbrMaterial->setTexture2D("TextureEmissive", emissive);
+        pbrMaterial->setTexture2D("texShadowMap", defaultShadowTexture);
+        pbrMaterial->setTexture2D("texAlbedo", albedo);
+        pbrMaterial->setTexture2D("texAO", ao);
+        pbrMaterial->setTexture2D("texMetalRoughness", metalroughness);
+        pbrMaterial->setTexture2D("texNormal", normal);
+        pbrMaterial->setTexture2D("texEmissive", emissive);
         pbrMaterial->updateUniformData();
     }
 
@@ -403,14 +403,14 @@ public:
                 if (light != nullptr) {
                     auto lightViewProj = light->getViewProjClipMatrix();
 
-                    mRenderMaterial->setTexture2D("TextureShadow", context.getShadowMap());
-                    mRenderMaterial->setMat4("UBO.lightSpace", lightViewProj);
-                    mRenderMaterial->setVec3("UBO.lightDir", light->getDirection());
+                    mRenderMaterial->setTexture2D("texShadowMap", context.getShadowMap());
+                    mRenderMaterial->setMat4("CommonParams.lightSpace", lightViewProj);
+                    mRenderMaterial->setVec3("CommonParams.lightDir", light->getDirection());
                 }
 
-                mRenderMaterial->setMat4("UBO.viewProj", camViewProj);
-                mRenderMaterial->setMat4("UBO.model", model);
-                mRenderMaterial->setVec3("UBO.cameraPosition", camera->getPosition());
+                mRenderMaterial->setMat4("CommonParams.viewProj", camViewProj);
+                mRenderMaterial->setMat4("CommonParams.model", model);
+                mRenderMaterial->setVec3("CommonParams.cameraPos", camera->getPosition());
 
                 mRenderMaterial->updateUniformData();
                 mRenderMaterial->bindGraphicsPipeline();
@@ -541,10 +541,10 @@ private:
 
     const uint32 SHADOW_MAP_SIZE = 4096;
 
-    String MODEL3D_SHADER_PATH_VERT = "shaders/spirv/shadowmapping/MeshVert.spv";
-    String MODEL3D_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/MeshFrag.spv";
-    String SHADOWS_SHADER_PATH_VERT = "shaders/spirv/shadowmapping/ShadowsVert.spv";
-    String SHADOWS_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/ShadowsFrag.spv";
+    String MODEL3D_SHADER_PATH_VERT = "shaders/spirv/shadowmapping/MeshShadowed.vert.spv";
+    String MODEL3D_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/MeshShadowed.frag.spv";
+    String SHADOWS_SHADER_PATH_VERT = "shaders/spirv/shadowmapping/Shadows.vert.spv";
+    String SHADOWS_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/Shadows.frag.spv";
     String PREFIX_PATH = "./shaders/";
 
     String MESH_PLANE_PATH          = "assets/models/plane.obj";
@@ -566,8 +566,8 @@ private:
     String TEXTURE_HELMET_METALROUGHNESS = "assets/textures/DamagedHelmet_MetalRoughness.jpg";
     String TEXTURE_HELMET_NORMAL         = "assets/textures/DamagedHelmet_Normal.jpg";
 
-    String SHADER_PBR_VERT = "shaders/spirv/pbr/ShadowsPBR.vert.spv";
-    String SHADER_PBR_FRAG = "shaders/spirv/pbr/ShadowsPBR.frag.spv";
+    String SHADER_PBR_VERT = "shaders/spirv/pbr/PBRShadowed.vert.spv";
+    String SHADER_PBR_FRAG = "shaders/spirv/pbr/PBRShadowed.frag.spv";
 
     RefCounted<Material> pbrMaterial;
     RefCounted<Texture> defaultShadowTexture;

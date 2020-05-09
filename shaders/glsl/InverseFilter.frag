@@ -1,13 +1,12 @@
 #version 450
-#extension GL_ARB_separate_shader_objects : enable
-#extension GL_ARB_shading_language_420pack : enable
 
-layout (location = 0) out vec4 fColor;
-layout (location = 0) in vec2 fTexCoords;
+layout (location = 0) in vec2 inTexCoords;
 
-layout (binding = 0) uniform sampler2D Texture0;
+layout (location = 0) out vec4 outColor;
+
+layout (binding = 0) uniform sampler2D texScreen;
 
 void main() {
-    vec3 color = texture(Texture0, fTexCoords.xy).rgb;
-    fColor = vec4(vec3(1.0f) - color, 1.0f);
+    vec3 color = texture(texScreen, inTexCoords.xy).rgb;
+    outColor = vec4(vec3(1.0f) - color, 1.0f);
 }
