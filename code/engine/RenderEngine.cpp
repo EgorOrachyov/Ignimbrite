@@ -187,27 +187,103 @@ namespace ignimbrite {
         mRenderDevice->drawListBegin();
 
         Vec3f cameraPos = mCamera->getPosition();
-        const auto& frustum = mCamera->getFrustum();
+        const auto &frustum = mCamera->getFrustum();
 
-        // todo: make shadow distance variable ?
-        float shadowDistance = 10.0f;
-        Frustum frustumCut = frustum;
-        frustumCut.cutFrustum(shadowDistance / mCamera->getFarClip());
+        {
+            IRenderDevice::Region shRegion = {0, 0,
+                                              {mShadowsRenderTarget->getWidth(), mShadowsRenderTarget->getHeight()}};
+            std::vector<IRenderDevice::Color> shClearColors;
 
-        for (auto &light : mLightSources) {
-            if (!light->castShadow()) {
+            mRenderDevice->drawListBindFramebuffer(mShadowsRenderTarget->getHandle(), shClearColors, shRegion);
+            PipelineContext::cacheFramebufferBinding(mShadowsRenderTarget->getHandle());
+            PipelineContext::cachePipelineBinding(ID<IRenderDevice::GraphicsPipeline>());
+
+            // todo: make shadow distance variable ?
+            float shadowDistance = 10.0f;
+            Frustum frustumCut = frustum;
+            frustumCut.cutFrustum(shadowDistance / mCamera->getFarClip());
+
+            for (auto &light : mLightSources) {
+                if (!light->castShadow()) {
+                    break;
+                }
+
+                mContext->setGlobalLight(light.get());
+
+                Vec3f lightpos = light->getPosition();
+
+                light->buildViewFrustum(frustumCut);
+                const auto &lightFrustum = light->getFrustum();
+
+                for (const auto &layer: mRenderLayers) {
+                    const auto &list = layer.second;
+
+                    if (list.empty())
+                        continue;
+
+                    mCollectQueue.clear();
+                    mVisibleSortedQueue.clear();
+
+                    for (auto object: list) {
+                        // object not visible at all or doesn't cast shadows
+                        if (!object->isVisible() || !object->castShadows())
+                            continue;
+
+                        Vec3f pos = object->getWorldPosition();
+                        float32 maxViewDistanceSq = object->getMaxViewDistanceSquared();
+                        float32 distanceSq = glm::distance2(lightpos, pos);
+
+                        // Object too far and we can cull it
+                        if (distanceSq > maxViewDistanceSq && object->canApplyCulling())
+                            continue;
+
+                        RenderQueueElement element = {};
+                        element.object = object;
+                        element.viewDistance = std::sqrt(distanceSq);
+                        element.boundingBox = object->getWorldBoundingBox();
+
+                        mCollectQueue.push_back(element);
+                    }
+
+                    // Do frustum culling
+                    for (const auto &element: mCollectQueue) {
+                        if (lightFrustum.isInside(element.boundingBox))
+                            mVisibleSortedQueue.push_back(element);
+                    }
+
+                    // Notify elements entered the render queue successfully and get it material for rendering
+                    for (auto &element: mVisibleSortedQueue) {
+                        element.object->onShadowRenderQueueEntered(element.viewDistance);
+                        element.material = element.object->getShadowRenderMaterial();
+                    }
+
+                    // Sort with distance and material predicate
+                    RenderQueueElement::SortPredicate predicate;
+                    std::sort(mVisibleSortedQueue.begin(), mVisibleSortedQueue.end(), predicate);
+
+                    for (const auto &element: mVisibleSortedQueue) {
+                        element.object->onShadowRender(*mContext);
+                    }
+
+                }
+
+                // only 1 light casts shadows
                 break;
             }
+        }
 
-            mContext->setGlobalLight(light.get());
+        // todo: main pass
 
-            Vec3f lightpos = light->getPosition();
+        {
+            std::vector<IRenderDevice::Color> clearColors = {IRenderDevice::Color{0, 0, 0, 0}};
+            IRenderDevice::Region region = {mRenderArea.x, mRenderArea.y, {mRenderArea.w, mRenderArea.h}};
 
-            light->buildViewFrustum(frustumCut);
-            const auto &lightFrustum = light->getFrustum();
+            //mRenderDevice->drawListBegin();
+            mRenderDevice->drawListBindFramebuffer(mOffscreenTarget1->getHandle(), clearColors, region);
+            PipelineContext::cacheFramebufferBinding(mOffscreenTarget1->getHandle());
 
-            for (const auto& layer: mRenderLayers) {
-                const auto& list = layer.second;
+            for (const auto &layer: mRenderLayers) {
+                const auto &list = layer.second;
 
                 if (list.empty())
                     continue;
@@ -216,13 +292,13 @@ namespace ignimbrite {
                 mVisibleSortedQueue.clear();
 
                 for (auto object: list) {
-                    // object not visible at all or doesn't cast shadows
-                    if (!object->isVisible() || !object->castShadows())
+                    // object not visible at all
+                    if (!object->isVisible())
                         continue;
 
                     Vec3f pos = object->getWorldPosition();
                     float32 maxViewDistanceSq = object->getMaxViewDistanceSquared();
-                    float32 distanceSq = glm::distance2(lightpos, pos);
+                    float32 distanceSq = glm::distance2(cameraPos, pos);
 
                     // Object too far and we can cull it
                     if (distanceSq > maxViewDistanceSq && object->canApplyCulling())
@@ -237,97 +313,23 @@ namespace ignimbrite {
                 }
 
                 // Do frustum culling
-                for (const auto& element: mCollectQueue) {
-                    if (lightFrustum.isInside(element.boundingBox))
+                for (const auto &element: mCollectQueue) {
+                    if (frustum.isInside(element.boundingBox))
                         mVisibleSortedQueue.push_back(element);
                 }
 
                 // Notify elements entered the render queue successfully and get it material for rendering
-                for (auto& element: mVisibleSortedQueue) {
-                    element.object->onShadowRenderQueueEntered(element.viewDistance);
-                    element.material = element.object->getShadowRenderMaterial();
+                for (auto &element: mVisibleSortedQueue) {
+                    element.object->onRenderQueueEntered(element.viewDistance);
+                    element.material = element.object->getRenderMaterial();
                 }
 
                 // Sort with distance and material predicate
                 RenderQueueElement::SortPredicate predicate;
                 std::sort(mVisibleSortedQueue.begin(), mVisibleSortedQueue.end(), predicate);
 
-                {
-                    IRenderDevice::Region region = {0, 0, {mShadowsRenderTarget->getWidth(), mShadowsRenderTarget->getHeight()}};
-                    std::vector<IRenderDevice::Color> clearColors;
-
-                    mRenderDevice->drawListBindFramebuffer(mShadowsRenderTarget->getHandle(), clearColors, region);
-                    PipelineContext::cacheFramebufferBinding(mShadowsRenderTarget->getHandle());
-                    PipelineContext::cachePipelineBinding(ID<IRenderDevice::GraphicsPipeline>());
-
-                    for (const auto& element: mVisibleSortedQueue) {
-                        element.object->onShadowRender(*mContext);
-                    }
-                }
-            }
-
-            // only 1 light casts shadows
-            break;
-        }
-
-        // todo: main pass
-
-        for (const auto& layer: mRenderLayers) {
-            const auto& list = layer.second;
-
-            if (list.empty())
-                continue;
-
-            mCollectQueue.clear();
-            mVisibleSortedQueue.clear();
-
-            for (auto object: list) {
-                // object not visible at all
-                if (!object->isVisible())
-                    continue;
-
-                Vec3f pos = object->getWorldPosition();
-                float32 maxViewDistanceSq = object->getMaxViewDistanceSquared();
-                float32 distanceSq = glm::distance2(cameraPos, pos);
-
-                // Object too far and we can cull it
-                if (distanceSq > maxViewDistanceSq && object->canApplyCulling())
-                    continue;
-
-                RenderQueueElement element = {};
-                element.object = object;
-                element.viewDistance = std::sqrt(distanceSq);
-                element.boundingBox = object->getWorldBoundingBox();
-
-                mCollectQueue.push_back(element);
-            }
-
-            // Do frustum culling
-            for (const auto& element: mCollectQueue) {
-                if (frustum.isInside(element.boundingBox))
-                    mVisibleSortedQueue.push_back(element);
-            }
-
-            // Notify elements entered the render queue successfully and get it material for rendering
-            for (auto& element: mVisibleSortedQueue) {
-                element.object->onRenderQueueEntered(element.viewDistance);
-                element.material = element.object->getRenderMaterial();
-            }
-
-            // Sort with distance and material predicate
-            RenderQueueElement::SortPredicate predicate;
-            std::sort(mVisibleSortedQueue.begin(), mVisibleSortedQueue.end(), predicate);
-
-            {
-                static std::vector<IRenderDevice::Color> clearColors = { IRenderDevice::Color{0,0,0,0} };
-                IRenderDevice::Region region = { mRenderArea.x, mRenderArea.y, { mRenderArea.w, mRenderArea.h } };
-
-                //mRenderDevice->drawListBegin();
-                mRenderDevice->drawListBindFramebuffer(mOffscreenTarget1->getHandle(), clearColors, region);
-                PipelineContext::cacheFramebufferBinding(mOffscreenTarget1->getHandle());
-
                 // Pass to object render context and call render for each
-                for (const auto& element: mVisibleSortedQueue) {
+                for (const auto &element: mVisibleSortedQueue) {
                     element.object->onRender(*mContext);
                 }
             }
