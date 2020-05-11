@@ -18,6 +18,7 @@ layout (location = 1) out vec3 outCameraPos;
 layout (location = 2) out vec3 outLightVec;
 layout (location = 3) out vec4 outShadowCoord;
 layout (location = 4) out vec2 outTexCoords;
+layout (location = 5) out vec4 outPosition;
 
 const mat4 biasMat = mat4(
 	0.5, 0.0, 0.0, 0.0,
@@ -34,6 +35,7 @@ void main()
 	outLightVec = -normalize(commonParams.lightDir);
 	outCameraPos = commonParams.cameraPos;
 	outTexCoords = inUV;
+	outPosition = pos;
 
 	outShadowCoord = (biasMat * commonParams.lightSpace * commonParams.model) * vec4(inPos, 1.0);
 }
