@@ -7,7 +7,6 @@
 /* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
-#include <Geometry.h>
 #include <RenderEngine.h>
 #include <PipelineContext.h>
 
@@ -18,10 +17,6 @@ namespace ignimbrite {
     }
 
     RenderEngine::~RenderEngine() {
-        if (mFullscreenQuad.isNotNull()) {
-            mRenderDevice->destroyVertexBuffer(mFullscreenQuad);
-            mFullscreenQuad = ID<IRenderDevice::VertexBuffer>();
-        }
     }
 
     void RenderEngine::setCamera(RefCounted<Camera> camera) {
@@ -75,6 +70,13 @@ namespace ignimbrite {
         mOffscreenTarget1->getAttachment(0)->setSampler(sampler);
         mOffscreenTarget2->getAttachment(0)->setSampler(sampler);
 
+        if (mOffscreenTarget1->hasDepthStencilAttachment()) {
+            mOffscreenTarget1->getDepthStencilAttachment()->setSampler(sampler);
+        }
+        if (mOffscreenTarget2->hasDepthStencilAttachment()) {
+            mOffscreenTarget2->getDepthStencilAttachment()->setSampler(sampler);
+        }
+
         mTargetSurface = surface;
 
         if (mCanvas) {
@@ -96,11 +98,9 @@ namespace ignimbrite {
         mRenderArea.h = h;
     }
 
-    void RenderEngine::setPresentationPass(RefCounted<Material> present) {
+    void RenderEngine::setPresentationPass(RefCounted<IPresentationPass> presentationPass) {
         CHECK_DEVICE_PRESENT();
-
-        mPresentationMaterial = std::move(present);
-        Geometry::createFullscreenQuad(mFullscreenQuad, mRenderDevice);
+        mPresentationPass = std::move(presentationPass);
     }
 
     void RenderEngine::addRenderable(RefCounted<IRenderable> object) {
@@ -348,20 +348,8 @@ namespace ignimbrite {
         }
 
         {
-            IRenderDevice::Color color = {0.0f, 0.0f, 0.0f, 0.0f};
             IRenderDevice::Region region = {mRenderArea.x, mRenderArea.y, {mRenderArea.w, mRenderArea.h}};
-
-            const auto &resultFrame = resultPostEffectsPass->getAttachment(0);
-            static String texture0 = "texScreen";
-            mPresentationMaterial->setTexture2D(texture0, resultFrame);
-            mPresentationMaterial->updateUniformData();
-
-            mRenderDevice->drawListBindSurface(mTargetSurface, color, region);
-            PipelineContext::cacheSurfaceBinding(mTargetSurface);
-            mPresentationMaterial->bindGraphicsPipeline();
-            mPresentationMaterial->bindUniformData();
-            mRenderDevice->drawListBindVertexBuffer(mFullscreenQuad, 0, 0);
-            mRenderDevice->drawListDraw(6, 1);
+            mPresentationPass->present(mTargetSurface, region, resultPostEffectsPass);
         }
 
         mCanvas->render();
@@ -402,8 +390,8 @@ namespace ignimbrite {
     }
 
     void RenderEngine::CHECK_FINAL_PASS_PRESENT() const {
-        if (mPresentationMaterial == nullptr)
-            throw std::runtime_error("Presentation material is not specified");
+        if (!mPresentationPass)
+            throw std::runtime_error("Presentation pass is not specified");
     }
 
     void RenderEngine::addScreenPoint2d(const Vec2f &p, const Vec4f &color, float size) {
@@ -420,6 +408,23 @@ namespace ignimbrite {
 
     void RenderEngine::addLine3d(const Vec3f &a, const Vec3f &b, const Vec4f &color, float width) {
         mCanvas->addLine3d(a, b, color, width);
+    }
+
+    RefCounted<Texture> RenderEngine::getDefaultWhiteTexture() {
+        CHECK_DEVICE_PRESENT();
+
+        if (!mDefaultWhiteTexture) {
+            const uint8_t whitePixel[4] = {255, 255, 255, 255};
+
+            RefCounted<Sampler> sampler = std::make_shared<Sampler>(mRenderDevice);
+            sampler->setHighQualityFiltering();
+
+            mDefaultWhiteTexture = std::make_shared<Texture>(mRenderDevice);
+            mDefaultWhiteTexture->setDataAsRGBA8(1, 1, whitePixel, true);
+            mDefaultWhiteTexture->setSampler(sampler);
+        }
+
+        return mDefaultWhiteTexture;
     }
 
 }

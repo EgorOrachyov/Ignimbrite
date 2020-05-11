@@ -18,23 +18,16 @@
 #include <VulkanRenderDevice.h>
 #include <VertexLayoutFactory.h>
 #include <FileUtils.h>
+#include <PresentationPass.h>
 
 #include <fstream>
 #include <stb_image.h>
 
 using namespace ignimbrite;
 
-static const int W = 1920;
-static const int H = 1280;
-
 struct Window {
-#ifdef __APPLE__
-    int32 w = W / 2;
-    int32 h = H / 2;
-#else
-    int32 w = W;
-    int32 h = H;
-#endif
+    int32 w = 1280;
+    int32 h = 720;
     GLFWwindow* handle;
     ID<IRenderDevice::Surface> surface;
     String name = "PBR Helmet Test";
@@ -108,7 +101,9 @@ public:
         engine->addLightSource(light);
         engine->setRenderArea(0, 0, window.w, window.h);
 
-        auto presentationPass = MaterialFullscreen::fullscreenQuad(SHADERS_FOLDER_PATH, window.surface, device);
+        auto presentationMaterial = MaterialFullscreen::fullscreenQuad(SHADERS_FOLDER_PATH, window.surface, device);
+        auto presentationPass = std::make_shared<PresentationPass>(device, engine->getDefaultWhiteTexture(), presentationMaterial);
+        presentationPass->enableDepthShow();
         engine->setPresentationPass(presentationPass);
 
         auto shadowTarget = std::make_shared<RenderTarget>(device);
@@ -179,7 +174,7 @@ public:
         whiteMaterial = std::make_shared<Material>(device);
         whiteMaterial->setGraphicsPipeline(pipeline);
         whiteMaterial->createMaterial();
-        whiteMaterial->setTexture2D("texShadowMap", defaultShadowTexture);
+        whiteMaterial->setTexture("texShadowMap", defaultShadowTexture);
         whiteMaterial->updateUniformData();
 
         IRenderDevice::VertexBufferLayoutDesc vertShadowLayoutDesc = {};
@@ -215,7 +210,7 @@ public:
             texture->setDataAsRGBA8(1, 1, whitePixel, true);
         }
 
-        mt->setTexture2D(name, texture);
+        mt->setTexture(name, texture);
 
         stbi_image_free(pixels);
     }
@@ -254,7 +249,7 @@ public:
 
         texture->setDataAsCubemapRGBA8(w, h, data, true);
 
-        mt->setTexture2D(name, texture);
+        mt->setTexture(name, texture);
 
         delete[] data;
     }
@@ -378,12 +373,12 @@ public:
         auto normal = loadTexture(TEXTURE_HELMET_NORMAL, sampler);
         auto emissive = loadTexture(TEXTURE_HELMET_EMISSIVE, sampler);
 
-        pbrMaterial->setTexture2D("texShadowMap", defaultShadowTexture);
-        pbrMaterial->setTexture2D("texAlbedo", albedo);
-        pbrMaterial->setTexture2D("texAO", ao);
-        pbrMaterial->setTexture2D("texMetalRoughness", metalroughness);
-        pbrMaterial->setTexture2D("texNormal", normal);
-        pbrMaterial->setTexture2D("texEmissive", emissive);
+        pbrMaterial->setTexture("texShadowMap", defaultShadowTexture);
+        pbrMaterial->setTexture("texAlbedo", albedo);
+        pbrMaterial->setTexture("texAO", ao);
+        pbrMaterial->setTexture("texMetalRoughness", metalroughness);
+        pbrMaterial->setTexture("texNormal", normal);
+        pbrMaterial->setTexture("texEmissive", emissive);
         pbrMaterial->updateUniformData();
     }
 
@@ -403,7 +398,7 @@ public:
                 if (light != nullptr) {
                     auto lightViewProj = light->getViewProjClipMatrix();
 
-                    mRenderMaterial->setTexture2D("texShadowMap", context.getShadowMap());
+                    mRenderMaterial->setTexture("texShadowMap", context.getShadowMap());
                     mRenderMaterial->setMat4("CommonParams.lightSpace", lightViewProj);
                     mRenderMaterial->setVec3("CommonParams.lightDir", light->getDirection());
                 }

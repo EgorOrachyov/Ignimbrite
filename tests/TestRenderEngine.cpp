@@ -17,6 +17,7 @@
 #include <MaterialFullscreen.h>
 #include <VulkanRenderDevice.h>
 #include <VertexLayoutFactory.h>
+#include <PresentationPass.h>
 
 #include <fstream>
 #include <stb_image.h>
@@ -61,7 +62,7 @@ public:
     }
 
     void initDevice() {
-        device = std::make_shared<VulkanRenderDevice>(window.extensionsCount, window.extensions);
+        device = std::make_shared<VulkanRenderDevice>(window.extensionsCount, window.extensions, true);
         window.surface = VulkanExtensions::createSurfaceGLFW((VulkanRenderDevice&)*device, window.handle, window.w, window.h, window.name);
     }
 
@@ -103,7 +104,9 @@ public:
         engine->addLightSource(light);
         engine->setRenderArea(0, 0, window.w, window.h);
 
-        auto presentationPass = MaterialFullscreen::fullscreenQuad(SHADERS_FOLDER_PATH, window.surface, device);
+        auto presentationMaterial = MaterialFullscreen::fullscreenQuad(SHADERS_FOLDER_PATH, window.surface, device);
+        auto presentationPass = std::make_shared<PresentationPass>(device, engine->getDefaultWhiteTexture(), presentationMaterial);
+        presentationPass->enableDepthShow();
         engine->setPresentationPass(presentationPass);
 
         auto shadowTarget = std::make_shared<RenderTarget>(device);
@@ -117,11 +120,11 @@ public:
     }
 
     void initPostEffects() {
-        auto inverse = std::make_shared<InverseFilter>(device, SHADERS_FOLDER_PATH);
-        engine->addPostEffect(inverse);
+        //auto inverse = std::make_shared<InverseFilter>(device, SHADERS_FOLDER_PATH);
+        //engine->addPostEffect(inverse);
 
-        auto noir = std::make_shared<NoirFilter>(device, SHADERS_FOLDER_PATH);
-        engine->addPostEffect(noir);
+        //auto noir = std::make_shared<NoirFilter>(device, SHADERS_FOLDER_PATH);
+        //engine->addPostEffect(noir);
     }
 
     void initMeshMaterial() {
@@ -188,10 +191,6 @@ public:
         RefCounted<Sampler> sampler = std::make_shared<Sampler>(device);
         sampler->setHighQualityFiltering();
 
-        RefCounted<Texture> defaultShadowTexture = std::make_shared<Texture>(device);
-        defaultShadowTexture->setDataAsRGBA8(1, 1, blackPixel, true);
-        defaultShadowTexture->setSampler(sampler);
-
         // Material
         material = std::make_shared<Material>(device);
         material->setGraphicsPipeline(pbrPipeline);
@@ -204,13 +203,13 @@ public:
         setMaterialTexture(TEXTURE_NORMAL_PATH.c_str(), "texNormal", material, sampler);
         setMaterialCubemap("texEnvMap", material, sampler);
 
-        material->setTexture2D("texShadowMap", defaultShadowTexture);
+        material->setTexture("texShadowMap", engine->getDefaultWhiteTexture());
         material->updateUniformData();
 
         whiteMaterial = std::make_shared<Material>(device);
         whiteMaterial->setGraphicsPipeline(pipeline);
         whiteMaterial->createMaterial();
-        whiteMaterial->setTexture2D("texShadowMap", defaultShadowTexture);
+        whiteMaterial->setTexture("texShadowMap", engine->getDefaultWhiteTexture());
         whiteMaterial->updateUniformData();
 
         IRenderDevice::VertexBufferLayoutDesc vertShadowLayoutDesc = {};
@@ -235,18 +234,16 @@ public:
     }
 
     void setMaterialTexture(const char *path, const char *name, RefCounted<Material> mt, RefCounted<Sampler> sampler) {
-        RefCounted<Texture> texture = std::make_shared<Texture>(device);
-        texture->setSampler(sampler);
-
         int w, h, channels;
         stbi_uc* pixels = stbi_load(path, &w, &h, &channels, STBI_rgb_alpha);
         if (pixels != nullptr) {
+            RefCounted<Texture> texture = std::make_shared<Texture>(device);
+            texture->setSampler(sampler);
             texture->setDataAsRGBA8(w, h, pixels, true);
+            mt->setTexture(name, texture);
         } else {
-            texture->setDataAsRGBA8(1, 1, whitePixel, true);
+            mt->setTexture(name, engine->getDefaultWhiteTexture());
         }
-
-        mt->setTexture2D(name, texture);
 
         stbi_image_free(pixels);
     }
@@ -285,7 +282,7 @@ public:
 
         texture->setDataAsCubemapRGBA8(w, h, data, true);
 
-        mt->setTexture2D(name, texture);
+        mt->setTexture(name, texture);
 
         delete[] data;
     }
@@ -440,9 +437,6 @@ private:
 
     std::vector<RefCounted<RenderableMesh>> meshes;
     std::vector<Vec4f>                      rotations;
-
-    const uint8_t whitePixel[4] = {255, 255, 255, 255};
-    const uint8_t blackPixel[4] = {0, 0, 0, 0};
 
     const uint32 SHADOW_MAP_SIZE = 4096;
 

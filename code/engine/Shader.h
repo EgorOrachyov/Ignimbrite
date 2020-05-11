@@ -81,6 +81,7 @@ namespace ignimbrite {
         const ParameterInfo& getParameterInfo(const String &name) const;
         const UniformBufferInfo& getBufferInfo(const String &name) const;
         const std::unordered_map<String, UniformBufferInfo> &getBuffersInfo() const;
+        const std::unordered_map<String, ParameterInfo> &getParametersInfo() const;
 
     private:
         friend class ShaderReflection;

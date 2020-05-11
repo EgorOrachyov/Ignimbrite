@@ -43,7 +43,7 @@ namespace ignimbrite {
         auto& texture0 = input->getAttachment(0);
         if (texture0 != mCachedTedxture0) {
             mCachedTedxture0 = texture0;
-            mMaterial->setTexture2D(textureName, mCachedTedxture0);
+            mMaterial->setTexture(textureName, mCachedTedxture0);
             mMaterial->updateUniformData();
         }
 

@@ -35,6 +35,7 @@ namespace ignimbrite {
         const std::vector<uint8> &getData() const { return mData; }
         const RefCounted<Sampler> &getSampler() const { return mSampler; }
         const ID<IRenderDevice::Texture> &getHandle() const { return mHandle; }
+        bool isCubemap() const { return mIsCubemap; }
 
     private:
         /** In pixels */
@@ -43,6 +44,8 @@ namespace ignimbrite {
         uint32 mHeight = 0;
         /** Size of single line of image in bytes */
         uint32 mStride = 0;
+        /** Does this texture have 6 layers and can be set as a cubemap in shaders? */
+        bool mIsCubemap = false;
         /** Format of pixels */
         DataFormat mDataFormat = DataFormat::R8G8B8A8_UNORM;
         /** Texture data on CPU (duplicate for some reason) */

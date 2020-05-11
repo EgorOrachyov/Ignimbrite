@@ -45,6 +45,8 @@ namespace ignimbrite {
         textureDesc.usageFlags = (uint32) TextureUsageBit::ShaderSampling | (uint32) TextureUsageBit::ColorAttachment;
         textureDesc.mipmaps = 1;
 
+        mIsCubemap = false;
+
         mHandle = mDevice->createTexture(textureDesc);
 
         if (mHandle.isNull())
@@ -67,6 +69,8 @@ namespace ignimbrite {
         textureDesc.size = mStride * mHeight;
         textureDesc.type = TextureType::Texture2D;
         textureDesc.usageFlags = (uint32) TextureUsageBit::ShaderSampling | (uint32) TextureUsageBit::DepthStencilAttachment;
+
+        mIsCubemap = false;
 
         mHandle = mDevice->createTexture(textureDesc);
 
@@ -96,6 +100,8 @@ namespace ignimbrite {
         textureDesc.type = TextureType::Texture2D;
         textureDesc.usageFlags = (uint32) TextureUsageBit::ShaderSampling;
         textureDesc.mipmaps = (genMipmaps ? (uint32)std::floor(std::log2(std::max(width, height))) + 1 : 1);
+
+        mIsCubemap = false;
 
         mHandle = mDevice->createTexture(textureDesc);
 
@@ -127,6 +133,8 @@ namespace ignimbrite {
         textureDesc.type = TextureType::Cubemap;
         textureDesc.cubemapLayerSize = mStride * mHeight;
         textureDesc.size = textureDesc.cubemapLayerSize * 6;
+
+        mIsCubemap = true;
 
         mHandle = mDevice->createTexture(textureDesc);
 

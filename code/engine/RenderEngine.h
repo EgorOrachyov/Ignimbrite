@@ -35,7 +35,7 @@ namespace ignimbrite {
 
         void setRenderArea(uint32 x, uint32 y, uint32 w, uint32 h) override;
 
-        void setPresentationPass(RefCounted<Material> present) override;
+        void setPresentationPass(RefCounted<IPresentationPass> presentationPass) override;
 
         void addRenderable(RefCounted<IRenderable> object) override;
 
@@ -65,6 +65,8 @@ namespace ignimbrite {
 
         const String &getName() override;
 
+        RefCounted<Texture> getDefaultWhiteTexture() override;
+
     private:
 
         void CHECK_CAMERA_PRESENT() const;
@@ -83,9 +85,9 @@ namespace ignimbrite {
         RefCounted<IRenderDevice>  mRenderDevice;
         RefCounted<RenderTarget>   mOffscreenTarget1;
         RefCounted<RenderTarget>   mOffscreenTarget2;
-        RefCounted<Material>       mPresentationMaterial;
-
         RefCounted<Canvas>         mCanvas;
+        RefCounted<IPresentationPass>   mPresentationPass;
+        RefCounted<Texture>             mDefaultWhiteTexture;
 
         ID<IRenderDevice::Surface>      mTargetSurface;
         ID<IRenderDevice::VertexBuffer> mFullscreenQuad;

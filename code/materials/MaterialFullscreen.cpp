@@ -118,8 +118,8 @@ namespace ignimbrite {
         pipeline->setVertexBuffersCount(1);
         pipeline->setVertexBufferDesc(0, vertexBufferLayoutDesc);
         pipeline->setBlendEnable(false);
-        pipeline->setDepthTestEnable(true);
-        pipeline->setDepthWriteEnable(true);
+        pipeline->setDepthTestEnable(false);
+        pipeline->setDepthWriteEnable(false);
         pipeline->createPipeline();
 
         auto material = std::make_shared<Material>(device);
