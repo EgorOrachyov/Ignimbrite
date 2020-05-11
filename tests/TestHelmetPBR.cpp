@@ -378,6 +378,9 @@ public:
         auto normal = loadTexture(TEXTURE_HELMET_NORMAL, sampler);
         auto emissive = loadTexture(TEXTURE_HELMET_EMISSIVE, sampler);
 
+        pbrMaterial->setFloat("PbrSettings.exposure", 2.0f);
+        pbrMaterial->setFloat("PbrSettings.ambient", 0.5f);
+        pbrMaterial->setFloat("PbrSettings.lightPower", 4.0f);
         pbrMaterial->setTexture2D("texShadowMap", defaultShadowTexture);
         pbrMaterial->setTexture2D("texAlbedo", albedo);
         pbrMaterial->setTexture2D("texAO", ao);
@@ -518,7 +521,7 @@ public:
             inputUpdate();
             meshUpdate();
 
-            pbrMesh->rotate({0,1,0}, 0.002f);
+            pbrMesh->rotate({0,1,0}, 0.006f);
             engine->draw();
         }
     }

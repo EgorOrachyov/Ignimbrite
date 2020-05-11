@@ -7,6 +7,12 @@ layout (binding = 4) uniform sampler2D texMetalRoughness;   // Linear
 layout (binding = 5) uniform sampler2D texNormal;           // Linear
 layout (binding = 6) uniform sampler2D texEmissive;         // Linear ?
 
+layout (binding = 7) uniform PbrSettings {
+    float exposure;
+    float ambient;
+    float lightPower;
+};
+
 layout (location = 0) in vec3 inViewVec;
 layout (location = 1) in vec3 inLightVec;
 layout (location = 2) in vec4 inShadowCoord;
@@ -114,7 +120,7 @@ void main()
     vec3 albedo     = pow(texture(texAlbedo,inTexCoord).rgb, vec3(2.2));      // remember, abledo in sRGB
     float metallic  = texture(texMetalRoughness,inTexCoord).b;
     float roughness = texture(texMetalRoughness,inTexCoord).g;
-    float ao        = texture(texAO,inTexCoord).r;
+    float ao        = texture(texAO,inTexCoord).r * ambient;
 
     vec3 N = getNormal();               // World space normal vector
     vec3 V = normalize(inViewVec);      // From fragment to camera
@@ -127,7 +133,7 @@ void main()
     float NdotL = max(dot(N,L), 0.0f);
     float NdotV = max(dot(N,V), 0.0f);
     vec3 lightColor = vec3(1.0f);
-    vec3 radiance = lightColor;
+    vec3 radiance = lightColor * lightPower;
 
     float NDF = DistributionGGX(N,H,roughness);
     float G = GeometrySmith(N,V,L,roughness);
@@ -144,7 +150,8 @@ void main()
 
     vec3 ambient = vec3(0.04) * albedo * vec3(ao);
     vec3 color = ambient + Lo * vec3(shadow) + emissive;
-    vec3 gammaCorrect = pow(color, vec3(1.0f / 2.2f));
+    vec3 hdr = vec3(1.0f) - exp(-color * exposure);
+    vec3 gammaCorrect = pow(hdr, vec3(1.0f / 2.2f));
 
     outColor = vec4(gammaCorrect, 1.0f);
 }
