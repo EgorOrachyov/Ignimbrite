@@ -19,7 +19,7 @@ namespace ignimbrite {
     class InverseFilter : public IPostEffect {
     public:
 
-        InverseFilter(RefCounted<IRenderDevice> device, String path);
+        InverseFilter(RefCounted<IRenderDevice> device, String folderPath);
 
         ~InverseFilter() override;
 

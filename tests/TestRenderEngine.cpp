@@ -103,7 +103,7 @@ public:
         engine->addLightSource(light);
         engine->setRenderArea(0, 0, window.w, window.h);
 
-        auto presentationPass = MaterialFullscreen::fullscreenQuad(PREFIX_PATH, window.surface, device);
+        auto presentationPass = MaterialFullscreen::fullscreenQuad(SHADERS_FOLDER_PATH, window.surface, device);
         engine->setPresentationPass(presentationPass);
 
         auto shadowTarget = std::make_shared<RenderTarget>(device);
@@ -117,11 +117,11 @@ public:
     }
 
     void initPostEffects() {
-        //auto inverse = std::make_shared<InverseFilter>(device, PREFIX_PATH);
-        //engine->addPostEffect(inverse);
+        auto inverse = std::make_shared<InverseFilter>(device, SHADERS_FOLDER_PATH);
+        engine->addPostEffect(inverse);
 
-        //auto noir = std::make_shared<NoirFilter>(device, PREFIX_PATH);
-        //engine->addPostEffect(noir);
+        auto noir = std::make_shared<NoirFilter>(device, SHADERS_FOLDER_PATH);
+        engine->addPostEffect(noir);
     }
 
     void initMeshMaterial() {
@@ -455,7 +455,7 @@ private:
     String MODEL3D_REFL_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/MeshReflectiveShadowed.frag.spv";
     String SHADOWS_SHADER_PATH_VERT = "shaders/spirv/shadowmapping/Shadows.vert.spv";
     String SHADOWS_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/Shadows.frag.spv";
-    String PREFIX_PATH = "./shaders/";
+    String SHADERS_FOLDER_PATH = "shaders/spirv/";
 
     String MESH_PATH                = "assets/models/DamagedHelmet.obj";
     String MESH_PLANE_PATH          = "assets/models/plane.obj";

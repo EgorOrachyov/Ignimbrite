@@ -30,7 +30,8 @@ namespace ignimbrite {
     using Texture = IRenderDevice::Texture;
     using Sampler = IRenderDevice::Sampler;
 
-    VulkanRenderDevice::VulkanRenderDevice(uint32 extensionsCount, const char *const *extensions) {
+    VulkanRenderDevice::VulkanRenderDevice(uint32 extensionsCount, const char *const *extensions, bool enableValidation) {
+        mContext.enableValidationLayers = enableValidation;
         mContext.fillRequiredExt(extensionsCount, extensions);
         mContext.createInstance();
         mContext.setupDebugMessenger();

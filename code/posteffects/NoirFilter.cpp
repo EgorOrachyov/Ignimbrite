@@ -14,9 +14,9 @@
 
 namespace ignimbrite {
 
-    NoirFilter::NoirFilter(ignimbrite::RefCounted<ignimbrite::IRenderDevice> device, String path) {
+    NoirFilter::NoirFilter(ignimbrite::RefCounted<ignimbrite::IRenderDevice> device, String folderPath) {
         mDevice = std::move(device);
-        mPrefixPath = std::move(path);
+        mPrefixPath = std::move(folderPath);
     }
 
     NoirFilter::~NoirFilter() {
@@ -38,7 +38,7 @@ namespace ignimbrite {
     void NoirFilter::execute(RefCounted<RenderTarget> &input, RefCounted<RenderTarget> &output) {
         static std::vector<IRenderDevice::Color> color = { {0.0f, 0.0f, 0.0f, 0.0f} };
         static IRenderDevice::Region region = { 0, 0, { output->getWidth(), output->getHeight() } };
-        static String textureName = "Texture0";
+        static String textureName = "texScreen";
 
         auto& texture0 = input->getAttachment(0);
         if (texture0 != mCachedTedxture0) {

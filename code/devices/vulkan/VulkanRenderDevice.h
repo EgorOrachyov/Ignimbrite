@@ -23,7 +23,7 @@ namespace ignimbrite {
     class VulkanRenderDevice : public IRenderDevice {
     public:
 
-        VulkanRenderDevice(uint32 extensionsCount, const char *const *extensions);
+        VulkanRenderDevice(uint32 extensionsCount, const char *const *extensions, bool enableValidation = false);
         ~VulkanRenderDevice() override;
 
         ID<VertexLayout> createVertexLayout(const std::vector<VertexBufferLayoutDesc> &vertexBuffersDesc) override;

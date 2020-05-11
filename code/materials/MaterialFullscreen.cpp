@@ -79,8 +79,8 @@ namespace ignimbrite {
         auto shader = std::make_shared<Shader>(device);
 
         if (supportsSpirv) {
-            auto vertexName = shadersFolderPath + "spirv/FullscreenQuad.vert.spv";
-            auto fragmentName = shadersFolderPath + "spirv/FullscreenQuad.frag.spv";
+            auto vertexName = shadersFolderPath + "FullscreenQuad.vert.spv";
+            auto fragmentName = shadersFolderPath + "FullscreenQuad.frag.spv";
 
             FileUtils::loadBinary(vertexName, vertexCode);
             FileUtils::loadBinary(fragmentName, fragmentCode);
@@ -130,14 +130,14 @@ namespace ignimbrite {
     }
 
     RefCounted <Material> MaterialFullscreen::noirFilter(const String &shadersFolderPath, const RefCounted<RenderTarget::Format> &format, const RefCounted<IRenderDevice> &device) {
-        auto vertexName = shadersFolderPath + "spirv/NoirFilter.vert.spv";
-        auto fragmentName = shadersFolderPath + "spirv/NoirFilter.frag.spv";
+        auto vertexName = shadersFolderPath + "NoirFilter.vert.spv";
+        auto fragmentName = shadersFolderPath + "NoirFilter.frag.spv";
         return screeMaterialSpv(vertexName, fragmentName, format, device);
     }
 
     RefCounted<Material> MaterialFullscreen::inverseFilter(const String &shadersFolderPath, const RefCounted<RenderTarget::Format> &format, const RefCounted<IRenderDevice> &device) {
-        auto vertexName = shadersFolderPath + "spirv/InverseFilter.vert.spv";
-        auto fragmentName = shadersFolderPath + "spirv/InverseFilter.frag.spv";
+        auto vertexName = shadersFolderPath + "InverseFilter.vert.spv";
+        auto fragmentName = shadersFolderPath + "InverseFilter.frag.spv";
         return screeMaterialSpv(vertexName, fragmentName, format, device);
     }
 
