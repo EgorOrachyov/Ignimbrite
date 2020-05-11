@@ -15,10 +15,12 @@
 #include <RenderableMesh.h>
 #include <VulkanExtensions.h>
 #include <MaterialFullscreen.h>
+#include <VulkanExtensions.h>
 #include <VulkanRenderDevice.h>
 #include <VertexLayoutFactory.h>
 #include <FileUtils.h>
 
+#include <GLFW/glfw3.h>
 #include <fstream>
 #include <stb_image.h>
 
