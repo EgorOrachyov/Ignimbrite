@@ -95,8 +95,8 @@ endif()
 ## Configure project options
 
 configure_file(
-    ${CMAKE_SOURCE_DIR}/code/engine/Options.h.in
-    ${CMAKE_SOURCE_DIR}/code/engine/Options.h
+    ${CMAKE_CURRENT_LIST_DIR}/code/engine/Options.h.in
+    ${CMAKE_CURRENT_LIST_DIR}/code/engine/Options.h
 )
 
 ##################################################################

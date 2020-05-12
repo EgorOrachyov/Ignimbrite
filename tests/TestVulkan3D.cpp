@@ -173,7 +173,7 @@ private:
         matData.material = std::make_shared<Material>(pDevice);
         matData.material->setGraphicsPipeline(matData.graphicsPipeline);
         matData.material->createMaterial();
-        matData.material->setTexture2D("texAlbedo", matData.texture);
+        matData.material->setTexture("texAlbedo", matData.texture);
         matData.material->updateUniformData();
     }
 

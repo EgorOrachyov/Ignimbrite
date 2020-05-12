@@ -60,6 +60,10 @@ set(Ignimbrite_SOURCES
     RenderEngine.h
     RenderQueueElement.h
     IPostEffect.h
+    IPostEffect.h 
+    PresentationPass.cpp 
+    PresentationPass.h 
+    IPresentationPass.h
     Geometry.cpp
     Geometry.h
     Canvas.cpp

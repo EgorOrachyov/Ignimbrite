@@ -14,9 +14,9 @@
 
 namespace ignimbrite {
 
-    InverseFilter::InverseFilter(ignimbrite::RefCounted<ignimbrite::IRenderDevice> device, ignimbrite::String path) {
+    InverseFilter::InverseFilter(ignimbrite::RefCounted<ignimbrite::IRenderDevice> device, ignimbrite::String folderPath) {
         mDevice = std::move(device);
-        mPrefixPath = std::move(path);
+        mPrefixPath = std::move(folderPath);
     }
 
     InverseFilter::~InverseFilter() {
@@ -38,12 +38,12 @@ namespace ignimbrite {
     void InverseFilter::execute(RefCounted<RenderTarget> &input, RefCounted<RenderTarget> &output) {
         static std::vector<IRenderDevice::Color> color = { {0.0f, 0.0f, 0.0f, 0.0f} };
         static IRenderDevice::Region region = { 0, 0, { output->getWidth(), output->getHeight() } };
-        static String textureName = "Texture0";
+        static String textureName = "texScreen";
 
         auto& texture0 = input->getAttachment(0);
         if (texture0 != mCachedTedxture0) {
             mCachedTedxture0 = texture0;
-            mMaterial->setTexture2D(textureName, mCachedTedxture0);
+            mMaterial->setTexture(textureName, mCachedTedxture0);
             mMaterial->updateUniformData();
         }
 

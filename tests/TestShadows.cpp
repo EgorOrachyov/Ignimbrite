@@ -246,7 +246,7 @@ private:
             mesh->material = std::make_shared<Material>(device);
             mesh->material->setGraphicsPipeline(meshPipeline);
             mesh->material->createMaterial();
-            mesh->material->setTexture2D("texShadowMap", shadowPass.depthTexture);
+            mesh->material->setTexture("texShadowMap", shadowPass.depthTexture);
 
             mesh->shadowMaterial = std::make_shared<Material>(device);
             mesh->shadowMaterial->setGraphicsPipeline(shadowsPipeline);

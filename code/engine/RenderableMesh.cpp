@@ -182,7 +182,7 @@ namespace ignimbrite {
 
             mRenderMaterial->setMat4("CommonParams.lightSpace", lightViewProj);
             mRenderMaterial->setVec3("CommonParams.lightDir", light->getDirection());
-            mRenderMaterial->setTexture2D("texShadowMap", context.getShadowMap());
+            mRenderMaterial->setTexture("texShadowMap", context.getShadowMap());
         }
 
         // todo: another bindings

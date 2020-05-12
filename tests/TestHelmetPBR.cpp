@@ -19,6 +19,7 @@
 #include <VulkanRenderDevice.h>
 #include <VertexLayoutFactory.h>
 #include <FileUtils.h>
+#include <PresentationPass.h>
 
 #include <GLFW/glfw3.h>
 #include <fstream>
@@ -110,8 +111,12 @@ public:
         engine->addLightSource(light);
         engine->setRenderArea(0, 0, window.w, window.h);
 
-        auto presentationPass = MaterialFullscreen::fullscreenQuad(PREFIX_PATH, window.surface, device);
-        engine->setPresentationPass(presentationPass);
+        auto presentMaterial = MaterialFullscreen::fullscreenQuad(SHADERS_FOLDER_PATH, window.surface, device);
+        auto depthPresentMaterial = MaterialFullscreen::fullscreenQuadLinearDepth(SHADERS_FOLDER_PATH, window.surface, device);
+        auto presentPass = std::make_shared<PresentationPass>(device, presentMaterial);
+        presentPass->setDepthPresentationMaterial(depthPresentMaterial);
+        presentPass->enableDepthShow();
+        engine->setPresentationPass(presentPass);
 
         auto shadowTarget = std::make_shared<RenderTarget>(device);
         shadowTarget->createTargetFromFormat(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, RenderTarget::DefaultFormat::DepthStencil);
@@ -124,10 +129,10 @@ public:
     }
 
     void initPostEffects() {
-        //auto inverse = std::make_shared<InverseFilter>(device, PREFIX_PATH);
+        //auto inverse = std::make_shared<InverseFilter>(device, SHADERS_FOLDER_PATH);
         //engine->addPostEffect(inverse);
 
-        //auto noir = std::make_shared<NoirFilter>(device, PREFIX_PATH);
+        //auto noir = std::make_shared<NoirFilter>(device, SHADERS_FOLDER_PATH);
         //engine->addPostEffect(noir);
     }
 
@@ -181,7 +186,7 @@ public:
         whiteMaterial = std::make_shared<Material>(device);
         whiteMaterial->setGraphicsPipeline(pipeline);
         whiteMaterial->createMaterial();
-        whiteMaterial->setTexture2D("texShadowMap", defaultShadowTexture);
+        whiteMaterial->setTexture("texShadowMap", defaultShadowTexture);
         whiteMaterial->updateUniformData();
 
         IRenderDevice::VertexBufferLayoutDesc vertShadowLayoutDesc = {};
@@ -217,7 +222,7 @@ public:
             texture->setDataAsRGBA8(1, 1, whitePixel, true);
         }
 
-        mt->setTexture2D(name, texture);
+        mt->setTexture(name, texture);
 
         stbi_image_free(pixels);
     }
@@ -256,7 +261,7 @@ public:
 
         texture->setDataAsCubemapRGBA8(w, h, data, true);
 
-        mt->setTexture2D(name, texture);
+        mt->setTexture(name, texture);
 
         delete[] data;
     }
@@ -383,12 +388,12 @@ public:
         pbrMaterial->setFloat("PbrSettings.exposure", 2.0f);
         pbrMaterial->setFloat("PbrSettings.ambient", 0.5f);
         pbrMaterial->setFloat("PbrSettings.lightPower", 4.0f);
-        pbrMaterial->setTexture2D("texShadowMap", defaultShadowTexture);
-        pbrMaterial->setTexture2D("texAlbedo", albedo);
-        pbrMaterial->setTexture2D("texAO", ao);
-        pbrMaterial->setTexture2D("texMetalRoughness", metalroughness);
-        pbrMaterial->setTexture2D("texNormal", normal);
-        pbrMaterial->setTexture2D("texEmissive", emissive);
+        pbrMaterial->setTexture("texShadowMap", defaultShadowTexture);
+        pbrMaterial->setTexture("texAlbedo", albedo);
+        pbrMaterial->setTexture("texAO", ao);
+        pbrMaterial->setTexture("texMetalRoughness", metalroughness);
+        pbrMaterial->setTexture("texNormal", normal);
+        pbrMaterial->setTexture("texEmissive", emissive);
         pbrMaterial->updateUniformData();
     }
 
@@ -408,7 +413,7 @@ public:
                 if (light != nullptr) {
                     auto lightViewProj = light->getViewProjClipMatrix();
 
-                    mRenderMaterial->setTexture2D("texShadowMap", context.getShadowMap());
+                    mRenderMaterial->setTexture("texShadowMap", context.getShadowMap());
                     mRenderMaterial->setMat4("CommonParams.lightSpace", lightViewProj);
                     mRenderMaterial->setVec3("CommonParams.lightDir", light->getDirection());
                 }
@@ -523,7 +528,7 @@ public:
             inputUpdate();
             meshUpdate();
 
-            pbrMesh->rotate({0,1,0}, 0.006f);
+            pbrMesh->rotate({0,1,0}, 0.004f);
             engine->draw();
         }
     }
@@ -553,7 +558,7 @@ private:
     String MODEL3D_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/MeshShadowed.frag.spv";
     String SHADOWS_SHADER_PATH_VERT = "shaders/spirv/shadowmapping/Shadows.vert.spv";
     String SHADOWS_SHADER_PATH_FRAG = "shaders/spirv/shadowmapping/Shadows.frag.spv";
-    String PREFIX_PATH = "./shaders/";
+    String SHADERS_FOLDER_PATH = "shaders/spirv/";
 
     String MESH_PLANE_PATH          = "assets/models/plane.obj";
 

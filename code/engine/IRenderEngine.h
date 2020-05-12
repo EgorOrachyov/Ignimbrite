@@ -12,9 +12,11 @@
 
 #include <Light.h>
 #include <Camera.h>
+#include <Texture.h>
 #include <IPostEffect.h>
 #include <IRenderable.h>
 #include <IRenderDevice.h>
+#include <IPresentationPass.h>
 
 namespace ignimbrite {
 
@@ -31,7 +33,7 @@ namespace ignimbrite {
         virtual void setTargetSurface(ID<IRenderDevice::Surface> surface) = 0;
         virtual void setShadowTarget(RefCounted<Light> light, RefCounted<RenderTarget> target) = 0;
         virtual void setRenderArea(uint32 x, uint32 y, uint32 w, uint32 h) = 0;
-        virtual void setPresentationPass(RefCounted<Material> present) = 0;
+        virtual void setPresentationPass(RefCounted<IPresentationPass> presentationPass) = 0;
 
         virtual void addRenderable(RefCounted<IRenderable> object) = 0;
         virtual void removeRenderable(const RefCounted <IRenderable> &object) = 0;
@@ -46,6 +48,8 @@ namespace ignimbrite {
         virtual void addScreenLine2d(const Vec2f &a, const Vec2f &b, const Vec4f &color, float width) = 0;
         virtual void addPoint3d(const Vec3f &p, const Vec4f &color, float size) = 0;
         virtual void addLine3d(const Vec3f &a, const Vec3f &b, const Vec4f &color, float width) = 0;
+
+        virtual RefCounted<Texture> getDefaultWhiteTexture() = 0;
 
         virtual void draw() = 0;
 

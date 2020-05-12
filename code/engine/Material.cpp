@@ -88,10 +88,32 @@ namespace ignimbrite {
         mUniformBuffersWereModified = true;
     }
 
-    void Material::setTexture2D(const String &name, RefCounted<Texture> texture) {
+    void Material::setTexture(const String &name, RefCounted<Texture> texture) {
         const auto& info = mPipeline->getShader()->getParameterInfo(name);
+
+        if (info.type == Shader::DataType::Sampler2D && texture->isCubemap()) {
+            throw std::runtime_error("Texture with name " + name + " must be 2D and not a cubemap");
+        } else if (info.type == Shader::DataType::SamplerCubemap && !texture->isCubemap()) {
+            throw std::runtime_error("Texture with name " + name + " must be a cubemap and not 2D");
+        }
+
         mTextures[info.binding] = std::move(texture);
         mUniformTexturesWereModified = true;
+    }
+
+    void Material::setAll2DTextures(RefCounted<Texture> defaultTexture) {
+        if (defaultTexture->isCubemap()) {
+            throw std::runtime_error("setAll2DTextures(..) requires default texture to be 2D and not a cubemap");
+        }
+
+        for (const auto& s : mPipeline->getShader()->getParametersInfo()) {
+            if (s.second.type == Shader::DataType::Sampler2D) {
+                auto binding = s.second.binding;
+                mTextures[binding] = defaultTexture;
+
+                mUniformTexturesWereModified = true;
+            }
+        }
     }
 
     void Material::bindGraphicsPipeline() {
@@ -157,6 +179,18 @@ namespace ignimbrite {
         RefCounted<Material> mat = std::make_shared<Material>(mDevice);
         mat->setGraphicsPipeline(mPipeline);
         mat->createMaterial();
+
+        int expectedTextureCount = 0;
+
+        for (const auto& s : mPipeline->getShader()->getParametersInfo()) {
+            if (s.second.type == Shader::DataType::Sampler2D || s.second.type == Shader::DataType::SamplerCubemap) {
+                expectedTextureCount++;
+            }
+        }
+
+        if (expectedTextureCount != mTextures.size()) {
+            throw std::runtime_error("Can't clone material as source one doesn't have all textures to be set");
+        }
 
         for (const auto& p: mTextures) {
             mat->mTextures.emplace(p.first, p.second);

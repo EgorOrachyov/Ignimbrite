@@ -19,7 +19,23 @@ namespace ignimbrite {
     class Geometry {
     public:
 
-        static void createFullscreenQuad(ID<IRenderDevice::VertexBuffer> &vertexBuffer, const RefCounted<IRenderDevice> &device);
+        /**
+         * Create vertex buffer that consists of 6 vertices (2 triangles)
+         * with 2-float position and 2-float texture coords data.
+         */
+        static void createFullscreenQuad(ID<IRenderDevice::VertexBuffer> &vertexBuffer, RefCounted<IRenderDevice> &device);
+
+        /**
+         * Create vertex buffer that consists of 6 vertices (2 triangles)
+         * with 2-float position and 2-float texture coords data.
+         * If x0 == -1, y0 = -1 and x1 == 1, y1 == 1 then it will cover full screen.
+         * @param x0 left upper corner horizontal
+         * @param y0 left upper corner vertical
+         * @param x1 right bottom corner horizontal
+         * @param y1 right bottom corner vertical
+         */
+        static void createRegionQuad(ID<IRenderDevice::VertexBuffer> &vertexBuffer,
+                float x0, float y0, float x1, float y1, RefCounted<IRenderDevice> &device);
 
     };
 

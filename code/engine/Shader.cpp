@@ -132,5 +132,7 @@ namespace ignimbrite {
         return mBuffers;
     }
 
-
+    const std::unordered_map<String, Shader::ParameterInfo> &Shader::getParametersInfo() const {
+        return mVariables;
+    }
 }

@@ -64,8 +64,15 @@ namespace ignimbrite {
         void setVec4(const String& name, const Vec4f& vec);
         /** Set mat4 value directly mapped to the GPU uniform params */
         void setMat4(const String& name, const Mat4f& mat);
-        /** Set 2D texture (i.e sampler2D) value directly mapped to the GPU uniform params */
-        void setTexture2D(const String& name, RefCounted<Texture> texture);
+        /** Set texture directly mapped to the GPU uniform params */
+        void setTexture(const String& name, RefCounted<Texture> texture);
+
+        /**
+         * Set all 2D textures in this material to specified default one.
+         * This function can be used to prevent unbound 2D textures.
+         * NOTE: cubemaps must be set manually.
+         */
+        void setAll2DTextures(RefCounted<Texture> defaultTexture);
 
         /** Bind this material graphics pipeline as active rendering target */
         void bindGraphicsPipeline();

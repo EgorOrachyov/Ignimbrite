@@ -18,7 +18,7 @@ namespace ignimbrite {
     class NoirFilter : public IPostEffect {
     public:
 
-        NoirFilter(RefCounted<IRenderDevice> device, String path);
+        NoirFilter(RefCounted<IRenderDevice> device, String folderPath);
 
         ~NoirFilter() override;
 
