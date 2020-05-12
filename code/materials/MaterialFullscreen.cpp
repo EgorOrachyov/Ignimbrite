@@ -18,7 +18,7 @@ namespace ignimbrite {
         float32 texcoords[2];
     };
 
-    RefCounted<Material> MaterialFullscreen::screeMaterialSpv(const String &vertexName, const String &fragmentName, const RefCounted<RenderTarget::Format> &format, const RefCounted<IRenderDevice> &device) {
+    RefCounted<Material> MaterialFullscreen::screenMaterialSpv(const String &vertexName, const String &fragmentName, const RefCounted<RenderTarget::Format> &format, const RefCounted<IRenderDevice> &device) {
         std::vector<uint8> vertexCode;
         std::vector<uint8> fragmentCode;
 
@@ -31,10 +31,17 @@ namespace ignimbrite {
             FileUtils::loadBinary(vertexName, vertexCode);
             FileUtils::loadBinary(fragmentName, fragmentCode);
 
+            if (vertexCode.empty()) {
+                throw std::runtime_error("Can't find vertex shader: " + vertexName);
+            }
+            if (fragmentCode.empty()) {
+                throw std::runtime_error("Can't find fragment shader: " + fragmentName);
+            }
+
             shader->fromSources(ShaderLanguage::SPIRV, vertexCode, fragmentCode);
         }
         else {
-            throw std::runtime_error("No shader sources for this device type");
+            throw std::runtime_error("Specified render device doesn't support SPIRV");
         }
 
         shader->reflectData();
@@ -57,8 +64,8 @@ namespace ignimbrite {
         pipeline->setVertexBuffersCount(1);
         pipeline->setVertexBufferDesc(0, vertexBufferLayoutDesc);
         pipeline->setBlendEnable(false);
-        pipeline->setDepthTestEnable(true);
-        pipeline->setDepthWriteEnable(true);
+        pipeline->setDepthTestEnable(false);
+        pipeline->setDepthWriteEnable(false);
         pipeline->createPipeline();
 
         auto material = std::make_shared<Material>(device);
@@ -68,8 +75,7 @@ namespace ignimbrite {
         return material;
     }
 
-    RefCounted <Material> MaterialFullscreen::fullscreenQuad(const String &shadersFolderPath, ID <IRenderDevice::Surface> surface,
-                                                             const RefCounted<IRenderDevice> &device) {
+    RefCounted<Material> MaterialFullscreen::screenMaterialSpv(const String &vertexName, const String &fragmentName, const ID<IRenderDevice::Surface> &surface, const RefCounted<IRenderDevice> &device) {
         std::vector<uint8> vertexCode;
         std::vector<uint8> fragmentCode;
 
@@ -79,23 +85,20 @@ namespace ignimbrite {
         auto shader = std::make_shared<Shader>(device);
 
         if (supportsSpirv) {
-            auto vertexName = shadersFolderPath + "FullscreenQuad.vert.spv";
-            auto fragmentName = shadersFolderPath + "FullscreenQuad.frag.spv";
-
             FileUtils::loadBinary(vertexName, vertexCode);
             FileUtils::loadBinary(fragmentName, fragmentCode);
 
             if (vertexCode.empty()) {
-                throw std::runtime_error("Can't find shader: " + vertexName);
+                throw std::runtime_error("Can't find vertex shader: " + vertexName);
             }
-            if (fragmentName.empty()) {
-                throw std::runtime_error("Can't find shader: " + fragmentName);
+            if (fragmentCode.empty()) {
+                throw std::runtime_error("Can't find fragment shader: " + fragmentName);
             }
 
             shader->fromSources(ShaderLanguage::SPIRV, vertexCode, fragmentCode);
         }
         else {
-            throw std::runtime_error("No shader sources for this device type");
+            throw std::runtime_error("Specified render device doesn't support SPIRV");
         }
 
         shader->reflectData();
@@ -129,16 +132,31 @@ namespace ignimbrite {
         return material;
     }
 
+    RefCounted <Material> MaterialFullscreen::fullscreenQuad(const String &shadersFolderPath, ID<IRenderDevice::Surface> surface,
+                                                             const RefCounted<IRenderDevice> &device) {
+        return screenMaterialSpv(
+                shadersFolderPath + "FullscreenQuad.vert.spv",
+                shadersFolderPath + "FullscreenQuad.frag.spv",
+                surface, device);
+    }
+
+    RefCounted<Material> MaterialFullscreen::fullscreenQuadLinearDepth(const String &shadersFolderPath, ID<IRenderDevice::Surface> surface,
+                                                                  const RefCounted<IRenderDevice> &device) {
+        return screenMaterialSpv(
+                shadersFolderPath + "FullscreenQuad.vert.spv",
+                shadersFolderPath + "FullscreenQuadLinearize.frag.spv",
+                surface, device);
+    }
+
     RefCounted <Material> MaterialFullscreen::noirFilter(const String &shadersFolderPath, const RefCounted<RenderTarget::Format> &format, const RefCounted<IRenderDevice> &device) {
         auto vertexName = shadersFolderPath + "NoirFilter.vert.spv";
         auto fragmentName = shadersFolderPath + "NoirFilter.frag.spv";
-        return screeMaterialSpv(vertexName, fragmentName, format, device);
+        return screenMaterialSpv(vertexName, fragmentName, format, device);
     }
 
     RefCounted<Material> MaterialFullscreen::inverseFilter(const String &shadersFolderPath, const RefCounted<RenderTarget::Format> &format, const RefCounted<IRenderDevice> &device) {
         auto vertexName = shadersFolderPath + "InverseFilter.vert.spv";
         auto fragmentName = shadersFolderPath + "InverseFilter.frag.spv";
-        return screeMaterialSpv(vertexName, fragmentName, format, device);
+        return screenMaterialSpv(vertexName, fragmentName, format, device);
     }
-
 }

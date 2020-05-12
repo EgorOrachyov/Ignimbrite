@@ -15,11 +15,13 @@
 #include <RenderableMesh.h>
 #include <VulkanExtensions.h>
 #include <MaterialFullscreen.h>
+#include <VulkanExtensions.h>
 #include <VulkanRenderDevice.h>
 #include <VertexLayoutFactory.h>
 #include <FileUtils.h>
 #include <PresentationPass.h>
 
+#include <GLFW/glfw3.h>
 #include <fstream>
 #include <stb_image.h>
 
@@ -101,10 +103,12 @@ public:
         engine->addLightSource(light);
         engine->setRenderArea(0, 0, window.w, window.h);
 
-        auto presentationMaterial = MaterialFullscreen::fullscreenQuad(SHADERS_FOLDER_PATH, window.surface, device);
-        auto presentationPass = std::make_shared<PresentationPass>(device, engine->getDefaultWhiteTexture(), presentationMaterial);
-        presentationPass->enableDepthShow();
-        engine->setPresentationPass(presentationPass);
+        auto presentMaterial = MaterialFullscreen::fullscreenQuad(SHADERS_FOLDER_PATH, window.surface, device);
+        auto depthPresentMaterial = MaterialFullscreen::fullscreenQuadLinearDepth(SHADERS_FOLDER_PATH, window.surface, device);
+        auto presentPass = std::make_shared<PresentationPass>(device, presentMaterial);
+        presentPass->setDepthPresentationMaterial(depthPresentMaterial);
+        presentPass->enableDepthShow();
+        engine->setPresentationPass(presentPass);
 
         auto shadowTarget = std::make_shared<RenderTarget>(device);
         shadowTarget->createTargetFromFormat(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, RenderTarget::DefaultFormat::DepthStencil);
@@ -373,6 +377,9 @@ public:
         auto normal = loadTexture(TEXTURE_HELMET_NORMAL, sampler);
         auto emissive = loadTexture(TEXTURE_HELMET_EMISSIVE, sampler);
 
+        pbrMaterial->setFloat("PbrSettings.exposure", 2.0f);
+        pbrMaterial->setFloat("PbrSettings.ambient", 0.5f);
+        pbrMaterial->setFloat("PbrSettings.lightPower", 4.0f);
         pbrMaterial->setTexture("texShadowMap", defaultShadowTexture);
         pbrMaterial->setTexture("texAlbedo", albedo);
         pbrMaterial->setTexture("texAO", ao);
@@ -513,7 +520,7 @@ public:
             inputUpdate();
             meshUpdate();
 
-            pbrMesh->rotate({0,1,0}, 0.002f);
+            pbrMesh->rotate({0,1,0}, 0.004f);
             engine->draw();
         }
     }

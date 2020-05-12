@@ -17,9 +17,11 @@ namespace ignimbrite {
     class MaterialFullscreen {
     public:
 
-        static RefCounted<Material> screeMaterialSpv(const String &vertexName, const String &fragmentName, const RefCounted<RenderTarget::Format> &format, const RefCounted<IRenderDevice> &device);
+        static RefCounted<Material> screenMaterialSpv(const String &vertexName, const String &fragmentName, const RefCounted<RenderTarget::Format> &format, const RefCounted<IRenderDevice> &device);
+        static RefCounted<Material> screenMaterialSpv(const String &vertexName, const String &fragmentName, const ID<IRenderDevice::Surface> &surface, const RefCounted<IRenderDevice> &device);
 
         static RefCounted<Material> fullscreenQuad(const String &shadersFolderPath, ID<IRenderDevice::Surface> surface, const RefCounted<IRenderDevice> &device);
+        static RefCounted<Material> fullscreenQuadLinearDepth(const String &shadersFolderPath, ID<IRenderDevice::Surface> surface, const RefCounted<IRenderDevice> &device);
 
         static RefCounted<Material> noirFilter(const String &shadersFolderPath, const RefCounted<RenderTarget::Format> &format, const RefCounted<IRenderDevice> &device);
 

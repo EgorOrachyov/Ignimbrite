@@ -20,9 +20,10 @@ namespace ignimbrite {
     public:
         explicit PresentationPass(
                 RefCounted<IRenderDevice> device,
-                RefCounted<Texture> default2dTexture,
                 RefCounted<Material> presentationMaterial);
         ~PresentationPass();
+
+        void setDepthPresentationMaterial(RefCounted<Material> depthPresentationMaterial);
 
         /**
          * Enable showing of depth buffer content.

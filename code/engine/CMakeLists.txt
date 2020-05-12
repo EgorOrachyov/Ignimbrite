@@ -3,6 +3,7 @@ project(Ignimbrite)
 
 # Library sources
 set(Ignimbrite_SOURCES
+    Options.h
     IncludeStd.h
     IncludeMath.h
     Compilation.h
@@ -58,7 +59,15 @@ set(Ignimbrite_SOURCES
     RenderEngine.cpp
     RenderEngine.h
     RenderQueueElement.h
-    IPostEffect.h Geometry.cpp Geometry.h Canvas.cpp Canvas.h PresentationPass.cpp PresentationPass.h IPresentationPass.h)
+    IPostEffect.h
+    IPostEffect.h 
+    PresentationPass.cpp 
+    PresentationPass.h 
+    IPresentationPass.h
+    Geometry.cpp
+    Geometry.h
+    Canvas.cpp
+    Canvas.h)
 
 add_library(Ignimbrite STATIC ${Ignimbrite_SOURCES})
 

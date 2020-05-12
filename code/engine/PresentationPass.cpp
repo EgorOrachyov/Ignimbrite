@@ -15,13 +15,11 @@
 
 namespace ignimbrite {
 
-    PresentationPass::PresentationPass(RefCounted<IRenderDevice> device, RefCounted<Texture> defaultTexture, RefCounted<Material> presentationMaterial) {
+    PresentationPass::PresentationPass(RefCounted<IRenderDevice> device, RefCounted<Material> presentationMaterial) {
         mDevice = std::move(device);
         mDepthBufferArea = { 0.3f, 0.3f, 0.95f, 0.95f };
 
         mPresentationMaterial = std::move(presentationMaterial);
-        mPresentationMaterial->setAll2DTextures(defaultTexture);
-        mDepthPresentationMaterial = mPresentationMaterial->clone();
 
         Geometry::createFullscreenQuad(mFullscreenQuad, mDevice);
         Geometry::createRegionQuad(
@@ -29,6 +27,10 @@ namespace ignimbrite {
                 mDepthBufferArea.x, mDepthBufferArea.y,
                 mDepthBufferArea.z, mDepthBufferArea.w,
                 mDevice);
+    }
+
+    void PresentationPass::setDepthPresentationMaterial(RefCounted<Material> depthPresentationMaterial) {
+        mDepthPresentationMaterial = std::move(depthPresentationMaterial);
     }
 
     PresentationPass::~PresentationPass() {
@@ -70,6 +72,10 @@ namespace ignimbrite {
         mDevice->drawListDraw(6, 1);
 
         if (mShowDepthBuffer && source->hasDepthStencilAttachment()) {
+            if (!mDepthPresentationMaterial) {
+                throw std::runtime_error("Depth presentation material wasn't set");
+            }
+
             const auto &depthTexture = source->getDepthStencilAttachment();
 
             if (!depthTexture->getSampler()) {
@@ -77,6 +83,8 @@ namespace ignimbrite {
             }
 
             mDepthPresentationMaterial->setTexture("texScreen", depthTexture);
+            mDepthPresentationMaterial->setFloat("DepthLinear.near", 0.1f);
+            mDepthPresentationMaterial->setFloat("DepthLinear.far", 1.0f);
             mDepthPresentationMaterial->updateUniformData();
 
             mDepthPresentationMaterial->bindGraphicsPipeline();
