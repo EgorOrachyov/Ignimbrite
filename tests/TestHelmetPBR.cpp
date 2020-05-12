@@ -27,9 +27,17 @@
 
 using namespace ignimbrite;
 
+static const int W = 1920;
+static const int H = 1280;
+
 struct Window {
-    int32 w = 1280;
-    int32 h = 720;
+#ifdef __APPLE__
+    int32 w = W / 2;
+    int32 h = H / 2;
+#else
+    int32 w = W;
+    int32 h = H;
+#endif
     GLFWwindow* handle;
     ID<IRenderDevice::Surface> surface;
     String name = "PBR Helmet Test";
