@@ -18,9 +18,12 @@ layout (location = 0) out vec4 outColor;
 float textureProj(vec4 shadowCoord, vec2 offset)
 {
 	float bias = 0.01;
+	float uvBias = 0.02;
 
 	float shadow = 1.0;
-	if ( shadowCoord.z > -1.0 && shadowCoord.z < 1.0 ) 
+	if ( shadowCoord.z > -1.0 && shadowCoord.z < 1.0 
+		&& shadowCoord.s > 0.0 + uvBias && shadowCoord.s < 1.0 - uvBias 
+		&& shadowCoord.t > 0.0 + uvBias && shadowCoord.t < 1.0 - uvBias) 
 	{
 		float dist = texture(texShadowMap, shadowCoord.st + offset).r;
 		if ( shadowCoord.w > 0.0 && dist < shadowCoord.z - bias) 
