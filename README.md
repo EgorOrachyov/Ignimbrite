@@ -82,7 +82,7 @@ containing tests executables (after build it something like *build/tests/*).
 
 ## Get and build 
 
-This project uses git as primary VCS and CMake 3.11 as build configuration tool.
+This project uses git as primary VCS and CMake 3.14 as build configuration tool.
 Project language is C++11 with std library 11. The following commands allow to get repository:
 
 ```

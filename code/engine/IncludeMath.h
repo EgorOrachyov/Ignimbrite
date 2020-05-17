@@ -3,8 +3,8 @@
 /* https://github.com/EgorOrachyov/Ignimbrite                                     */
 /**********************************************************************************/
 /* Licensed under MIT License                                                     */
-/* Copyright (c) 2019 - 2020 Egor Orachyov                                        */
-/* Copyright (c) 2019 - 2020 Sultim Tsyrendashiev                                 */
+/* Copyright (c) 2019, 2020  Egor Orachyov                                        */
+/* Copyright (c) 2019, 2020  Sultim Tsyrendashiev                                 */
 /**********************************************************************************/
 
 #ifndef IGNIMBRITE_INCLUDEMATH_H
